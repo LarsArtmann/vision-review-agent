@@ -6,6 +6,7 @@ import (
 )
 
 func TestDetectImageFormat(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		data []byte
@@ -27,6 +28,7 @@ func TestDetectImageFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := DetectImageFormat(tt.data)
 			if got != tt.want {
 				t.Errorf("DetectImageFormat() = %q, want %q", got, tt.want)
@@ -36,6 +38,7 @@ func TestDetectImageFormat(t *testing.T) {
 }
 
 func TestIsValidImage(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		data []byte
@@ -50,6 +53,7 @@ func TestIsValidImage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := IsValidImage(tt.data)
 			if got != tt.want {
 				t.Errorf("IsValidImage() = %v, want %v", got, tt.want)
@@ -59,19 +63,23 @@ func TestIsValidImage(t *testing.T) {
 }
 
 func TestValidateImage(t *testing.T) {
+	t.Parallel()
 	t.Run("valid png", func(t *testing.T) {
+			t.Parallel()
 		if err := ValidateImage([]byte{0x89, 0x50, 0x4E, 0x47}); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})
 
 	t.Run("invalid data", func(t *testing.T) {
+			t.Parallel()
 		if err := ValidateImage([]byte{0x00, 0x00, 0x00, 0x00}); !errors.Is(err, ErrInvalidImage) {
 			t.Errorf("expected ErrInvalidImage, got %v", err)
 		}
 	})
 
 	t.Run("empty data", func(t *testing.T) {
+			t.Parallel()
 		if err := ValidateImage([]byte{}); err == nil {
 			t.Error("expected error for empty data")
 		}

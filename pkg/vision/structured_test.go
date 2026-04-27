@@ -12,13 +12,15 @@ type testReview struct {
 }
 
 func TestAnalyzeStructured(t *testing.T) {
+	t.Parallel()
+
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	ctx := context.Background()
-	img := &ImageSource{Data: []byte("test"), MediaType: "image/png"}
+	img := &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"}
 
 	tests := []struct {
 		name        string
@@ -55,6 +57,7 @@ func TestAnalyzeStructured(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := AnalyzeStructured[testReview](ctx, agent, tt.prompt, tt.images...)
 			if tt.wantErr {
 				if err == nil {

@@ -3,7 +3,7 @@ package vision
 import (
 	"context"
 	"errors"
-	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +12,7 @@ import (
 )
 
 func TestConfigValidate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		config  Config
@@ -74,6 +75,7 @@ func TestConfigValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.config.Validate()
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("expected %v, got %v", tt.wantErr, err)
@@ -83,6 +85,7 @@ func TestConfigValidate(t *testing.T) {
 }
 
 func TestNewAgent(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		config  Config
@@ -108,6 +111,7 @@ func TestNewAgent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			agent, err := NewAgent(tt.config)
 			if tt.wantErr {
 				if err == nil {
@@ -130,15 +134,17 @@ func TestNewAgent(t *testing.T) {
 }
 
 func TestVisionAgent_Analyze(t *testing.T) {
+	t.Parallel()
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	ctx := context.Background()
-	img := &ImageSource{Data: []byte("test"), MediaType: "image/png"}
+	img := &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"}
 
 	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 		result, err := agent.Analyze(ctx, "test prompt", img)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -158,7 +164,8 @@ func TestVisionAgent_Analyze(t *testing.T) {
 	})
 
 	t.Run("multiple images", func(t *testing.T) {
-		img2 := &ImageSource{Data: []byte("test2"), MediaType: "image/png"}
+		t.Parallel()
+		img2 := &ImageSource{Data: []byte("test2"), MediaType: "image/png", Filename: "test2.png"}
 		result, err := agent.Analyze(ctx, "compare", img, img2)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -169,6 +176,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 	})
 
 	t.Run("empty prompt", func(t *testing.T) {
+		t.Parallel()
 		_, err := agent.Analyze(ctx, "", img)
 		if !errors.Is(err, ErrEmptyPrompt) {
 			t.Errorf("expected ErrEmptyPrompt, got %v", err)
@@ -176,6 +184,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 	})
 
 	t.Run("no images", func(t *testing.T) {
+		t.Parallel()
 		_, err := agent.Analyze(ctx, "test", nil)
 		if !errors.Is(err, ErrNoImages) {
 			t.Errorf("expected ErrNoImages, got %v", err)
@@ -183,6 +192,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 	})
 
 	t.Run("empty images", func(t *testing.T) {
+		t.Parallel()
 		_, err := agent.Analyze(ctx, "test")
 		if !errors.Is(err, ErrNoImages) {
 			t.Errorf("expected ErrNoImages, got %v", err)
@@ -191,15 +201,17 @@ func TestVisionAgent_Analyze(t *testing.T) {
 }
 
 func TestVisionAgent_AnalyzeStream(t *testing.T) {
+	t.Parallel()
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	ctx := context.Background()
-	img := &ImageSource{Data: []byte("test"), MediaType: "image/png"}
+	img := &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"}
 
 	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 		var chunks []string
 		result, err := agent.AnalyzeStream(ctx, "test prompt", func(text string) error {
 			chunks = append(chunks, text)
@@ -220,6 +232,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 	})
 
 	t.Run("nil callback", func(t *testing.T) {
+		t.Parallel()
 		result, err := agent.AnalyzeStream(ctx, "test prompt", nil, img)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -230,6 +243,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 	})
 
 	t.Run("empty prompt", func(t *testing.T) {
+		t.Parallel()
 		_, err := agent.AnalyzeStream(ctx, "", nil, img)
 		if !errors.Is(err, ErrEmptyPrompt) {
 			t.Errorf("expected ErrEmptyPrompt, got %v", err)
@@ -237,6 +251,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 	})
 
 	t.Run("no images", func(t *testing.T) {
+		t.Parallel()
 		_, err := agent.AnalyzeStream(ctx, "test", nil, nil)
 		if !errors.Is(err, ErrNoImages) {
 			t.Errorf("expected ErrNoImages, got %v", err)
@@ -245,6 +260,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 }
 
 func TestAnalyzeResult_String(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		result    AnalyzeResult
@@ -267,11 +283,12 @@ func TestAnalyzeResult_String(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			s := tt.result.String()
 			if !strings.Contains(s, tt.wantText) {
 				t.Errorf("String() should contain %q, got: %s", tt.wantText, s)
 			}
-			if !strings.Contains(s, fmt.Sprintf("%d", tt.wantToken)) {
+			if !strings.Contains(s, strconv.FormatInt(tt.wantToken, 10)) {
 				t.Errorf("String() should contain token count %d, got: %s", tt.wantToken, s)
 			}
 		})
@@ -279,9 +296,10 @@ func TestAnalyzeResult_String(t *testing.T) {
 }
 
 func TestWithTimeout(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
-		name        string
-		timeout     time.Duration
+		name         string
+		timeout      time.Duration
 		wantDeadline bool
 	}{
 		{
@@ -298,6 +316,7 @@ func TestWithTimeout(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			agent, err := NewAgent(Config{
 				Model:          &mockModel{},
 				RequestTimeout: tt.timeout,
