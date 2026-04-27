@@ -16,22 +16,25 @@
 ## a) FULLY DONE
 
 ### Core SDK (`vision/` package)
+
 - `vision.go` — VisionAgent with Analyze, AnalyzeStream, Config validation, withTimeout
 - `image.go` — ImageSource with LoadImageFromFile, LoadImageFromReader
 - `errors.go` — 5 sentinel error types (ErrNoModel, ErrEmptyPrompt, ErrNoImages, ErrInvalidTemperature, ErrInvalidMaxTokens)
-- `screenshot.go` — ScreenshotAnalyzer fluent builder with 6 With* methods
+- `screenshot.go` — ScreenshotAnalyzer fluent builder with 6 With\* methods
 - `structured.go` — AnalyzeStructured[T] generic function for typed JSON output
 - `validate.go` — Image magic bytes validation (PNG, JPEG, GIF, WebP, BMP)
 
 ### Tests (7 test files, 24 test funcs, all passing)
+
 - `vision_test.go` — Config validation, NewAgent, Analyze success+validation, AnalyzeStream success+validation, String(), timeout tests
 - `image_test.go` — LoadImageFromFile, LoadImageFromReader, media type detection
-- `screenshot_test.go` — Builder pattern, all AnalyzeScreenshot* variants, missing file errors, validation
+- `screenshot_test.go` — Builder pattern, all AnalyzeScreenshot\* variants, missing file errors, validation
 - `structured_test.go` — AnalyzeStructured success, validation, unmarshalToType
 - `validate_test.go` — DetectImageFormat (8 cases), IsValidImage, ValidateImage
 - `mock_test.go` — mockModel implementing fantasy.LanguageModel
 
 ### CLI (`cmd/vision/`)
+
 - `--provider` flag (openai, openrouter)
 - `--model` flag
 - `--prompt` flag
@@ -45,11 +48,13 @@
 - Custom usage with examples
 
 ### Examples
+
 - `examples/openai/main.go` — OpenAI provider with basic analysis
 - `examples/openrouter/main.go` — OpenRouter with ScreenshotAnalyzer
 - `examples/structured/main.go` — Typed UIReview output with scores, issues, suggestions
 
 ### Project Infrastructure
+
 - `.gitignore` — binaries, IDE files, OS files
 - `go.mod` / `go.sum` — dependency management
 - `README.md` — usage docs for SDK and CLI
@@ -65,6 +70,7 @@
 ## b) PARTIALLY DONE
 
 ### Go Version Mismatch
+
 - `go.mod` requires go1.26.2 but system has go1.26.0
 - Core `vision/` package tests pass fine
 - `cmd/vision`, `examples/*` fail to compile with toolchain mismatch errors
@@ -72,11 +78,13 @@
 - **Mitigation:** Core SDK works; examples are reference code
 
 ### Error Wrapping Consistency
+
 - Some errors use plain fmt.Errorf, others use %w wrapping
 - Not all error paths wrap underlying errors consistently
 - **Impact:** Low — errors are readable but chain inspection varies
 
 ### Test Coverage Gaps
+
 - 92.9% coverage on vision package but missing:
   - Error paths in actual LLM calls (requires network mocking)
   - Structured output streaming paths
@@ -117,6 +125,7 @@
 ## d) TOTALLY FUCKED UP
 
 ### Go Toolchain Version Mismatch
+
 - **Severity:** HIGH for examples, LOW for core SDK
 - **Problem:** `go.mod` specifies `go 1.26.2` but system Go is `1.26.0`
 - **Symptom:** `go test ./...` fails for cmd/vision and examples with "compile: version does not match"
@@ -132,12 +141,14 @@
 ## e) WHAT WE SHOULD IMPROVE
 
 ### Immediate (This Week)
+
 1. **Fix Go toolchain mismatch** — Either upgrade Go or adjust go.mod
 2. **Refactor to use helper functions** — `filterValidImages` and `toFileParts` exist but aren't used in `vision.go` or `structured.go` (current uncommitted changes do this)
 3. **Add GitHub Actions CI** — Auto-run tests on push/PR
 4. **Add integration tests** — At least one test with a real provider (marked with build tag)
 
 ### Short Term (Next 2 Weeks)
+
 5. **Improve CLI error handling** — Add user-friendly error messages with actionable fixes
 6. **Add image preprocessing** — Resize/compress large images before sending to API
 7. **Add config file support** — `.visionrc` or similar for default settings
@@ -146,6 +157,7 @@
 10. **Add benchmarking** — Measure image loading and analysis latency
 
 ### Medium Term (Next Month)
+
 11. **Plugin architecture** — Allow custom analyzers (accessibility, security, etc.)
 12. **Add caching layer** — Cache results for identical image+prompt combinations
 13. **Add webhook support** — For async analysis workflows
@@ -156,33 +168,33 @@
 
 ## f) Top #25 Things To Get Done Next
 
-| # | Priority | Task | Impact | Effort |
-|---|----------|------|--------|--------|
-| 1 | 🔴 CRITICAL | Fix Go 1.26.0 vs 1.26.2 toolchain mismatch | HIGH | LOW |
-| 2 | 🔴 CRITICAL | Commit uncommitted DRY refactoring (filterValidImages, toFileParts) | MEDIUM | LOW |
-| 3 | 🔴 CRITICAL | Add GitHub Actions CI (.github/workflows/test.yml) | HIGH | LOW |
-| 4 | 🟡 HIGH | Add integration test with real provider (build-tagged) | HIGH | MEDIUM |
-| 5 | 🟡 HIGH | Create git remote and push to GitHub | HIGH | LOW |
-| 6 | 🟡 HIGH | Tag v0.1.0 release | MEDIUM | LOW |
-| 7 | 🟡 HIGH | Add image resize/compression before API upload | HIGH | MEDIUM |
-| 8 | 🟢 MEDIUM | Add CLI config file support (.visionrc) | MEDIUM | LOW |
-| 9 | 🟢 MEDIUM | Add progress bars for batch analysis | MEDIUM | LOW |
-| 10 | 🟢 MEDIUM | Improve error messages with actionable fixes | HIGH | LOW |
-| 11 | 🟢 MEDIUM | Add benchmarks for image loading and analysis | LOW | LOW |
-| 12 | 🟢 MEDIUM | Add test coverage reporting to CI | MEDIUM | LOW |
-| 13 | 🟢 MEDIUM | Add Docker image for CLI | MEDIUM | MEDIUM |
-| 14 | 🟢 MEDIUM | Add response caching (in-memory or Redis) | MEDIUM | MEDIUM |
-| 15 | 🟢 MEDIUM | Add OpenTelemetry tracing | LOW | MEDIUM |
-| 16 | 🔵 LOW | Add Homebrew formula | LOW | HIGH |
-| 17 | 🔵 LOW | Add screenshot capture capability | MEDIUM | HIGH |
-| 18 | 🔵 LOW | Add plugin architecture for custom analyzers | MEDIUM | HIGH |
-| 19 | 🔵 LOW | Add webhook support for async analysis | LOW | MEDIUM |
-| 20 | 🔵 LOW | Add database persistence for results | LOW | HIGH |
-| 21 | 🔵 LOW | Create web UI | LOW | HIGH |
-| 22 | 🔵 LOW | Add output templates (markdown, HTML) | LOW | MEDIUM |
-| 23 | 🔵 LOW | Add batch concurrent processing | MEDIUM | MEDIUM |
-| 24 | 🔵 LOW | Add rate limiting | LOW | LOW |
-| 25 | 🔵 LOW | Create documentation website | LOW | HIGH |
+| #   | Priority    | Task                                                                | Impact | Effort |
+| --- | ----------- | ------------------------------------------------------------------- | ------ | ------ |
+| 1   | 🔴 CRITICAL | Fix Go 1.26.0 vs 1.26.2 toolchain mismatch                          | HIGH   | LOW    |
+| 2   | 🔴 CRITICAL | Commit uncommitted DRY refactoring (filterValidImages, toFileParts) | MEDIUM | LOW    |
+| 3   | 🔴 CRITICAL | Add GitHub Actions CI (.github/workflows/test.yml)                  | HIGH   | LOW    |
+| 4   | 🟡 HIGH     | Add integration test with real provider (build-tagged)              | HIGH   | MEDIUM |
+| 5   | 🟡 HIGH     | Create git remote and push to GitHub                                | HIGH   | LOW    |
+| 6   | 🟡 HIGH     | Tag v0.1.0 release                                                  | MEDIUM | LOW    |
+| 7   | 🟡 HIGH     | Add image resize/compression before API upload                      | HIGH   | MEDIUM |
+| 8   | 🟢 MEDIUM   | Add CLI config file support (.visionrc)                             | MEDIUM | LOW    |
+| 9   | 🟢 MEDIUM   | Add progress bars for batch analysis                                | MEDIUM | LOW    |
+| 10  | 🟢 MEDIUM   | Improve error messages with actionable fixes                        | HIGH   | LOW    |
+| 11  | 🟢 MEDIUM   | Add benchmarks for image loading and analysis                       | LOW    | LOW    |
+| 12  | 🟢 MEDIUM   | Add test coverage reporting to CI                                   | MEDIUM | LOW    |
+| 13  | 🟢 MEDIUM   | Add Docker image for CLI                                            | MEDIUM | MEDIUM |
+| 14  | 🟢 MEDIUM   | Add response caching (in-memory or Redis)                           | MEDIUM | MEDIUM |
+| 15  | 🟢 MEDIUM   | Add OpenTelemetry tracing                                           | LOW    | MEDIUM |
+| 16  | 🔵 LOW      | Add Homebrew formula                                                | LOW    | HIGH   |
+| 17  | 🔵 LOW      | Add screenshot capture capability                                   | MEDIUM | HIGH   |
+| 18  | 🔵 LOW      | Add plugin architecture for custom analyzers                        | MEDIUM | HIGH   |
+| 19  | 🔵 LOW      | Add webhook support for async analysis                              | LOW    | MEDIUM |
+| 20  | 🔵 LOW      | Add database persistence for results                                | LOW    | HIGH   |
+| 21  | 🔵 LOW      | Create web UI                                                       | LOW    | HIGH   |
+| 22  | 🔵 LOW      | Add output templates (markdown, HTML)                               | LOW    | MEDIUM |
+| 23  | 🔵 LOW      | Add batch concurrent processing                                     | MEDIUM | MEDIUM |
+| 24  | 🔵 LOW      | Add rate limiting                                                   | LOW    | LOW    |
+| 25  | 🔵 LOW      | Create documentation website                                        | LOW    | HIGH   |
 
 ---
 
@@ -193,6 +205,7 @@
 The project requires Go 1.26.2 (because `charm.land/fantasy@v0.26.0` requires it), but the system Go is 1.26.0. The Go toolchain module system downloads the correct version automatically, but this causes compile errors when running `go test ./...` because the downloaded toolchain and local toolchain conflict.
 
 **Options I've considered:**
+
 1. Upgrade system Go to 1.26.2+ — Requires system-level change
 2. Set `GOTOOLCHAIN=local` — Might break compatibility with fantasy
 3. Change go.mod to `go 1.26` without patch — Unclear if fantasy will still work
@@ -204,17 +217,17 @@ The project requires Go 1.26.2 (because `charm.land/fantasy@v0.26.0` requires it
 
 ## Metrics Summary
 
-| Metric | Value |
-|--------|-------|
-| Total Files | 26 |
-| Go Source Files | 17 |
-| Test Files | 7 |
-| Example Files | 3 |
-| Lines of Code | ~1,846 |
-| Test Functions | 24 |
-| Tests Passing | 24/24 (100%) |
-| Test Coverage | 92.9% |
-| Race Detector | Clean |
-| go vet | Clean |
-| gofmt | Clean |
-| Commits | 3 |
+| Metric          | Value        |
+| --------------- | ------------ |
+| Total Files     | 26           |
+| Go Source Files | 17           |
+| Test Files      | 7            |
+| Example Files   | 3            |
+| Lines of Code   | ~1,846       |
+| Test Functions  | 24           |
+| Tests Passing   | 24/24 (100%) |
+| Test Coverage   | 92.9%        |
+| Race Detector   | Clean        |
+| go vet          | Clean        |
+| gofmt           | Clean        |
+| Commits         | 3            |

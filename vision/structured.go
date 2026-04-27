@@ -95,7 +95,7 @@ func appendSystemAndPrompt(
 }
 
 // unmarshalToType converts an object to a specific type using JSON round-tripping.
-func unmarshalToType(obj any, target any) error {
+func unmarshalToType(obj, target any) error {
 	jsonBytes, err := json.Marshal(obj)
 	if err != nil {
 		return fmt.Errorf("marshal object: %w", err)

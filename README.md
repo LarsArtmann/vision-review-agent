@@ -122,14 +122,14 @@ result, _ := analyzer.AnalyzeScreenshot(ctx, "Review this page", "screenshot.png
 
 ## Configuration
 
-| Option | Description |
-|--------|-------------|
-| `SystemPrompt` | Defines agent behavior |
-| `Model` | The LLM to use (must support vision) |
-| `Temperature` | Randomness (0.0-2.0) |
-| `MaxOutputTokens` | Response length limit |
-| `MaxRetries` | Retry count for transient errors |
-| `RequestTimeout` | Per-request timeout |
+| Option            | Description                          |
+| ----------------- | ------------------------------------ |
+| `SystemPrompt`    | Defines agent behavior               |
+| `Model`           | The LLM to use (must support vision) |
+| `Temperature`     | Randomness (0.0-2.0)                 |
+| `MaxOutputTokens` | Response length limit                |
+| `MaxRetries`      | Retry count for transient errors     |
+| `RequestTimeout`  | Per-request timeout                  |
 
 ## Error Types
 

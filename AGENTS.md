@@ -45,6 +45,7 @@ make fmt         # Run gofmt
 ## Image Validation
 
 Uses magic byte signatures to validate image formats:
+
 - PNG: `89 50 4E 47`
 - JPEG: `FF D8 FF`
 - GIF: `47 49 46`
