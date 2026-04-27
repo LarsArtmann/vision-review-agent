@@ -12,7 +12,6 @@ type testReview struct {
 }
 
 func TestAnalyzeStructured(t *testing.T) {
-	t.Parallel()
 
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {

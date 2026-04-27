@@ -17,8 +17,9 @@ coverage:
     #!/usr/bin/env bash
     set -euo pipefail
     threshold=70
-    go test ./pkg/... ./internal/... -coverprofile=coverage.out
-    coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+    mkdir -p coverage
+    go test ./pkg/... ./internal/... -coverprofile=coverage/coverage.out
+    coverage=$(go tool cover -func=coverage/coverage.out | grep total | awk '{print $3}' | sed 's/%//')
     echo "Coverage: ${coverage}%"
     # Compare using awk instead of bc
     if awk "BEGIN {exit !($coverage < $threshold)}"; then

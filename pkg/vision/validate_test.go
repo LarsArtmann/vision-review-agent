@@ -6,7 +6,6 @@ import (
 )
 
 func TestDetectImageFormat(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name string
 		data []byte
@@ -38,7 +37,6 @@ func TestDetectImageFormat(t *testing.T) {
 }
 
 func TestIsValidImage(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name string
 		data []byte
@@ -63,7 +61,6 @@ func TestIsValidImage(t *testing.T) {
 }
 
 func TestValidateImage(t *testing.T) {
-	t.Parallel()
 	t.Run("valid png", func(t *testing.T) {
 			t.Parallel()
 		if err := ValidateImage([]byte{0x89, 0x50, 0x4E, 0x47}); err != nil {

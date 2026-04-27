@@ -6,7 +6,6 @@ import (
 )
 
 func TestErrors(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		name    string
@@ -59,7 +58,6 @@ func TestErrors(t *testing.T) {
 }
 
 func TestErrorsIs(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		name   string

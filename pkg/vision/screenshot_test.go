@@ -12,7 +12,6 @@ import (
 const mockResponseText = "mock response"
 
 func TestScreenshotAnalyzer_Builder(t *testing.T) {
-	t.Parallel()
 	model := &mockModel{}
 
 	tests := []struct {
@@ -77,7 +76,6 @@ func TestScreenshotAnalyzer_Builder(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_DefaultPrompt(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name string
 		want string
@@ -99,7 +97,6 @@ func TestScreenshotAnalyzer_DefaultPrompt(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
-	t.Parallel()
 	tmpDir := t.TempDir()
 	screenshotPath := filepath.Join(tmpDir, "screenshot.png")
 	if err := os.WriteFile(screenshotPath, []byte("fake"), 0o644); err != nil {
@@ -148,7 +145,6 @@ func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name        string
 		img         *ImageSource
@@ -201,7 +197,6 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
-	t.Parallel()
 	tmpDir := t.TempDir()
 	path1 := filepath.Join(tmpDir, "1.png")
 	path2 := filepath.Join(tmpDir, "2.png")
@@ -254,7 +249,6 @@ func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name     string
 		images   []*ImageSource

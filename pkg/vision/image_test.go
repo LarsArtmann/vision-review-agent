@@ -8,7 +8,6 @@ import (
 )
 
 func TestLoadImageFromFile(t *testing.T) {
-	t.Parallel()
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.png")
 	if err := os.WriteFile(tmpFile, []byte("fake png data"), 0o644); err != nil {
@@ -61,7 +60,6 @@ func TestLoadImageFromFile(t *testing.T) {
 }
 
 func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
-	t.Parallel()
 	tmpDir := t.TempDir()
 
 	tests := []struct {
@@ -95,7 +93,6 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 }
 
 func TestLoadImageFromReader(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name      string
 		reader    *strings.Reader

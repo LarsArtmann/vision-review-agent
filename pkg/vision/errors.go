@@ -1,7 +1,7 @@
 package vision
 
 import (
-	"github.com/larsartmann/vision-review-agent/pkg/errors"
+	apperrors "github.com/larsartmann/vision-review-agent/pkg/errors"
 )
 
 // Re-export domain errors for backwards compatibility.

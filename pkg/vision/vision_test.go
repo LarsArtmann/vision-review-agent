@@ -12,7 +12,6 @@ import (
 )
 
 func TestConfigValidate(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name    string
 		config  Config
@@ -85,7 +84,6 @@ func TestConfigValidate(t *testing.T) {
 }
 
 func TestNewAgent(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name    string
 		config  Config
@@ -134,7 +132,6 @@ func TestNewAgent(t *testing.T) {
 }
 
 func TestVisionAgent_Analyze(t *testing.T) {
-	t.Parallel()
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
@@ -201,7 +198,6 @@ func TestVisionAgent_Analyze(t *testing.T) {
 }
 
 func TestVisionAgent_AnalyzeStream(t *testing.T) {
-	t.Parallel()
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
@@ -260,7 +256,6 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 }
 
 func TestAnalyzeResult_String(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name      string
 		result    AnalyzeResult
@@ -296,7 +291,6 @@ func TestAnalyzeResult_String(t *testing.T) {
 }
 
 func TestWithTimeout(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name         string
 		timeout      time.Duration
