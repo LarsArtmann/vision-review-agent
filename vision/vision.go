@@ -6,12 +6,12 @@
 //
 //	provider, _ := openai.New(openai.WithAPIKey(key))
 //	model, _ := provider.LanguageModel(ctx, "gpt-4o")
-//	
+//
 //	agent := vision.NewAgent(vision.Config{
 //	    SystemPrompt: "Describe what you see in the image.",
 //	    Model:        model,
 //	})
-//	
+//
 //	img, _ := vision.LoadImageFromFile("screenshot.png")
 //	result, _ := agent.Analyze(ctx, "What UI issues do you see?", img)
 //	fmt.Println(result.Text)

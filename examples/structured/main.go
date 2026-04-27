@@ -20,11 +20,11 @@ import (
 
 // UIReview is the structured output type.
 type UIReview struct {
-	Layout       string   `json:"layout" description:"Brief description of the overall layout"`
-	Components   []string `json:"components" description:"List of UI components identified"`
-	Issues       []Issue  `json:"issues" description:"List of issues found"`
-	Score        int      `json:"score" description:"Overall UX score from 1-10"`
-	Suggestions  []string `json:"suggestions" description:"Actionable improvement suggestions"`
+	Layout      string   `json:"layout" description:"Brief description of the overall layout"`
+	Components  []string `json:"components" description:"List of UI components identified"`
+	Issues      []Issue  `json:"issues" description:"List of issues found"`
+	Score       int      `json:"score" description:"Overall UX score from 1-10"`
+	Suggestions []string `json:"suggestions" description:"Actionable improvement suggestions"`
 }
 
 // Issue represents a single UI issue.

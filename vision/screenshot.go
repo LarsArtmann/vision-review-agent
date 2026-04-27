@@ -16,7 +16,7 @@ import (
 //	analyzer := vision.NewScreenshotAnalyzer(model).
 //	    WithSystemPrompt("Find all accessibility issues").
 //	    WithTemperature(0.2)
-//	
+//
 //	result, err := analyzer.AnalyzeScreenshot(ctx, "Describe this UI", "screenshot.png")
 type ScreenshotAnalyzer struct {
 	config Config

@@ -5,10 +5,12 @@
 //	vision -provider openai -model gpt-4o -prompt "Describe this UI" screenshot.png
 //	vision -provider openrouter -model openai/gpt-4o -prompt "Find bugs" *.png
 //	vision -stream -prompt "Analyze this" screenshot.png
+//	vision -json -prompt "Find bugs" screenshot.png | jq '.text'
 package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -20,6 +22,8 @@ import (
 	"github.com/larsartmann/vision-review-agent/vision"
 )
 
+const version = "0.1.0"
+
 func main() {
 	var (
 		providerName = flag.String("provider", "openai", "Provider: openai, openrouter")
@@ -29,6 +33,9 @@ func main() {
 		stream       = flag.Bool("stream", false, "Stream the response")
 		temperature  = flag.Float64("temperature", 0.3, "Temperature (0.0-2.0)")
 		maxTokens    = flag.Int64("max-tokens", 0, "Max output tokens (0 = unlimited)")
+		jsonOutput   = flag.Bool("json", false, "Output result as JSON")
+		timeout      = flag.Duration("timeout", 0, "Request timeout (e.g., 30s, 2m)")
+		showVersion  = flag.Bool("version", false, "Show version and exit")
 	)
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] <image1.png> [image2.png ...]\n\n", os.Args[0])
@@ -42,8 +49,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  %s -prompt \"Find UI bugs\" screenshot.png\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -provider openrouter -model anthropic/claude-3.5-sonnet screenshot.png\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -stream -prompt \"Describe this\" *.png\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -json -prompt \"Find bugs\" screenshot.png | jq '.text'\n", os.Args[0])
 	}
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println("vision", version)
+		os.Exit(0)
+	}
 
 	if flag.NArg() == 0 {
 		flag.Usage()
@@ -76,6 +89,9 @@ func main() {
 	if *systemPrompt != "" {
 		config.SystemPrompt = *systemPrompt
 	}
+	if *timeout > 0 {
+		config.RequestTimeout = *timeout
+	}
 
 	agent, err := vision.NewAgent(config)
 	if err != nil {
@@ -105,7 +121,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "\nError:", err)
 			os.Exit(1)
 		}
-		fmt.Printf("\n\nTokens used: %d\n", result.Usage.TotalTokens)
+		if *jsonOutput {
+			printJSON(result)
+		} else {
+			fmt.Printf("\n\nTokens used: %d\n", result.Usage.TotalTokens)
+		}
 	} else {
 		fmt.Println("Analyzing...")
 		result, err := agent.Analyze(ctx, *prompt, images...)
@@ -113,10 +133,39 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(1)
 		}
-		fmt.Println("\n--- Analysis ---")
-		fmt.Println(result.Text)
-		fmt.Printf("\nTokens used: %d\n", result.Usage.TotalTokens)
+		if *jsonOutput {
+			printJSON(result)
+		} else {
+			fmt.Println("\n--- Analysis ---")
+			fmt.Println(result.Text)
+			fmt.Printf("\nTokens used: %d\n", result.Usage.TotalTokens)
+		}
 	}
+}
+
+func printJSON(result *vision.AnalyzeResult) {
+	output := struct {
+		Text  string `json:"text"`
+		Usage struct {
+			InputTokens  int64 `json:"input_tokens"`
+			OutputTokens int64 `json:"output_tokens"`
+			TotalTokens  int64 `json:"total_tokens"`
+		} `json:"usage"`
+	}{
+		Text: result.Text,
+		Usage: struct {
+			InputTokens  int64 `json:"input_tokens"`
+			OutputTokens int64 `json:"output_tokens"`
+			TotalTokens  int64 `json:"total_tokens"`
+		}{
+			InputTokens:  result.Usage.InputTokens,
+			OutputTokens: result.Usage.OutputTokens,
+			TotalTokens:  result.Usage.TotalTokens,
+		},
+	}
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	_ = enc.Encode(output)
 }
 
 func createProvider(name string) (fantasy.Provider, error) {

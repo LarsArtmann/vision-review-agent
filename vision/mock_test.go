@@ -22,8 +22,8 @@ func (m *mockModel) Generate(ctx context.Context, call fantasy.Call) (*fantasy.R
 func (m *mockModel) Stream(ctx context.Context, call fantasy.Call) (fantasy.StreamResponse, error) {
 	return func(yield func(fantasy.StreamPart) bool) {
 		_ = yield(fantasy.StreamPart{
-			Type:  fantasy.StreamPartTypeTextStart,
-			ID:    "1",
+			Type: fantasy.StreamPartTypeTextStart,
+			ID:   "1",
 		})
 		_ = yield(fantasy.StreamPart{
 			Type:  fantasy.StreamPartTypeTextDelta,
