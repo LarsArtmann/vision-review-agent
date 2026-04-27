@@ -3,6 +3,7 @@ package vision
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -244,50 +245,75 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 }
 
 func TestAnalyzeResult_String(t *testing.T) {
-	result := AnalyzeResult{
-		Text:  "test analysis",
-		Usage: fantasy.Usage{TotalTokens: 42},
+	tests := []struct {
+		name      string
+		result    AnalyzeResult
+		wantText  string
+		wantToken int64
+	}{
+		{
+			name:      "with text and tokens",
+			result:    AnalyzeResult{Text: "test analysis", Usage: fantasy.Usage{TotalTokens: 42}},
+			wantText:  "test analysis",
+			wantToken: 42,
+		},
+		{
+			name:      "empty text",
+			result:    AnalyzeResult{Text: "", Usage: fantasy.Usage{TotalTokens: 0}},
+			wantText:  "",
+			wantToken: 0,
+		},
 	}
-	s := result.String()
-	if !strings.Contains(s, "test analysis") {
-		t.Errorf("String() should contain text, got: %s", s)
-	}
-	if !strings.Contains(s, "42") {
-		t.Errorf("String() should contain token count, got: %s", s)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := tt.result.String()
+			if !strings.Contains(s, tt.wantText) {
+				t.Errorf("String() should contain %q, got: %s", tt.wantText, s)
+			}
+			if !strings.Contains(s, fmt.Sprintf("%d", tt.wantToken)) {
+				t.Errorf("String() should contain token count %d, got: %s", tt.wantToken, s)
+			}
+		})
 	}
 }
 
 func TestWithTimeout(t *testing.T) {
-	agent, err := NewAgent(Config{
-		Model:          &mockModel{},
-		RequestTimeout: 100 * time.Millisecond,
-	})
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name        string
+		timeout     time.Duration
+		wantDeadline bool
+	}{
+		{
+			name:         "with timeout",
+			timeout:      100 * time.Millisecond,
+			wantDeadline: true,
+		},
+		{
+			name:         "zero timeout",
+			timeout:      0,
+			wantDeadline: false,
+		},
 	}
 
-	ctx := context.Background()
-	ctx, cancel := agent.withTimeout(ctx)
-	defer cancel()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			agent, err := NewAgent(Config{
+				Model:          &mockModel{},
+				RequestTimeout: tt.timeout,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	_, ok := ctx.Deadline()
-	if !ok {
-		t.Error("expected deadline to be set")
-	}
-}
+			ctx := context.Background()
+			ctx, cancel := agent.withTimeout(ctx)
+			defer cancel()
 
-func TestWithTimeout_Zero(t *testing.T) {
-	agent, err := NewAgent(Config{Model: &mockModel{}})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ctx := context.Background()
-	ctx, cancel := agent.withTimeout(ctx)
-	defer cancel()
-
-	_, ok := ctx.Deadline()
-	if ok {
-		t.Error("expected no deadline when timeout is zero")
+			_, ok := ctx.Deadline()
+			if ok != tt.wantDeadline {
+				t.Errorf("expected deadline=%v, got %v", tt.wantDeadline, ok)
+			}
+		})
 	}
 }

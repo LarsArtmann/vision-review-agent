@@ -36,14 +36,25 @@ func TestDetectImageFormat(t *testing.T) {
 }
 
 func TestIsValidImage(t *testing.T) {
-	if !IsValidImage([]byte{0x89, 0x50, 0x4E, 0x47}) {
-		t.Error("expected PNG to be valid")
+	tests := []struct {
+		name string
+		data []byte
+		want bool
+	}{
+		{"png", []byte{0x89, 0x50, 0x4E, 0x47}, true},
+		{"jpg", []byte{0xFF, 0xD8, 0xFF, 0xE0}, true},
+		{"gif", []byte{0x47, 0x49, 0x46, 0x38}, true},
+		{"unknown", []byte{0x00, 0x00, 0x00, 0x00}, false},
+		{"empty", []byte{}, false},
 	}
-	if IsValidImage([]byte{0x00, 0x00, 0x00, 0x00}) {
-		t.Error("expected unknown to be invalid")
-	}
-	if IsValidImage([]byte{}) {
-		t.Error("expected empty to be invalid")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsValidImage(tt.data)
+			if got != tt.want {
+				t.Errorf("IsValidImage() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 

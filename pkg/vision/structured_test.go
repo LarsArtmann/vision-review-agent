@@ -11,7 +11,7 @@ type testReview struct {
 	Score  int    `json:"score"`
 }
 
-func TestAnalyzeStructured_Success(t *testing.T) {
+func TestAnalyzeStructured(t *testing.T) {
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
@@ -20,41 +20,64 @@ func TestAnalyzeStructured_Success(t *testing.T) {
 	ctx := context.Background()
 	img := &ImageSource{Data: []byte("test"), MediaType: "image/png"}
 
-	result, err := AnalyzeStructured[testReview](ctx, agent, "analyze this", img)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	tests := []struct {
+		name        string
+		prompt      string
+		images      []*ImageSource
+		wantLayout  string
+		wantTokens  int64
+		wantErr     bool
+		wantErrType error
+	}{
+		{
+			name:       "success",
+			prompt:     "analyze this",
+			images:     []*ImageSource{img},
+			wantLayout: "test layout",
+			wantTokens: 10,
+			wantErr:    false,
+		},
+		{
+			name:        "empty prompt",
+			prompt:      "",
+			images:      []*ImageSource{img},
+			wantErr:     true,
+			wantErrType: ErrEmptyPrompt,
+		},
+		{
+			name:        "no images",
+			prompt:      "test",
+			images:      nil,
+			wantErr:     true,
+			wantErrType: ErrNoImages,
+		},
 	}
-	if result == nil {
-		t.Fatal("expected result, got nil")
-	}
-	if result.Object.Layout != "test layout" {
-		t.Errorf("expected layout 'test layout', got %q", result.Object.Layout)
-	}
-	if result.Usage.TotalTokens != 10 {
-		t.Errorf("expected 10 tokens, got %d", result.Usage.TotalTokens)
-	}
-}
 
-func TestAnalyzeStructured_Validation(t *testing.T) {
-	agent, err := NewAgent(Config{Model: &mockModel{}})
-	if err != nil {
-		t.Fatal(err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := AnalyzeStructured[testReview](ctx, agent, tt.prompt, tt.images...)
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if tt.wantErrType != nil && !errors.Is(err, tt.wantErrType) {
+					t.Errorf("expected %v, got %v", tt.wantErrType, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if result == nil {
+				t.Fatal("expected result, got nil")
+			}
+			if result.Object.Layout != tt.wantLayout {
+				t.Errorf("expected layout %q, got %q", tt.wantLayout, result.Object.Layout)
+			}
+			if result.Usage.TotalTokens != tt.wantTokens {
+				t.Errorf("expected %d tokens, got %d", tt.wantTokens, result.Usage.TotalTokens)
+			}
+		})
 	}
-
-	ctx := context.Background()
-	img := &ImageSource{Data: []byte("test"), MediaType: "image/png"}
-
-	t.Run("empty prompt", func(t *testing.T) {
-		_, err := AnalyzeStructured[testReview](ctx, agent, "", img)
-		if !errors.Is(err, ErrEmptyPrompt) {
-			t.Errorf("expected ErrEmptyPrompt, got %v", err)
-		}
-	})
-
-	t.Run("no images", func(t *testing.T) {
-		_, err := AnalyzeStructured[testReview](ctx, agent, "test")
-		if !errors.Is(err, ErrNoImages) {
-			t.Errorf("expected ErrNoImages, got %v", err)
-		}
-	})
 }
