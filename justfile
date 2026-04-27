@@ -8,19 +8,21 @@ cli:
     go build -o vision-cli ./cmd/vision
 
 test:
-    go test ./... -v -coverprofile=coverage.out -coverpkg=./...
+    go test ./pkg/... ./internal/... -v
 
 test-race:
-    go test ./... -race
+    go test ./pkg/... ./internal/... -race
 
 coverage:
     #!/usr/bin/env bash
     set -euo pipefail
-    go test ./... -coverprofile=coverage.out -coverpkg=./...
+    threshold=70
+    go test ./pkg/... ./internal/... -coverprofile=coverage.out
     coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
     echo "Coverage: ${coverage}%"
-    if (( $(echo "$coverage < 70" | bc -l) )); then
-        echo "ERROR: Coverage ${coverage}% is below threshold 70%"
+    # Compare using awk instead of bc
+    if awk "BEGIN {exit !($coverage < $threshold)}"; then
+        echo "ERROR: Coverage ${coverage}% is below threshold ${threshold}%"
         exit 1
     fi
     echo "Coverage check passed!"
@@ -37,5 +39,8 @@ clean:
 
 lint:
     golangci-lint run ./...
+
+structure-lint:
+    go-structure-linter .
 
 all: vet fmt test build
