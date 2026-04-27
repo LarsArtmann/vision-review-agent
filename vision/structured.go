@@ -32,12 +32,7 @@ func AnalyzeStructured[T any](
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	var validImages []*ImageSource
-	for _, img := range images {
-		if img != nil {
-			validImages = append(validImages, img)
-		}
-	}
+	validImages := filterValidImages(images)
 	if len(validImages) == 0 {
 		return nil, ErrNoImages
 	}
@@ -45,14 +40,7 @@ func AnalyzeStructured[T any](
 	ctx, cancel := agent.withTimeout(ctx)
 	defer cancel()
 
-	files := make([]fantasy.FilePart, len(validImages))
-	for i, img := range validImages {
-		files[i] = fantasy.FilePart{
-			Data:      img.Data,
-			MediaType: img.MediaType,
-			Filename:  img.Filename,
-		}
-	}
+	files := toFileParts(validImages)
 
 	var zero T
 	schemaDef := schema.Generate(reflect.TypeOf(zero))

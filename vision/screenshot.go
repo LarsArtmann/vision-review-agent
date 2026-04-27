@@ -76,6 +76,19 @@ func (sa *ScreenshotAnalyzer) agent() (*VisionAgent, error) {
 	return NewAgent(sa.config)
 }
 
+// analyzeWithAgent calls the agent's Analyze method with the given prompt and images.
+func (sa *ScreenshotAnalyzer) analyzeWithAgent(
+	ctx context.Context,
+	prompt string,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
+	agent, err := sa.agent()
+	if err != nil {
+		return nil, err
+	}
+	return agent.Analyze(ctx, prompt, images...)
+}
+
 // AnalyzeScreenshot analyzes a single screenshot with the given prompt.
 func (sa *ScreenshotAnalyzer) AnalyzeScreenshot(
 	ctx context.Context,
@@ -95,11 +108,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImage(
 	prompt string,
 	img *ImageSource,
 ) (*AnalyzeResult, error) {
-	agent, err := sa.agent()
-	if err != nil {
-		return nil, err
-	}
-	return agent.Analyze(ctx, prompt, img)
+	return sa.analyzeWithAgent(ctx, prompt, img)
 }
 
 // AnalyzeScreenshots analyzes multiple screenshots with the given prompt.
@@ -125,9 +134,5 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
 	prompt string,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	agent, err := sa.agent()
-	if err != nil {
-		return nil, err
-	}
-	return agent.Analyze(ctx, prompt, images...)
+	return sa.analyzeWithAgent(ctx, prompt, images...)
 }

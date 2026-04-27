@@ -125,12 +125,7 @@ func (va *VisionAgent) Analyze(
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	var validImages []*ImageSource
-	for _, img := range images {
-		if img != nil {
-			validImages = append(validImages, img)
-		}
-	}
+	validImages := filterValidImages(images)
 	if len(validImages) == 0 {
 		return nil, ErrNoImages
 	}
@@ -138,14 +133,7 @@ func (va *VisionAgent) Analyze(
 	ctx, cancel := va.withTimeout(ctx)
 	defer cancel()
 
-	files := make([]fantasy.FilePart, len(validImages))
-	for i, img := range validImages {
-		files[i] = fantasy.FilePart{
-			Data:      img.Data,
-			MediaType: img.MediaType,
-			Filename:  img.Filename,
-		}
-	}
+	files := toFileParts(validImages)
 
 	call := fantasy.AgentCall{
 		Prompt: prompt,
@@ -175,12 +163,7 @@ func (va *VisionAgent) AnalyzeStream(
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	var validImages []*ImageSource
-	for _, img := range images {
-		if img != nil {
-			validImages = append(validImages, img)
-		}
-	}
+	validImages := filterValidImages(images)
 	if len(validImages) == 0 {
 		return nil, ErrNoImages
 	}
@@ -188,14 +171,7 @@ func (va *VisionAgent) AnalyzeStream(
 	ctx, cancel := va.withTimeout(ctx)
 	defer cancel()
 
-	files := make([]fantasy.FilePart, len(validImages))
-	for i, img := range validImages {
-		files[i] = fantasy.FilePart{
-			Data:      img.Data,
-			MediaType: img.MediaType,
-			Filename:  img.Filename,
-		}
-	}
+	files := toFileParts(validImages)
 
 	var fullText string
 
@@ -230,4 +206,28 @@ func (va *VisionAgent) withTimeout(ctx context.Context) (context.Context, contex
 		return context.WithTimeout(ctx, va.config.RequestTimeout)
 	}
 	return ctx, func() {}
+}
+
+// filterValidImages removes nil images from the slice.
+func filterValidImages(images []*ImageSource) []*ImageSource {
+	var valid []*ImageSource
+	for _, img := range images {
+		if img != nil {
+			valid = append(valid, img)
+		}
+	}
+	return valid
+}
+
+// toFileParts converts ImageSources to fantasy FileParts.
+func toFileParts(images []*ImageSource) []fantasy.FilePart {
+	files := make([]fantasy.FilePart, len(images))
+	for i, img := range images {
+		files[i] = fantasy.FilePart{
+			Data:      img.Data,
+			MediaType: img.MediaType,
+			Filename:  img.Filename,
+		}
+	}
+	return files
 }
