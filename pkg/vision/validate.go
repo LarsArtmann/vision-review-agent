@@ -22,9 +22,6 @@ func imageSignatures() []struct {
 	}
 }
 
-// ErrInvalidImage is returned when the data does not match any known image format.
-var ErrInvalidImage = errors.New("vision agent: data does not appear to be a valid image")
-
 // DetectImageFormat attempts to detect the image format from magic bytes.
 // Returns the format name (e.g., "png", "jpg") or an empty string if unknown.
 func DetectImageFormat(data []byte) string {

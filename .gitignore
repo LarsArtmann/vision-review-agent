@@ -35,3 +35,6 @@ Copy/paste detection report
 /report/jscpd-report.json
 # Build artifacts
 /vision-review-agent
+
+# Nix build output
+/result

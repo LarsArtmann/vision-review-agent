@@ -1,20 +1,26 @@
 package vision
 
-import "errors"
+import (
+	"github.com/larsartmann/vision-review-agent/pkg/errors"
+)
 
+// Re-export domain errors for backwards compatibility.
 var (
 	// ErrNoModel is returned when no language model is configured.
-	ErrNoModel = errors.New("vision agent: no model configured")
+	ErrNoModel = apperrors.ErrNoModel
 
 	// ErrEmptyPrompt is returned when the prompt is empty.
-	ErrEmptyPrompt = errors.New("vision agent: prompt cannot be empty")
+	ErrEmptyPrompt = apperrors.ErrEmptyPrompt
 
 	// ErrNoImages is returned when no images are provided for analysis.
-	ErrNoImages = errors.New("vision agent: at least one image is required")
+	ErrNoImages = apperrors.ErrNoImages
 
 	// ErrInvalidTemperature is returned when temperature is out of range.
-	ErrInvalidTemperature = errors.New("vision agent: temperature must be between 0.0 and 2.0")
+	ErrInvalidTemperature = apperrors.ErrInvalidTemperature
 
 	// ErrInvalidMaxTokens is returned when max tokens is negative.
-	ErrInvalidMaxTokens = errors.New("vision agent: max output tokens cannot be negative")
+	ErrInvalidMaxTokens = apperrors.ErrInvalidMaxTokens
+
+	// ErrInvalidImage is returned when the data does not match any known image format.
+	ErrInvalidImage = apperrors.ErrInvalidImage
 )
