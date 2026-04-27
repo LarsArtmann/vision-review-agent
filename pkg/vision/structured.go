@@ -2,12 +2,12 @@ package vision
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 
 	"charm.land/fantasy"
 	"charm.land/fantasy/schema"
+	"github.com/larsartmann/vision-review-agent/internal/visionutil"
 )
 
 // AnalyzeStructured sends images to the agent and returns a typed structured response.
@@ -25,7 +25,7 @@ import (
 //	fmt.Println(result.Object.Layout)
 func AnalyzeStructured[T any](
 	ctx context.Context,
-	agent *VisionAgent,
+	agent *Agent,
 	prompt string,
 	images ...*ImageSource,
 ) (*fantasy.ObjectResult[T], error) {
@@ -46,7 +46,11 @@ func AnalyzeStructured[T any](
 	schemaDef := schema.Generate(reflect.TypeOf(zero))
 
 	call := fantasy.ObjectCall{
-		Prompt:            appendSystemAndPrompt(agent.config.SystemPrompt, prompt, files),
+		Prompt: visionutil.AppendSystemAndPrompt(
+			agent.config.SystemPrompt,
+			prompt,
+			files,
+		),
 		Schema:            schemaDef,
 		SchemaName:        reflect.TypeOf(zero).Name(),
 		SchemaDescription: "Structured analysis result for " + reflect.TypeOf(zero).Name(),
@@ -66,7 +70,7 @@ func AnalyzeStructured[T any](
 
 	var typedResult T
 	if result.Object != nil {
-		if err := unmarshalToType(result.Object, &typedResult); err != nil {
+		if err := visionutil.UnmarshalToType(result.Object, &typedResult); err != nil {
 			return nil, fmt.Errorf("vision agent unmarshal result: %w", err)
 		}
 	}
@@ -79,29 +83,4 @@ func AnalyzeStructured[T any](
 		Warnings:         result.Warnings,
 		ProviderMetadata: result.ProviderMetadata,
 	}, nil
-}
-
-// appendSystemAndPrompt builds a prompt with optional system message and files.
-func appendSystemAndPrompt(
-	systemPrompt, userPrompt string,
-	files []fantasy.FilePart,
-) fantasy.Prompt {
-	var prompt fantasy.Prompt
-	if systemPrompt != "" {
-		prompt = append(prompt, fantasy.NewSystemMessage(systemPrompt))
-	}
-	prompt = append(prompt, fantasy.NewUserMessage(userPrompt, files...))
-	return prompt
-}
-
-// unmarshalToType converts an object to a specific type using JSON round-tripping.
-func unmarshalToType(obj, target any) error {
-	jsonBytes, err := json.Marshal(obj)
-	if err != nil {
-		return fmt.Errorf("marshal object: %w", err)
-	}
-	if err := json.Unmarshal(jsonBytes, target); err != nil {
-		return fmt.Errorf("unmarshal into target: %w", err)
-	}
-	return nil
 }

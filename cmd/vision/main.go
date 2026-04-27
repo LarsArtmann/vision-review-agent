@@ -16,16 +16,64 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"charm.land/fantasy"
 	"charm.land/fantasy/providers/openai"
 	"charm.land/fantasy/providers/openrouter"
-	"github.com/larsartmann/vision-review-agent/vision"
+	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
 const version = "0.1.0"
 
 func main() {
+	cfg, err := parseFlags()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+	provider, err := createProvider(cfg.providerName)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
+
+	model, err := provider.LanguageModel(ctx, cfg.modelID)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error getting model:", err)
+		os.Exit(1)
+	}
+
+	agent, err := vision.NewAgent(buildConfig(model, cfg))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error creating agent:", err)
+		os.Exit(1)
+	}
+
+	images, err := loadImages()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
+
+	runAnalysis(ctx, agent, cfg, images)
+}
+
+type config struct {
+	providerName string
+	modelID      string
+	prompt       string
+	systemPrompt string
+	stream       bool
+	temperature  float64
+	maxTokens    int64
+	jsonOutput   bool
+	timeout      int64
+}
+
+func parseFlags() (*config, error) {
 	var (
 		providerName = flag.String("provider", "openai", "Provider: openai, openrouter")
 		modelID      = flag.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")
@@ -39,31 +87,10 @@ func main() {
 		temperature  = flag.Float64("temperature", 0.3, "Temperature (0.0-2.0)")
 		maxTokens    = flag.Int64("max-tokens", 0, "Max output tokens (0 = unlimited)")
 		jsonOutput   = flag.Bool("json", false, "Output result as JSON")
-		timeout      = flag.Duration("timeout", 0, "Request timeout (e.g., 30s, 2m)")
+		timeout      = flag.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
 		showVersion  = flag.Bool("version", false, "Show version and exit")
 	)
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] <image1.png> [image2.png ...]\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Analyze images/screenshots with AI vision models.\n\n")
-		fmt.Fprintf(os.Stderr, "Environment variables:\n")
-		fmt.Fprintf(os.Stderr, "  OPENAI_API_KEY     - Required for OpenAI provider\n")
-		fmt.Fprintf(os.Stderr, "  OPENROUTER_API_KEY - Required for OpenRouter provider\n\n")
-		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\nExamples:\n")
-		fmt.Fprintf(os.Stderr, "  %s -prompt \"Find UI bugs\" screenshot.png\n", os.Args[0])
-		fmt.Fprintf(
-			os.Stderr,
-			"  %s -provider openrouter -model anthropic/claude-3.5-sonnet screenshot.png\n",
-			os.Args[0],
-		)
-		fmt.Fprintf(os.Stderr, "  %s -stream -prompt \"Describe this\" *.png\n", os.Args[0])
-		fmt.Fprintf(
-			os.Stderr,
-			"  %s -json -prompt \"Find bugs\" screenshot.png | jq '.text'\n",
-			os.Args[0],
-		)
-	}
+	flag.Usage = usageFunc(os.Args[0])
 	flag.Parse()
 
 	if *showVersion {
@@ -76,84 +103,123 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
+	return &config{
+		providerName: *providerName,
+		modelID:      *modelID,
+		prompt:       *prompt,
+		systemPrompt: *systemPrompt,
+		stream:       *stream,
+		temperature:  *temperature,
+		maxTokens:    *maxTokens,
+		jsonOutput:   *jsonOutput,
+		timeout:      *timeout,
+	}, nil
+}
 
-	// Setup provider
-	provider, err := createProvider(*providerName)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
+func usageFunc(name string) func() {
+	return func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] <image1.png> [image2.png ...]\n\n", name)
+		fmt.Fprint(os.Stderr, "Analyze images/screenshots with AI vision models.\n\n")
+		fmt.Fprintln(os.Stderr, "Environment variables:")
+		fmt.Fprintln(os.Stderr, "  OPENAI_API_KEY     - Required for OpenAI provider")
+		fmt.Fprint(os.Stderr, "  OPENROUTER_API_KEY - Required for OpenRouter provider\n\n")
+		fmt.Fprintln(os.Stderr, "Options:")
+		flag.PrintDefaults()
+		fmt.Fprintln(os.Stderr, "\nExamples:")
+		fmt.Fprintf(os.Stderr, "  %s -prompt \"Find UI bugs\" screenshot.png\n", name)
+		fmt.Fprintf(
+			os.Stderr,
+			"  %s -provider openrouter -model anthropic/claude-3.5-sonnet screenshot.png\n",
+			name,
+		)
+		fmt.Fprintf(os.Stderr, "  %s -stream -prompt \"Describe this\" *.png\n", name)
+		fmt.Fprintf(
+			os.Stderr,
+			"  %s -json -prompt \"Find bugs\" screenshot.png | jq '.text'\n",
+			name,
+		)
 	}
+}
 
-	// Get model
-	model, err := provider.LanguageModel(ctx, *modelID)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error getting model:", err)
-		os.Exit(1)
-	}
-
-	// Build agent config
+func buildConfig(model fantasy.LanguageModel, cfg *config) vision.Config {
 	config := vision.Config{
 		Model:           model,
-		Temperature:     *temperature,
-		MaxOutputTokens: *maxTokens,
+		Temperature:     cfg.temperature,
+		MaxOutputTokens: cfg.maxTokens,
 	}
 
-	if *systemPrompt != "" {
-		config.SystemPrompt = *systemPrompt
+	if cfg.systemPrompt != "" {
+		config.SystemPrompt = cfg.systemPrompt
 	}
-	if *timeout > 0 {
-		config.RequestTimeout = *timeout
-	}
-
-	agent, err := vision.NewAgent(config)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating agent:", err)
-		os.Exit(1)
+	if cfg.timeout > 0 {
+		config.RequestTimeout = parseTimeout(cfg.timeout)
 	}
 
-	// Load images
+	return config
+}
+
+func parseTimeout(seconds int64) time.Duration {
+	return time.Duration(seconds) * time.Second
+}
+
+func loadImages() ([]*vision.ImageSource, error) {
 	images := make([]*vision.ImageSource, flag.NArg())
-	for i := 0; i < flag.NArg(); i++ {
+	for i := range flag.NArg() {
 		img, err := vision.LoadImageFromFile(flag.Arg(i))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading %s: %v\n", flag.Arg(i), err)
-			os.Exit(1)
+			return nil, fmt.Errorf("loading %s: %w", flag.Arg(i), err)
 		}
 		images[i] = img
 	}
+	return images, nil
+}
 
-	// Analyze
-	if *stream {
+func runAnalysis(
+	ctx context.Context,
+	agent *vision.Agent,
+	cfg *config,
+	images []*vision.ImageSource,
+) {
+	var analyzeFn func() (*vision.AnalyzeResult, error)
+
+	if cfg.stream {
 		fmt.Println("Analyzing (streaming)...")
-		result, err := agent.AnalyzeStream(ctx, *prompt, func(text string) error {
-			fmt.Print(text)
-			return nil
-		}, images...)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "\nError:", err)
-			os.Exit(1)
-		}
-		if *jsonOutput {
-			printJSON(result)
-		} else {
-			fmt.Printf("\n\nTokens used: %d\n", result.Usage.TotalTokens)
+		analyzeFn = func() (*vision.AnalyzeResult, error) {
+			return agent.AnalyzeStream(ctx, cfg.prompt, func(text string) error {
+				fmt.Print(text)
+				return nil
+			}, images...)
 		}
 	} else {
 		fmt.Println("Analyzing...")
-		result, err := agent.Analyze(ctx, *prompt, images...)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error:", err)
-			os.Exit(1)
-		}
-		if *jsonOutput {
-			printJSON(result)
-		} else {
-			fmt.Println("\n--- Analysis ---")
-			fmt.Println(result.Text)
-			fmt.Printf("\nTokens used: %d\n", result.Usage.TotalTokens)
+		analyzeFn = func() (*vision.AnalyzeResult, error) {
+			return agent.Analyze(ctx, cfg.prompt, images...)
 		}
 	}
+
+	result, err := analyzeFn()
+	if err != nil {
+		if cfg.stream {
+			fmt.Fprintln(os.Stderr, "\nError:", err)
+		} else {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+		}
+		os.Exit(1)
+	}
+
+	if cfg.jsonOutput {
+		printJSON(result)
+	} else {
+		printText(result, cfg.stream)
+	}
+}
+
+func printText(result *vision.AnalyzeResult, streamed bool) {
+	if !streamed {
+		fmt.Println("\n--- Analysis ---")
+		fmt.Println(result.Text)
+	}
+	fmt.Printf("\nTokens used: %d\n", result.Usage.TotalTokens)
 }
 
 func printJSON(result *vision.AnalyzeResult) {
@@ -178,7 +244,9 @@ func printJSON(result *vision.AnalyzeResult) {
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	_ = enc.Encode(output)
+	if err := enc.Encode(output); err != nil {
+		fmt.Fprintln(os.Stderr, "Error encoding JSON:", err)
+	}
 }
 
 func createProvider(name string) (fantasy.Provider, error) {
@@ -188,13 +256,21 @@ func createProvider(name string) (fantasy.Provider, error) {
 		if apiKey == "" {
 			return nil, errors.New("OPENAI_API_KEY environment variable not set")
 		}
-		return openai.New(openai.WithAPIKey(apiKey))
+		provider, err := openai.New(openai.WithAPIKey(apiKey))
+		if err != nil {
+			return nil, fmt.Errorf("create openai provider: %w", err)
+		}
+		return provider, nil
 	case "openrouter":
 		apiKey := os.Getenv("OPENROUTER_API_KEY")
 		if apiKey == "" {
 			return nil, errors.New("OPENROUTER_API_KEY environment variable not set")
 		}
-		return openrouter.New(openrouter.WithAPIKey(apiKey))
+		provider, err := openrouter.New(openrouter.WithAPIKey(apiKey))
+		if err != nil {
+			return nil, fmt.Errorf("create openrouter provider: %w", err)
+		}
+		return provider, nil
 	default:
 		return nil, fmt.Errorf("unknown provider: %s (supported: openai, openrouter)", name)
 	}

@@ -9,7 +9,7 @@ import (
 // mockModel is a mock implementation of fantasy.LanguageModel for testing.
 type mockModel struct{}
 
-func (m *mockModel) Generate(ctx context.Context, call fantasy.Call) (*fantasy.Response, error) {
+func (m *mockModel) Generate(_ context.Context, _ fantasy.Call) (*fantasy.Response, error) {
 	return &fantasy.Response{
 		Content: []fantasy.Content{
 			fantasy.TextContent{Text: "mock response"},
@@ -19,7 +19,7 @@ func (m *mockModel) Generate(ctx context.Context, call fantasy.Call) (*fantasy.R
 	}, nil
 }
 
-func (m *mockModel) Stream(ctx context.Context, call fantasy.Call) (fantasy.StreamResponse, error) {
+func (m *mockModel) Stream(_ context.Context, _ fantasy.Call) (fantasy.StreamResponse, error) {
 	return func(yield func(fantasy.StreamPart) bool) {
 		_ = yield(fantasy.StreamPart{
 			Type: fantasy.StreamPartTypeTextStart,
@@ -43,8 +43,8 @@ func (m *mockModel) Stream(ctx context.Context, call fantasy.Call) (fantasy.Stre
 }
 
 func (m *mockModel) GenerateObject(
-	ctx context.Context,
-	call fantasy.ObjectCall,
+	_ context.Context,
+	_ fantasy.ObjectCall,
 ) (*fantasy.ObjectResponse, error) {
 	return &fantasy.ObjectResponse{
 		Object: map[string]any{
@@ -57,8 +57,8 @@ func (m *mockModel) GenerateObject(
 }
 
 func (m *mockModel) StreamObject(
-	ctx context.Context,
-	call fantasy.ObjectCall,
+	_ context.Context,
+	_ fantasy.ObjectCall,
 ) (fantasy.ObjectStreamResponse, error) {
 	return func(yield func(fantasy.ObjectStreamPart) bool) {
 		_ = yield(fantasy.ObjectStreamPart{

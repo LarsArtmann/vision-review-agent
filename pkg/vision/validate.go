@@ -5,16 +5,21 @@ import (
 	"errors"
 )
 
-// imageSignatures maps image formats to their magic byte signatures.
-var imageSignatures = []struct {
+// imageSignatures returns the magic byte signatures for supported image formats.
+func imageSignatures() []struct {
 	format    string
 	signature []byte
-}{
-	{"png", []byte{0x89, 0x50, 0x4E, 0x47}},
-	{"jpg", []byte{0xFF, 0xD8, 0xFF}},
-	{"gif", []byte{0x47, 0x49, 0x46}},
-	{"webp", []byte{0x52, 0x49, 0x46, 0x46}}, // RIFF header, WebP uses this
-	{"bmp", []byte{0x42, 0x4D}},
+} {
+	return []struct {
+		format    string
+		signature []byte
+	}{
+		{"png", []byte{0x89, 0x50, 0x4E, 0x47}},
+		{"jpg", []byte{0xFF, 0xD8, 0xFF}},
+		{"gif", []byte{0x47, 0x49, 0x46}},
+		{"webp", []byte{0x52, 0x49, 0x46, 0x46}}, // RIFF header, WebP uses this
+		{"bmp", []byte{0x42, 0x4D}},
+	}
 }
 
 // ErrInvalidImage is returned when the data does not match any known image format.
@@ -26,7 +31,7 @@ func DetectImageFormat(data []byte) string {
 	if len(data) < 4 {
 		return ""
 	}
-	for _, sig := range imageSignatures {
+	for _, sig := range imageSignatures() {
 		if bytes.HasPrefix(data, sig.signature) {
 			return sig.format
 		}

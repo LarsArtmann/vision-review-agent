@@ -63,15 +63,19 @@ func (c Config) Validate() error {
 	return nil
 }
 
-// VisionAgent is an AI agent capable of analyzing images/screenshots.
-type VisionAgent struct {
+// Agent is an AI agent capable of analyzing images/screenshots.
+type Agent struct {
 	config Config
 	agent  fantasy.Agent
 }
 
-// NewAgent creates a new VisionAgent with the given configuration.
+// VisionAgent is an alias for Agent for backwards compatibility.
+// Deprecated: Use Agent instead.
+type VisionAgent = Agent
+
+// NewAgent creates a new Agent with the given configuration.
 // Returns an error if the configuration is invalid.
-func NewAgent(config Config) (*VisionAgent, error) {
+func NewAgent(config Config) (*Agent, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
@@ -92,7 +96,7 @@ func NewAgent(config Config) (*VisionAgent, error) {
 		opts = append(opts, fantasy.WithMaxRetries(config.MaxRetries))
 	}
 
-	return &VisionAgent{
+	return &Agent{
 		config: config,
 		agent:  fantasy.NewAgent(config.Model, opts...),
 	}, nil
@@ -117,7 +121,7 @@ func (r AnalyzeResult) String() string {
 
 // Analyze sends one or more images to the agent along with a prompt and returns the analysis.
 // Returns ErrEmptyPrompt if prompt is empty, ErrNoImages if no images are provided.
-func (va *VisionAgent) Analyze(
+func (va *Agent) Analyze(
 	ctx context.Context,
 	prompt string,
 	images ...*ImageSource,
@@ -154,7 +158,7 @@ func (va *VisionAgent) Analyze(
 
 // AnalyzeStream sends images to the agent and streams the response.
 // The onText callback is called for each chunk of text received.
-func (va *VisionAgent) AnalyzeStream(
+func (va *Agent) AnalyzeStream(
 	ctx context.Context,
 	prompt string,
 	onText func(text string) error,
@@ -178,7 +182,7 @@ func (va *VisionAgent) AnalyzeStream(
 	streamCall := fantasy.AgentStreamCall{
 		Prompt: prompt,
 		Files:  files,
-		OnTextDelta: func(id, text string) error {
+		OnTextDelta: func(_, text string) error {
 			fullText += text
 			if onText != nil {
 				return onText(text)
@@ -201,7 +205,7 @@ func (va *VisionAgent) AnalyzeStream(
 
 // withTimeout applies the configured request timeout if set.
 // Returns the context and a cancel function that the caller must call.
-func (va *VisionAgent) withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+func (va *Agent) withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	if va.config.RequestTimeout > 0 {
 		return context.WithTimeout(ctx, va.config.RequestTimeout)
 	}

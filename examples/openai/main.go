@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"charm.land/fantasy/providers/openai"
-	"github.com/larsartmann/vision-review-agent/vision"
+	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
 func main() {

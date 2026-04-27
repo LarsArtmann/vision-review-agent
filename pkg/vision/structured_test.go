@@ -58,27 +58,3 @@ func TestAnalyzeStructured_Validation(t *testing.T) {
 		}
 	})
 }
-
-func TestUnmarshalToType(t *testing.T) {
-	t.Run("valid object", func(t *testing.T) {
-		obj := map[string]any{"layout": "test", "score": 5}
-		var result testReview
-		if err := unmarshalToType(obj, &result); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if result.Layout != "test" {
-			t.Errorf("expected layout 'test', got %q", result.Layout)
-		}
-		if result.Score != 5 {
-			t.Errorf("expected score 5, got %d", result.Score)
-		}
-	})
-
-	t.Run("invalid target", func(t *testing.T) {
-		obj := map[string]any{"layout": "test"}
-		var result string
-		if err := unmarshalToType(obj, &result); err == nil {
-			t.Error("expected error for invalid target type")
-		}
-	})
-}

@@ -91,21 +91,62 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 }
 
 func TestLoadImageFromReader(t *testing.T) {
-	r := strings.NewReader("test image data")
-	img, err := LoadImageFromReader(r, "image/jpeg", "photo.jpg")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	tests := []struct {
+		name       string
+		reader     *strings.Reader
+		mediaType  string
+		filename   string
+		wantData   string
+		wantType   string
+		wantName   string
+		wantErr    bool
+	}{
+		{
+			name:      "jpeg image",
+			reader:    strings.NewReader("test image data"),
+			mediaType: "image/jpeg",
+			filename:  "photo.jpg",
+			wantData:  "test image data",
+			wantType:  "image/jpeg",
+			wantName:  "photo.jpg",
+			wantErr:   false,
+		},
+		{
+			name:      "png image",
+			reader:    strings.NewReader("png data"),
+			mediaType: "image/png",
+			filename:  "screenshot.png",
+			wantData:  "png data",
+			wantType:  "image/png",
+			wantName:  "screenshot.png",
+			wantErr:   false,
+		},
 	}
-	if img == nil {
-		t.Fatal("expected image, got nil")
-	}
-	if string(img.Data) != "test image data" {
-		t.Error("data mismatch")
-	}
-	if img.MediaType != "image/jpeg" {
-		t.Errorf("expected image/jpeg, got %s", img.MediaType)
-	}
-	if img.Filename != "photo.jpg" {
-		t.Errorf("expected photo.jpg, got %s", img.Filename)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			img, err := LoadImageFromReader(tt.reader, tt.mediaType, tt.filename)
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if img == nil {
+				t.Fatal("expected image, got nil")
+			}
+			if string(img.Data) != tt.wantData {
+				t.Errorf("expected data %q, got %q", tt.wantData, string(img.Data))
+			}
+			if img.MediaType != tt.wantType {
+				t.Errorf("expected media type %q, got %q", tt.wantType, img.MediaType)
+			}
+			if img.Filename != tt.wantName {
+				t.Errorf("expected filename %q, got %q", tt.wantName, img.Filename)
+			}
+		})
 	}
 }

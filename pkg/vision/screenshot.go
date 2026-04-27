@@ -71,8 +71,8 @@ func (sa *ScreenshotAnalyzer) WithRequestTimeout(timeout time.Duration) *Screens
 	return sa
 }
 
-// agent lazily creates the underlying VisionAgent with current config.
-func (sa *ScreenshotAnalyzer) agent() (*VisionAgent, error) {
+// agent lazily creates the underlying Agent with current config.
+func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
 	return NewAgent(sa.config)
 }
 

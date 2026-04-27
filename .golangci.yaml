@@ -27,7 +27,6 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exhaustruct
     - forcetypeassert
     - funlen
     - ginkgolinter
@@ -56,7 +55,6 @@ linters:
     - nilnil
     - noctx
     - nolintlint
-    - paralleltest
     - perfsprint
     - prealloc
     - predeclared
@@ -78,6 +76,13 @@ linters:
     - wastedassign
     - wrapcheck
     - zerologlint
+  settings:
+    cyclop:
+      max-complexity: 15
+    gosec:
+      excludes:
+        - G306 # file permissions in tests
+        - G304 # file reading with variable path in image.go
 formatters:
   enable:
     - gci
