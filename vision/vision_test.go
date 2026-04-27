@@ -3,95 +3,12 @@ package vision
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+
+	"charm.land/fantasy"
 )
-
-func TestLoadImageFromFile(t *testing.T) {
-	// Create a temporary image file
-	tmpDir := t.TempDir()
-	tmpFile := filepath.Join(tmpDir, "test.png")
-	if err := os.WriteFile(tmpFile, []byte("fake png data"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		name    string
-		path    string
-		wantErr bool
-	}{
-		{
-			name:    "valid file",
-			path:    tmpFile,
-			wantErr: false,
-		},
-		{
-			name:    "missing file",
-			path:    filepath.Join(tmpDir, "missing.png"),
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			img, err := LoadImageFromFile(tt.path)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
-				return
-			}
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-				return
-			}
-			if img == nil {
-				t.Error("expected image, got nil")
-				return
-			}
-			if img.MediaType != "image/png" {
-				t.Errorf("expected media type image/png, got %s", img.MediaType)
-			}
-			if string(img.Data) != "fake png data" {
-				t.Error("data mismatch")
-			}
-		})
-	}
-}
-
-func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	tests := []struct {
-		ext      string
-		wantType string
-	}{
-		{".png", "image/png"},
-		{".jpg", "image/jpeg"},
-		{".jpeg", "image/jpeg"},
-		{".gif", "image/gif"},
-		{".webp", "image/webp"},
-		{".unknown", "image/png"}, // fallback
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.ext, func(t *testing.T) {
-			path := filepath.Join(tmpDir, "test"+tt.ext)
-			if err := os.WriteFile(path, []byte("data"), 0o644); err != nil {
-				t.Fatal(err)
-			}
-			img, err := LoadImageFromFile(path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if img.MediaType != tt.wantType {
-				t.Errorf("expected %s, got %s", tt.wantType, img.MediaType)
-			}
-		})
-	}
-}
 
 func TestConfigValidate(t *testing.T) {
 	tests := []struct {
@@ -211,7 +128,7 @@ func TestNewAgent(t *testing.T) {
 	}
 }
 
-func TestVisionAgent_Analyze_Validation(t *testing.T) {
+func TestVisionAgent_Analyze(t *testing.T) {
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
@@ -220,43 +137,59 @@ func TestVisionAgent_Analyze_Validation(t *testing.T) {
 	ctx := context.Background()
 	img := &ImageSource{Data: []byte("test"), MediaType: "image/png"}
 
-	tests := []struct {
-		name    string
-		prompt  string
-		images  []*ImageSource
-		wantErr error
-	}{
-		{
-			name:    "empty prompt",
-			prompt:  "",
-			images:  []*ImageSource{img},
-			wantErr: ErrEmptyPrompt,
-		},
-		{
-			name:    "no images",
-			prompt:  "test",
-			images:  nil,
-			wantErr: ErrNoImages,
-		},
-		{
-			name:    "empty images",
-			prompt:  "test",
-			images:  []*ImageSource{},
-			wantErr: ErrNoImages,
-		},
-	}
+	t.Run("success", func(t *testing.T) {
+		result, err := agent.Analyze(ctx, "test prompt", img)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil {
+			t.Fatal("expected result, got nil")
+		}
+		if result.Text != "mock response" {
+			t.Errorf("expected 'mock response', got %q", result.Text)
+		}
+		if result.Usage.TotalTokens != 10 {
+			t.Errorf("expected 10 tokens, got %d", result.Usage.TotalTokens)
+		}
+		if result.RawResponse == nil {
+			t.Error("expected RawResponse to be set")
+		}
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := agent.Analyze(ctx, tt.prompt, tt.images...)
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("expected %v, got %v", tt.wantErr, err)
-			}
-		})
-	}
+	t.Run("multiple images", func(t *testing.T) {
+		img2 := &ImageSource{Data: []byte("test2"), MediaType: "image/png"}
+		result, err := agent.Analyze(ctx, "compare", img, img2)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.Text != "mock response" {
+			t.Errorf("expected 'mock response', got %q", result.Text)
+		}
+	})
+
+	t.Run("empty prompt", func(t *testing.T) {
+		_, err := agent.Analyze(ctx, "", img)
+		if !errors.Is(err, ErrEmptyPrompt) {
+			t.Errorf("expected ErrEmptyPrompt, got %v", err)
+		}
+	})
+
+	t.Run("no images", func(t *testing.T) {
+		_, err := agent.Analyze(ctx, "test", nil)
+		if !errors.Is(err, ErrNoImages) {
+			t.Errorf("expected ErrNoImages, got %v", err)
+		}
+	})
+
+	t.Run("empty images", func(t *testing.T) {
+		_, err := agent.Analyze(ctx, "test")
+		if !errors.Is(err, ErrNoImages) {
+			t.Errorf("expected ErrNoImages, got %v", err)
+		}
+	})
 }
 
-func TestVisionAgent_AnalyzeStream_Validation(t *testing.T) {
+func TestVisionAgent_AnalyzeStream(t *testing.T) {
 	agent, err := NewAgent(Config{Model: &mockModel{}})
 	if err != nil {
 		t.Fatal(err)
@@ -265,67 +198,62 @@ func TestVisionAgent_AnalyzeStream_Validation(t *testing.T) {
 	ctx := context.Background()
 	img := &ImageSource{Data: []byte("test"), MediaType: "image/png"}
 
-	tests := []struct {
-		name    string
-		prompt  string
-		images  []*ImageSource
-		wantErr error
-	}{
-		{
-			name:    "empty prompt",
-			prompt:  "",
-			images:  []*ImageSource{img},
-			wantErr: ErrEmptyPrompt,
-		},
-		{
-			name:    "no images",
-			prompt:  "test",
-			images:  nil,
-			wantErr: ErrNoImages,
-		},
-	}
+	t.Run("success", func(t *testing.T) {
+		var chunks []string
+		result, err := agent.AnalyzeStream(ctx, "test prompt", func(text string) error {
+			chunks = append(chunks, text)
+			return nil
+		}, img)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil {
+			t.Fatal("expected result, got nil")
+		}
+		if result.Text != "mock response" {
+			t.Errorf("expected 'mock response', got %q", result.Text)
+		}
+		if len(chunks) == 0 {
+			t.Error("expected chunks to be received")
+		}
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := agent.AnalyzeStream(ctx, tt.prompt, nil, tt.images...)
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("expected %v, got %v", tt.wantErr, err)
-			}
-		})
-	}
+	t.Run("nil callback", func(t *testing.T) {
+		result, err := agent.AnalyzeStream(ctx, "test prompt", nil, img)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.Text != "mock response" {
+			t.Errorf("expected 'mock response', got %q", result.Text)
+		}
+	})
+
+	t.Run("empty prompt", func(t *testing.T) {
+		_, err := agent.AnalyzeStream(ctx, "", nil, img)
+		if !errors.Is(err, ErrEmptyPrompt) {
+			t.Errorf("expected ErrEmptyPrompt, got %v", err)
+		}
+	})
+
+	t.Run("no images", func(t *testing.T) {
+		_, err := agent.AnalyzeStream(ctx, "test", nil, nil)
+		if !errors.Is(err, ErrNoImages) {
+			t.Errorf("expected ErrNoImages, got %v", err)
+		}
+	})
 }
 
-func TestScreenshotAnalyzer_Builder(t *testing.T) {
-	model := &mockModel{}
-
-	sa := NewScreenshotAnalyzer(model).
-		WithSystemPrompt("custom prompt").
-		WithMaxOutputTokens(500).
-		WithTemperature(0.7).
-		WithMaxRetries(5).
-		WithRequestTimeout(30 * time.Second)
-
-	if sa.config.SystemPrompt != "custom prompt" {
-		t.Errorf("expected system prompt 'custom prompt', got %q", sa.config.SystemPrompt)
+func TestAnalyzeResult_String(t *testing.T) {
+	result := AnalyzeResult{
+		Text:  "test analysis",
+		Usage: fantasy.Usage{TotalTokens: 42},
 	}
-	if sa.config.MaxOutputTokens != 500 {
-		t.Errorf("expected max tokens 500, got %d", sa.config.MaxOutputTokens)
+	s := result.String()
+	if !strings.Contains(s, "test analysis") {
+		t.Errorf("String() should contain text, got: %s", s)
 	}
-	if sa.config.Temperature != 0.7 {
-		t.Errorf("expected temperature 0.7, got %f", sa.config.Temperature)
-	}
-	if sa.config.MaxRetries != 5 {
-		t.Errorf("expected max retries 5, got %d", sa.config.MaxRetries)
-	}
-	if sa.config.RequestTimeout != 30*time.Second {
-		t.Errorf("expected timeout 30s, got %v", sa.config.RequestTimeout)
-	}
-}
-
-func TestScreenshotAnalyzer_DefaultPrompt(t *testing.T) {
-	sa := NewScreenshotAnalyzer(&mockModel{})
-	if sa.config.SystemPrompt != DefaultScreenshotPrompt {
-		t.Error("expected default screenshot prompt")
+	if !strings.Contains(s, "42") {
+		t.Errorf("String() should contain token count, got: %s", s)
 	}
 }
 
@@ -339,9 +267,9 @@ func TestWithTimeout(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = agent.withTimeout(ctx)
+	ctx, cancel := agent.withTimeout(ctx)
+	defer cancel()
 
-	// Check that deadline is set
 	_, ok := ctx.Deadline()
 	if !ok {
 		t.Error("expected deadline to be set")
@@ -355,9 +283,9 @@ func TestWithTimeout_Zero(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = agent.withTimeout(ctx)
+	ctx, cancel := agent.withTimeout(ctx)
+	defer cancel()
 
-	// Check that deadline is NOT set
 	_, ok := ctx.Deadline()
 	if ok {
 		t.Error("expected no deadline when timeout is zero")

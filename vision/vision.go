@@ -110,20 +110,32 @@ type AnalyzeResult struct {
 	RawResponse *fantasy.AgentResult
 }
 
+// String returns a human-readable summary of the analysis result.
+func (r AnalyzeResult) String() string {
+	return fmt.Sprintf("AnalyzeResult{Text: %q, Usage: %s}", r.Text, r.Usage)
+}
+
 // Analyze sends one or more images to the agent along with a prompt and returns the analysis.
 // Returns ErrEmptyPrompt if prompt is empty, ErrNoImages if no images are provided.
 func (va *VisionAgent) Analyze(ctx context.Context, prompt string, images ...*ImageSource) (*AnalyzeResult, error) {
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	if len(images) == 0 {
+	var validImages []*ImageSource
+	for _, img := range images {
+		if img != nil {
+			validImages = append(validImages, img)
+		}
+	}
+	if len(validImages) == 0 {
 		return nil, ErrNoImages
 	}
 
-	ctx = va.withTimeout(ctx)
+	ctx, cancel := va.withTimeout(ctx)
+	defer cancel()
 
-	files := make([]fantasy.FilePart, len(images))
-	for i, img := range images {
+	files := make([]fantasy.FilePart, len(validImages))
+	for i, img := range validImages {
 		files[i] = fantasy.FilePart{
 			Data:      img.Data,
 			MediaType: img.MediaType,
@@ -159,14 +171,21 @@ func (va *VisionAgent) AnalyzeStream(
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	if len(images) == 0 {
+	var validImages []*ImageSource
+	for _, img := range images {
+		if img != nil {
+			validImages = append(validImages, img)
+		}
+	}
+	if len(validImages) == 0 {
 		return nil, ErrNoImages
 	}
 
-	ctx = va.withTimeout(ctx)
+	ctx, cancel := va.withTimeout(ctx)
+	defer cancel()
 
-	files := make([]fantasy.FilePart, len(images))
-	for i, img := range images {
+	files := make([]fantasy.FilePart, len(validImages))
+	for i, img := range validImages {
 		files[i] = fantasy.FilePart{
 			Data:      img.Data,
 			MediaType: img.MediaType,
@@ -201,11 +220,10 @@ func (va *VisionAgent) AnalyzeStream(
 }
 
 // withTimeout applies the configured request timeout if set.
-func (va *VisionAgent) withTimeout(ctx context.Context) context.Context {
+// Returns the context and a cancel function that the caller must call.
+func (va *VisionAgent) withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	if va.config.RequestTimeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, va.config.RequestTimeout)
-		_ = cancel // caller should handle ctx cancellation
+		return context.WithTimeout(ctx, va.config.RequestTimeout)
 	}
-	return ctx
+	return ctx, func() {}
 }
