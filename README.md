@@ -29,7 +29,7 @@ import (
     "os"
 
     "charm.land/fantasy/providers/openai"
-    "github.com/larsartmann/vision-review-agent/vision"
+    "github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
 func main() {
@@ -48,11 +48,27 @@ func main() {
 }
 ```
 
+## Development
+
+```bash
+# Enter dev shell (requires Nix + direnv, or use `nix develop`)
+direnv allow
+
+# Available commands
+just test        # Run tests
+just coverage    # Run tests with 70% threshold
+just test-race   # Run with race detector
+just lint        # Run golangci-lint
+just structure-lint  # Run go-structure-linter
+just build       # Build all packages
+just cli         # Build CLI binary
+```
+
 ## CLI Usage
 
 ```bash
 # Build the CLI
-go build -o vision-cli ./cmd/vision
+just cli
 
 # Analyze a screenshot
 export OPENAI_API_KEY=your-key
@@ -138,6 +154,7 @@ result, _ := analyzer.AnalyzeScreenshot(ctx, "Review this page", "screenshot.png
 - `ErrNoImages` — No images provided
 - `ErrInvalidTemperature` — Temperature out of range
 - `ErrInvalidMaxTokens` — Negative max tokens
+- `ErrInvalidImage` — Image data does not match known format
 
 ## Examples
 
@@ -146,6 +163,18 @@ See the [`examples/`](examples/) directory for complete working examples:
 - [`examples/openai/`](examples/openai/) — OpenAI provider
 - [`examples/openrouter/`](examples/openrouter/) — OpenRouter provider
 - [`examples/structured/`](examples/structured/) — Structured output
+
+## Project Structure
+
+```
+pkg/
+  vision/         Public SDK (Agent, Config, image loading, analysis)
+  errors/         Centralized domain errors (re-exported from pkg/vision)
+internal/
+  visionutil/     Internal helpers (prompt building, unmarshaling)
+cmd/vision/       CLI tool
+examples/         Working examples for each provider
+```
 
 ## License
 
