@@ -48,7 +48,11 @@ func main() {
 
 	// Analyze
 	fmt.Println("Analyzing screenshot...")
-	result, err := analyzer.AnalyzeScreenshot(ctx, "Review this UI for accessibility and design issues.", os.Args[1])
+	result, err := analyzer.AnalyzeScreenshot(
+		ctx,
+		"Review this UI for accessibility and design issues.",
+		os.Args[1],
+	)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)

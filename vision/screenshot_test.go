@@ -143,7 +143,11 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage_Validation(t *testing.T) {
 	sa := NewScreenshotAnalyzer(&mockModel{})
 	ctx := context.Background()
 
-	_, err := sa.AnalyzeScreenshotImage(ctx, "", &ImageSource{Data: []byte("test"), MediaType: "image/png"})
+	_, err := sa.AnalyzeScreenshotImage(
+		ctx,
+		"",
+		&ImageSource{Data: []byte("test"), MediaType: "image/png"},
+	)
 	if !errors.Is(err, ErrEmptyPrompt) {
 		t.Errorf("expected ErrEmptyPrompt, got %v", err)
 	}

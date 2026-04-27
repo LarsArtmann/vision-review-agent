@@ -61,7 +61,7 @@ func AnalyzeStructured[T any](
 		Prompt:            appendSystemAndPrompt(agent.config.SystemPrompt, prompt, files),
 		Schema:            schemaDef,
 		SchemaName:        reflect.TypeOf(zero).Name(),
-		SchemaDescription: fmt.Sprintf("Structured analysis result for %s", reflect.TypeOf(zero).Name()),
+		SchemaDescription: "Structured analysis result for " + reflect.TypeOf(zero).Name(),
 	}
 
 	if agent.config.MaxOutputTokens > 0 {
@@ -94,7 +94,10 @@ func AnalyzeStructured[T any](
 }
 
 // appendSystemAndPrompt builds a prompt with optional system message and files.
-func appendSystemAndPrompt(systemPrompt, userPrompt string, files []fantasy.FilePart) fantasy.Prompt {
+func appendSystemAndPrompt(
+	systemPrompt, userPrompt string,
+	files []fantasy.FilePart,
+) fantasy.Prompt {
 	var prompt fantasy.Prompt
 	if systemPrompt != "" {
 		prompt = append(prompt, fantasy.NewSystemMessage(systemPrompt))

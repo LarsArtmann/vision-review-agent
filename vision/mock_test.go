@@ -42,7 +42,10 @@ func (m *mockModel) Stream(ctx context.Context, call fantasy.Call) (fantasy.Stre
 	}, nil
 }
 
-func (m *mockModel) GenerateObject(ctx context.Context, call fantasy.ObjectCall) (*fantasy.ObjectResponse, error) {
+func (m *mockModel) GenerateObject(
+	ctx context.Context,
+	call fantasy.ObjectCall,
+) (*fantasy.ObjectResponse, error) {
 	return &fantasy.ObjectResponse{
 		Object: map[string]any{
 			"layout": "test layout",
@@ -53,7 +56,10 @@ func (m *mockModel) GenerateObject(ctx context.Context, call fantasy.ObjectCall)
 	}, nil
 }
 
-func (m *mockModel) StreamObject(ctx context.Context, call fantasy.ObjectCall) (fantasy.ObjectStreamResponse, error) {
+func (m *mockModel) StreamObject(
+	ctx context.Context,
+	call fantasy.ObjectCall,
+) (fantasy.ObjectStreamResponse, error) {
 	return func(yield func(fantasy.ObjectStreamPart) bool) {
 		_ = yield(fantasy.ObjectStreamPart{
 			Type: fantasy.ObjectStreamPartTypeObject,

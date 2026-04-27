@@ -2,7 +2,7 @@ package vision
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 )
 
 // imageSignatures maps image formats to their magic byte signatures.
@@ -18,7 +18,7 @@ var imageSignatures = []struct {
 }
 
 // ErrInvalidImage is returned when the data does not match any known image format.
-var ErrInvalidImage = fmt.Errorf("vision agent: data does not appear to be a valid image")
+var ErrInvalidImage = errors.New("vision agent: data does not appear to be a valid image")
 
 // DetectImageFormat attempts to detect the image format from magic bytes.
 // Returns the format name (e.g., "png", "jpg") or an empty string if unknown.
@@ -43,7 +43,7 @@ func IsValidImage(data []byte) bool {
 // Returns ErrInvalidImage if the data does not match any known image signature.
 func ValidateImage(data []byte) error {
 	if len(data) == 0 {
-		return fmt.Errorf("vision agent: image data is empty")
+		return errors.New("vision agent: image data is empty")
 	}
 	if !IsValidImage(data) {
 		return ErrInvalidImage

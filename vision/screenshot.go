@@ -77,7 +77,11 @@ func (sa *ScreenshotAnalyzer) agent() (*VisionAgent, error) {
 }
 
 // AnalyzeScreenshot analyzes a single screenshot with the given prompt.
-func (sa *ScreenshotAnalyzer) AnalyzeScreenshot(ctx context.Context, prompt string, screenshotPath string) (*AnalyzeResult, error) {
+func (sa *ScreenshotAnalyzer) AnalyzeScreenshot(
+	ctx context.Context,
+	prompt string,
+	screenshotPath string,
+) (*AnalyzeResult, error) {
 	img, err := LoadImageFromFile(screenshotPath)
 	if err != nil {
 		return nil, err
@@ -86,7 +90,11 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshot(ctx context.Context, prompt stri
 }
 
 // AnalyzeScreenshotImage analyzes a single screenshot ImageSource with the given prompt.
-func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImage(ctx context.Context, prompt string, img *ImageSource) (*AnalyzeResult, error) {
+func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImage(
+	ctx context.Context,
+	prompt string,
+	img *ImageSource,
+) (*AnalyzeResult, error) {
 	agent, err := sa.agent()
 	if err != nil {
 		return nil, err
@@ -95,7 +103,11 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImage(ctx context.Context, prompt
 }
 
 // AnalyzeScreenshots analyzes multiple screenshots with the given prompt.
-func (sa *ScreenshotAnalyzer) AnalyzeScreenshots(ctx context.Context, prompt string, screenshotPaths ...string) (*AnalyzeResult, error) {
+func (sa *ScreenshotAnalyzer) AnalyzeScreenshots(
+	ctx context.Context,
+	prompt string,
+	screenshotPaths ...string,
+) (*AnalyzeResult, error) {
 	images := make([]*ImageSource, len(screenshotPaths))
 	for i, path := range screenshotPaths {
 		img, err := LoadImageFromFile(path)
@@ -108,7 +120,11 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshots(ctx context.Context, prompt str
 }
 
 // AnalyzeScreenshotImages analyzes multiple ImageSources with the given prompt.
-func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(ctx context.Context, prompt string, images ...*ImageSource) (*AnalyzeResult, error) {
+func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
+	ctx context.Context,
+	prompt string,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
 	agent, err := sa.agent()
 	if err != nil {
 		return nil, err

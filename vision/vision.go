@@ -117,7 +117,11 @@ func (r AnalyzeResult) String() string {
 
 // Analyze sends one or more images to the agent along with a prompt and returns the analysis.
 // Returns ErrEmptyPrompt if prompt is empty, ErrNoImages if no images are provided.
-func (va *VisionAgent) Analyze(ctx context.Context, prompt string, images ...*ImageSource) (*AnalyzeResult, error) {
+func (va *VisionAgent) Analyze(
+	ctx context.Context,
+	prompt string,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}

@@ -11,6 +11,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -28,7 +29,11 @@ func main() {
 	var (
 		providerName = flag.String("provider", "openai", "Provider: openai, openrouter")
 		modelID      = flag.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")
-		prompt       = flag.String("prompt", "Describe what you see in this image.", "Analysis prompt")
+		prompt       = flag.String(
+			"prompt",
+			"Describe what you see in this image.",
+			"Analysis prompt",
+		)
 		systemPrompt = flag.String("system", "", "Custom system prompt (optional)")
 		stream       = flag.Bool("stream", false, "Stream the response")
 		temperature  = flag.Float64("temperature", 0.3, "Temperature (0.0-2.0)")
@@ -47,9 +52,17 @@ func main() {
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
 		fmt.Fprintf(os.Stderr, "  %s -prompt \"Find UI bugs\" screenshot.png\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -provider openrouter -model anthropic/claude-3.5-sonnet screenshot.png\n", os.Args[0])
+		fmt.Fprintf(
+			os.Stderr,
+			"  %s -provider openrouter -model anthropic/claude-3.5-sonnet screenshot.png\n",
+			os.Args[0],
+		)
 		fmt.Fprintf(os.Stderr, "  %s -stream -prompt \"Describe this\" *.png\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -json -prompt \"Find bugs\" screenshot.png | jq '.text'\n", os.Args[0])
+		fmt.Fprintf(
+			os.Stderr,
+			"  %s -json -prompt \"Find bugs\" screenshot.png | jq '.text'\n",
+			os.Args[0],
+		)
 	}
 	flag.Parse()
 
@@ -173,13 +186,13 @@ func createProvider(name string) (fantasy.Provider, error) {
 	case "openai":
 		apiKey := os.Getenv("OPENAI_API_KEY")
 		if apiKey == "" {
-			return nil, fmt.Errorf("OPENAI_API_KEY environment variable not set")
+			return nil, errors.New("OPENAI_API_KEY environment variable not set")
 		}
 		return openai.New(openai.WithAPIKey(apiKey))
 	case "openrouter":
 		apiKey := os.Getenv("OPENROUTER_API_KEY")
 		if apiKey == "" {
-			return nil, fmt.Errorf("OPENROUTER_API_KEY environment variable not set")
+			return nil, errors.New("OPENROUTER_API_KEY environment variable not set")
 		}
 		return openrouter.New(openrouter.WithAPIKey(apiKey))
 	default:

@@ -20,17 +20,17 @@ import (
 
 // UIReview is the structured output type.
 type UIReview struct {
-	Layout      string   `json:"layout" description:"Brief description of the overall layout"`
-	Components  []string `json:"components" description:"List of UI components identified"`
-	Issues      []Issue  `json:"issues" description:"List of issues found"`
-	Score       int      `json:"score" description:"Overall UX score from 1-10"`
+	Layout      string   `json:"layout"      description:"Brief description of the overall layout"`
+	Components  []string `json:"components"  description:"List of UI components identified"`
+	Issues      []Issue  `json:"issues"      description:"List of issues found"`
+	Score       int      `json:"score"       description:"Overall UX score from 1-10"`
 	Suggestions []string `json:"suggestions" description:"Actionable improvement suggestions"`
 }
 
 // Issue represents a single UI issue.
 type Issue struct {
-	Severity    string `json:"severity" description:"Severity: critical, major, minor, or info"`
-	Component   string `json:"component" description:"Which component has the issue"`
+	Severity    string `json:"severity"    description:"Severity: critical, major, minor, or info"`
+	Component   string `json:"component"   description:"Which component has the issue"`
 	Description string `json:"description" description:"Detailed description of the issue"`
 }
 
@@ -76,7 +76,12 @@ func main() {
 	}
 
 	fmt.Println("Analyzing screenshot with structured output...")
-	result, err := vision.AnalyzeStructured[UIReview](ctx, agent, "Review this UI design comprehensively.", img)
+	result, err := vision.AnalyzeStructured[UIReview](
+		ctx,
+		agent,
+		"Review this UI design comprehensively.",
+		img,
+	)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
