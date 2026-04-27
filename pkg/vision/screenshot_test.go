@@ -154,15 +154,23 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 		wantErrType error
 	}{
 		{
-			name:     "valid image",
-			img:      &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"},
+			name: "valid image",
+			img: &ImageSource{
+				Data:      []byte("test"),
+				MediaType: "image/png",
+				Filename:  "test.png",
+			},
 			prompt:   "describe",
 			wantText: mockResponseText,
 			wantErr:  false,
 		},
 		{
-			name:        "empty prompt",
-			img:         &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"},
+			name: "empty prompt",
+			img: &ImageSource{
+				Data:      []byte("test"),
+				MediaType: "image/png",
+				Filename:  "test.png",
+			},
 			prompt:      "",
 			wantErr:     true,
 			wantErrType: ErrEmptyPrompt,
@@ -265,8 +273,10 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:    "empty prompt",
-			images:  []*ImageSource{{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"}},
+			name: "empty prompt",
+			images: []*ImageSource{
+				{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"},
+			},
 			wantErr: true,
 		},
 	}

@@ -14,16 +14,36 @@ func TestErrors(t *testing.T) {
 		wantMsg string
 	}{
 		{name: "ErrNoModel", err: ErrNoModel, wantMsg: "vision agent: no model configured"},
-		{name: "ErrEmptyPrompt", err: ErrEmptyPrompt, wantMsg: "vision agent: prompt cannot be empty"},
-		{name: "ErrNoImages", err: ErrNoImages, wantMsg: "vision agent: at least one image is required"},
-		{name: "ErrInvalidTemperature", err: ErrInvalidTemperature, wantMsg: "vision agent: temperature must be between 0.0 and 2.0"},
-		{name: "ErrInvalidMaxTokens", err: ErrInvalidMaxTokens, wantMsg: "vision agent: max output tokens cannot be negative"},
-		{name: "ErrInvalidImage", err: ErrInvalidImage, wantMsg: "vision agent: data does not appear to be a valid image"},
+		{
+			name:    "ErrEmptyPrompt",
+			err:     ErrEmptyPrompt,
+			wantMsg: "vision agent: prompt cannot be empty",
+		},
+		{
+			name:    "ErrNoImages",
+			err:     ErrNoImages,
+			wantMsg: "vision agent: at least one image is required",
+		},
+		{
+			name:    "ErrInvalidTemperature",
+			err:     ErrInvalidTemperature,
+			wantMsg: "vision agent: temperature must be between 0.0 and 2.0",
+		},
+		{
+			name:    "ErrInvalidMaxTokens",
+			err:     ErrInvalidMaxTokens,
+			wantMsg: "vision agent: max output tokens cannot be negative",
+		},
+		{
+			name:    "ErrInvalidImage",
+			err:     ErrInvalidImage,
+			wantMsg: "vision agent: data does not appear to be a valid image",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.NotNil(t, tt.err)
+			assert.Error(t, tt.err)
 			assert.EqualError(t, tt.err, tt.wantMsg)
 		})
 	}
@@ -38,7 +58,12 @@ func TestErrorsIs(t *testing.T) {
 	}{
 		{name: "matches itself", err: ErrNoModel, target: ErrNoModel, want: true},
 		{name: "different errors", err: ErrNoModel, target: ErrNoImages, want: false},
-		{name: "literal string match", err: errors.New("vision agent: no model configured"), target: ErrNoModel, want: false},
+		{
+			name:   "literal string match",
+			err:    errors.New("vision agent: no model configured"),
+			target: ErrNoModel,
+			want:   false,
+		},
 	}
 
 	for _, tt := range tests {
