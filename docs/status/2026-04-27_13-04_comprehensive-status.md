@@ -19,6 +19,7 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 ## a) FULLY DONE
 
 ### Architecture & Structure
+
 - [x] Moved `vision/` → `pkg/vision/` — public library code now lives in `pkg/`
 - [x] Created `pkg/errors/errors.go` — centralized domain-specific errors (`apperrors`)
 - [x] Created `pkg/vision/errors.go` — re-exports from `pkg/errors/` for backwards compatibility
@@ -28,6 +29,7 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 - [x] Removed old `vision/` directory (git history preserved via `git mv`)
 
 ### Build System
+
 - [x] Deleted `Makefile`
 - [x] Created `justfile` with recipes: `build`, `cli`, `test`, `test-race`, `coverage`, `vet`, `fmt`, `clean`, `lint`, `structure-lint`, `all`
 - [x] Fixed `justfile` coverage: replaced `bc` with `awk`, tests only `pkg/...` and `internal/...`
@@ -36,6 +38,7 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 - [x] `flake.nix` commented out broken `buildGoModule` (vendorHash=null was invalid)
 
 ### Testing
+
 - [x] Refactored ALL tests to table-driven pattern (15+ functions across 5 test files)
 - [x] Added `pkg/errors/errors_test.go` — 100% coverage on all sentinel errors
 - [x] Added `internal/visionutil/helpers_test.go` — tests for extracted helpers
@@ -46,11 +49,13 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 - [x] Added `github.com/stretchr/testify` as direct dependency — demonstrated in `pkg/errors` tests
 
 ### Documentation
+
 - [x] Updated `README.md`: fixed import paths to `pkg/vision`, added Development section, added Project Structure section, added `ErrInvalidImage` to error types, replaced `go build` with `just cli`
 - [x] Updated `AGENTS.md` with new architecture, testing commands, design decisions
 - [x] Updated `.gitignore` with `/result` (Nix build output) and `coverage/`
 
 ### Quality Gates
+
 - [x] `go test ./pkg/... ./internal/...` — PASS
 - [x] `go-structure-linter .` — 0 issues (clean)
 - [x] Coverage threshold 70% — PASS at 93.2%
@@ -61,6 +66,7 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 ## b) PARTIALLY DONE
 
 ### CLI Tool (`cmd/vision/main.go`)
+
 - The CLI works but is flagged by golangci-lint with ~10 warnings
 - `cyclop:15` (function `main` is too complex)
 - `nestif` (complex nested blocks for stream vs non-stream)
@@ -70,11 +76,13 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 - **Status:** CLI compiles and runs, but needs refactoring for lint cleanliness
 
 ### Test Parallelism
+
 - All `t.Run()` subtests now have `t.Parallel()` inside them
 - Top-level `t.Parallel()` removed from test functions to satisfy go-structure-linter
 - **Trade-off:** tests run sequentially at top level but in parallel at subtest level
 
 ### testify Migration
+
 - Only `pkg/errors/errors_test.go` uses testify (`assert.EqualError`, `assert.NotNil`)
 - Other test files still use manual `if`/`t.Errorf` patterns
 - **Status:** Proof of concept done, but full migration across all test files not done
@@ -105,6 +113,7 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 ## d) TOTALLY FUCKED UP
 
 ### Go Version Mismatch (examples/)
+
 - `go test ./... -coverpkg=./...` fails on `examples/` packages with:
   ```
   compile: version "go1.26.2" does not match go tool version "go1.26.0"
@@ -114,6 +123,7 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 - **Fix:** Either downgrade `go.mod` to `1.26.0` or upgrade system Go
 
 ### Working Tree Is Clean (Good Problem)
+
 - All changes are committed. No uncommitted work exists.
 - Remote `origin/master` exists and is in sync.
 
@@ -122,12 +132,14 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 ## e) WHAT WE SHOULD IMPROVE
 
 ### High Priority (Do Next)
+
 1. **Fix go.mod Go version** — Change `go 1.26.2` → `go 1.26.0` to match system compiler
 2. **Refactor CLI** — Extract sub-functions from `main()`, use a CLI library (cobra/urfave), fix all ~10 golangci-lint warnings
 3. **Migrate remaining tests to testify** — `pkg/vision/*_test.go`, `internal/visionutil/*_test.go` would benefit from `assert/require`
 4. **Add CI/CD** — GitHub Actions workflow for `go test`, `golangci-lint`, `go-structure-linter`, coverage threshold
 
 ### Medium Priority
+
 5. **Functional options for Config** — `WithModel()`, `WithTemperature()`, `WithSystemPrompt()` — makes API more discoverable and eliminates zero-value ambiguity
 6. **Image validation on load** — `LoadImageFromFile` should optionally call `ValidateImage` on loaded data
 7. **Add structured logging** — `log/slog` integration with configurable levels
@@ -135,6 +147,7 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 9. **Package doc comments** — Every package needs a `// Package x ...` comment
 
 ### Low Priority (Nice to Have)
+
 10. **Anthropic/Google examples** — Expand example coverage
 11. **GoReleaser config** — Automated binary builds for vision-cli
 12. **Result caching** — Simple in-memory cache keyed by image hash + prompt
@@ -144,33 +157,33 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 
 ## f) Top #25 Things We Should Get Done Next
 
-| # | Priority | Task | Effort | Impact |
-|---|----------|------|--------|--------|
-| 1 | 🔴 High | Fix go.mod Go version (1.26.2 → 1.26.0) | 1 min | Fixes examples/ build |
-| 2 | 🔴 High | Refactor cmd/vision/main.go complexity | 1 hr | Eliminates 10 linter warnings |
-| 3 | 🔴 High | Add GitHub Actions CI workflow | 30 min | Automated quality gates |
-| 4 | 🟡 Med | Migrate pkg/vision tests to testify | 1 hr | Cleaner, more maintainable |
-| 5 | 🟡 Med | Add Config functional options | 1 hr | Better API design |
-| 6 | 🟡 Med | ValidateImage on LoadImageFromFile | 30 min | Fail fast on bad images |
-| 7 | 🟡 Med | Add structured logging (log/slog) | 1 hr | Better debugging |
-| 8 | 🟡 Med | Add benchmark tests | 30 min | Performance baseline |
-| 9 | 🟡 Med | Add fuzz tests for validation | 30 min | Robustness |
-| 10 | 🟡 Med | Package doc comments | 15 min | Documentation |
-| 11 | 🟢 Low | Anthropic example | 30 min | Provider coverage |
-| 12 | 🟢 Low | Google Gemini example | 30 min | Provider coverage |
-| 13 | 🟢 Low | GoReleaser config | 30 min | Distribution |
-| 14 | 🟢 Low | Result caching | 1 hr | Performance |
-| 15 | 🟢 Low | Image preprocessing helpers | 2 hr | UX |
-| 16 | 🟢 Low | Middleware/plugin hooks | 2 hr | Extensibility |
-| 17 | 🟢 Low | Provider model discovery | 2 hr | Usability |
-| 18 | 🟢 Low | Batch analysis API | 2 hr | Feature |
-| 19 | 🟢 Low | OpenTelemetry tracing | 2 hr | Observability |
-| 20 | 🟢 Low | JSON schema validation for structured output | 2 hr | Safety |
-| 21 | 🟢 Low | Context cancellation tests | 30 min | Reliability |
-| 22 | 🟢 Low | Integration tests with real providers | 4 hr | Confidence |
-| 23 | 🟢 Low | README badges (coverage, build, lint) | 15 min | Trust |
-| 24 | 🟢 Low | CONTRIBUTING.md | 30 min | Community |
-| 25 | 🟢 Low | Changelog automation | 15 min | Maintenance |
+| #   | Priority | Task                                         | Effort | Impact                        |
+| --- | -------- | -------------------------------------------- | ------ | ----------------------------- |
+| 1   | 🔴 High  | Fix go.mod Go version (1.26.2 → 1.26.0)      | 1 min  | Fixes examples/ build         |
+| 2   | 🔴 High  | Refactor cmd/vision/main.go complexity       | 1 hr   | Eliminates 10 linter warnings |
+| 3   | 🔴 High  | Add GitHub Actions CI workflow               | 30 min | Automated quality gates       |
+| 4   | 🟡 Med   | Migrate pkg/vision tests to testify          | 1 hr   | Cleaner, more maintainable    |
+| 5   | 🟡 Med   | Add Config functional options                | 1 hr   | Better API design             |
+| 6   | 🟡 Med   | ValidateImage on LoadImageFromFile           | 30 min | Fail fast on bad images       |
+| 7   | 🟡 Med   | Add structured logging (log/slog)            | 1 hr   | Better debugging              |
+| 8   | 🟡 Med   | Add benchmark tests                          | 30 min | Performance baseline          |
+| 9   | 🟡 Med   | Add fuzz tests for validation                | 30 min | Robustness                    |
+| 10  | 🟡 Med   | Package doc comments                         | 15 min | Documentation                 |
+| 11  | 🟢 Low   | Anthropic example                            | 30 min | Provider coverage             |
+| 12  | 🟢 Low   | Google Gemini example                        | 30 min | Provider coverage             |
+| 13  | 🟢 Low   | GoReleaser config                            | 30 min | Distribution                  |
+| 14  | 🟢 Low   | Result caching                               | 1 hr   | Performance                   |
+| 15  | 🟢 Low   | Image preprocessing helpers                  | 2 hr   | UX                            |
+| 16  | 🟢 Low   | Middleware/plugin hooks                      | 2 hr   | Extensibility                 |
+| 17  | 🟢 Low   | Provider model discovery                     | 2 hr   | Usability                     |
+| 18  | 🟢 Low   | Batch analysis API                           | 2 hr   | Feature                       |
+| 19  | 🟢 Low   | OpenTelemetry tracing                        | 2 hr   | Observability                 |
+| 20  | 🟢 Low   | JSON schema validation for structured output | 2 hr   | Safety                        |
+| 21  | 🟢 Low   | Context cancellation tests                   | 30 min | Reliability                   |
+| 22  | 🟢 Low   | Integration tests with real providers        | 4 hr   | Confidence                    |
+| 23  | 🟢 Low   | README badges (coverage, build, lint)        | 15 min | Trust                         |
+| 24  | 🟢 Low   | CONTRIBUTING.md                              | 30 min | Community                     |
+| 25  | 🟢 Low   | Changelog automation                         | 15 min | Maintenance                   |
 
 ---
 
@@ -204,4 +217,4 @@ aa0d04f Comprehensive architectural refactoring: package restructuring, Nix flak
 
 ---
 
-*Report generated by Crush AI Assistant*
+_Report generated by Crush AI Assistant_
