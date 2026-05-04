@@ -29,9 +29,7 @@ func TestDetectImageFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got := DetectImageFormat(tt.data)
-			if got != tt.want {
-				t.Errorf("DetectImageFormat() = %q, want %q", got, tt.want)
-			}
+			AssertGotEq(t, "DetectImageFormat()", got, tt.want)
 		})
 	}
 }
@@ -53,9 +51,7 @@ func TestIsValidImage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got := IsValidImage(tt.data)
-			if got != tt.want {
-				t.Errorf("IsValidImage() = %v, want %v", got, tt.want)
-			}
+			AssertGotEq(t, "IsValidImage()", got, tt.want)
 		})
 	}
 }

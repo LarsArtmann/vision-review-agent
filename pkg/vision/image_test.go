@@ -82,9 +82,7 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if img.MediaType != tt.wantType {
-				t.Errorf("expected %s, got %s", tt.wantType, img.MediaType)
-			}
+			AssertEq(t, img.MediaType, tt.wantType)
 		})
 	}
 }
@@ -138,9 +136,7 @@ func TestLoadImageFromReader(t *testing.T) {
 			if string(img.Data) != tt.wantData {
 				t.Errorf("expected data %q, got %q", tt.wantData, string(img.Data))
 			}
-			if img.MediaType != tt.wantType {
-				t.Errorf("expected media type %q, got %q", tt.wantType, img.MediaType)
-			}
+			AssertEq(t, img.MediaType, tt.wantType)
 			if img.Filename != tt.wantName {
 				t.Errorf("expected filename %q, got %q", tt.wantName, img.Filename)
 			}

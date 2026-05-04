@@ -133,9 +133,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if result.Text != tt.wantText {
-				t.Errorf("expected %q, got %q", tt.wantText, result.Text)
-			}
+			AssertEq(t, result.Text, tt.wantText)
 		})
 	}
 }
@@ -178,9 +176,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if result.Text != tt.wantText {
-				t.Errorf("expected %q, got %q", tt.wantText, result.Text)
-			}
+			AssertEq(t, result.Text, tt.wantText)
 		})
 	}
 }
@@ -227,9 +223,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if result.Text != tt.wantText {
-				t.Errorf("expected %q, got %q", tt.wantText, result.Text)
-			}
+			AssertEq(t, result.Text, tt.wantText)
 		})
 	}
 }
@@ -277,9 +271,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if result.Text != tt.wantText {
-				t.Errorf("expected %q, got %q", tt.wantText, result.Text)
-			}
+			AssertEq(t, result.Text, tt.wantText)
 		})
 	}
 }

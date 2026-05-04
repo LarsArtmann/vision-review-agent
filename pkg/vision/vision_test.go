@@ -146,9 +146,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 		if result == nil {
 			t.Fatal("expected result, got nil")
 		}
-		if result.Text != "mock response" {
-			t.Errorf("expected 'mock response', got %q", result.Text)
-		}
+		AssertEq(t, result.Text, mockResponseText)
 		if result.Usage.TotalTokens != 10 {
 			t.Errorf("expected 10 tokens, got %d", result.Usage.TotalTokens)
 		}
@@ -164,9 +162,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if result.Text != "mock response" {
-			t.Errorf("expected 'mock response', got %q", result.Text)
-		}
+		AssertEq(t, result.Text, mockResponseText)
 	})
 
 	t.Run("empty prompt", func(t *testing.T) {
@@ -210,9 +206,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 		if result == nil {
 			t.Fatal("expected result, got nil")
 		}
-		if result.Text != "mock response" {
-			t.Errorf("expected 'mock response', got %q", result.Text)
-		}
+		AssertEq(t, result.Text, mockResponseText)
 		if len(chunks) == 0 {
 			t.Error("expected chunks to be received")
 		}
@@ -224,9 +218,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if result.Text != "mock response" {
-			t.Errorf("expected 'mock response', got %q", result.Text)
-		}
+		AssertEq(t, result.Text, mockResponseText)
 	})
 
 	t.Run("empty prompt", func(t *testing.T) {

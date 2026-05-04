@@ -38,9 +38,17 @@ func AssertErr(t *testing.T, wantErr bool, wantErrType, err error) bool {
 	return false
 }
 
+// AssertEq is a helper for asserting that a string value equals the expected value.
+// Use for field comparison assertions in table-driven tests.
+func AssertEq(t *testing.T, got, want string) {
+	t.Helper()
+	if got != want {
+		t.Errorf("expected %q, got %q", want, got)
+	}
+}
+
 // AssertError is a helper for checking error types in table-driven tests.
 // It returns true if the error matches wantErrType via errors.Is.
-// Use this when you need to assert a specific error without the wantErr boolean.
 func AssertError(t *testing.T, wantErrType, err error) bool {
 	t.Helper()
 	if !errors.Is(err, wantErrType) {
@@ -48,6 +56,15 @@ func AssertError(t *testing.T, wantErrType, err error) bool {
 		return true
 	}
 	return false
+}
+
+// AssertGotEq is a helper for asserting got == want in table-driven tests.
+// name is a description of what is being tested (e.g. "DetectImageFormat()").
+func AssertGotEq(t *testing.T, name string, got, want any) {
+	t.Helper()
+	if got != want {
+		t.Errorf("%s = %v, want %v", name, got, want)
+	}
 }
 
 // mockModel is a mock implementation of fantasy.LanguageModel for testing.
