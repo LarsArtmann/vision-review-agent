@@ -88,7 +88,7 @@ func TestScreenshotAnalyzer_DefaultPrompt(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // capture range variable
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			sa := NewScreenshotAnalyzer(testModel())
@@ -127,7 +127,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // capture range variable
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			sa := NewScreenshotAnalyzer(testModel())

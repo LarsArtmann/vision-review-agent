@@ -61,9 +61,13 @@ func NewAgent(
 	if len(temperature) > 0 {
 		temp = temperature[0]
 	}
-	return vision.NewAgent(vision.Config{
+	agent, err := vision.NewAgent(vision.Config{
 		SystemPrompt: systemPrompt,
 		Model:        model,
 		Temperature:  temp,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("create vision agent: %w", err)
+	}
+	return agent, nil
 }

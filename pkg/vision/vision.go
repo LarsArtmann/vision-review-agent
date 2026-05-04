@@ -72,7 +72,7 @@ type Agent struct {
 // VisionAgent is an alias for Agent for backwards compatibility.
 //
 // Deprecated: Use Agent instead.
-type VisionAgent = Agent
+type VisionAgent = Agent //nolint:revive
 
 // NewAgent creates a new Agent with the given configuration.
 // Returns an error if the configuration is invalid.
