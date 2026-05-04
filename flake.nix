@@ -45,5 +45,6 @@
             echo "  just lint    - run golangci-lint"
           '';
         };
+        formatter = pkgs.nixfmt;
       });
 }
