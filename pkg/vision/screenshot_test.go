@@ -2,7 +2,6 @@ package vision
 
 import (
 	"context"
-	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -128,10 +127,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
 			ctx := context.Background()
 
 			result, err := sa.AnalyzeScreenshot(ctx, "describe", tt.path)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
+			if AssertErr(t, tt.wantErr, nil, err) {
 				return
 			}
 			if err != nil {
@@ -154,23 +150,15 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 		wantErrType error
 	}{
 		{
-			name: "valid image",
-			img: &ImageSource{
-				Data:      []byte("test"),
-				MediaType: "image/png",
-				Filename:  "test.png",
-			},
+			name:     "valid image",
+			img:      ImageSrc(),
 			prompt:   "describe",
 			wantText: mockResponseText,
 			wantErr:  false,
 		},
 		{
-			name: "empty prompt",
-			img: &ImageSource{
-				Data:      []byte("test"),
-				MediaType: "image/png",
-				Filename:  "test.png",
-			},
+			name:        "empty prompt",
+			img:         ImageSrc(),
 			prompt:      "",
 			wantErr:     true,
 			wantErrType: ErrEmptyPrompt,
@@ -184,14 +172,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 			ctx := context.Background()
 
 			result, err := sa.AnalyzeScreenshotImage(ctx, tt.prompt, tt.img)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-					return
-				}
-				if tt.wantErrType != nil && !errors.Is(err, tt.wantErrType) {
-					t.Errorf("expected %v, got %v", tt.wantErrType, err)
-				}
+			if AssertErr(t, tt.wantErr, tt.wantErrType, err) {
 				return
 			}
 			if err != nil {
@@ -240,10 +221,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
 			ctx := context.Background()
 
 			result, err := sa.AnalyzeScreenshots(ctx, "compare", tt.paths...)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
+			if AssertErr(t, tt.wantErr, nil, err) {
 				return
 			}
 			if err != nil {
@@ -293,10 +271,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
 			}
 
 			result, err := sa.AnalyzeScreenshotImages(ctx, prompt, tt.images...)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
+			if AssertErr(t, tt.wantErr, nil, err) {
 				return
 			}
 			if err != nil {

@@ -111,10 +111,7 @@ func TestNewAgent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			agent, err := NewAgent(tt.config)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
+			if AssertErr(t, tt.wantErr, nil, err) {
 				return
 			}
 			if err != nil {
@@ -138,7 +135,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	img := &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"}
+	img := ImageSrc()
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
@@ -162,7 +159,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 
 	t.Run("multiple images", func(t *testing.T) {
 		t.Parallel()
-		img2 := &ImageSource{Data: []byte("test2"), MediaType: "image/png", Filename: "test2.png"}
+		img2 := ImageSrc("test2.png")
 		result, err := agent.Analyze(ctx, "compare", img, img2)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -175,25 +172,19 @@ func TestVisionAgent_Analyze(t *testing.T) {
 	t.Run("empty prompt", func(t *testing.T) {
 		t.Parallel()
 		_, err := agent.Analyze(ctx, "", img)
-		if !errors.Is(err, ErrEmptyPrompt) {
-			t.Errorf("expected ErrEmptyPrompt, got %v", err)
-		}
+		AssertError(t, ErrEmptyPrompt, err)
 	})
 
 	t.Run("no images", func(t *testing.T) {
 		t.Parallel()
 		_, err := agent.Analyze(ctx, "test", nil)
-		if !errors.Is(err, ErrNoImages) {
-			t.Errorf("expected ErrNoImages, got %v", err)
-		}
+		AssertError(t, ErrNoImages, err)
 	})
 
 	t.Run("empty images", func(t *testing.T) {
 		t.Parallel()
 		_, err := agent.Analyze(ctx, "test")
-		if !errors.Is(err, ErrNoImages) {
-			t.Errorf("expected ErrNoImages, got %v", err)
-		}
+		AssertError(t, ErrNoImages, err)
 	})
 }
 
@@ -204,7 +195,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	img := &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"}
+	img := ImageSrc()
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
@@ -241,17 +232,13 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 	t.Run("empty prompt", func(t *testing.T) {
 		t.Parallel()
 		_, err := agent.AnalyzeStream(ctx, "", nil, img)
-		if !errors.Is(err, ErrEmptyPrompt) {
-			t.Errorf("expected ErrEmptyPrompt, got %v", err)
-		}
+		AssertError(t, ErrEmptyPrompt, err)
 	})
 
 	t.Run("no images", func(t *testing.T) {
 		t.Parallel()
 		_, err := agent.AnalyzeStream(ctx, "test", nil, nil)
-		if !errors.Is(err, ErrNoImages) {
-			t.Errorf("expected ErrNoImages, got %v", err)
-		}
+		AssertError(t, ErrNoImages, err)
 	})
 }
 

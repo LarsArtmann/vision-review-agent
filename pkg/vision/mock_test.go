@@ -2,9 +2,53 @@ package vision
 
 import (
 	"context"
+	"errors"
+	"testing"
 
 	"charm.land/fantasy"
 )
+
+// ImageSrc returns a test ImageSource with default test values.
+// If filename is empty, "test.png" is used.
+func ImageSrc(filename ...string) *ImageSource {
+	name := "test.png"
+	if len(filename) > 0 {
+		name = filename[0]
+	}
+	return &ImageSource{
+		Data:      []byte("test"),
+		MediaType: "image/png",
+		Filename:  name,
+	}
+}
+
+// AssertErr is a helper for testing error cases in table-driven tests.
+// It handles the common pattern of checking wantErr and optional wantErrType.
+// Returns true if an expected error was found and test should return early.
+func AssertErr(t *testing.T, wantErr bool, wantErrType, err error) bool {
+	t.Helper()
+	if wantErr {
+		if err == nil {
+			t.Error("expected error, got nil")
+		} else if wantErrType != nil && !errors.Is(err, wantErrType) {
+			t.Errorf("expected %v, got %v", wantErrType, err)
+		}
+		return true
+	}
+	return false
+}
+
+// AssertError is a helper for checking error types in table-driven tests.
+// It returns true if the error matches wantErrType via errors.Is.
+// Use this when you need to assert a specific error without the wantErr boolean.
+func AssertError(t *testing.T, wantErrType, err error) bool {
+	t.Helper()
+	if !errors.Is(err, wantErrType) {
+		t.Errorf("expected %v, got %v", wantErrType, err)
+		return true
+	}
+	return false
+}
 
 // mockModel is a mock implementation of fantasy.LanguageModel for testing.
 type mockModel struct{}

@@ -21,6 +21,7 @@ import (
 	"charm.land/fantasy"
 	"charm.land/fantasy/providers/openai"
 	"charm.land/fantasy/providers/openrouter"
+	"github.com/larsartmann/vision-review-agent/internal/cli"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
@@ -28,35 +29,20 @@ const version = "0.1.0"
 
 func main() {
 	cfg, err := parseFlags()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "")
 
 	ctx := context.Background()
 	provider, err := createProvider(cfg.providerName)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "")
 
 	model, err := provider.LanguageModel(ctx, cfg.modelID)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error getting model:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "Error getting model")
 
 	agent, err := vision.NewAgent(buildConfig(model, cfg))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating agent:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "Error creating agent")
 
 	images, err := loadImages()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "")
 
 	runAnalysis(ctx, agent, cfg, images)
 }

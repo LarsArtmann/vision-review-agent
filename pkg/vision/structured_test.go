@@ -2,7 +2,6 @@ package vision
 
 import (
 	"context"
-	"errors"
 	"testing"
 )
 
@@ -18,7 +17,7 @@ func TestAnalyzeStructured(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	img := &ImageSource{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"}
+	img := ImageSrc()
 
 	tests := []struct {
 		name        string
@@ -57,14 +56,7 @@ func TestAnalyzeStructured(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			result, err := AnalyzeStructured[testReview](ctx, agent, tt.prompt, tt.images...)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-					return
-				}
-				if tt.wantErrType != nil && !errors.Is(err, tt.wantErrType) {
-					t.Errorf("expected %v, got %v", tt.wantErrType, err)
-				}
+			if AssertErr(t, tt.wantErr, tt.wantErrType, err) {
 				return
 			}
 			if err != nil {

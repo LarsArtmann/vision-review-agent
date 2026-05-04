@@ -35,10 +35,7 @@ func TestLoadImageFromFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			img, err := LoadImageFromFile(tt.path)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
+			if AssertErr(t, tt.wantErr, nil, err) {
 				return
 			}
 			if err != nil {
@@ -129,10 +126,7 @@ func TestLoadImageFromReader(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			img, err := LoadImageFromReader(tt.reader, tt.mediaType, tt.filename)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
+			if AssertErr(t, tt.wantErr, nil, err) {
 				return
 			}
 			if err != nil {

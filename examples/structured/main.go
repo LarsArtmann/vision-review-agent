@@ -15,6 +15,7 @@ import (
 	"os"
 
 	"charm.land/fantasy/providers/openai"
+	"github.com/larsartmann/vision-review-agent/internal/cli"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
@@ -35,45 +36,26 @@ type Issue struct {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "Usage: go run examples/structured/main.go <screenshot.png>")
-		os.Exit(1)
-	}
+	cli.RequireArgc(2)
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		fmt.Fprintln(os.Stderr, "Please set OPENAI_API_KEY")
-		os.Exit(1)
-	}
+	apiKey := cli.RequireEnvVar("OPENAI_API_KEY")
 
 	provider, err := openai.New(openai.WithAPIKey(apiKey))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating provider:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "Error creating provider")
 
 	ctx := context.Background()
 	model, err := provider.LanguageModel(ctx, "gpt-4o")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error getting model:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "Error getting model")
 
 	agent, err := vision.NewAgent(vision.Config{
 		SystemPrompt: "You are a meticulous UI/UX reviewer. Analyze designs thoroughly.",
 		Model:        model,
 		Temperature:  0.2,
 	})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating agent:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "Error creating agent")
 
 	img, err := vision.LoadImageFromFile(os.Args[1])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error loading image:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "Error loading image")
 
 	fmt.Println("Analyzing screenshot with structured output...")
 	result, err := vision.AnalyzeStructured[UIReview](
@@ -82,10 +64,7 @@ func main() {
 		"Review this UI design comprehensively.",
 		img,
 	)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
-	}
+	cli.ExitOnError(err, "Error during analysis")
 
 	review := result.Object
 
