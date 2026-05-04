@@ -12,17 +12,15 @@ import (
 )
 
 func TestConfigValidate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		config  Config
 		wantErr error
 	}{
 		{
-			name: "valid config",
-			config: Config{
-				Model:       &mockModel{},
-				Temperature: 0.5,
-			},
+			name:    "valid config",
+			config:  testConfig(0.5),
 			wantErr: nil,
 		},
 		{
@@ -31,48 +29,37 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: ErrNoModel,
 		},
 		{
-			name: "negative temperature",
-			config: Config{
-				Model:       &mockModel{},
-				Temperature: -0.1,
-			},
+			name:    "negative temperature",
+			config:  testConfig(-0.1),
 			wantErr: ErrInvalidTemperature,
 		},
 		{
-			name: "temperature too high",
-			config: Config{
-				Model:       &mockModel{},
-				Temperature: 2.1,
-			},
+			name:    "temperature too high",
+			config:  testConfig(2.1),
 			wantErr: ErrInvalidTemperature,
 		},
 		{
 			name: "negative max tokens",
 			config: Config{
-				Model:           &mockModel{},
+				Model:           testModel(),
 				MaxOutputTokens: -1,
 			},
 			wantErr: ErrInvalidMaxTokens,
 		},
 		{
-			name: "boundary temperature 0",
-			config: Config{
-				Model:       &mockModel{},
-				Temperature: 0,
-			},
+			name:    "boundary temperature 0",
+			config:  testConfig(0),
 			wantErr: nil,
 		},
 		{
-			name: "boundary temperature 2",
-			config: Config{
-				Model:       &mockModel{},
-				Temperature: 2.0,
-			},
+			name:    "boundary temperature 2",
+			config:  testConfig(2.0),
 			wantErr: nil,
 		},
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := tt.config.Validate()
@@ -84,6 +71,7 @@ func TestConfigValidate(t *testing.T) {
 }
 
 func TestNewAgent(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		config  Config
@@ -92,7 +80,7 @@ func TestNewAgent(t *testing.T) {
 		{
 			name: "valid config",
 			config: Config{
-				Model:           &mockModel{},
+				Model:           testModel(),
 				SystemPrompt:    "test prompt",
 				MaxOutputTokens: 100,
 				Temperature:     0.5,
@@ -108,6 +96,7 @@ func TestNewAgent(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			agent, err := NewAgent(tt.config)
@@ -120,6 +109,7 @@ func TestNewAgent(t *testing.T) {
 			}
 			if agent == nil {
 				t.Error("expected agent, got nil")
+				return
 			}
 			if agent.config.Model == nil {
 				t.Error("expected model to be set")
@@ -129,7 +119,7 @@ func TestNewAgent(t *testing.T) {
 }
 
 func TestVisionAgent_Analyze(t *testing.T) {
-	agent, err := NewAgent(Config{Model: &mockModel{}})
+	agent, err := NewAgent(Config{Model: testModel()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +175,7 @@ func TestVisionAgent_Analyze(t *testing.T) {
 }
 
 func TestVisionAgent_AnalyzeStream(t *testing.T) {
-	agent, err := NewAgent(Config{Model: &mockModel{}})
+	agent, err := NewAgent(Config{Model: testModel()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,6 +225,7 @@ func TestVisionAgent_AnalyzeStream(t *testing.T) {
 }
 
 func TestAnalyzeResult_String(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		result    AnalyzeResult
@@ -256,6 +247,7 @@ func TestAnalyzeResult_String(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			s := tt.result.String()
@@ -270,6 +262,7 @@ func TestAnalyzeResult_String(t *testing.T) {
 }
 
 func TestWithTimeout(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		timeout      time.Duration
@@ -288,10 +281,11 @@ func TestWithTimeout(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			agent, err := NewAgent(Config{
-				Model:          &mockModel{},
+				Model:          testModel(),
 				RequestTimeout: tt.timeout,
 			})
 			if err != nil {

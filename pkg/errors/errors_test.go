@@ -4,10 +4,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestErrors(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		err     error
@@ -42,14 +43,17 @@ func TestErrors(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Error(t, tt.err)
-			assert.EqualError(t, tt.err, tt.wantMsg)
+			t.Parallel()
+			require.Error(t, tt.err)
+			require.EqualError(t, tt.err, tt.wantMsg)
 		})
 	}
 }
 
 func TestErrorsIs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		err    error
@@ -67,8 +71,10 @@ func TestErrorsIs(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, errors.Is(tt.err, tt.target))
+			t.Parallel()
+			require.Equal(t, tt.want, errors.Is(tt.err, tt.target))
 		})
 	}
 }

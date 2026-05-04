@@ -6,6 +6,7 @@ import (
 )
 
 func TestDetectImageFormat(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		data []byte
@@ -35,6 +36,7 @@ func TestDetectImageFormat(t *testing.T) {
 }
 
 func TestIsValidImage(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		data []byte

@@ -70,6 +70,7 @@ type Agent struct {
 }
 
 // VisionAgent is an alias for Agent for backwards compatibility.
+//
 // Deprecated: Use Agent instead.
 type VisionAgent = Agent
 
@@ -139,9 +140,13 @@ func (va *Agent) Analyze(
 
 	files := toFileParts(validImages)
 
+	maxTokens := va.config.MaxOutputTokens
+
 	call := fantasy.AgentCall{
-		Prompt: prompt,
-		Files:  files,
+		Prompt:          prompt,
+		Files:           files,
+		MaxOutputTokens: &maxTokens,
+		Temperature:     &va.config.Temperature,
 	}
 
 	result, err := va.agent.Generate(ctx, call)
@@ -179,9 +184,13 @@ func (va *Agent) AnalyzeStream(
 
 	var fullText string
 
+	maxTokens := va.config.MaxOutputTokens
+
 	streamCall := fantasy.AgentStreamCall{
-		Prompt: prompt,
-		Files:  files,
+		Prompt:          prompt,
+		Files:           files,
+		MaxOutputTokens: &maxTokens,
+		Temperature:     &va.config.Temperature,
 		OnTextDelta: func(_, text string) error {
 			fullText += text
 			if onText != nil {
@@ -228,9 +237,10 @@ func toFileParts(images []*ImageSource) []fantasy.FilePart {
 	files := make([]fantasy.FilePart, len(images))
 	for i, img := range images {
 		files[i] = fantasy.FilePart{
-			Data:      img.Data,
-			MediaType: img.MediaType,
-			Filename:  img.Filename,
+			Data:            img.Data,
+			MediaType:       img.MediaType,
+			Filename:        img.Filename,
+			ProviderOptions: nil,
 		}
 	}
 	return files

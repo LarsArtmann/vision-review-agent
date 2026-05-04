@@ -47,11 +47,11 @@ func main() {
 	model, err := provider.LanguageModel(ctx, "gpt-4o")
 	cli.ExitOnError(err, "Error getting model")
 
-	agent, err := vision.NewAgent(vision.Config{
-		SystemPrompt: "You are a meticulous UI/UX reviewer. Analyze designs thoroughly.",
-		Model:        model,
-		Temperature:  0.2,
-	})
+	agent, err := cli.NewAgent(
+		model,
+		"You are a meticulous UI/UX reviewer. Analyze designs thoroughly.",
+		0.2,
+	)
 	cli.ExitOnError(err, "Error creating agent")
 
 	img, err := vision.LoadImageFromFile(os.Args[1])

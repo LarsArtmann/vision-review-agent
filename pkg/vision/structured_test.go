@@ -11,7 +11,8 @@ type testReview struct {
 }
 
 func TestAnalyzeStructured(t *testing.T) {
-	agent, err := NewAgent(Config{Model: &mockModel{}})
+	t.Parallel()
+	agent, err := NewAgent(Config{Model: testModel()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,6 +54,7 @@ func TestAnalyzeStructured(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			result, err := AnalyzeStructured[testReview](ctx, agent, tt.prompt, tt.images...)

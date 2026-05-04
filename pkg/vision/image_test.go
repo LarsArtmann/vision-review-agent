@@ -8,6 +8,7 @@ import (
 )
 
 func TestLoadImageFromFile(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.png")
 	if err := os.WriteFile(tmpFile, []byte("fake png data"), 0o644); err != nil {
@@ -32,6 +33,7 @@ func TestLoadImageFromFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			img, err := LoadImageFromFile(tt.path)
@@ -57,6 +59,7 @@ func TestLoadImageFromFile(t *testing.T) {
 }
 
 func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 
 	tests := []struct {
@@ -72,6 +75,7 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.ext, func(t *testing.T) {
 			t.Parallel()
 			path := filepath.Join(tmpDir, "test"+tt.ext)
@@ -88,6 +92,7 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 }
 
 func TestLoadImageFromReader(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		reader    *strings.Reader
@@ -121,6 +126,7 @@ func TestLoadImageFromReader(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			img, err := LoadImageFromReader(tt.reader, tt.mediaType, tt.filename)

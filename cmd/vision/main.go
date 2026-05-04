@@ -59,7 +59,7 @@ type config struct {
 	timeout      int64
 }
 
-func parseFlags() (*config, error) {
+func parseFlags() (*config, error) { //nolint:unparam
 	var (
 		providerName = flag.String("provider", "openai", "Provider: openai, openrouter")
 		modelID      = flag.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")

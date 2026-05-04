@@ -4,6 +4,9 @@ package cli
 import (
 	"fmt"
 	"os"
+
+	"charm.land/fantasy"
+	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
 // ExitOnError prints the error message and exits with code 1 if err is not nil.
@@ -45,4 +48,22 @@ func PrintResult(text string, totalTokens int64) {
 	fmt.Println("\n--- Analysis ---")
 	fmt.Println(text)
 	fmt.Printf("\nTokens used: %d\n", totalTokens)
+}
+
+// NewAgent creates a new vision agent with the given model and system prompt.
+// Temperature defaults to 0.3 if not specified.
+func NewAgent(
+	model fantasy.LanguageModel,
+	systemPrompt string,
+	temperature ...float64,
+) (*vision.Agent, error) {
+	temp := 0.3
+	if len(temperature) > 0 {
+		temp = temperature[0]
+	}
+	return vision.NewAgent(vision.Config{
+		SystemPrompt: systemPrompt,
+		Model:        model,
+		Temperature:  temp,
+	})
 }

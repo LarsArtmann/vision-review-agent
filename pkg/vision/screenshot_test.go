@@ -11,7 +11,8 @@ import (
 const mockResponseText = "mock response"
 
 func TestScreenshotAnalyzer_Builder(t *testing.T) {
-	model := &mockModel{}
+	t.Parallel()
+	model := testModel()
 
 	tests := []struct {
 		name        string
@@ -75,6 +76,7 @@ func TestScreenshotAnalyzer_Builder(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_DefaultPrompt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		want string
@@ -86,8 +88,10 @@ func TestScreenshotAnalyzer_DefaultPrompt(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
-			sa := NewScreenshotAnalyzer(&mockModel{})
+			t.Parallel()
+			sa := NewScreenshotAnalyzer(testModel())
 			if sa.config.SystemPrompt != tt.want {
 				t.Errorf("expected %q, got %q", tt.want, sa.config.SystemPrompt)
 			}
@@ -96,6 +100,7 @@ func TestScreenshotAnalyzer_DefaultPrompt(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	screenshotPath := filepath.Join(tmpDir, "screenshot.png")
 	if err := os.WriteFile(screenshotPath, []byte("fake"), 0o644); err != nil {
@@ -122,8 +127,10 @@ func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
-			sa := NewScreenshotAnalyzer(&mockModel{})
+			t.Parallel()
+			sa := NewScreenshotAnalyzer(testModel())
 			ctx := context.Background()
 
 			result, err := sa.AnalyzeScreenshot(ctx, "describe", tt.path)
@@ -139,6 +146,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		img         *ImageSource
@@ -166,7 +174,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			sa := NewScreenshotAnalyzer(&mockModel{})
+			sa := NewScreenshotAnalyzer(testModel())
 			ctx := context.Background()
 
 			result, err := sa.AnalyzeScreenshotImage(ctx, tt.prompt, tt.img)
@@ -182,6 +190,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	path1 := filepath.Join(tmpDir, "1.png")
 	path2 := filepath.Join(tmpDir, "2.png")
@@ -213,7 +222,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			sa := NewScreenshotAnalyzer(&mockModel{})
+			sa := NewScreenshotAnalyzer(testModel())
 			ctx := context.Background()
 
 			result, err := sa.AnalyzeScreenshots(ctx, "compare", tt.paths...)
@@ -229,6 +238,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
 }
 
 func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		images   []*ImageSource
@@ -256,7 +266,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			sa := NewScreenshotAnalyzer(&mockModel{})
+			sa := NewScreenshotAnalyzer(testModel())
 			ctx := context.Background()
 
 			prompt := "compare"

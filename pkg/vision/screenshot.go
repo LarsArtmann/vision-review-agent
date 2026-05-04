@@ -2,7 +2,6 @@ package vision
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"charm.land/fantasy"
@@ -76,17 +75,13 @@ func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
 	return NewAgent(sa.config)
 }
 
-// analyzeWithAgent calls the agent's Analyze method with the given prompt and images.
-func (sa *ScreenshotAnalyzer) analyzeWithAgent(
+// AnalyzeScreenshotImage analyzes a single screenshot ImageSource with the given prompt.
+func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImage(
 	ctx context.Context,
 	prompt string,
-	images ...*ImageSource,
+	img *ImageSource,
 ) (*AnalyzeResult, error) {
-	agent, err := sa.agent()
-	if err != nil {
-		return nil, err
-	}
-	return agent.Analyze(ctx, prompt, images...)
+	return sa.AnalyzeScreenshotImages(ctx, prompt, img)
 }
 
 // AnalyzeScreenshot analyzes a single screenshot with the given prompt.
@@ -102,13 +97,17 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshot(
 	return sa.AnalyzeScreenshotImage(ctx, prompt, img)
 }
 
-// AnalyzeScreenshotImage analyzes a single screenshot ImageSource with the given prompt.
-func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImage(
+// AnalyzeScreenshotImages analyzes multiple ImageSources with the given prompt.
+func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
 	ctx context.Context,
 	prompt string,
-	img *ImageSource,
+	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	return sa.analyzeWithAgent(ctx, prompt, img)
+	agent, err := sa.agent()
+	if err != nil {
+		return nil, err
+	}
+	return agent.Analyze(ctx, prompt, images...)
 }
 
 // AnalyzeScreenshots analyzes multiple screenshots with the given prompt.
@@ -121,18 +120,9 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshots(
 	for i, path := range screenshotPaths {
 		img, err := LoadImageFromFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("load screenshot %q: %w", path, err)
+			return nil, err
 		}
 		images[i] = img
 	}
 	return sa.AnalyzeScreenshotImages(ctx, prompt, images...)
-}
-
-// AnalyzeScreenshotImages analyzes multiple ImageSources with the given prompt.
-func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
-	ctx context.Context,
-	prompt string,
-	images ...*ImageSource,
-) (*AnalyzeResult, error) {
-	return sa.analyzeWithAgent(ctx, prompt, images...)
 }

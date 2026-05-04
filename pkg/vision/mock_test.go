@@ -22,6 +22,19 @@ func ImageSrc(filename ...string) *ImageSource {
 	}
 }
 
+// testModel returns a singleton mock model for testing.
+func testModel() *mockModel {
+	return &mockModel{}
+}
+
+// testConfig returns a Config with the test model and temperature set.
+func testConfig(temp float64) Config {
+	return Config{
+		Model:       testModel(),
+		Temperature: temp,
+	}
+}
+
 // AssertErr is a helper for testing error cases in table-driven tests.
 // It handles the common pattern of checking wantErr and optional wantErrType.
 // Returns true if an expected error was found and test should return early.
