@@ -18,7 +18,8 @@ import (
 //
 //	result, err := analyzer.AnalyzeScreenshot(ctx, "Describe this UI", "screenshot.png")
 type ScreenshotAnalyzer struct {
-	config Config
+	config      Config
+	cachedAgent *Agent
 }
 
 // DefaultScreenshotPrompt is the default system prompt for UI/screenshot analysis.
@@ -70,9 +71,17 @@ func (sa *ScreenshotAnalyzer) WithRequestTimeout(timeout time.Duration) *Screens
 	return sa
 }
 
-// agent lazily creates the underlying Agent with current config.
+// agent returns the underlying cached Agent, initializing it on first call.
 func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
-	return NewAgent(sa.config)
+	if sa.cachedAgent != nil {
+		return sa.cachedAgent, nil
+	}
+	agent, err := NewAgent(sa.config)
+	if err != nil {
+		return nil, err
+	}
+	sa.cachedAgent = agent
+	return agent, nil
 }
 
 // AnalyzeScreenshotImage analyzes a single screenshot ImageSource with the given prompt.
