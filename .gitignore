@@ -39,3 +39,5 @@ Copy/paste detection report
 
 # Nix build output
 /result
+# Sensitive files
+*.db
