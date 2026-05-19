@@ -18,7 +18,7 @@
             pname = "vision-review-agent";
             inherit version;
             src = ./.;
-            vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            vendorHash = "sha256-RdPdjO8wAcJ91bFbX7PZaZzKCLdhc7Av08YOyDgJ5bg=";
             meta = with pkgs.lib; {
               description = "AI-powered screenshot and image analysis SDK";
               license = licenses.mit;

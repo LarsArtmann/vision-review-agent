@@ -1,9 +1,9 @@
 module github.com/larsartmann/vision-review-agent
 
-go 1.26.3
+go 1.26.2
 
 require (
-	charm.land/fantasy v0.25.0
+	charm.land/fantasy v0.23.0
 	github.com/stretchr/testify v1.11.1
 )
 
@@ -46,9 +46,9 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.15 // indirect
 	github.com/googleapis/gax-go/v2 v2.22.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/kaptinlin/go-i18n v0.4.9 // indirect
-	github.com/kaptinlin/jsonpointer v0.4.24 // indirect
-	github.com/kaptinlin/jsonschema v0.7.14 // indirect
+	github.com/kaptinlin/go-i18n v0.4.8 // indirect
+	github.com/kaptinlin/jsonpointer v0.4.23 // indirect
+	github.com/kaptinlin/jsonschema v0.7.13 // indirect
 	github.com/kaptinlin/messageformat-go v0.6.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
