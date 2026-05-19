@@ -10,32 +10,31 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-
-        # To enable package builds, run:
-        #   nix build .#default
-        # If vendorHash is wrong, copy the correct hash from the error output.
-        # vision-review-agent = pkgs.buildGoModule {
-        #   pname = "vision-review-agent";
-        #   version = "0.1.0";
-        #   src = ./.;
-        #   vendorHash = "<run nix build to get hash>";
-        #   meta = with pkgs.lib; {
-        #     description = "AI-powered screenshot and image analysis SDK";
-        #     license = licenses.mit;
-        #   };
-        # };
+        version = self.rev or self.dirtyRev or "dev";
       in
       {
-        # packages.default = vision-review-agent;
+        packages.default = pkgs.buildGoModule {
+          pname = "vision-review-agent";
+          inherit version;
+          src = ./.;
+          vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+          meta = with pkgs.lib; {
+            description = "AI-powered screenshot and image analysis SDK";
+            license = licenses.mit;
+            mainProgram = "vision-review-agent";
+          };
+        };
 
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
+          packages = with pkgs; [
             go_1_26
             golangci-lint
             gopls
             gotools
             just
           ];
+
+          GOWORK = "off";
 
           shellHook = ''
             echo "Vision Review Agent dev shell"
@@ -45,6 +44,9 @@
             echo "  just lint    - run golangci-lint"
           '';
         };
+
+        checks.build = self.packages.${system}.default;
+
         formatter = pkgs.nixfmt;
       });
 }
