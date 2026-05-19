@@ -8,6 +8,14 @@ import (
 	"path/filepath"
 )
 
+// Media type constants for supported image formats.
+const (
+	MediaTypePNG  = "image/png"
+	MediaTypeJPEG = "image/jpeg"
+	MediaTypeGIF  = "image/gif"
+	MediaTypeWebP = "image/webp"
+)
+
 // ImageSource represents the source of an image for analysis.
 type ImageSource struct {
 	Data      []byte
@@ -25,7 +33,7 @@ func LoadImageFromFile(path string) (*ImageSource, error) {
 
 	mediaType := mime.TypeByExtension(filepath.Ext(path))
 	if mediaType == "" {
-		mediaType = "image/png"
+		mediaType = MediaTypePNG
 	}
 
 	return &ImageSource{

@@ -26,7 +26,7 @@ func TestLoadImageFromFile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "missing file",
+			name:    testNameMissingFile,
 			path:    filepath.Join(tmpDir, "missing.png"),
 			wantErr: true,
 		},
@@ -48,7 +48,7 @@ func TestLoadImageFromFile(t *testing.T) {
 				t.Error("expected image, got nil")
 				return
 			}
-			if img.MediaType != "image/png" {
+			if img.MediaType != MediaTypePNG {
 				t.Errorf("expected media type image/png, got %s", img.MediaType)
 			}
 			if string(img.Data) != "fake png data" {
@@ -66,12 +66,12 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 		ext      string
 		wantType string
 	}{
-		{".png", "image/png"},
-		{".jpg", "image/jpeg"},
-		{".jpeg", "image/jpeg"},
-		{".gif", "image/gif"},
-		{".webp", "image/webp"},
-		{".unknown", "image/png"}, // fallback
+		{".png", MediaTypePNG},
+		{".jpg", MediaTypeJPEG},
+		{".jpeg", MediaTypeJPEG},
+		{".gif", MediaTypeGIF},
+		{".webp", MediaTypeWebP},
+		{".unknown", MediaTypePNG}, // fallback
 	}
 
 	for _, tt := range tests {

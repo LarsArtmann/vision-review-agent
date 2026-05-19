@@ -8,6 +8,13 @@ import (
 	"charm.land/fantasy"
 )
 
+// Test string constants.
+const (
+	testNameMissingFile = "missing file"
+	testLayout          = "test layout"
+	testEmptyPrompt     = "empty prompt"
+)
+
 // ImageSrc returns a test ImageSource with default test values.
 // If filename is empty, "test.png" is used.
 func ImageSrc(filename ...string) *ImageSource {
@@ -17,7 +24,7 @@ func ImageSrc(filename ...string) *ImageSource {
 	}
 	return &ImageSource{
 		Data:      []byte("test"),
-		MediaType: "image/png",
+		MediaType: MediaTypePNG,
 		Filename:  name,
 	}
 }
@@ -122,9 +129,9 @@ func (m *mockModel) GenerateObject(
 ) (*fantasy.ObjectResponse, error) {
 	return &fantasy.ObjectResponse{
 		Object: map[string]any{
-			"layout": "test layout",
+			"layout": testLayout,
 		},
-		RawText:      `{"layout": "test layout"}`,
+		RawText:      `{"layout": "` + testLayout + `"}`,
 		Usage:        fantasy.Usage{TotalTokens: 10},
 		FinishReason: fantasy.FinishReasonStop,
 	}, nil
@@ -138,7 +145,7 @@ func (m *mockModel) StreamObject(
 		_ = yield(fantasy.ObjectStreamPart{
 			Type: fantasy.ObjectStreamPartTypeObject,
 			Object: map[string]any{
-				"layout": "test layout",
+				"layout": testLayout,
 			},
 		})
 		_ = yield(fantasy.ObjectStreamPart{

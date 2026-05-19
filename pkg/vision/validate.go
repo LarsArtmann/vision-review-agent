@@ -5,6 +5,15 @@ import (
 	"errors"
 )
 
+// Image format constants for magic byte signatures.
+const (
+	formatPNG  = "png"
+	formatJPG  = "jpg"
+	formatGIF  = "gif"
+	formatWebP = "webp"
+	formatBMP  = "bmp"
+)
+
 // imageSignatures returns the magic byte signatures for supported image formats.
 func imageSignatures() []struct {
 	format    string
@@ -14,11 +23,11 @@ func imageSignatures() []struct {
 		format    string
 		signature []byte
 	}{
-		{"png", []byte{0x89, 0x50, 0x4E, 0x47}},
-		{"jpg", []byte{0xFF, 0xD8, 0xFF}},
-		{"gif", []byte{0x47, 0x49, 0x46}},
-		{"webp", []byte{0x52, 0x49, 0x46, 0x46}}, // RIFF header, WebP uses this
-		{"bmp", []byte{0x42, 0x4D}},
+		{formatPNG, []byte{0x89, 0x50, 0x4E, 0x47}},
+		{formatJPG, []byte{0xFF, 0xD8, 0xFF}},
+		{formatGIF, []byte{0x47, 0x49, 0x46}},
+		{formatWebP, []byte{0x52, 0x49, 0x46, 0x46}}, // RIFF header, WebP uses this
+		{formatBMP, []byte{0x42, 0x4D}},
 	}
 }
 

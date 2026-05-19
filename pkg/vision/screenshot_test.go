@@ -120,7 +120,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshot(t *testing.T) {
 			wantText: mockResponseText,
 		},
 		{
-			name:    "missing file",
+			name:    testNameMissingFile,
 			path:    "/nonexistent/file.png",
 			wantErr: true,
 		},
@@ -163,7 +163,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImage(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:        "empty prompt",
+			name:        testEmptyPrompt,
 			img:         ImageSrc(),
 			prompt:      "",
 			wantErr:     true,
@@ -213,7 +213,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshots(t *testing.T) {
 			wantText: mockResponseText,
 		},
 		{
-			name:    "missing file",
+			name:    testNameMissingFile,
 			paths:   []string{path1, "/nonexistent/2.png"},
 			wantErr: true,
 		},
@@ -248,8 +248,8 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
 		{
 			name: "multiple images",
 			images: []*ImageSource{
-				{Data: []byte("test1"), MediaType: "image/png", Filename: "test1.png"},
-				{Data: []byte("test2"), MediaType: "image/png", Filename: "test2.png"},
+				{Data: []byte("test1"), MediaType: MediaTypePNG, Filename: "test1.png"},
+				{Data: []byte("test2"), MediaType: MediaTypePNG, Filename: "test2.png"},
 			},
 			wantText: mockResponseText,
 			wantErr:  false,
@@ -257,7 +257,7 @@ func TestScreenshotAnalyzer_AnalyzeScreenshotImages(t *testing.T) {
 		{
 			name: "empty prompt",
 			images: []*ImageSource{
-				{Data: []byte("test"), MediaType: "image/png", Filename: "test.png"},
+				{Data: []byte("test"), MediaType: MediaTypePNG, Filename: "test.png"},
 			},
 			wantErr: true,
 		},
