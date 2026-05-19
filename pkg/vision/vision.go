@@ -63,6 +63,25 @@ func (c Config) Validate() error {
 	return nil
 }
 
+// Analyzer is the interface for AI agents capable of analyzing images/screenshots.
+// Consumers can use this interface to mock the agent in their own tests.
+type Analyzer interface {
+	Analyze(
+		ctx context.Context,
+		prompt string,
+		images ...*ImageSource,
+	) (*AnalyzeResult, error)
+	AnalyzeStream(
+		ctx context.Context,
+		prompt string,
+		onText func(text string) error,
+		images ...*ImageSource,
+	) (*AnalyzeResult, error)
+}
+
+// Compile-time check: Agent implements Analyzer.
+var _ Analyzer = (*Agent)(nil)
+
 // Agent is an AI agent capable of analyzing images/screenshots.
 type Agent struct {
 	config Config
