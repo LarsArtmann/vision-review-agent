@@ -64,7 +64,7 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 
 	tests := []struct {
 		ext      string
-		wantType string
+		wantType MediaType
 	}{
 		{".png", MediaTypePNG},
 		{".jpg", MediaTypeJPEG},
@@ -86,7 +86,9 @@ func TestLoadImageFromFile_MediaTypeDetection(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			AssertEq(t, img.MediaType, tt.wantType)
+			if img.MediaType != tt.wantType {
+				t.Errorf("expected media type %q, got %q", tt.wantType, img.MediaType)
+			}
 		})
 	}
 }
@@ -96,30 +98,30 @@ func TestLoadImageFromReader(t *testing.T) {
 	tests := []struct {
 		name      string
 		reader    *strings.Reader
-		mediaType string
+		mediaType MediaType
 		filename  string
 		wantData  string
-		wantType  string
+		wantType  MediaType
 		wantName  string
 		wantErr   bool
 	}{
 		{
 			name:      "jpeg image",
 			reader:    strings.NewReader("test image data"),
-			mediaType: "image/jpeg",
+			mediaType: MediaTypeJPEG,
 			filename:  "photo.jpg",
 			wantData:  "test image data",
-			wantType:  "image/jpeg",
+			wantType:  MediaTypeJPEG,
 			wantName:  "photo.jpg",
 			wantErr:   false,
 		},
 		{
 			name:      "png image",
 			reader:    strings.NewReader("png data"),
-			mediaType: "image/png",
+			mediaType: MediaTypePNG,
 			filename:  "screenshot.png",
 			wantData:  "png data",
-			wantType:  "image/png",
+			wantType:  MediaTypePNG,
 			wantName:  "screenshot.png",
 			wantErr:   false,
 		},
@@ -142,7 +144,9 @@ func TestLoadImageFromReader(t *testing.T) {
 			if string(img.Data) != tt.wantData {
 				t.Errorf("expected data %q, got %q", tt.wantData, string(img.Data))
 			}
-			AssertEq(t, img.MediaType, tt.wantType)
+			if img.MediaType != tt.wantType {
+				t.Errorf("expected media type %q, got %q", tt.wantType, img.MediaType)
+			}
 			if img.Filename != tt.wantName {
 				t.Errorf("expected filename %q, got %q", tt.wantName, img.Filename)
 			}

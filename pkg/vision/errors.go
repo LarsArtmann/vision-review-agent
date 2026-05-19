@@ -23,4 +23,7 @@ var (
 
 	// ErrInvalidImage is returned when the data does not match any known image format.
 	ErrInvalidImage = apperrors.ErrInvalidImage
+
+	// ErrEmptyImageData is returned when image data is empty.
+	ErrEmptyImageData = apperrors.ErrEmptyImageData
 )

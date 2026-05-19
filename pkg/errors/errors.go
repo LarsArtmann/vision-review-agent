@@ -22,4 +22,7 @@ var (
 
 	// ErrInvalidImage is returned when the data does not match any known image format.
 	ErrInvalidImage = stderrors.New("vision agent: data does not appear to be a valid image")
+
+	// ErrEmptyImageData is returned when image data is empty.
+	ErrEmptyImageData = stderrors.New("vision agent: image data is empty")
 )

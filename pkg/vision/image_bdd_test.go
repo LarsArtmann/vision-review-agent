@@ -34,7 +34,7 @@ var _ = ginkgo.Describe("Image Loading", func() {
 	ginkgo.It("should detect correct media types by extension", func() {
 		tmpDir := ginkgo.GinkgoT().TempDir()
 
-		testCases := map[string]string{
+		testCases := map[string]MediaType{
 			".png":  MediaTypePNG,
 			".jpg":  MediaTypeJPEG,
 			".jpeg": MediaTypeJPEG,

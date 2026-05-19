@@ -238,7 +238,7 @@ func toFileParts(images []*ImageSource) []fantasy.FilePart {
 	for i, img := range images {
 		files[i] = fantasy.FilePart{
 			Data:            img.Data,
-			MediaType:       img.MediaType,
+			MediaType:       string(img.MediaType),
 			Filename:        img.Filename,
 			ProviderOptions: nil,
 		}
