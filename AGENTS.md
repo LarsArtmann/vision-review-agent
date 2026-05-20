@@ -1,6 +1,6 @@
 # Vision Review Agent
 
-**Version:** 0.1.0 | **Updated:** April 27, 2026
+**Version:** 0.1.0 | **Updated:** May 20, 2026
 
 ## Overview
 
@@ -31,7 +31,9 @@ examples/                Working examples for each provider
 - **Context cancellation** — `withTimeout` returns `(ctx, cancel)`; callers must `defer cancel()`
 - **Validation at boundaries** — `Config.Validate()` at construction, input validation at method entry
 - **Centralized errors** — Domain errors live in `pkg/errors/` and are re-exported from `pkg/vision/` for backwards compatibility
-- **Table-driven tests** — All tests use table-driven pattern for maintainability
+- **Table-driven tests** — Pure function tests use table-driven pattern for maintainability
+- **BDD tests** — User-facing behavior tests use Ginkgo + Gomega for readability
+- **Strong types** — `MediaType` is a defined string type; `ImageSource` validates at construction
 
 ## Testing
 
@@ -44,11 +46,25 @@ just fmt         # Run gofmt
 just lint        # Run golangci-lint
 ```
 
+### Test Organization
+
+- `*_test.go` — Table-driven tests for pure functions (config validation, image format detection)
+- `*_bdd_test.go` — Ginkgo BDD specs for user-facing behavior (agent analysis, streaming, screenshot analyzer)
+- `agent_suite_test.go` — Ginkgo test runner (`TestGinkgo`)
+- `mock_test.go` — Shared test helpers and mock model
+
 ## Dependencies
 
 - `charm.land/fantasy` — Core AI agent framework
 - `charm.land/fantasy/providers/openai` — OpenAI provider
 - `charm.land/fantasy/providers/openrouter` — OpenRouter provider (multi-model)
+
+## Type Model
+
+- `MediaType` — Defined string type with typed constants (`MediaTypePNG`, `MediaTypeJPEG`, etc.)
+- `ImageSource` — Created via `NewImageSource(data, mediaType, filename)` which validates non-empty data
+- `Analyzer` — Interface for `Analyze`/`AnalyzeStream`; consumers can mock this instead of concrete `Agent`
+- `Agent` — Concrete implementation of `Analyzer`; compile-time checked via `var _ Analyzer = (*Agent)(nil)`
 
 ## Image Validation
 
