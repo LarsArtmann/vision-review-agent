@@ -27,6 +27,16 @@ var _ = ginkgo.Describe("Image Validation", func() {
 			gomega.Expect(DetectImageFormat(data)).To(gomega.Equal(formatWebP))
 		})
 
+		ginkgo.It("should reject RIFF data that is not WebP (e.g. WAV)", func() {
+			data := []byte{0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45}
+			gomega.Expect(DetectImageFormat(data)).To(gomega.BeEmpty())
+		})
+
+		ginkgo.It("should reject RIFF data shorter than 12 bytes", func() {
+			data := []byte{0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00}
+			gomega.Expect(DetectImageFormat(data)).To(gomega.BeEmpty())
+		})
+
 		ginkgo.It("should detect BMP from magic bytes", func() {
 			data := []byte{0x42, 0x4D, 0x36, 0x00}
 			gomega.Expect(DetectImageFormat(data)).To(gomega.Equal(formatBMP))
