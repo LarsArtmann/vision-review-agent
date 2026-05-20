@@ -5,7 +5,7 @@ A simple, production-ready Go SDK for building AI agents with vision capabilitie
 ## Features
 
 - **Simple API** — Analyze images/screenshots with a single function call
-- **Multi-provider** — Works with OpenAI, OpenRouter, Anthropic, and any fantasy-compatible provider
+- **Multi-provider** — Works with OpenAI, OpenRouter, and any fantasy-compatible provider
 - **Streaming** — Stream responses in real-time
 - **Structured Output** — Get typed, structured results instead of free-form text
 - **Built-in CLI** — Analyze images from the command line
@@ -155,6 +155,8 @@ result, _ := analyzer.AnalyzeScreenshot(ctx, "Review this page", "screenshot.png
 - `ErrInvalidTemperature` — Temperature out of range
 - `ErrInvalidMaxTokens` — Negative max tokens
 - `ErrInvalidImage` — Image data does not match known format
+- `ErrEmptyImageData` — Image data is empty
+- `ErrImageTooLarge` — Image exceeds 50 MB size limit
 
 ## Examples
 
@@ -178,4 +180,4 @@ examples/         Working examples for each provider
 
 ## License
 
-MIT
+Proprietary — see [LICENSE](LICENSE) for details.

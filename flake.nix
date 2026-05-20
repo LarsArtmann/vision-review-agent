@@ -21,7 +21,7 @@
             vendorHash = "sha256-XOYhWymnhQZNSdlWVFE8MsJdote7HtPA53MqIsDWZ7s=";
             meta = with pkgs.lib; {
               description = "AI-powered screenshot and image analysis SDK";
-              license = licenses.mit;
+              license = licenses.unfree;
               mainProgram = "vision-review-agent";
             };
           };
