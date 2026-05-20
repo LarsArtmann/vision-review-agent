@@ -65,16 +65,26 @@ just lint        # Run golangci-lint
 - `ImageSource` — Created via `NewImageSource(data, mediaType, filename)` which validates non-empty data
 - `Analyzer` — Interface for `Analyze`/`AnalyzeStream`; consumers can mock this instead of concrete `Agent`
 - `Agent` — Concrete implementation of `Analyzer`; compile-time checked via `var _ Analyzer = (*Agent)(nil)`
+- `ScreenshotAnalyzer` — Fluent builder that implements `Analyzer`; delegates to cached `Agent`
 
-## Image Validation
+- **WebP validation** — Checks both RIFF header (bytes 0-3) and WEBP magic (bytes 8-11) to reject WAV/AVI
+- **Size limit** — `LoadImageFromReader` caps at 50 MB via `io.LimitReader`
+- **Conditional pointers** — `Analyze`/`AnalyzeStream` only send `MaxOutputTokens`/`Temperature` when non-zero
+- **strings.Builder** — `AnalyzeStream` uses builder for O(n) instead of O(n^2) string concat
+- **ScreenshotAnalyzer** — Implements `Analyzer` interface via delegate methods
 
-Uses magic byte signatures to validate image formats:
+## Sentinel Errors
 
-- PNG: `89 50 4E 47`
-- JPEG: `FF D8 FF`
-- GIF: `47 49 46`
-- WebP: `52 49 46 46` (RIFF)
-- BMP: `42 4D`
+All in `pkg/errors/`, re-exported from `pkg/vision/`:
+
+- `ErrNoModel` — No language model configured
+- `ErrEmptyPrompt` — Empty prompt provided
+- `ErrNoImages` — No images provided
+- `ErrInvalidTemperature` — Temperature out of 0.0-2.0 range
+- `ErrInvalidMaxTokens` — Negative max tokens
+- `ErrInvalidImage` — Data doesn't match known image format
+- `ErrEmptyImageData` — Image data is empty
+- `ErrImageTooLarge` — Image exceeds 50 MB limit
 
 ## CLI Usage
 
