@@ -2,7 +2,6 @@ package vision
 
 import (
 	"bytes"
-	"errors"
 )
 
 // Image format constants for magic byte signatures.
@@ -54,7 +53,7 @@ func IsValidImage(data []byte) bool {
 // Returns ErrInvalidImage if the data does not match any known image signature.
 func ValidateImage(data []byte) error {
 	if len(data) == 0 {
-		return errors.New("vision agent: image data is empty")
+		return ErrEmptyImageData
 	}
 	if !IsValidImage(data) {
 		return ErrInvalidImage
