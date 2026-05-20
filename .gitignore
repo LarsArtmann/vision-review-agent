@@ -28,16 +28,21 @@ Thumbs.db
 
 # Dependencies (if vendoring)
 vendor/
-Test coverage
+
+# Test coverage
 /coverage
-Dependencies
+
+# Dependencies
 node_modules/
-Copy/paste detection report
+
+# Copy/paste detection report
 /report/jscpd-report.json
+
 # Build artifacts
 /vision-review-agent
 
 # Nix build output
 /result
+
 # Sensitive files
 *.db
