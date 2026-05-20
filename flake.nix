@@ -11,7 +11,7 @@
       perSystem = flake-utils.lib.eachDefaultSystem (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          version = self.rev or self.dirtyRev or "dev";
+          version = "0.1.0";
         in
         {
           packages.default = pkgs.buildGoModule {
