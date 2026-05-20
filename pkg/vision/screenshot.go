@@ -7,6 +7,9 @@ import (
 	"charm.land/fantasy"
 )
 
+// Compile-time check: ScreenshotAnalyzer implements Analyzer.
+var _ Analyzer = (*ScreenshotAnalyzer)(nil)
+
 // ScreenshotAnalyzer is a convenience builder for screenshot analysis use cases.
 // It provides a fluent API for configuring and running screenshot analysis.
 //
@@ -82,6 +85,29 @@ func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
 	}
 	sa.cachedAgent = agent
 	return agent, nil
+}
+
+// Analyze analyzes images with the given prompt, satisfying the Analyzer interface.
+func (sa *ScreenshotAnalyzer) Analyze(
+	ctx context.Context,
+	prompt string,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
+	return sa.AnalyzeScreenshotImages(ctx, prompt, images...)
+}
+
+// AnalyzeStream streams analysis of images with the given prompt, satisfying the Analyzer interface.
+func (sa *ScreenshotAnalyzer) AnalyzeStream(
+	ctx context.Context,
+	prompt string,
+	onText func(text string) error,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
+	a, err := sa.agent()
+	if err != nil {
+		return nil, err
+	}
+	return a.AnalyzeStream(ctx, prompt, onText, images...)
 }
 
 // AnalyzeScreenshotImage analyzes a single screenshot ImageSource with the given prompt.
