@@ -20,6 +20,7 @@ package vision
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"charm.land/fantasy"
@@ -159,13 +160,15 @@ func (va *Agent) Analyze(
 
 	files := toFileParts(validImages)
 
-	maxTokens := va.config.MaxOutputTokens
-
 	call := fantasy.AgentCall{
-		Prompt:          prompt,
-		Files:           files,
-		MaxOutputTokens: &maxTokens,
-		Temperature:     &va.config.Temperature,
+		Prompt: prompt,
+		Files:  files,
+	}
+	if va.config.MaxOutputTokens > 0 {
+		call.MaxOutputTokens = &va.config.MaxOutputTokens
+	}
+	if va.config.Temperature != 0 {
+		call.Temperature = &va.config.Temperature
 	}
 
 	result, err := va.agent.Generate(ctx, call)
@@ -201,22 +204,24 @@ func (va *Agent) AnalyzeStream(
 
 	files := toFileParts(validImages)
 
-	var fullText string
-
-	maxTokens := va.config.MaxOutputTokens
+	var builder strings.Builder
 
 	streamCall := fantasy.AgentStreamCall{
-		Prompt:          prompt,
-		Files:           files,
-		MaxOutputTokens: &maxTokens,
-		Temperature:     &va.config.Temperature,
-		OnTextDelta: func(_, text string) error {
-			fullText += text
-			if onText != nil {
-				return onText(text)
-			}
-			return nil
-		},
+		Prompt: prompt,
+		Files:  files,
+	}
+	if va.config.MaxOutputTokens > 0 {
+		streamCall.MaxOutputTokens = &va.config.MaxOutputTokens
+	}
+	if va.config.Temperature != 0 {
+		streamCall.Temperature = &va.config.Temperature
+	}
+	streamCall.OnTextDelta = func(_, text string) error {
+		builder.WriteString(text)
+		if onText != nil {
+			return onText(text)
+		}
+		return nil
 	}
 
 	result, err := va.agent.Stream(ctx, streamCall)
@@ -225,7 +230,7 @@ func (va *Agent) AnalyzeStream(
 	}
 
 	return &AnalyzeResult{
-		Text:        fullText,
+		Text:        builder.String(),
 		Usage:       result.TotalUsage,
 		RawResponse: result,
 	}, nil
