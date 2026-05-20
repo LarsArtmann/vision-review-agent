@@ -13,6 +13,8 @@ const (
 	testNameMissingFile = "missing file"
 	testLayout          = "test layout"
 	testEmptyPrompt     = "empty prompt"
+	testAnalysisText    = "test analysis"
+	mockResponseText    = "mock response"
 )
 
 // ImageSrc returns a test ImageSource with default test values.
@@ -45,26 +47,6 @@ func AssertErr(t *testing.T, wantErr bool, wantErrType, err error) bool {
 		} else if wantErrType != nil && !errors.Is(err, wantErrType) {
 			t.Errorf("expected %v, got %v", wantErrType, err)
 		}
-		return true
-	}
-	return false
-}
-
-// AssertEq is a helper for asserting that a string value equals the expected value.
-// Use for field comparison assertions in table-driven tests.
-func AssertEq(t *testing.T, got, want string) {
-	t.Helper()
-	if got != want {
-		t.Errorf("expected %q, got %q", want, got)
-	}
-}
-
-// AssertError is a helper for checking error types in table-driven tests.
-// It returns true if the error matches wantErrType via errors.Is.
-func AssertError(t *testing.T, wantErrType, err error) bool {
-	t.Helper()
-	if !errors.Is(err, wantErrType) {
-		t.Errorf("expected %v, got %v", wantErrType, err)
 		return true
 	}
 	return false

@@ -10,8 +10,6 @@ import (
 	"github.com/onsi/gomega"
 )
 
-const testAnalysisText = "test analysis"
-
 var _ = ginkgo.Describe("Image Loading", func() {
 	ginkgo.It("should load image from file", func() {
 		tmpDir := ginkgo.GinkgoT().TempDir()
