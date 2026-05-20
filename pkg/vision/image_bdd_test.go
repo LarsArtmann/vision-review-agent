@@ -1,6 +1,7 @@
 package vision
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 
@@ -51,6 +52,22 @@ var _ = ginkgo.Describe("Image Loading", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(img.MediaType).To(gomega.Equal(expectedType), "for extension "+ext)
 		}
+	})
+
+	ginkgo.It("should load image from reader", func() {
+		data := []byte("reader image data")
+		img, err := LoadImageFromReader(bytes.NewReader(data), MediaTypePNG, "test.png")
+
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		gomega.Expect(img.Data).To(gomega.Equal(data))
+		gomega.Expect(img.MediaType).To(gomega.Equal(MediaTypePNG))
+	})
+
+	ginkgo.It("should reject oversized image from reader", func() {
+		oversized := bytes.NewReader(make([]byte, maxImageSize+1))
+		_, err := LoadImageFromReader(oversized, MediaTypePNG, "big.png")
+
+		gomega.Expect(err).To(gomega.Equal(ErrImageTooLarge))
 	})
 })
 

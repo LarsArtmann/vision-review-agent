@@ -25,4 +25,7 @@ var (
 
 	// ErrEmptyImageData is returned when image data is empty.
 	ErrEmptyImageData = stderrors.New("vision agent: image data is empty")
+
+	// ErrImageTooLarge is returned when image data exceeds the maximum allowed size.
+	ErrImageTooLarge = stderrors.New("vision agent: image data exceeds maximum size")
 )

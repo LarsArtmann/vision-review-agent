@@ -26,4 +26,7 @@ var (
 
 	// ErrEmptyImageData is returned when image data is empty.
 	ErrEmptyImageData = apperrors.ErrEmptyImageData
+
+	// ErrImageTooLarge is returned when image data exceeds the maximum allowed size.
+	ErrImageTooLarge = apperrors.ErrImageTooLarge
 )

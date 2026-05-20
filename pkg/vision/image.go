@@ -55,11 +55,19 @@ func LoadImageFromFile(path string) (*ImageSource, error) {
 	return NewImageSource(data, mt, filepath.Base(path))
 }
 
+// maxImageSize is the maximum allowed image size (50 MB).
+const maxImageSize = 50 << 20
+
 // LoadImageFromReader reads image data from an io.Reader.
+// Returns ErrImageTooLarge if the data exceeds maxImageSize (50 MB).
 func LoadImageFromReader(r io.Reader, mediaType MediaType, filename string) (*ImageSource, error) {
-	data, err := io.ReadAll(r)
+	data, err := io.ReadAll(io.LimitReader(r, maxImageSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("read image data: %w", err)
+	}
+
+	if len(data) > maxImageSize {
+		return nil, ErrImageTooLarge
 	}
 
 	return NewImageSource(data, mediaType, filename)
