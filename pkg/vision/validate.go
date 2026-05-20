@@ -13,11 +13,11 @@ const (
 	formatBMP  = "bmp"
 )
 
-// webpSignature is the RIFF header shared by all RIFF containers (WAV, AVI, WebP).
-var webpSignature = []byte{0x52, 0x49, 0x46, 0x46}
+// webpSignature returns the RIFF header shared by all RIFF containers.
+func webpSignature() []byte { return []byte{0x52, 0x49, 0x46, 0x46} }
 
-// webpMagic is the WEBP identifier at offset 8 in a WebP file.
-var webpMagic = []byte{0x57, 0x45, 0x42, 0x50}
+// webpMagic returns the WEBP identifier at offset 8 in a WebP file.
+func webpMagic() []byte { return []byte{0x57, 0x45, 0x42, 0x50} }
 
 // imageSignatures returns the magic byte signatures for supported image formats.
 func imageSignatures() []struct {
@@ -31,7 +31,7 @@ func imageSignatures() []struct {
 		{formatPNG, []byte{0x89, 0x50, 0x4E, 0x47}},
 		{formatJPG, []byte{0xFF, 0xD8, 0xFF}},
 		{formatGIF, []byte{0x47, 0x49, 0x46}},
-		{formatWebP, webpSignature},
+		{formatWebP, webpSignature()},
 		{formatBMP, []byte{0x42, 0x4D}},
 	}
 }
@@ -47,7 +47,7 @@ func DetectImageFormat(data []byte) string {
 	for _, sig := range imageSignatures() {
 		if bytes.HasPrefix(data, sig.signature) {
 			if sig.format == formatWebP {
-				if len(data) < 12 || !bytes.Equal(data[8:12], webpMagic) {
+				if len(data) < 12 || !bytes.Equal(data[8:12], webpMagic()) {
 					return ""
 				}
 			}

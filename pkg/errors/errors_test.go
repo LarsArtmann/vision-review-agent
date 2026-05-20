@@ -72,8 +72,18 @@ func TestErrorsIs(t *testing.T) {
 	}{
 		{name: "matches itself", err: ErrNoModel, target: ErrNoModel, want: true},
 		{name: "different errors", err: ErrNoModel, target: ErrNoImages, want: false},
-		{name: "ErrEmptyImageData matches itself", err: ErrEmptyImageData, target: ErrEmptyImageData, want: true},
-		{name: "ErrImageTooLarge matches itself", err: ErrImageTooLarge, target: ErrImageTooLarge, want: true},
+		{
+			name:   "ErrEmptyImageData matches itself",
+			err:    ErrEmptyImageData,
+			target: ErrEmptyImageData,
+			want:   true,
+		},
+		{
+			name:   "ErrImageTooLarge matches itself",
+			err:    ErrImageTooLarge,
+			target: ErrImageTooLarge,
+			want:   true,
+		},
 		{
 			name:   "literal string match",
 			err:    errors.New("vision agent: no model configured"),
