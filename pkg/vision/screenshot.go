@@ -2,6 +2,7 @@ package vision
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"charm.land/fantasy"
@@ -105,7 +106,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeStream(
 ) (*AnalyzeResult, error) {
 	a, err := sa.agent()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("AnalyzeStream: prompt=%q: %w", prompt, err)
 	}
 	return a.AnalyzeStream(ctx, prompt, onText, images...)
 }
@@ -127,7 +128,12 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshot(
 ) (*AnalyzeResult, error) {
 	img, err := LoadImageFromFile(screenshotPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"AnalyzeScreenshot: screenshotPath=%q, prompt=%q: %w",
+			screenshotPath,
+			prompt,
+			err,
+		)
 	}
 	return sa.AnalyzeScreenshotImage(ctx, prompt, img)
 }
@@ -140,7 +146,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
 ) (*AnalyzeResult, error) {
 	agent, err := sa.agent()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("AnalyzeScreenshotImages: prompt=%q: %w", prompt, err)
 	}
 	return agent.Analyze(ctx, prompt, images...)
 }
@@ -155,7 +161,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshots(
 	for i, path := range screenshotPaths {
 		img, err := LoadImageFromFile(path)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("AnalyzeScreenshots: path=%q, prompt=%q: %w", path, prompt, err)
 		}
 		images[i] = img
 	}

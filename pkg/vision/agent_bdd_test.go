@@ -9,18 +9,9 @@ import (
 )
 
 var _ = ginkgo.Describe("Vision Agent", func() {
-	var agent *Agent
-	var ctx context.Context
-
-	ginkgo.BeforeEach(func() {
-		ctx = context.Background()
-		var err error
-		agent, err = NewAgent(Config{Model: testModel()})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	})
-
 	ginkgo.Describe("Configuration Validation", func() {
 		ginkgo.It("should create an agent with valid configuration", func() {
+			_, agent := setupAgent()
 			gomega.Expect(agent).NotTo(gomega.BeNil())
 			gomega.Expect(agent.config.Model).NotTo(gomega.BeNil())
 		})
@@ -46,23 +37,19 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 			gomega.Expect(err).To(gomega.Equal(ErrInvalidTemperature))
 		})
 
-		ginkgo.It("should accept temperature at boundary 0", func() {
-			a, err := NewAgent(Config{
-				Model:       testModel(),
-				Temperature: 0,
-			})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(a).NotTo(gomega.BeNil())
-		})
-
-		ginkgo.It("should accept temperature at boundary 2.0", func() {
-			a, err := NewAgent(Config{
-				Model:       testModel(),
-				Temperature: 2.0,
-			})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(a).NotTo(gomega.BeNil())
-		})
+		ginkgo.DescribeTable(
+			"should accept temperature at valid boundaries",
+			func(temp float64) {
+				a, err := NewAgent(Config{
+					Model:       testModel(),
+					Temperature: temp,
+				})
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(a).NotTo(gomega.BeNil())
+			},
+			ginkgo.Entry("lower boundary 0", float64(0)),
+			ginkgo.Entry("upper boundary 2.0", float64(2.0)),
+		)
 
 		ginkgo.It("should reject negative max output tokens", func() {
 			_, err := NewAgent(Config{
@@ -75,6 +62,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 
 	ginkgo.Describe("Image Analysis", func() {
 		ginkgo.It("should analyze a single image and return text response", func() {
+			ctx, agent := setupAgent()
 			img := ImageSrc()
 			result, err := agent.Analyze(ctx, "describe this", img)
 
@@ -85,6 +73,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		})
 
 		ginkgo.It("should analyze multiple images in a single request", func() {
+			ctx, agent := setupAgent()
 			img1 := ImageSrc("first.png")
 			img2 := ImageSrc("second.png")
 			result, err := agent.Analyze(ctx, "compare these", img1, img2)
@@ -95,6 +84,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		})
 
 		ginkgo.It("should filter out nil images from the input", func() {
+			ctx, agent := setupAgent()
 			img := ImageSrc()
 			result, err := agent.Analyze(ctx, "describe", nil, img, nil)
 
@@ -103,6 +93,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		})
 
 		ginkgo.It("should return error for empty prompt", func() {
+			ctx, agent := setupAgent()
 			img := ImageSrc()
 			_, err := agent.Analyze(ctx, "", img)
 
@@ -110,18 +101,21 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		})
 
 		ginkgo.It("should return error when no images provided", func() {
+			ctx, agent := setupAgent()
 			_, err := agent.Analyze(ctx, "describe", nil)
 
 			gomega.Expect(err).To(gomega.Equal(ErrNoImages))
 		})
 
 		ginkgo.It("should return error when only nil images provided", func() {
+			ctx, agent := setupAgent()
 			_, err := agent.Analyze(ctx, "describe")
 
 			gomega.Expect(err).To(gomega.Equal(ErrNoImages))
 		})
 
 		ginkgo.It("should populate raw response with model result", func() {
+			ctx, agent := setupAgent()
 			img := ImageSrc()
 			result, err := agent.Analyze(ctx, "describe", img)
 
@@ -132,6 +126,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 
 	ginkgo.Describe("Streaming Analysis", func() {
 		ginkgo.It("should stream analysis results via callback", func() {
+			ctx, agent := setupAgent()
 			img := ImageSrc()
 			var chunks []string
 
@@ -146,6 +141,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		})
 
 		ginkgo.It("should handle nil callback without error", func() {
+			ctx, agent := setupAgent()
 			img := ImageSrc()
 			result, err := agent.AnalyzeStream(ctx, "describe", nil, img)
 
@@ -154,6 +150,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		})
 
 		ginkgo.It("should return error for empty prompt", func() {
+			ctx, agent := setupAgent()
 			img := ImageSrc()
 			_, err := agent.AnalyzeStream(ctx, "", nil, img)
 
@@ -161,6 +158,7 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		})
 
 		ginkgo.It("should return error when no images provided", func() {
+			ctx, agent := setupAgent()
 			_, err := agent.AnalyzeStream(ctx, "describe", nil, nil)
 
 			gomega.Expect(err).To(gomega.Equal(ErrNoImages))
@@ -199,22 +197,13 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 })
 
 var _ = ginkgo.Describe("AnalyzeStructured", func() {
-	var agent *Agent
-	var ctx context.Context
-
 	type testReview struct {
 		Layout string `json:"layout"`
 		Score  int    `json:"score"`
 	}
 
-	ginkgo.BeforeEach(func() {
-		ctx = context.Background()
-		var err error
-		agent, err = NewAgent(Config{Model: testModel()})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	})
-
 	ginkgo.It("should return typed structured response", func() {
+		ctx, agent := setupAgent()
 		img := ImageSrc()
 		result, err := AnalyzeStructured[testReview](ctx, agent, "analyze", img)
 
@@ -224,6 +213,7 @@ var _ = ginkgo.Describe("AnalyzeStructured", func() {
 	})
 
 	ginkgo.It("should return error for empty prompt", func() {
+		ctx, agent := setupAgent()
 		img := ImageSrc()
 		_, err := AnalyzeStructured[testReview](ctx, agent, "", img)
 
@@ -231,6 +221,7 @@ var _ = ginkgo.Describe("AnalyzeStructured", func() {
 	})
 
 	ginkgo.It("should return error when no images provided", func() {
+		ctx, agent := setupAgent()
 		_, err := AnalyzeStructured[testReview](ctx, agent, "analyze")
 
 		gomega.Expect(err).To(gomega.Equal(ErrNoImages))

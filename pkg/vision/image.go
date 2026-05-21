@@ -63,7 +63,12 @@ const maxImageSize = 50 << 20
 func LoadImageFromReader(r io.Reader, mediaType MediaType, filename string) (*ImageSource, error) {
 	data, err := io.ReadAll(io.LimitReader(r, maxImageSize+1))
 	if err != nil {
-		return nil, fmt.Errorf("read image data: %w", err)
+		return nil, fmt.Errorf(
+			"read image data (mediaType=%v, filename=%q): %w",
+			mediaType,
+			filename,
+			err,
+		)
 	}
 
 	if len(data) > maxImageSize {

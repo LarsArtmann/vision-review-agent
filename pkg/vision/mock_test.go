@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"charm.land/fantasy"
+	"github.com/onsi/gomega"
 )
 
 // Test string constants.
@@ -128,6 +129,14 @@ func (m *mockModel) StreamObject(
 			FinishReason: fantasy.FinishReasonStop,
 		})
 	}, nil
+}
+
+// setupAgent creates a fresh context and agent for BDD tests.
+func setupAgent() (context.Context, *Agent) {
+	ctx := context.Background()
+	agent, err := NewAgent(Config{Model: testModel()})
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	return ctx, agent
 }
 
 func (m *mockModel) Provider() string { return "mock" }

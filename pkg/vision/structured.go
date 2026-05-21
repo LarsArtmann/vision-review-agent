@@ -65,13 +65,13 @@ func AnalyzeStructured[T any](
 
 	result, err := agent.config.Model.GenerateObject(ctx, call)
 	if err != nil {
-		return nil, fmt.Errorf("vision agent structured generate: %w", err)
+		return nil, fmt.Errorf("vision agent structured generate (prompt=%q): %w", prompt, err)
 	}
 
 	var typedResult T
 	if result.Object != nil {
 		if err := visionutil.UnmarshalToType(result.Object, &typedResult); err != nil {
-			return nil, fmt.Errorf("vision agent unmarshal result: %w", err)
+			return nil, fmt.Errorf("vision agent unmarshal result (prompt=%q): %w", prompt, err)
 		}
 	}
 

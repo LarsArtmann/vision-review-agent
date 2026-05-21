@@ -173,7 +173,7 @@ func (va *Agent) Analyze(
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
-		return nil, fmt.Errorf("vision agent generate: %w", err)
+		return nil, fmt.Errorf("vision agent generate (prompt=%q): %w", prompt, err)
 	}
 
 	return &AnalyzeResult{
@@ -226,7 +226,7 @@ func (va *Agent) AnalyzeStream(
 
 	result, err := va.agent.Stream(ctx, streamCall)
 	if err != nil {
-		return nil, fmt.Errorf("vision agent stream: %w", err)
+		return nil, fmt.Errorf("vision agent stream (prompt=%q): %w", prompt, err)
 	}
 
 	return &AnalyzeResult{
