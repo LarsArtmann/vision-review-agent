@@ -32,17 +32,12 @@
               golangci-lint
               gopls
               gotools
-              just
             ];
 
             GOWORK = "off";
 
             shellHook = ''
               echo "Vision Review Agent dev shell"
-              echo "  just         - list available commands"
-              echo "  just test    - run tests"
-              echo "  just coverage - run tests with coverage threshold"
-              echo "  just lint    - run golangci-lint"
             '';
           };
 
