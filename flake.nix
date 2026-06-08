@@ -12,9 +12,7 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           version = "0.1.0";
-        in
-        {
-          packages.default = pkgs.buildGoModule {
+          defaultPkg = pkgs.buildGoModule {
             pname = "vision-review-agent";
             inherit version;
             src = ./.;
@@ -23,6 +21,34 @@
               description = "AI-powered screenshot and image analysis SDK";
               license = licenses.mit;
               mainProgram = "vision-review-agent";
+            };
+          };
+        in
+        {
+          packages.default = defaultPkg;
+
+          apps = {
+            default = {
+              type = "app";
+              program = pkgs.lib.getExe defaultPkg;
+            };
+
+            test = {
+              type = "app";
+              program = "${pkgs.lib.getExe (pkgs.writeShellApplication {
+                name = "run-test";
+                runtimeInputs = [ pkgs.go_1_26 ];
+                text = "go test -race -v -coverprofile=coverage.out ./...";
+              })}";
+            };
+
+            lint = {
+              type = "app";
+              program = "${pkgs.lib.getExe (pkgs.writeShellApplication {
+                name = "run-lint";
+                runtimeInputs = [ pkgs.go_1_26 pkgs.golangci-lint ];
+                text = "golangci-lint run ./...";
+              })}";
             };
           };
 
