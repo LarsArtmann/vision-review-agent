@@ -41,6 +41,11 @@
             '';
           };
 
+          devShells.ci = pkgs.mkShellNoCC {
+            packages = [ pkgs.go_1_26 pkgs.golangci-lint ];
+            GOWORK = "off";
+          };
+
           checks.build = self.packages.${system}.default;
 
           formatter = pkgs.nixfmt;
