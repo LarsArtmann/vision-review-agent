@@ -17,6 +17,7 @@
             inherit version;
             src = ./.;
             vendorHash = "sha256-XOYhWymnhQZNSdlWVFE8MsJdote7HtPA53MqIsDWZ7s=";
+            proxyVendor = true;
             meta = with pkgs.lib; {
               description = "AI-powered screenshot and image analysis SDK";
               license = licenses.mit;
