@@ -28,7 +28,12 @@
       imports = [ inputs.treefmt-nix.flakeModule ];
 
       perSystem =
-        { config, pkgs, lib, ... }:
+        {
+          config,
+          pkgs,
+          lib,
+          ...
+        }:
         let
           version = "0.1.0";
         in
@@ -66,7 +71,10 @@
               type = "app";
               program = pkgs.writeShellApplication {
                 name = "run-lint";
-                runtimeInputs = [ pkgs.go_1_26 pkgs.golangci-lint ];
+                runtimeInputs = [
+                  pkgs.go_1_26
+                  pkgs.golangci-lint
+                ];
                 text = "golangci-lint run ./...";
               };
             };
@@ -91,7 +99,10 @@
             };
 
             ci = pkgs.mkShellNoCC {
-              packages = [ pkgs.go_1_26 pkgs.golangci-lint ];
+              packages = [
+                pkgs.go_1_26
+                pkgs.golangci-lint
+              ];
               GOWORK = "off";
             };
           };
