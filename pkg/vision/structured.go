@@ -2,7 +2,6 @@ package vision
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"charm.land/fantasy"
@@ -32,9 +31,9 @@ func AnalyzeStructured[T any](
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	validImages := filterValidImages(images)
-	if len(validImages) == 0 {
-		return nil, ErrNoImages
+	validImages, err := requireImages(images)
+	if err != nil {
+		return nil, err
 	}
 
 	ctx, cancel := agent.withTimeout(ctx)
@@ -65,13 +64,13 @@ func AnalyzeStructured[T any](
 
 	result, err := agent.config.Model.GenerateObject(ctx, call)
 	if err != nil {
-		return nil, fmt.Errorf("vision agent structured generate (prompt=%q): %w", prompt, err)
+		return nil, wrapWithPrompt("vision agent structured generate", prompt, err)
 	}
 
 	var typedResult T
 	if result.Object != nil {
 		if err := visionutil.UnmarshalToType(result.Object, &typedResult); err != nil {
-			return nil, fmt.Errorf("vision agent unmarshal result (prompt=%q): %w", prompt, err)
+			return nil, wrapWithPrompt("vision agent unmarshal result", prompt, err)
 		}
 	}
 

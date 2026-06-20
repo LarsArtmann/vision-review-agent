@@ -166,24 +166,22 @@ func runAnalysis(
 	cfg *config,
 	images []*vision.ImageSource,
 ) {
-	var analyzeFn func() (*vision.AnalyzeResult, error)
+	var (
+		result *vision.AnalyzeResult
+		err    error
+	)
 
 	if cfg.stream {
 		fmt.Println("Analyzing (streaming)...")
-		analyzeFn = func() (*vision.AnalyzeResult, error) {
-			return agent.AnalyzeStream(ctx, cfg.prompt, func(text string) error {
-				fmt.Print(text)
-				return nil
-			}, images...)
-		}
+		result, err = agent.AnalyzeStream(ctx, cfg.prompt, func(text string) error {
+			fmt.Print(text)
+			return nil
+		}, images...)
 	} else {
 		fmt.Println("Analyzing...")
-		analyzeFn = func() (*vision.AnalyzeResult, error) {
-			return agent.Analyze(ctx, cfg.prompt, images...)
-		}
+		result, err = agent.Analyze(ctx, cfg.prompt, images...)
 	}
 
-	result, err := analyzeFn()
 	if err != nil {
 		if cfg.stream {
 			fmt.Fprintln(os.Stderr, "\nError:", err)
@@ -208,21 +206,23 @@ func printText(result *vision.AnalyzeResult, streamed bool) {
 	fmt.Printf("\nTokens used: %d\n", result.Usage.TotalTokens)
 }
 
+// jsonUsage is the shape of the JSON output produced by `-json`.
+type jsonUsage struct {
+	InputTokens  int64 `json:"input_tokens"`
+	OutputTokens int64 `json:"output_tokens"`
+	TotalTokens  int64 `json:"total_tokens"`
+}
+
+// jsonOutput is the JSON document written when `-json` is set.
+type jsonOutput struct {
+	Text  string    `json:"text"`
+	Usage jsonUsage `json:"usage"`
+}
+
 func printJSON(result *vision.AnalyzeResult) {
-	output := struct {
-		Text  string `json:"text"`
-		Usage struct {
-			InputTokens  int64 `json:"input_tokens"`
-			OutputTokens int64 `json:"output_tokens"`
-			TotalTokens  int64 `json:"total_tokens"`
-		} `json:"usage"`
-	}{
+	output := jsonOutput{
 		Text: result.Text,
-		Usage: struct {
-			InputTokens  int64 `json:"input_tokens"`
-			OutputTokens int64 `json:"output_tokens"`
-			TotalTokens  int64 `json:"total_tokens"`
-		}{
+		Usage: jsonUsage{
 			InputTokens:  result.Usage.InputTokens,
 			OutputTokens: result.Usage.OutputTokens,
 			TotalTokens:  result.Usage.TotalTokens,
@@ -235,28 +235,46 @@ func printJSON(result *vision.AnalyzeResult) {
 	}
 }
 
+// newProviderFromEnv reads an API key from the environment and uses the given
+// factory to build the provider. It returns a descriptive error if the key is
+// missing or the factory fails.
+func newProviderFromEnv(
+	envVar string,
+	factory func(apiKey string) (fantasy.Provider, error),
+) (fantasy.Provider, error) {
+	apiKey := os.Getenv(envVar)
+	if apiKey == "" {
+		return nil, errors.New(envVar + " environment variable not set")
+	}
+	provider, err := factory(apiKey)
+	if err != nil {
+		return nil, fmt.Errorf("create provider (env=%s): %w", envVar, err)
+	}
+	return provider, nil
+}
+
+func createOpenAIProvider(apiKey string) (fantasy.Provider, error) {
+	provider, err := openai.New(openai.WithAPIKey(apiKey))
+	if err != nil {
+		return nil, fmt.Errorf("create openai provider: %w", err)
+	}
+	return provider, nil
+}
+
+func createOpenRouterProvider(apiKey string) (fantasy.Provider, error) {
+	provider, err := openrouter.New(openrouter.WithAPIKey(apiKey))
+	if err != nil {
+		return nil, fmt.Errorf("create openrouter provider: %w", err)
+	}
+	return provider, nil
+}
+
 func createProvider(name string) (fantasy.Provider, error) {
 	switch strings.ToLower(name) {
 	case "openai":
-		apiKey := os.Getenv("OPENAI_API_KEY")
-		if apiKey == "" {
-			return nil, errors.New("OPENAI_API_KEY environment variable not set")
-		}
-		provider, err := openai.New(openai.WithAPIKey(apiKey))
-		if err != nil {
-			return nil, fmt.Errorf("create openai provider: %w", err)
-		}
-		return provider, nil
+		return newProviderFromEnv("OPENAI_API_KEY", createOpenAIProvider)
 	case "openrouter":
-		apiKey := os.Getenv("OPENROUTER_API_KEY")
-		if apiKey == "" {
-			return nil, errors.New("OPENROUTER_API_KEY environment variable not set")
-		}
-		provider, err := openrouter.New(openrouter.WithAPIKey(apiKey))
-		if err != nil {
-			return nil, fmt.Errorf("create openrouter provider: %w", err)
-		}
-		return provider, nil
+		return newProviderFromEnv("OPENROUTER_API_KEY", createOpenRouterProvider)
 	default:
 		return nil, fmt.Errorf("unknown provider: %s (supported: openai, openrouter)", name)
 	}

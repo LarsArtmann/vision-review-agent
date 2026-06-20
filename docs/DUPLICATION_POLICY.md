@@ -1,0 +1,53 @@
+# Code Duplication Policy
+
+This document records why specific duplications are intentionally retained in
+the codebase. It complements the [`deduplicate-code`][dedup] skill by encoding
+project-specific decisions.
+
+[dedup]: https://github.com/example/deduplicate-code
+
+## Goal
+
+Reach **zero harmful duplication**, not zero report lines. A clone is only
+harmful if removing it would make the codebase easier to change. Idiomatic Go
+patterns that the language or its standard library require are accepted and
+documented here.
+
+## Decision Checklist
+
+Before refactoring any clone group, answer:
+
+1. Is the code generated? → Exclude it.
+2. Is the duplication structural or semantic? → Same logic / different names
+   is a candidate; same shape / different intent is usually accepted.
+3. Would an abstraction improve or harm readability? → If the helper takes
+   more parameters than the duplication has lines, leave it alone.
+4. Is the duplication likely to drift? → Two places that must change together
+   are extracted; two places that happen to look similar now are accepted.
+
+## Helpers in Place
+
+| Helper                                                                       | Location                  | Purpose                                              |
+| ---------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------- |
+| `requireImages`                                                              | `pkg/vision/vision.go`    | Single source for `ErrNoImages` guard                |
+| `wrapWithPrompt`                                                             | `pkg/vision/vision.go`    | Standard `op (prompt=%q): %w` error wrap             |
+| `imageSignature` (named type)                                                | `pkg/vision/validate.go`  | Named struct replaces double anonymous declaration   |
+| `jsonOutput` / `jsonUsage` (named types)                                     | `cmd/vision/main.go`      | Named structs replace inline anonymous struct        |
+| `newProviderFromEnv`                                                         | `cmd/vision/main.go`      | API-key-from-env + provider factory                  |
+| `createOpenAIProvider` / `createOpenRouterProvider`                          | `cmd/vision/main.go`      | Named factories for provider constructors            |
+| `ImageSrc`                                                                   | `pkg/vision/mock_test.go` | Existing helper for `*ImageSource` test fixtures     |
+| `testReview`                                                                 | `pkg/vision/mock_test.go` | Shared structured-output test type (pkg/vision only) |
+| `ExitOnError` / `RequireArgc` / `RequireEnvVar` / `PrintResult` / `NewAgent` | `internal/cli/helpers.go` | Shared CLI helpers                                   |
+
+## Accepted Duplication (with rationale)
+
+| Clone                                                                                                             | Pattern                                | Rationale                                                                                                                                                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Analyze` / `AnalyzeStream` method signatures on `*Agent` and `*ScreenshotAnalyzer`                               | Required by `Analyzer` interface       | Go's type system requires identical signatures for interface satisfaction. Cannot be extracted without changing the public API or introducing a shared base type.                                                                                                |
+| `*_bdd_test.go` `gomega.Expect(IsValidImage(...)).To(...)` and `gomega.Expect(...).To(...)` patterns              | BDD assertion idiom                    | Table-driven BDD specs intentionally repeat the same assertion shape with different inputs. The shape is the value: each `It` block is a self-contained specification.                                                                                           |
+| `validate_test.go` table-driven entries `{"png", []byte{...}, true}`                                              | Table-driven tests                     | Data rows in a test table; each row is an independent test case.                                                                                                                                                                                                 |
+| `examples/*/main.go` provider-construction + `vision.LoadImageFromFile(os.Args[1])`                               | Example boilerplate                    | Examples are deliberately self-contained so readers can copy/paste them into their own projects. Adding a `cli` import defeats the educational purpose.                                                                                                          |
+| `cmd/vision/main.go` `fmt.Fprintf(os.Stderr, ...)` usage lines                                                    | CLI help text                          | Each line prints a different example invocation. A helper would add parameters rather than remove them.                                                                                                                                                          |
+| `cmd/vision/main.go` `fmt.Fprintln(os.Stderr, "Error:", err)` in `runAnalysis`                                    | Inline error reporting after streaming | `cli.ExitOnError` is used everywhere else. The two remaining sites differ from the cli helper by adding the `"\n"` prefix (after streamed output) or a different label (JSON encode failure). Accepting this drift keeps `cli.ExitOnError` simple and exit-free. |
+| `type testReview struct{...}` in `internal/visionutil/helpers_test.go`                                            | Cross-package test type                | `internal/visionutil` is imported by `pkg/vision`, so `pkg/vision` cannot import `internal/visionutil` test types. Sharing would require a third package just for test fixtures, which is more friction than the duplication.                                    |
+| Mock model method signatures `func (m *mockModel) Generate(...) ...` and `Stream / GenerateObject / StreamObject` | `fantasy.LanguageModel` interface      | The mock must satisfy the interface with identical signatures. Bodies differ; signatures cannot.                                                                                                                                                                 |

@@ -104,3 +104,10 @@ just cli
 # With timeout
 ./vision-cli -timeout 30s -prompt "Review" screenshot.png
 ```
+
+## Code Duplication
+
+See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
+list of accepted duplications and their rationale. Goal: **zero harmful
+duplication**, not zero report lines. Idiomatic Go patterns (interface
+signatures, table-driven tests, BDD assertion idioms) are kept by design.

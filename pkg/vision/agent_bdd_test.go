@@ -197,11 +197,6 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 })
 
 var _ = ginkgo.Describe("AnalyzeStructured", func() {
-	type testReview struct {
-		Layout string `json:"layout"`
-		Score  int    `json:"score"`
-	}
-
 	ginkgo.It("should return typed structured response", func() {
 		ctx, agent := setupAgent()
 		img := ImageSrc()

@@ -18,6 +18,13 @@ const (
 	mockResponseText    = "mock response"
 )
 
+// testReview is the shared fixture type used by structured-output tests
+// (both table-driven TestAnalyzeStructured and the BDD AnalyzeStructured spec).
+type testReview struct {
+	Layout string `json:"layout"`
+	Score  int    `json:"score"`
+}
+
 // ImageSrc returns a test ImageSource with default test values.
 // If filename is empty, "test.png" is used.
 func ImageSrc(filename ...string) *ImageSource {

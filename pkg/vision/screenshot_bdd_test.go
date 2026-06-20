@@ -125,16 +125,8 @@ var _ = ginkgo.Describe("ScreenshotAnalyzer", func() {
 
 		ginkgo.It("should analyze multiple ImageSources", func() {
 			sa := NewScreenshotAnalyzer(model)
-			img1 := &ImageSource{
-				Data:      []byte("test1"),
-				MediaType: MediaTypePNG,
-				Filename:  "test1.png",
-			}
-			img2 := &ImageSource{
-				Data:      []byte("test2"),
-				MediaType: MediaTypePNG,
-				Filename:  "test2.png",
-			}
+			img1 := ImageSrc("test1.png")
+			img2 := ImageSrc("test2.png")
 
 			result, err := sa.AnalyzeScreenshotImages(ctx, "compare", img1, img2)
 

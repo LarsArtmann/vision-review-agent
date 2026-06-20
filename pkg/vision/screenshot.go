@@ -106,7 +106,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeStream(
 ) (*AnalyzeResult, error) {
 	a, err := sa.agent()
 	if err != nil {
-		return nil, fmt.Errorf("AnalyzeStream: prompt=%q: %w", prompt, err)
+		return nil, wrapWithPrompt("AnalyzeStream", prompt, err)
 	}
 	return a.AnalyzeStream(ctx, prompt, onText, images...)
 }
@@ -146,7 +146,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
 ) (*AnalyzeResult, error) {
 	agent, err := sa.agent()
 	if err != nil {
-		return nil, fmt.Errorf("AnalyzeScreenshotImages: prompt=%q: %w", prompt, err)
+		return nil, wrapWithPrompt("AnalyzeScreenshotImages", prompt, err)
 	}
 	return agent.Analyze(ctx, prompt, images...)
 }

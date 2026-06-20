@@ -19,15 +19,15 @@ func webpSignature() []byte { return []byte{0x52, 0x49, 0x46, 0x46} }
 // webpMagic returns the WEBP identifier at offset 8 in a WebP file.
 func webpMagic() []byte { return []byte{0x57, 0x45, 0x42, 0x50} }
 
-// imageSignatures returns the magic byte signatures for supported image formats.
-func imageSignatures() []struct {
+// imageSignature is one entry in the table of supported image format magic bytes.
+type imageSignature struct {
 	format    string
 	signature []byte
-} {
-	return []struct {
-		format    string
-		signature []byte
-	}{
+}
+
+// imageSignatures returns the magic byte signatures for supported image formats.
+func imageSignatures() []imageSignature {
+	return []imageSignature{
 		{formatPNG, []byte{0x89, 0x50, 0x4E, 0x47}},
 		{formatJPG, []byte{0xFF, 0xD8, 0xFF}},
 		{formatGIF, []byte{0x47, 0x49, 0x46}},

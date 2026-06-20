@@ -150,9 +150,9 @@ func (va *Agent) Analyze(
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	validImages := filterValidImages(images)
-	if len(validImages) == 0 {
-		return nil, ErrNoImages
+	validImages, err := requireImages(images)
+	if err != nil {
+		return nil, err
 	}
 
 	ctx, cancel := va.withTimeout(ctx)
@@ -173,7 +173,7 @@ func (va *Agent) Analyze(
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
-		return nil, fmt.Errorf("vision agent generate (prompt=%q): %w", prompt, err)
+		return nil, wrapWithPrompt("vision agent generate", prompt, err)
 	}
 
 	return &AnalyzeResult{
@@ -194,9 +194,9 @@ func (va *Agent) AnalyzeStream(
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
-	validImages := filterValidImages(images)
-	if len(validImages) == 0 {
-		return nil, ErrNoImages
+	validImages, err := requireImages(images)
+	if err != nil {
+		return nil, err
 	}
 
 	ctx, cancel := va.withTimeout(ctx)
@@ -226,7 +226,7 @@ func (va *Agent) AnalyzeStream(
 
 	result, err := va.agent.Stream(ctx, streamCall)
 	if err != nil {
-		return nil, fmt.Errorf("vision agent stream (prompt=%q): %w", prompt, err)
+		return nil, wrapWithPrompt("vision agent stream", prompt, err)
 	}
 
 	return &AnalyzeResult{
@@ -243,6 +243,23 @@ func (va *Agent) withTimeout(ctx context.Context) (context.Context, context.Canc
 		return context.WithTimeout(ctx, va.config.RequestTimeout)
 	}
 	return ctx, func() {}
+}
+
+// wrapWithPrompt wraps an error with the operation name and prompt for context.
+// It standardises the format used at every public call-site in this package so
+// that errors are easy to grep and stack traces remain consistent.
+func wrapWithPrompt(op, prompt string, err error) error {
+	return fmt.Errorf("%s (prompt=%q): %w", op, prompt, err)
+}
+
+// requireImages filters nil images and returns ErrNoImages if the result is empty.
+// It is the shared guard at the entry of every public analysis method.
+func requireImages(images []*ImageSource) ([]*ImageSource, error) {
+	valid := filterValidImages(images)
+	if len(valid) == 0 {
+		return nil, ErrNoImages
+	}
+	return valid, nil
 }
 
 // filterValidImages removes nil images from the slice.

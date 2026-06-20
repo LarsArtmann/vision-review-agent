@@ -5,11 +5,6 @@ import (
 	"testing"
 )
 
-type testReview struct {
-	Layout string `json:"layout"`
-	Score  int    `json:"score"`
-}
-
 func TestAnalyzeStructured(t *testing.T) {
 	t.Parallel()
 	agent, err := NewAgent(Config{Model: testModel()})
