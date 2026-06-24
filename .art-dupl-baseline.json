@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "threshold": 2,
+  "recordedAt": "2026-06-24T22:23:18.85677143Z",
+  "entries": [
+    {
+      "hash": "3a22159cafa9a677",
+      "files": [
+        "examples/structured/main.go",
+        "examples/openai/main.go"
+      ],
+      "tokens": 6
+    },
+    {
+      "hash": "8b6310cb2b357ecf",
+      "files": [
+        "examples/structured/main.go",
+        "examples/openai/main.go"
+      ],
+      "tokens": 14
+    },
+    {
+      "hash": "a1897a6f756d6d86",
+      "files": [
+        "pkg/vision/structured.go",
+        "pkg/vision/vision.go"
+      ],
+      "tokens": 6
+    },
+    {
+      "hash": "a6b91add9aefcbec",
+      "files": [
+        "pkg/vision/vision.go",
+        "pkg/vision/structured.go"
+      ],
+      "tokens": 4
+    }
+  ]
+}
