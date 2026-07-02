@@ -42,7 +42,7 @@
             pname = "vision-review-agent";
             inherit version;
             src = lib.cleanSource ./.;
-            vendorHash = "sha256-XOYhWymnhQZNSdlWVFE8MsJdote7HtPA53MqIsDWZ7s=";
+            vendorHash = "sha256-6HWkeFrzedvS7pQwlSxTw/b4WtLnKBa4GCr7qyqspaU=";
             proxyVendor = true;
             meta = with lib; {
               description = "AI-powered screenshot and image analysis SDK";
