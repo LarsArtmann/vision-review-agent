@@ -47,7 +47,12 @@
             meta = with lib; {
               description = "AI-powered screenshot and image analysis SDK";
               license = licenses.mit;
-              maintainers = [ maintainers.larsartmann ];
+              maintainers = [
+                {
+                  name = "Lars Artmann";
+                  github = "LarsArtmann";
+                }
+              ];
               mainProgram = "vision-review-agent";
             };
           };
