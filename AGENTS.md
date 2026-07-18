@@ -1,7 +1,5 @@
 # Vision Review Agent
 
-**Version:** 0.1.0 | **Updated:** May 20, 2026
-
 ## Overview
 
 A Go SDK for building AI agents with vision capabilities. Built on top of [charm.land/fantasy](https://github.com/charmbracelet/fantasy).
