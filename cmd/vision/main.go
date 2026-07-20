@@ -255,16 +255,23 @@ func newProviderFromEnv(
 
 func createOpenAIProvider(apiKey string) (fantasy.Provider, error) {
 	provider, err := openai.New(openai.WithAPIKey(apiKey))
-	if err != nil {
-		return nil, fmt.Errorf("create openai provider: %w", err)
-	}
-	return provider, nil
+	return wrapProvider("openai", provider, err)
 }
 
 func createOpenRouterProvider(apiKey string) (fantasy.Provider, error) {
 	provider, err := openrouter.New(openrouter.WithAPIKey(apiKey))
+	return wrapProvider("openrouter", provider, err)
+}
+
+// wrapProvider pairs a provider constructor's (Provider, error) result with a
+// consistent error message naming the provider that failed.
+func wrapProvider(
+	name string,
+	provider fantasy.Provider,
+	err error,
+) (fantasy.Provider, error) {
 	if err != nil {
-		return nil, fmt.Errorf("create openrouter provider: %w", err)
+		return nil, fmt.Errorf("create %s provider: %w", name, err)
 	}
 	return provider, nil
 }

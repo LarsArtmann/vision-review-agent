@@ -9,25 +9,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 
-	"charm.land/fantasy/providers/openai"
 	"github.com/larsartmann/vision-review-agent/internal/cli"
-	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
 func main() {
 	cli.RequireArgc(2)
 
-	apiKey := cli.RequireEnvVar("OPENAI_API_KEY")
-
-	provider, err := openai.New(openai.WithAPIKey(apiKey))
-	cli.ExitOnError(err, "Error creating provider")
-
 	ctx := context.Background()
-
-	model, err := provider.LanguageModel(ctx, "gpt-4o")
-	cli.ExitOnError(err, "Error getting model")
+	model := cli.NewOpenAIModel(ctx, "gpt-4o")
 
 	agent, err := cli.NewAgent(
 		model,
@@ -35,8 +25,7 @@ func main() {
 	)
 	cli.ExitOnError(err, "Error creating agent")
 
-	img, err := vision.LoadImageFromFile(os.Args[1])
-	cli.ExitOnError(err, "Error loading image")
+	img := cli.LoadImageArg()
 
 	fmt.Println("Analyzing screenshot...")
 	result, err := agent.Analyze(ctx, "Describe the UI and identify any usability issues.", img)

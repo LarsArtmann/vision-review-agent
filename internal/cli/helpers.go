@@ -71,3 +71,12 @@ func NewAgent(
 	}
 	return agent, nil
 }
+
+// LoadImageArg loads an image from the first positional CLI argument
+// (os.Args[1]). It exits the process on any error. RequireArgc(2) must be
+// called first so os.Args[1] exists.
+func LoadImageArg() *vision.ImageSource {
+	img, err := vision.LoadImageFromFile(os.Args[1])
+	ExitOnError(err, "Error loading image")
+	return img
+}
