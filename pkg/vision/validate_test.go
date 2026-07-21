@@ -74,7 +74,12 @@ func TestValidateImage(t *testing.T) {
 
 	t.Run("invalid data", func(t *testing.T) {
 		t.Parallel()
-		if err := ValidateImage([]byte{0x00, 0x00, 0x00, 0x00}); !errors.Is(err, ErrInvalidImage) {
+		if err := ValidateImage(
+			[]byte{0x00, 0x00, 0x00, 0x00},
+		); !errors.Is(
+			err,
+			ErrInvalidImage,
+		) { //nolint:legacyerrors // value sentinel
 			t.Errorf("expected ErrInvalidImage, got %v", err)
 		}
 	})

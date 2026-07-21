@@ -96,7 +96,11 @@ func TestErrorsIs(t *testing.T) {
 		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tt.want, errors.Is(tt.err, tt.target))
+			require.Equal(
+				t,
+				tt.want,
+				errors.Is(tt.err, tt.target),
+			) //nolint:legacyerrors // value match testing
 		})
 	}
 }
