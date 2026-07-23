@@ -230,18 +230,18 @@ if err != nil {
 
 ## Configuration
 
-| Option             | Description                              |
-| ------------------ | ---------------------------------------- |
-| `SystemPrompt`     | Defines agent behavior                   |
-| `Model`            | The LLM to use (must support vision)     |
-| `Temperature`      | Randomness (0.0-2.0)                     |
-| `TopP`             | Nucleus sampling (0.0-1.0)               |
-| `TopK`             | Top-k sampling limit                     |
-| `PresencePenalty`  | Penalize tokens already present (-2 to 2)|
-| `FrequencyPenalty` | Penalize tokens by frequency (-2 to 2)   |
-| `MaxOutputTokens`  | Response length limit                    |
-| `MaxRetries`       | Retry count for transient errors         |
-| `RequestTimeout`   | Per-request timeout                      |
+| Option             | Description                                    |
+| ------------------ | ---------------------------------------------- |
+| `SystemPrompt`     | Defines agent behavior                         |
+| `Model`            | The LLM to use (must support vision)           |
+| `Temperature`      | Randomness (0.0-2.0)                           |
+| `TopP`             | Nucleus sampling (0.0-1.0)                     |
+| `TopK`             | Top-k sampling limit                           |
+| `PresencePenalty`  | Penalize tokens already present (-2 to 2)      |
+| `FrequencyPenalty` | Penalize tokens by frequency (-2 to 2)         |
+| `MaxOutputTokens`  | Response length limit                          |
+| `MaxRetries`       | Retry count for transient errors               |
+| `RequestTimeout`   | Per-request timeout                            |
 | `Hooks`            | Lifecycle callbacks (OnStart/OnFinish/OnError) |
 
 ## Error Types
@@ -263,19 +263,19 @@ if err != nil {
 
 **Classified model errors** (`*vision.ModelError`, extract via `errors.AsType`):
 
-| Kind                     | Retryable | Description                           |
-| ------------------------ | --------- | ------------------------------------- |
-| `KindRateLimited`        | Yes       | Provider returned 429                 |
-| `KindTimeout`            | Yes       | Request exceeded deadline             |
-| `KindServerError`        | Yes       | Provider returned 5xx                 |
-| `KindNetwork`            | Yes       | Transport-level failure              |
-| `KindAuthentication`     | No        | Invalid credentials (401/403)         |
-| `KindNotFound`           | No        | Model or resource not found (404)     |
-| `KindBadRequest`         | No        | Provider rejected request (400)       |
-| `KindContextTooLarge`    | No        | Input exceeded context window         |
-| `KindCancelled`          | No        | Context was cancelled                 |
-| `KindStructuredParse`    | No        | JSON parse failure in structured mode |
-| `KindUnknown`            | No        | Unclassified                          |
+| Kind                  | Retryable | Description                           |
+| --------------------- | --------- | ------------------------------------- |
+| `KindRateLimited`     | Yes       | Provider returned 429                 |
+| `KindTimeout`         | Yes       | Request exceeded deadline             |
+| `KindServerError`     | Yes       | Provider returned 5xx                 |
+| `KindNetwork`         | Yes       | Transport-level failure               |
+| `KindAuthentication`  | No        | Invalid credentials (401/403)         |
+| `KindNotFound`        | No        | Model or resource not found (404)     |
+| `KindBadRequest`      | No        | Provider rejected request (400)       |
+| `KindContextTooLarge` | No        | Input exceeded context window         |
+| `KindCancelled`       | No        | Context was cancelled                 |
+| `KindStructuredParse` | No        | JSON parse failure in structured mode |
+| `KindUnknown`         | No        | Unclassified                          |
 
 ## Examples
 

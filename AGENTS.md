@@ -29,14 +29,19 @@ examples/                Working examples for each provider
 
 ## Key Design Decisions
 
-- **Standalone `AnalyzeStructured[T]`** — Go doesn't allow type params on methods, so it's a package-level function that takes a `*Agent`
+- **Standalone `AnalyzeStructured[T]` / `AnalyzeStructuredStream[T]`** — Go doesn't allow type params on methods, so these are package-level functions that take a `*Agent`
 - **Nil image filtering** — All analysis functions filter nil images from variadic args to prevent panics
 - **Context cancellation** — `withTimeout` returns `(ctx, cancel)`; callers must `defer cancel()`
 - **Validation at boundaries** — `Config.Validate()` at construction, input validation at method entry
 - **Centralized errors** — Domain errors live in `pkg/errors/` and are re-exported from `pkg/vision/` for backwards compatibility
+- **Classified model errors** — All model errors are wrapped in `*ModelError` with an `ErrorKind` and `IsRetryable()` for consumer retry logic
 - **Table-driven tests** — Pure function tests use table-driven pattern for maintainability
 - **BDD tests** — User-facing behavior tests use Ginkgo + Gomega for readability
+- **Testify tests** — Error classification and feature tests use testify/require for clarity
 - **Strong types** — `MediaType` is a defined string type; `ImageSource` validates at construction
+- **Hooks are synchronous** — `Hooks` callbacks fire in the calling goroutine; keep them fast
+- **Batch uses semaphore** — `AnalyzeBatch` bounds concurrency via `golang.org/x/sync/semaphore`
+- **ScreenshotAnalyzer cache invalidation** — All `With*` builder methods set `cachedAgent = nil` to ensure config changes take effect
 
 ## Testing
 
@@ -85,9 +90,22 @@ All in `pkg/errors/`, re-exported from `pkg/vision/`:
 - `ErrNoImages` — No images provided
 - `ErrInvalidTemperature` — Temperature out of 0.0-2.0 range
 - `ErrInvalidMaxTokens` — Negative max tokens
+- `ErrInvalidTopP` — Top-p out of 0.0-1.0 range
+- `ErrInvalidTopK` — Negative top-k
+- `ErrInvalidPresencePenalty` — Presence penalty out of -2.0 to 2.0
+- `ErrInvalidFrequencyPenalty` — Frequency penalty out of -2.0 to 2.0
 - `ErrInvalidImage` — Data doesn't match known image format
 - `ErrEmptyImageData` — Image data is empty
 - `ErrImageTooLarge` — Image exceeds 50 MB limit
+
+## Classified Model Errors
+
+Model invocation errors are wrapped in `*apperrors.ModelError` (re-exported as `vision.ModelError`):
+
+- `ErrorKind` — 11 categories: `KindRateLimited`, `KindTimeout`, `KindServerError`, `KindNetwork`, `KindAuthentication`, `KindNotFound`, `KindBadRequest`, `KindContextTooLarge`, `KindCancelled`, `KindStructuredParse`, `KindUnknown`
+- `IsRetryable()` — Quick check for retry logic
+- `Unwrap()` — Preserves original cause for `errors.Is` / `errors.AsType`
+- Extract via `errors.AsType[*vision.ModelError](err)`
 
 ## CLI Usage
 
