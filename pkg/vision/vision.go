@@ -62,6 +62,10 @@ type Config struct {
 
 	// RequestTimeout sets a per-request timeout. Zero means no timeout.
 	RequestTimeout time.Duration
+
+	// Hooks defines optional lifecycle callbacks for observability (logging, metrics).
+	// All callbacks are optional; nil hooks are safe.
+	Hooks Hooks
 }
 
 // Validate checks the configuration for errors.
@@ -239,28 +243,7 @@ func (va *Agent) AnalyzeStream(
 
 	var builder strings.Builder
 
-	streamCall := fantasy.AgentStreamCall{
-		Prompt: prompt,
-		Files:  files,
-	}
-	if va.config.MaxOutputTokens > 0 {
-		streamCall.MaxOutputTokens = &va.config.MaxOutputTokens
-	}
-	if va.config.Temperature != 0 {
-		streamCall.Temperature = &va.config.Temperature
-	}
-	if va.config.TopP > 0 {
-		streamCall.TopP = &va.config.TopP
-	}
-	if va.config.TopK > 0 {
-		streamCall.TopK = &va.config.TopK
-	}
-	if va.config.PresencePenalty != 0 {
-		streamCall.PresencePenalty = &va.config.PresencePenalty
-	}
-	if va.config.FrequencyPenalty != 0 {
-		streamCall.FrequencyPenalty = &va.config.FrequencyPenalty
-	}
+	streamCall := va.buildAgentStreamCall(prompt, files, nil)
 	streamCall.OnTextDelta = func(_, text string) error {
 		builder.WriteString(text)
 		if onText != nil {

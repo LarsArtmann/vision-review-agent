@@ -191,3 +191,32 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshots(
 	}
 	return sa.AnalyzeScreenshotImages(ctx, prompt, images...)
 }
+
+// AnalyzeConversation analyzes images with conversation history.
+func (sa *ScreenshotAnalyzer) AnalyzeConversation(
+	ctx context.Context,
+	conv *Conversation,
+	prompt string,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
+	a, err := sa.agent()
+	if err != nil {
+		return nil, wrapWithPrompt("AnalyzeConversation", prompt, err)
+	}
+	return a.AnalyzeConversation(ctx, conv, prompt, images...)
+}
+
+// AnalyzeConversationStream streams analysis with conversation history.
+func (sa *ScreenshotAnalyzer) AnalyzeConversationStream(
+	ctx context.Context,
+	conv *Conversation,
+	prompt string,
+	onText func(text string) error,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
+	a, err := sa.agent()
+	if err != nil {
+		return nil, wrapWithPrompt("AnalyzeConversationStream", prompt, err)
+	}
+	return a.AnalyzeConversationStream(ctx, conv, prompt, onText, images...)
+}
