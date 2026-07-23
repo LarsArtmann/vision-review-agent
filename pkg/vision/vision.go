@@ -202,28 +202,7 @@ func (va *Agent) Analyze(
 
 	files := toFileParts(validImages)
 
-	call := fantasy.AgentCall{
-		Prompt: prompt,
-		Files:  files,
-	}
-	if va.config.MaxOutputTokens > 0 {
-		call.MaxOutputTokens = &va.config.MaxOutputTokens
-	}
-	if va.config.Temperature != 0 {
-		call.Temperature = &va.config.Temperature
-	}
-	if va.config.TopP > 0 {
-		call.TopP = &va.config.TopP
-	}
-	if va.config.TopK > 0 {
-		call.TopK = &va.config.TopK
-	}
-	if va.config.PresencePenalty != 0 {
-		call.PresencePenalty = &va.config.PresencePenalty
-	}
-	if va.config.FrequencyPenalty != 0 {
-		call.FrequencyPenalty = &va.config.FrequencyPenalty
-	}
+	call := va.buildAgentCall(prompt, files, nil)
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
@@ -300,6 +279,163 @@ func (va *Agent) AnalyzeStream(
 		Usage:       result.TotalUsage,
 		RawResponse: result,
 	}, nil
+}
+
+// AnalyzeConversation analyzes images with the given prompt, incorporating
+// conversation history for multi-turn interactions.
+// The prompt and images represent the current turn; the conversation provides
+// prior context.
+//
+// After a successful call, persist the turn by calling:
+//
+//	conv.AddUserMessage(prompt, images...)
+//	conv.AddAssistantMessage(result.Text)
+func (va *Agent) AnalyzeConversation(
+	ctx context.Context,
+	conv *Conversation,
+	prompt string,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
+	if prompt == "" {
+		return nil, ErrEmptyPrompt
+	}
+	validImages, err := requireImages(images)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := va.withTimeout(ctx)
+	defer cancel()
+
+	call := va.buildAgentCall(prompt, toFileParts(validImages), conv.Messages())
+
+	result, err := va.agent.Generate(ctx, call)
+	if err != nil {
+		return nil, wrapWithPrompt("vision agent conversation generate", prompt, err)
+	}
+
+	return &AnalyzeResult{
+		Text:        result.Response.Content.Text(),
+		Usage:       result.TotalUsage,
+		RawResponse: result,
+	}, nil
+}
+
+// AnalyzeConversationStream streams analysis with conversation history for multi-turn interactions.
+// The onText callback is called for each chunk of text received.
+func (va *Agent) AnalyzeConversationStream(
+	ctx context.Context,
+	conv *Conversation,
+	prompt string,
+	onText func(text string) error,
+	images ...*ImageSource,
+) (*AnalyzeResult, error) {
+	if prompt == "" {
+		return nil, ErrEmptyPrompt
+	}
+	validImages, err := requireImages(images)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := va.withTimeout(ctx)
+	defer cancel()
+
+	var builder strings.Builder
+
+	streamCall := va.buildAgentStreamCall(prompt, toFileParts(validImages), conv.Messages())
+	streamCall.OnTextDelta = func(_, text string) error {
+		builder.WriteString(text)
+		if onText != nil {
+			return onText(text)
+		}
+		return nil
+	}
+
+	result, err := va.agent.Stream(ctx, streamCall)
+	if err != nil {
+		return nil, wrapWithPrompt("vision agent conversation stream", prompt, err)
+	}
+
+	return &AnalyzeResult{
+		Text:        builder.String(),
+		Usage:       result.TotalUsage,
+		RawResponse: result,
+	}, nil
+}
+
+// buildAgentCall constructs a fantasy.AgentCall with model parameters and optional history.
+func (va *Agent) buildAgentCall(
+	prompt string,
+	files []fantasy.FilePart,
+	messages []fantasy.Message,
+) fantasy.AgentCall {
+	call := fantasy.AgentCall{
+		Prompt:   prompt,
+		Files:    files,
+		Messages: messages,
+	}
+	va.applyModelParamsAgentCall(&call)
+	return call
+}
+
+// buildAgentStreamCall constructs a fantasy.AgentStreamCall with model parameters and optional history.
+func (va *Agent) buildAgentStreamCall(
+	prompt string,
+	files []fantasy.FilePart,
+	messages []fantasy.Message,
+) fantasy.AgentStreamCall {
+	call := fantasy.AgentStreamCall{
+		Prompt:   prompt,
+		Files:    files,
+		Messages: messages,
+	}
+	va.applyModelParamsStreamCall(&call)
+	return call
+}
+
+// applyModelParamsAgentCall sets optional model parameters on an AgentCall.
+func (va *Agent) applyModelParamsAgentCall(call *fantasy.AgentCall) {
+	if va.config.MaxOutputTokens > 0 {
+		call.MaxOutputTokens = &va.config.MaxOutputTokens
+	}
+	if va.config.Temperature != 0 {
+		call.Temperature = &va.config.Temperature
+	}
+	if va.config.TopP > 0 {
+		call.TopP = &va.config.TopP
+	}
+	if va.config.TopK > 0 {
+		call.TopK = &va.config.TopK
+	}
+	if va.config.PresencePenalty != 0 {
+		call.PresencePenalty = &va.config.PresencePenalty
+	}
+	if va.config.FrequencyPenalty != 0 {
+		call.FrequencyPenalty = &va.config.FrequencyPenalty
+	}
+}
+
+// applyModelParamsStreamCall sets optional model parameters on an AgentStreamCall.
+func (va *Agent) applyModelParamsStreamCall(call *fantasy.AgentStreamCall) {
+	if va.config.MaxOutputTokens > 0 {
+		call.MaxOutputTokens = &va.config.MaxOutputTokens
+	}
+	if va.config.Temperature != 0 {
+		call.Temperature = &va.config.Temperature
+	}
+	if va.config.TopP > 0 {
+		call.TopP = &va.config.TopP
+	}
+	if va.config.TopK > 0 {
+		call.TopK = &va.config.TopK
+	}
+	if va.config.PresencePenalty != 0 {
+		call.PresencePenalty = &va.config.PresencePenalty
+	}
+	if va.config.FrequencyPenalty != 0 {
+		call.FrequencyPenalty = &va.config.FrequencyPenalty
+	}
 }
 
 // withTimeout applies the configured request timeout if set.

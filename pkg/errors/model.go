@@ -12,14 +12,13 @@ import (
 // Defined as named constants rather than net/http imports to keep the
 // classification logic self-documenting and free of magic numbers.
 const (
-	statusUnauthorized       = 401
-	statusForbidden          = 403
-	statusNotFound           = 404
-	statusRequestTimeout     = 408
-	statusTooManyRequests    = 429
-	statusServerError        = 500
-	statusBadGateway         = 502
-	statusServiceUnavailable = 503
+	statusUnauthorized    = 401
+	statusForbidden       = 403
+	statusNotFound        = 404
+	statusRequestTimeout  = 408
+	statusTooManyRequests = 429
+	statusServerError     = 500
+	statusBadRequest      = 400
 )
 
 // maxPromptDisplayLen is the maximum number of characters of the prompt
@@ -117,10 +116,7 @@ func (e *ModelError) Error() string {
 		cause = e.Cause.Error()
 	}
 
-	prompt := e.Prompt
-	if len(prompt) > maxPromptDisplayLen {
-		prompt = prompt[:maxPromptDisplayLen] + "..."
-	}
+	prompt := truncatePrompt(e.Prompt)
 
 	if e.Op != "" {
 		return fmt.Sprintf(
@@ -149,9 +145,22 @@ func (e *ModelError) IsRetryable() bool {
 	switch e.Kind {
 	case KindRateLimited, KindTimeout, KindServerError, KindNetwork:
 		return true
-	default:
+	case KindAuthentication, KindNotFound, KindBadRequest,
+		KindContextTooLarge, KindCancelled, KindStructuredParse, KindUnknown:
 		return false
 	}
+
+	return false
+}
+
+// truncatePrompt shortens a prompt to maxPromptDisplayLen characters for
+// display in error messages.
+func truncatePrompt(prompt string) string {
+	if len(prompt) <= maxPromptDisplayLen {
+		return prompt
+	}
+
+	return prompt[:maxPromptDisplayLen] + "..."
 }
 
 // Wrap creates a ModelError with an explicit kind, for cases where the
@@ -159,10 +168,23 @@ func (e *ModelError) IsRetryable() bool {
 // is always KindStructuredParse).
 func Wrap(kind ErrorKind, op, prompt string, cause error) *ModelError {
 	return &ModelError{
-		Kind:   kind,
-		Op:     op,
-		Prompt: prompt,
-		Cause:  cause,
+		Kind:       kind,
+		Op:         op,
+		Prompt:     prompt,
+		StatusCode: 0,
+		Cause:      cause,
+	}
+}
+
+// classified creates a ModelError with a kind and cause, leaving Op, Prompt,
+// and StatusCode at their zero values for call sites to populate.
+func classified(kind ErrorKind, cause error) *ModelError {
+	return &ModelError{
+		Kind:       kind,
+		Op:         "",
+		Prompt:     "",
+		StatusCode: 0,
+		Cause:      cause,
 	}
 }
 
@@ -181,64 +203,68 @@ func Classify(err error) *ModelError {
 	}
 
 	if errors.Is(err, context.Canceled) { //nolint:legacyerrors // stdlib sentinel match
-		return &ModelError{Kind: KindCancelled, Cause: err}
+		return classified(KindCancelled, err)
 	}
 
 	if errors.Is(err, context.DeadlineExceeded) { //nolint:legacyerrors // stdlib sentinel match
-		return &ModelError{Kind: KindTimeout, Cause: err}
+		return classified(KindTimeout, err)
 	}
 
 	if _, ok := errors.AsType[*fantasy.NoObjectGeneratedError](err); ok {
-		return &ModelError{Kind: KindStructuredParse, Cause: err}
+		return classified(KindStructuredParse, err)
 	}
 
 	if providerErr, ok := errors.AsType[*fantasy.ProviderError](err); ok {
 		return classifyProviderError(providerErr, err)
 	}
 
-	return &ModelError{Kind: KindUnknown, Cause: err}
+	return classified(KindUnknown, err)
 }
 
 // classifyProviderError maps a fantasy.ProviderError to a domain ErrorKind
 // based on its HTTP status code and context-too-large flag.
-func classifyProviderError(pe *fantasy.ProviderError, err error) *ModelError {
-	me := &ModelError{
+func classifyProviderError(providerErr *fantasy.ProviderError, err error) *ModelError {
+	modelErr := &ModelError{
+		Kind:       KindUnknown,
+		Op:         "",
+		Prompt:     "",
+		StatusCode: providerErr.StatusCode,
 		Cause:      err,
-		StatusCode: pe.StatusCode,
 	}
 
-	if pe.IsContextTooLarge() {
-		me.Kind = KindContextTooLarge
-		return me
+	if providerErr.IsContextTooLarge() {
+		modelErr.Kind = KindContextTooLarge
+
+		return modelErr
 	}
 
-	switch pe.StatusCode {
+	switch providerErr.StatusCode {
 	case statusUnauthorized, statusForbidden:
-		me.Kind = KindAuthentication
+		modelErr.Kind = KindAuthentication
 	case statusNotFound:
-		me.Kind = KindNotFound
+		modelErr.Kind = KindNotFound
 	case statusTooManyRequests:
-		me.Kind = KindRateLimited
+		modelErr.Kind = KindRateLimited
 	case statusRequestTimeout:
-		me.Kind = KindTimeout
+		modelErr.Kind = KindTimeout
+	case statusBadRequest:
+		modelErr.Kind = KindBadRequest
 	default:
-		me.Kind = kindFromStatusOrRetryability(pe)
+		modelErr.Kind = kindFromStatusOrRetryability(providerErr)
 	}
 
-	return me
+	return modelErr
 }
 
 // kindFromStatusOrRetryability handles status codes outside the explicit
 // switch above: 5xx maps to KindServerError, a missing status code with a
 // retryable transport failure maps to KindNetwork, and everything else falls
 // back to KindUnknown.
-func kindFromStatusOrRetryability(pe *fantasy.ProviderError) ErrorKind {
+func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind {
 	switch {
-	case pe.StatusCode == 400:
-		return KindBadRequest
-	case pe.StatusCode >= statusServerError:
+	case providerErr.StatusCode >= statusServerError:
 		return KindServerError
-	case pe.StatusCode == 0 && pe.IsRetryable():
+	case providerErr.StatusCode == 0 && providerErr.IsRetryable():
 		return KindNetwork
 	default:
 		return KindUnknown
@@ -254,8 +280,8 @@ func IsRetryable(err error) bool {
 		return me.IsRetryable()
 	}
 
-	if pe, ok := errors.AsType[*fantasy.ProviderError](err); ok {
-		return pe.IsRetryable()
+	if providerErr, ok := errors.AsType[*fantasy.ProviderError](err); ok {
+		return providerErr.IsRetryable()
 	}
 
 	return false
