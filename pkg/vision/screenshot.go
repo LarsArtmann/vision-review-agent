@@ -48,54 +48,63 @@ func NewScreenshotAnalyzer(model fantasy.LanguageModel) *ScreenshotAnalyzer {
 // WithSystemPrompt sets a custom system prompt.
 func (sa *ScreenshotAnalyzer) WithSystemPrompt(prompt string) *ScreenshotAnalyzer {
 	sa.config.SystemPrompt = prompt
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithMaxOutputTokens sets the maximum output tokens.
 func (sa *ScreenshotAnalyzer) WithMaxOutputTokens(tokens int64) *ScreenshotAnalyzer {
 	sa.config.MaxOutputTokens = tokens
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithTemperature sets the temperature.
 func (sa *ScreenshotAnalyzer) WithTemperature(temp float64) *ScreenshotAnalyzer {
 	sa.config.Temperature = temp
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithTopP sets the top-p (nucleus sampling) parameter.
 func (sa *ScreenshotAnalyzer) WithTopP(topP float64) *ScreenshotAnalyzer {
 	sa.config.TopP = topP
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithTopK sets the top-k sampling parameter.
 func (sa *ScreenshotAnalyzer) WithTopK(topK int64) *ScreenshotAnalyzer {
 	sa.config.TopK = topK
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithPresencePenalty sets the presence penalty.
 func (sa *ScreenshotAnalyzer) WithPresencePenalty(penalty float64) *ScreenshotAnalyzer {
 	sa.config.PresencePenalty = penalty
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithFrequencyPenalty sets the frequency penalty.
 func (sa *ScreenshotAnalyzer) WithFrequencyPenalty(penalty float64) *ScreenshotAnalyzer {
 	sa.config.FrequencyPenalty = penalty
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithMaxRetries sets the maximum number of retries on transient errors.
 func (sa *ScreenshotAnalyzer) WithMaxRetries(retries int) *ScreenshotAnalyzer {
 	sa.config.MaxRetries = retries
+	sa.cachedAgent = nil
 	return sa
 }
 
 // WithRequestTimeout sets a per-request timeout.
 func (sa *ScreenshotAnalyzer) WithRequestTimeout(timeout time.Duration) *ScreenshotAnalyzer {
 	sa.config.RequestTimeout = timeout
+	sa.cachedAgent = nil
 	return sa
 }
 

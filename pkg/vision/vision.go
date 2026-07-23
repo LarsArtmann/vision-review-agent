@@ -209,9 +209,9 @@ func (va *Agent) Analyze(
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
-		wrapped := wrapWithPrompt("vision agent generate", prompt, err)
-		va.config.Hooks.fireError(ctx, wrapped)
-		return nil, wrapped
+		classified := classifyModelErr("vision agent generate", prompt, err)
+		va.config.Hooks.fireError(ctx, classified)
+		return nil, classified
 	}
 
 	analysisResult := &AnalyzeResult{
@@ -256,9 +256,9 @@ func (va *Agent) AnalyzeStream(
 
 	result, err := va.agent.Stream(ctx, streamCall)
 	if err != nil {
-		wrapped := wrapWithPrompt("vision agent stream", prompt, err)
-		va.config.Hooks.fireError(ctx, wrapped)
-		return nil, wrapped
+		classified := classifyModelErr("vision agent stream", prompt, err)
+		va.config.Hooks.fireError(ctx, classified)
+		return nil, classified
 	}
 
 	analysisResult := &AnalyzeResult{
@@ -297,7 +297,7 @@ func (va *Agent) AnalyzeConversation(
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
-		return nil, wrapWithPrompt("vision agent conversation generate", prompt, err)
+		return nil, classifyModelErr("vision agent conversation generate", prompt, err)
 	}
 
 	return &AnalyzeResult{
@@ -340,7 +340,7 @@ func (va *Agent) AnalyzeConversationStream(
 
 	result, err := va.agent.Stream(ctx, streamCall)
 	if err != nil {
-		return nil, wrapWithPrompt("vision agent conversation stream", prompt, err)
+		return nil, classifyModelErr("vision agent conversation stream", prompt, err)
 	}
 
 	return &AnalyzeResult{

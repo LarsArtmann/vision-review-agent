@@ -6,6 +6,7 @@ import (
 
 	"charm.land/fantasy"
 	"charm.land/fantasy/schema"
+	apperrors "github.com/larsartmann/vision-review-agent/pkg/errors"
 	"github.com/larsartmann/vision-review-agent/internal/visionutil"
 )
 
@@ -61,13 +62,18 @@ func AnalyzeStructured[T any](
 
 	result, err := agent.config.Model.GenerateObject(ctx, call)
 	if err != nil {
-		return nil, wrapWithPrompt("vision agent structured generate", prompt, err)
+		return nil, classifyModelErr("vision agent structured generate", prompt, err)
 	}
 
 	var typedResult T
 	if result.Object != nil {
 		if err := visionutil.UnmarshalToType(result.Object, &typedResult); err != nil {
-			return nil, wrapWithPrompt("vision agent unmarshal result", prompt, err)
+			return nil, apperrors.Wrap(
+				apperrors.KindStructuredParse,
+				"vision agent unmarshal result",
+				prompt,
+				err,
+			)
 		}
 	}
 
