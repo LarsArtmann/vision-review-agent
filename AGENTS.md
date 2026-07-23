@@ -10,13 +10,18 @@ A Go SDK for building AI agents with vision capabilities. Built on top of [charm
 cmd/vision/              CLI tool
 pkg/                     Public library code
   vision/                Core SDK package
-    vision.go            Agent, Config, AnalyzeResult
-    image.go             ImageSource, loading helpers
-    screenshot.go        ScreenshotAnalyzer builder
-    structured.go        Typed structured output (AnalyzeStructured[T])
-    errors.go            Re-exports domain errors (backwards compat)
+    vision.go            Agent, Config, Analyze, AnalyzeStream, AnalyzeConversation
+    image.go             ImageSource, LoadImageFromFile/URL/Base64/Reader
+    screenshot.go        ScreenshotAnalyzer builder (cache-safe)
+    structured.go        AnalyzeStructured[T], AnalyzeStructuredStream[T]
+    conversation.go      Conversation type for multi-turn analysis
+    batch.go             AnalyzeBatch for concurrent analysis
+    hooks.go             Hooks (OnStart, OnFinish, OnError)
+    errors.go            Re-exports domain errors + ModelError classification
     validate.go          Image format validation (magic bytes)
   errors/                Centralized domain-specific errors (apperrors)
+    errors.go            Sentinel validation errors
+    model.go             ModelError, ErrorKind, Classify, IsRetryable
 internal/                Private implementation code
   visionutil/            Internal helpers (prompt building, unmarshaling)
 examples/                Working examples for each provider

@@ -230,25 +230,52 @@ if err != nil {
 
 ## Configuration
 
-| Option            | Description                          |
-| ----------------- | ------------------------------------ |
-| `SystemPrompt`    | Defines agent behavior               |
-| `Model`           | The LLM to use (must support vision) |
-| `Temperature`     | Randomness (0.0-2.0)                 |
-| `MaxOutputTokens` | Response length limit                |
-| `MaxRetries`      | Retry count for transient errors     |
-| `RequestTimeout`  | Per-request timeout                  |
+| Option             | Description                              |
+| ------------------ | ---------------------------------------- |
+| `SystemPrompt`     | Defines agent behavior                   |
+| `Model`            | The LLM to use (must support vision)     |
+| `Temperature`      | Randomness (0.0-2.0)                     |
+| `TopP`             | Nucleus sampling (0.0-1.0)               |
+| `TopK`             | Top-k sampling limit                     |
+| `PresencePenalty`  | Penalize tokens already present (-2 to 2)|
+| `FrequencyPenalty` | Penalize tokens by frequency (-2 to 2)   |
+| `MaxOutputTokens`  | Response length limit                    |
+| `MaxRetries`       | Retry count for transient errors         |
+| `RequestTimeout`   | Per-request timeout                      |
+| `Hooks`            | Lifecycle callbacks (OnStart/OnFinish/OnError) |
 
 ## Error Types
+
+**Validation errors** (returned before any model call):
 
 - `ErrNoModel` — No model configured
 - `ErrEmptyPrompt` — Empty prompt provided
 - `ErrNoImages` — No images provided
 - `ErrInvalidTemperature` — Temperature out of range
 - `ErrInvalidMaxTokens` — Negative max tokens
+- `ErrInvalidTopP` — Top-p out of 0.0-1.0 range
+- `ErrInvalidTopK` — Negative top-k
+- `ErrInvalidPresencePenalty` — Presence penalty out of -2.0 to 2.0
+- `ErrInvalidFrequencyPenalty` — Frequency penalty out of -2.0 to 2.0
 - `ErrInvalidImage` — Image data does not match known format
 - `ErrEmptyImageData` — Image data is empty
 - `ErrImageTooLarge` — Image exceeds 50 MB size limit
+
+**Classified model errors** (`*vision.ModelError`, extract via `errors.AsType`):
+
+| Kind                     | Retryable | Description                           |
+| ------------------------ | --------- | ------------------------------------- |
+| `KindRateLimited`        | Yes       | Provider returned 429                 |
+| `KindTimeout`            | Yes       | Request exceeded deadline             |
+| `KindServerError`        | Yes       | Provider returned 5xx                 |
+| `KindNetwork`            | Yes       | Transport-level failure              |
+| `KindAuthentication`     | No        | Invalid credentials (401/403)         |
+| `KindNotFound`           | No        | Model or resource not found (404)     |
+| `KindBadRequest`         | No        | Provider rejected request (400)       |
+| `KindContextTooLarge`    | No        | Input exceeded context window         |
+| `KindCancelled`          | No        | Context was cancelled                 |
+| `KindStructuredParse`    | No        | JSON parse failure in structured mode |
+| `KindUnknown`            | No        | Unclassified                          |
 
 ## Examples
 
