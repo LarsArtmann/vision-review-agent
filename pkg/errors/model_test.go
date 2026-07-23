@@ -13,13 +13,13 @@ import (
 
 // Package-level test sentinels to avoid err113 in table-driven tests.
 var (
-	errTestUpstream   = errors.New("upstream")
-	errTestGeneric    = errors.New("something broke")
-	errTestTooMany    = errors.New("too many requests")
-	errTestParseFail  = errors.New("parse failure")
-	errTestSimple     = errors.New("err")
-	errTestBoom       = errors.New("boom")
-	errTestNoop       = errors.New("noop")
+	errTestUpstream  = errors.New("upstream")
+	errTestGeneric   = errors.New("something broke")
+	errTestTooMany   = errors.New("too many requests")
+	errTestParseFail = errors.New("parse failure")
+	errTestSimple    = errors.New("err")
+	errTestBoom      = errors.New("boom")
+	errTestNoop      = errors.New("noop")
 )
 
 // newProviderErr builds a fantasy.ProviderError with the given status code

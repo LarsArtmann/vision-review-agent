@@ -201,6 +201,8 @@ func (va *Agent) Analyze(
 		return nil, err
 	}
 
+	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
+
 	ctx, cancel := va.withTimeout(ctx)
 	defer cancel()
 
@@ -210,14 +212,18 @@ func (va *Agent) Analyze(
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
-		return nil, wrapWithPrompt("vision agent generate", prompt, err)
+		wrapped := wrapWithPrompt("vision agent generate", prompt, err)
+		va.config.Hooks.fireError(ctx, wrapped)
+		return nil, wrapped
 	}
 
-	return &AnalyzeResult{
+	analysisResult := &AnalyzeResult{
 		Text:        result.Response.Content.Text(),
 		Usage:       result.TotalUsage,
 		RawResponse: result,
-	}, nil
+	}
+	va.config.Hooks.fireFinish(ctx, analysisResult)
+	return analysisResult, nil
 }
 
 // AnalyzeStream sends images to the agent and streams the response.
@@ -235,6 +241,8 @@ func (va *Agent) AnalyzeStream(
 	if err != nil {
 		return nil, err
 	}
+
+	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
 
 	ctx, cancel := va.withTimeout(ctx)
 	defer cancel()
@@ -254,14 +262,18 @@ func (va *Agent) AnalyzeStream(
 
 	result, err := va.agent.Stream(ctx, streamCall)
 	if err != nil {
-		return nil, wrapWithPrompt("vision agent stream", prompt, err)
+		wrapped := wrapWithPrompt("vision agent stream", prompt, err)
+		va.config.Hooks.fireError(ctx, wrapped)
+		return nil, wrapped
 	}
 
-	return &AnalyzeResult{
+	analysisResult := &AnalyzeResult{
 		Text:        builder.String(),
 		Usage:       result.TotalUsage,
 		RawResponse: result,
-	}, nil
+	}
+	va.config.Hooks.fireFinish(ctx, analysisResult)
+	return analysisResult, nil
 }
 
 // AnalyzeConversation analyzes images with the given prompt, incorporating
