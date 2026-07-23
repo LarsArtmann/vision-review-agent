@@ -193,10 +193,7 @@ func (va *Agent) Analyze(
 	prompt string,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	if prompt == "" {
-		return nil, ErrEmptyPrompt
-	}
-	validImages, err := requireImages(images)
+	validImages, err := validateAnalyzeInput(prompt, images)
 	if err != nil {
 		return nil, err
 	}
@@ -234,10 +231,7 @@ func (va *Agent) AnalyzeStream(
 	onText func(text string) error,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	if prompt == "" {
-		return nil, ErrEmptyPrompt
-	}
-	validImages, err := requireImages(images)
+	validImages, err := validateAnalyzeInput(prompt, images)
 	if err != nil {
 		return nil, err
 	}
@@ -291,10 +285,7 @@ func (va *Agent) AnalyzeConversation(
 	prompt string,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	if prompt == "" {
-		return nil, ErrEmptyPrompt
-	}
-	validImages, err := requireImages(images)
+	validImages, err := validateAnalyzeInput(prompt, images)
 	if err != nil {
 		return nil, err
 	}
@@ -389,48 +380,58 @@ func (va *Agent) buildAgentStreamCall(
 	return call
 }
 
-// applyModelParamsAgentCall sets optional model parameters on an AgentCall.
-func (va *Agent) applyModelParamsAgentCall(call *fantasy.AgentCall) {
+// applyOptionalPointers copies non-zero optional config fields into the
+// destination pointers. Zero-valued config fields are skipped, leaving the
+// destination at its zero value (nil). This avoids the cost of allocating
+// a pointer-to-zero on every call.
+//
+// The six pointer parameters must be passed in the canonical order:
+// MaxOutputTokens, Temperature, TopP, TopK, PresencePenalty, FrequencyPenalty.
+// Callers that need a single shared helper across two external structs with
+// matching field shapes can pass the matching pointer fields from each struct.
+func (va *Agent) applyOptionalPointers(
+	maxOut **int64,
+	temp, topP, presence, freq **float64,
+	topK **int64,
+) {
 	if va.config.MaxOutputTokens > 0 {
-		call.MaxOutputTokens = &va.config.MaxOutputTokens
+		*maxOut = &va.config.MaxOutputTokens
 	}
 	if va.config.Temperature != 0 {
-		call.Temperature = &va.config.Temperature
+		*temp = &va.config.Temperature
 	}
 	if va.config.TopP > 0 {
-		call.TopP = &va.config.TopP
+		*topP = &va.config.TopP
 	}
 	if va.config.TopK > 0 {
-		call.TopK = &va.config.TopK
+		*topK = &va.config.TopK
 	}
 	if va.config.PresencePenalty != 0 {
-		call.PresencePenalty = &va.config.PresencePenalty
+		*presence = &va.config.PresencePenalty
 	}
 	if va.config.FrequencyPenalty != 0 {
-		call.FrequencyPenalty = &va.config.FrequencyPenalty
+		*freq = &va.config.FrequencyPenalty
 	}
+}
+
+// applyModelParamsAgentCall sets optional model parameters on an AgentCall.
+func (va *Agent) applyModelParamsAgentCall(call *fantasy.AgentCall) {
+	va.applyOptionalPointers(
+		&call.MaxOutputTokens,
+		&call.Temperature, &call.TopP,
+		&call.PresencePenalty, &call.FrequencyPenalty,
+		&call.TopK,
+	)
 }
 
 // applyModelParamsStreamCall sets optional model parameters on an AgentStreamCall.
 func (va *Agent) applyModelParamsStreamCall(call *fantasy.AgentStreamCall) {
-	if va.config.MaxOutputTokens > 0 {
-		call.MaxOutputTokens = &va.config.MaxOutputTokens
-	}
-	if va.config.Temperature != 0 {
-		call.Temperature = &va.config.Temperature
-	}
-	if va.config.TopP > 0 {
-		call.TopP = &va.config.TopP
-	}
-	if va.config.TopK > 0 {
-		call.TopK = &va.config.TopK
-	}
-	if va.config.PresencePenalty != 0 {
-		call.PresencePenalty = &va.config.PresencePenalty
-	}
-	if va.config.FrequencyPenalty != 0 {
-		call.FrequencyPenalty = &va.config.FrequencyPenalty
-	}
+	va.applyOptionalPointers(
+		&call.MaxOutputTokens,
+		&call.Temperature, &call.TopP,
+		&call.PresencePenalty, &call.FrequencyPenalty,
+		&call.TopK,
+	)
 }
 
 // withTimeout applies the configured request timeout if set.
@@ -457,6 +458,16 @@ func requireImages(images []*ImageSource) ([]*ImageSource, error) {
 		return nil, ErrNoImages
 	}
 	return valid, nil
+}
+
+// validateAnalyzeInput enforces the two preconditions every public analysis
+// method must satisfy: a non-empty prompt and at least one non-nil image.
+// Centralising the check prevents the entry guards from drifting apart.
+func validateAnalyzeInput(prompt string, images []*ImageSource) ([]*ImageSource, error) {
+	if prompt == "" {
+		return nil, ErrEmptyPrompt
+	}
+	return requireImages(images)
 }
 
 // filterValidImages removes nil images from the slice.

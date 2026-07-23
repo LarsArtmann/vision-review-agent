@@ -28,10 +28,7 @@ func AnalyzeStructured[T any](
 	prompt string,
 	images ...*ImageSource,
 ) (*fantasy.ObjectResult[T], error) {
-	if prompt == "" {
-		return nil, ErrEmptyPrompt
-	}
-	validImages, err := requireImages(images)
+	validImages, err := validateAnalyzeInput(prompt, images)
 	if err != nil {
 		return nil, err
 	}
