@@ -5,12 +5,19 @@ A simple, production-ready Go SDK for building AI agents with vision capabilitie
 ## Features
 
 - **Simple API** — Analyze images/screenshots with a single function call
-- **Multi-provider** — Works with OpenAI, OpenRouter, and any fantasy-compatible provider
-- **Streaming** — Stream responses in real-time
+- **Multi-provider** — Works with OpenAI, OpenRouter, Anthropic, Google, Azure, Bedrock, and any fantasy-compatible provider
+- **Streaming** — Stream responses in real-time (text and structured)
 - **Structured Output** — Get typed, structured results instead of free-form text
+- **Structured Streaming** — Stream partial structured objects as they arrive
+- **Multi-turn Conversations** — Maintain conversation history for follow-up questions
+- **Batch Analysis** — Analyze multiple images concurrently with bounded parallelism
+- **Lifecycle Hooks** — Observe analysis lifecycle via OnStart, OnFinish, OnError callbacks
+- **Flexible Image Loading** — Load from files, URLs, base64 strings, or any `io.Reader`
+- **Classified Errors** — Every model error is classified (rate-limited, auth, timeout, etc.) with `IsRetryable()` for smart retry logic
 - **Built-in CLI** — Analyze images from the command line
+- **Full Model Parameters** — Temperature, TopP, TopK, PresencePenalty, FrequencyPenalty
 - **Validation** — Strong input validation with clear error types
-- **Configurable** — Temperature, token limits, retries, timeouts
+- **Configurable** — Token limits, retries, timeouts, sampling parameters
 
 ## Installation
 
@@ -131,9 +138,94 @@ fmt.Printf("Score: %d/10\n", result.Object.Score)
 analyzer := vision.NewScreenshotAnalyzer(model).
     WithSystemPrompt("Find accessibility issues").
     WithTemperature(0.2).
+    WithTopP(0.9).
     WithMaxOutputTokens(1000)
 
 result, _ := analyzer.AnalyzeScreenshot(ctx, "Review this page", "screenshot.png")
+```
+
+### Multi-turn Conversations
+
+```go
+conv := vision.NewConversation()
+conv.AddUserMessage("Describe this UI", img)
+
+result, _ := agent.AnalyzeConversation(ctx, conv, "What UI issues do you see?", img)
+conv.AddAssistantMessage(result.Text)
+
+// Follow-up with full context
+followUp, _ := agent.AnalyzeConversation(ctx, conv, "What about the color contrast?", img)
+```
+
+### Batch Analysis
+
+```go
+images := []*vision.ImageSource{img1, img2, img3}
+results := agent.AnalyzeBatch(ctx, "Describe", 3, images...)
+
+for _, r := range results {
+    if r.Err != nil {
+        log.Printf("image %d failed: %v", r.Index, r.Err)
+        continue
+    }
+    fmt.Println(r.Index, r.Result.Text)
+}
+```
+
+### Structured Streaming
+
+```go
+result, _ := vision.AnalyzeStructuredStream[UIReview](
+    ctx, agent, "Review this UI",
+    func(partial UIReview) {
+        fmt.Printf("Score so far: %d\n", partial.Score) // real-time updates
+    },
+    img,
+)
+```
+
+### Flexible Image Loading
+
+```go
+// From URL
+img, _ := vision.LoadImageFromURL(ctx, "https://example.com/screenshot.png")
+
+// From base64 (supports standard, URL-safe, and raw encodings)
+img, _ := vision.LoadImageFromBase64(b64String, vision.MediaTypePNG, "capture.png")
+
+// From any io.Reader
+img, _ := vision.LoadImageFromReader(file, vision.MediaTypeJPEG, "photo.jpg")
+```
+
+### Lifecycle Hooks
+
+```go
+agent, _ := vision.NewAgent(vision.Config{
+    Model: model,
+    Hooks: vision.Hooks{
+        OnStart:  func(ctx, prompt, n) { log.Printf("analyzing %d images", n) },
+        OnFinish: func(ctx, result) { log.Printf("used %d tokens", result.Usage.TotalTokens) },
+        OnError:  func(ctx, err) { log.Printf("failed: %v", err) },
+    },
+})
+```
+
+### Classified Errors with Retry Logic
+
+```go
+result, err := agent.Analyze(ctx, "describe", img)
+if err != nil {
+    var me *vision.ModelError
+    if errors.AsType(err, &me) {
+        if me.IsRetryable() {
+            // back off and retry
+        }
+        switch me.Kind {
+        case vision.KindRateLimited: // ...
+        case vision.KindAuthentication: // ...
+        }
+    }
+}
 ```
 
 ## Configuration
