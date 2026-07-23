@@ -191,12 +191,7 @@ func runAnalysis(
 	}
 
 	if err != nil {
-		if cfg.stream {
-			fmt.Fprintln(os.Stderr, "\nError:", err)
-		} else {
-			fmt.Fprintln(os.Stderr, "Error:", err)
-		}
-
+		printAnalysisError(err, cfg.stream)
 		os.Exit(1)
 	}
 
@@ -204,6 +199,60 @@ func runAnalysis(
 		printJSON(result)
 	} else {
 		printText(result, cfg.stream)
+	}
+}
+
+// printAnalysisError prints a user-friendly error message with actionable
+// advice when the error is a classified ModelError, or falls back to the raw
+// error string for unclassified errors.
+func printAnalysisError(err error, streamed bool) {
+	prefix := "Error:"
+	if streamed {
+		prefix = "\nError:"
+	}
+
+	modelErr, ok := errors.AsType[*vision.ModelError](err)
+	if !ok {
+		fmt.Fprintln(os.Stderr, prefix, err)
+		return
+	}
+
+	advice := adviceForKind(modelErr.Kind)
+	if advice != "" {
+		fmt.Fprintf(os.Stderr, "%s [%s] %s\n", prefix, modelErr.Kind, advice)
+		fmt.Fprintf(os.Stderr, "  Details: %s\n", modelErr.Cause)
+		return
+	}
+
+	fmt.Fprintln(os.Stderr, prefix, err)
+}
+
+// adviceForKind returns a user-actionable hint for a given error kind,
+// or an empty string if no specific advice applies.
+func adviceForKind(kind vision.ErrorKind) string {
+	switch kind {
+	case vision.KindRateLimited:
+		return "The AI provider is rate-limiting requests. Wait a moment and retry."
+	case vision.KindTimeout:
+		return "The request timed out. Increase the -timeout flag or use fewer/smaller images."
+	case vision.KindServerError:
+		return "The AI provider is experiencing issues. Retry later."
+	case vision.KindNetwork:
+		return "Could not reach the AI provider. Check your internet connection and retry."
+	case vision.KindAuthentication:
+		return "Authentication failed. Verify your API key environment variable (OPENAI_API_KEY or OPENROUTER_API_KEY)."
+	case vision.KindNotFound:
+		return "The requested model was not found. Check the -model flag."
+	case vision.KindBadRequest:
+		return "The provider rejected the request. Check your prompt and image formats."
+	case vision.KindContextTooLarge:
+		return "The input exceeds the model's context window. Use fewer or smaller images."
+	case vision.KindCancelled:
+		return "The request was cancelled."
+	case vision.KindStructuredParse:
+		return "The model failed to produce valid structured output. Try simplifying your prompt."
+	default:
+		return ""
 	}
 }
 
