@@ -138,7 +138,8 @@ func usageFunc(name string) func() {
 }
 
 func buildConfig(model fantasy.LanguageModel, cfg *config) vision.Config {
-	config := vision.Config{ //nolint:exhaustruct // optional fields intentionally use zero-value defaults
+	//nolint:exhaustruct // optional fields intentionally use zero-value defaults
+	config := vision.Config{
 		Model:           model,
 		Temperature:     cfg.temperature,
 		MaxOutputTokens: cfg.maxTokens,
