@@ -70,9 +70,18 @@ func AssertGotEq(t *testing.T, name string, got, want any) {
 }
 
 // mockModel is a mock implementation of fantasy.LanguageModel for testing.
-type mockModel struct{}
+// By default it returns canned success responses. Set the *Err fields to
+// inject errors for testing classified error paths.
+type mockModel struct {
+	generateErr       error
+	streamErr         error
+	generateObjectErr error
+}
 
 func (m *mockModel) Generate(_ context.Context, _ fantasy.Call) (*fantasy.Response, error) {
+	if m.generateErr != nil {
+		return nil, m.generateErr
+	}
 	return &fantasy.Response{
 		Content: []fantasy.Content{
 			fantasy.TextContent{Text: "mock response"},
@@ -83,6 +92,9 @@ func (m *mockModel) Generate(_ context.Context, _ fantasy.Call) (*fantasy.Respon
 }
 
 func (m *mockModel) Stream(_ context.Context, _ fantasy.Call) (fantasy.StreamResponse, error) {
+	if m.streamErr != nil {
+		return nil, m.streamErr
+	}
 	return func(yield func(fantasy.StreamPart) bool) {
 		_ = yield(fantasy.StreamPart{
 			Type: fantasy.StreamPartTypeTextStart,
@@ -109,6 +121,9 @@ func (m *mockModel) GenerateObject(
 	_ context.Context,
 	_ fantasy.ObjectCall,
 ) (*fantasy.ObjectResponse, error) {
+	if m.generateObjectErr != nil {
+		return nil, m.generateObjectErr
+	}
 	return &fantasy.ObjectResponse{
 		Object: map[string]any{
 			"layout": testLayout,
@@ -142,6 +157,15 @@ func (m *mockModel) StreamObject(
 func setupAgent() (context.Context, *Agent) {
 	ctx := context.Background()
 	agent, err := NewAgent(Config{Model: testModel()})
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	return ctx, agent
+}
+
+// setupAgentWithModel creates a fresh context and agent using the provided mock.
+// Use this when you need to inject errors into the mock.
+func setupAgentWithModel(model *mockModel) (context.Context, *Agent) {
+	ctx := context.Background()
+	agent, err := NewAgent(Config{Model: model})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	return ctx, agent
 }
