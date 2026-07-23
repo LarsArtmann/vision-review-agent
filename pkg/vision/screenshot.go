@@ -63,6 +63,30 @@ func (sa *ScreenshotAnalyzer) WithTemperature(temp float64) *ScreenshotAnalyzer 
 	return sa
 }
 
+// WithTopP sets the top-p (nucleus sampling) parameter.
+func (sa *ScreenshotAnalyzer) WithTopP(topP float64) *ScreenshotAnalyzer {
+	sa.config.TopP = topP
+	return sa
+}
+
+// WithTopK sets the top-k sampling parameter.
+func (sa *ScreenshotAnalyzer) WithTopK(topK int64) *ScreenshotAnalyzer {
+	sa.config.TopK = topK
+	return sa
+}
+
+// WithPresencePenalty sets the presence penalty.
+func (sa *ScreenshotAnalyzer) WithPresencePenalty(penalty float64) *ScreenshotAnalyzer {
+	sa.config.PresencePenalty = penalty
+	return sa
+}
+
+// WithFrequencyPenalty sets the frequency penalty.
+func (sa *ScreenshotAnalyzer) WithFrequencyPenalty(penalty float64) *ScreenshotAnalyzer {
+	sa.config.FrequencyPenalty = penalty
+	return sa
+}
+
 // WithMaxRetries sets the maximum number of retries on transient errors.
 func (sa *ScreenshotAnalyzer) WithMaxRetries(retries int) *ScreenshotAnalyzer {
 	sa.config.MaxRetries = retries

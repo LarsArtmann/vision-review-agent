@@ -38,6 +38,20 @@ type Config struct {
 	// Temperature controls randomness (0.0-2.0). Zero means model default.
 	Temperature float64
 
+	// TopP controls nucleus sampling (0.0-1.0). Zero means model default.
+	TopP float64
+
+	// TopK limits sampling to the top K tokens. Zero means model default.
+	TopK int64
+
+	// PresencePenalty penalizes tokens that have appeared (typically -2.0 to 2.0).
+	// Zero means model default.
+	PresencePenalty float64
+
+	// FrequencyPenalty penalizes tokens based on frequency (typically -2.0 to 2.0).
+	// Zero means model default.
+	FrequencyPenalty float64
+
 	// Model is the language model to use. Must support vision.
 	// Required.
 	Model fantasy.LanguageModel
@@ -60,6 +74,18 @@ func (c Config) Validate() error {
 	}
 	if c.MaxOutputTokens < 0 {
 		return ErrInvalidMaxTokens
+	}
+	if c.TopP < 0 || c.TopP > 1.0 {
+		return ErrInvalidTopP
+	}
+	if c.TopK < 0 {
+		return ErrInvalidTopK
+	}
+	if c.PresencePenalty < -2.0 || c.PresencePenalty > 2.0 {
+		return ErrInvalidPresencePenalty
+	}
+	if c.FrequencyPenalty < -2.0 || c.FrequencyPenalty > 2.0 {
+		return ErrInvalidFrequencyPenalty
 	}
 	return nil
 }
@@ -117,6 +143,22 @@ func NewAgent(config Config) (*Agent, error) {
 		opts = append(opts, fantasy.WithMaxRetries(config.MaxRetries))
 	}
 
+	if config.TopP > 0 {
+		opts = append(opts, fantasy.WithTopP(config.TopP))
+	}
+
+	if config.TopK > 0 {
+		opts = append(opts, fantasy.WithTopK(config.TopK))
+	}
+
+	if config.PresencePenalty != 0 {
+		opts = append(opts, fantasy.WithPresencePenalty(config.PresencePenalty))
+	}
+
+	if config.FrequencyPenalty != 0 {
+		opts = append(opts, fantasy.WithFrequencyPenalty(config.FrequencyPenalty))
+	}
+
 	return &Agent{
 		config: config,
 		agent:  fantasy.NewAgent(config.Model, opts...),
@@ -170,6 +212,18 @@ func (va *Agent) Analyze(
 	if va.config.Temperature != 0 {
 		call.Temperature = &va.config.Temperature
 	}
+	if va.config.TopP > 0 {
+		call.TopP = &va.config.TopP
+	}
+	if va.config.TopK > 0 {
+		call.TopK = &va.config.TopK
+	}
+	if va.config.PresencePenalty != 0 {
+		call.PresencePenalty = &va.config.PresencePenalty
+	}
+	if va.config.FrequencyPenalty != 0 {
+		call.FrequencyPenalty = &va.config.FrequencyPenalty
+	}
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
@@ -215,6 +269,18 @@ func (va *Agent) AnalyzeStream(
 	}
 	if va.config.Temperature != 0 {
 		streamCall.Temperature = &va.config.Temperature
+	}
+	if va.config.TopP > 0 {
+		streamCall.TopP = &va.config.TopP
+	}
+	if va.config.TopK > 0 {
+		streamCall.TopK = &va.config.TopK
+	}
+	if va.config.PresencePenalty != 0 {
+		streamCall.PresencePenalty = &va.config.PresencePenalty
+	}
+	if va.config.FrequencyPenalty != 0 {
+		streamCall.FrequencyPenalty = &va.config.FrequencyPenalty
 	}
 	streamCall.OnTextDelta = func(_, text string) error {
 		builder.WriteString(text)

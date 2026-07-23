@@ -21,6 +21,18 @@ var (
 	// ErrInvalidMaxTokens is returned when max tokens is negative.
 	ErrInvalidMaxTokens = apperrors.ErrInvalidMaxTokens
 
+	// ErrInvalidTopP is returned when top-p is out of range.
+	ErrInvalidTopP = apperrors.ErrInvalidTopP
+
+	// ErrInvalidTopK is returned when top-k is negative.
+	ErrInvalidTopK = apperrors.ErrInvalidTopK
+
+	// ErrInvalidPresencePenalty is returned when presence penalty is out of range.
+	ErrInvalidPresencePenalty = apperrors.ErrInvalidPresencePenalty
+
+	// ErrInvalidFrequencyPenalty is returned when frequency penalty is out of range.
+	ErrInvalidFrequencyPenalty = apperrors.ErrInvalidFrequencyPenalty
+
 	// ErrInvalidImage is returned when the data does not match any known image format.
 	ErrInvalidImage = apperrors.ErrInvalidImage
 

@@ -20,6 +20,18 @@ var (
 	// ErrInvalidMaxTokens is returned when max tokens is negative.
 	ErrInvalidMaxTokens = stderrors.New("vision agent: max output tokens cannot be negative")
 
+	// ErrInvalidTopP is returned when top-p is out of range.
+	ErrInvalidTopP = stderrors.New("vision agent: top-p must be between 0.0 and 1.0")
+
+	// ErrInvalidTopK is returned when top-k is negative.
+	ErrInvalidTopK = stderrors.New("vision agent: top-k cannot be negative")
+
+	// ErrInvalidPresencePenalty is returned when presence penalty is out of range.
+	ErrInvalidPresencePenalty = stderrors.New("vision agent: presence penalty must be between -2.0 and 2.0")
+
+	// ErrInvalidFrequencyPenalty is returned when frequency penalty is out of range.
+	ErrInvalidFrequencyPenalty = stderrors.New("vision agent: frequency penalty must be between -2.0 and 2.0")
+
 	// ErrInvalidImage is returned when the data does not match any known image format.
 	ErrInvalidImage = stderrors.New("vision agent: data does not appear to be a valid image")
 
