@@ -11,6 +11,7 @@ type testReview struct {
 
 func TestUnmarshalToType(t *testing.T) {
 	t.Parallel()
+
 	cases := []struct {
 		name    string
 		obj     any
@@ -32,22 +33,29 @@ func TestUnmarshalToType(t *testing.T) {
 		// capture range variable
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			var result testReview
+
 			err := UnmarshalToType(tc.obj, &result)
 			if tc.wantErr {
 				if err == nil {
 					t.Error("expected error, got nil")
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
+
 				return
 			}
+
 			if tc.name == "valid object" {
 				if result.Layout != "test" {
 					t.Errorf("expected layout 'test', got %q", result.Layout)
 				}
+
 				if result.Score != 5 {
 					t.Errorf("expected score 5, got %d", result.Score)
 				}
@@ -58,6 +66,7 @@ func TestUnmarshalToType(t *testing.T) {
 
 func TestAppendSystemAndPrompt(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name         string
 		systemPrompt string
@@ -82,6 +91,7 @@ func TestAppendSystemAndPrompt(t *testing.T) {
 		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			prompt := AppendSystemAndPrompt(tt.systemPrompt, tt.userPrompt, nil)
 			if len(prompt) != tt.wantLen {
 				t.Errorf("expected prompt length %d, got %d", tt.wantLen, len(prompt))

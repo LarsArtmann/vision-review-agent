@@ -33,6 +33,7 @@ func main() {
 		WithSystemPrompt("You are a senior frontend engineer reviewing UI designs.")
 
 	fmt.Println("Analyzing screenshot...")
+
 	result, err := analyzer.AnalyzeScreenshot(
 		ctx,
 		"Review this UI for accessibility and design issues.",

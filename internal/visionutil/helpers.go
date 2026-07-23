@@ -17,7 +17,9 @@ func AppendSystemAndPrompt(
 	if systemPrompt != "" {
 		prompt = append(prompt, fantasy.NewSystemMessage(systemPrompt))
 	}
+
 	prompt = append(prompt, fantasy.NewUserMessage(userPrompt, files...))
+
 	return prompt
 }
 
@@ -27,8 +29,10 @@ func UnmarshalToType(obj, target any) error {
 	if err != nil {
 		return fmt.Errorf("marshal object: %w", err)
 	}
+
 	if err := json.Unmarshal(jsonBytes, target); err != nil {
 		return fmt.Errorf("unmarshal into target: %w", err)
 	}
+
 	return nil
 }

@@ -76,7 +76,9 @@ func parseFlags() (*config, error) { //nolint:unparam
 		timeout      = flag.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
 		showVersion  = flag.Bool("version", false, "Show version and exit")
 	)
+
 	flag.Usage = usageFunc(os.Args[0])
+
 	flag.Parse()
 
 	if *showVersion {
@@ -137,6 +139,7 @@ func buildConfig(model fantasy.LanguageModel, cfg *config) vision.Config {
 	if cfg.systemPrompt != "" {
 		config.SystemPrompt = cfg.systemPrompt
 	}
+
 	if cfg.timeout > 0 {
 		config.RequestTimeout = parseTimeout(cfg.timeout)
 	}
@@ -155,8 +158,10 @@ func loadImages() ([]*vision.ImageSource, error) {
 		if err != nil {
 			return nil, fmt.Errorf("loading %s: %w", flag.Arg(i), err)
 		}
+
 		images[i] = img
 	}
+
 	return images, nil
 }
 
@@ -173,12 +178,15 @@ func runAnalysis(
 
 	if cfg.stream {
 		fmt.Println("Analyzing (streaming)...")
+
 		result, err = agent.AnalyzeStream(ctx, cfg.prompt, func(text string) error {
 			fmt.Print(text)
+
 			return nil
 		}, images...)
 	} else {
 		fmt.Println("Analyzing...")
+
 		result, err = agent.Analyze(ctx, cfg.prompt, images...)
 	}
 
@@ -188,6 +196,7 @@ func runAnalysis(
 		} else {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 		}
+
 		os.Exit(1)
 	}
 
@@ -203,6 +212,7 @@ func printText(result *vision.AnalyzeResult, streamed bool) {
 		fmt.Println("\n--- Analysis ---")
 		fmt.Println(result.Text)
 	}
+
 	fmt.Printf("\nTokens used: %d\n", result.Usage.TotalTokens)
 }
 
@@ -230,6 +240,7 @@ func printJSON(result *vision.AnalyzeResult) {
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
+
 	if err := enc.Encode(output); err != nil {
 		fmt.Fprintln(os.Stderr, "Error encoding JSON:", err)
 	}
@@ -246,20 +257,24 @@ func newProviderFromEnv(
 	if apiKey == "" {
 		return nil, errors.New(envVar + " environment variable not set")
 	}
+
 	provider, err := factory(apiKey)
 	if err != nil {
 		return nil, fmt.Errorf("create provider (env=%s): %w", envVar, err)
 	}
+
 	return provider, nil
 }
 
 func createOpenAIProvider(apiKey string) (fantasy.Provider, error) {
 	provider, err := openai.New(openai.WithAPIKey(apiKey))
+
 	return wrapProvider("openai", provider, err)
 }
 
 func createOpenRouterProvider(apiKey string) (fantasy.Provider, error) {
 	provider, err := openrouter.New(openrouter.WithAPIKey(apiKey))
+
 	return wrapProvider("openrouter", provider, err)
 }
 
@@ -273,6 +288,7 @@ func wrapProvider(
 	if err != nil {
 		return nil, fmt.Errorf("create %s provider: %w", name, err)
 	}
+
 	return provider, nil
 }
 

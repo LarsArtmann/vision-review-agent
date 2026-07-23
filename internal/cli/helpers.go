@@ -15,11 +15,13 @@ func ExitOnError(err error, msg string) {
 	if err == nil {
 		return
 	}
+
 	if msg != "" {
 		fmt.Fprintln(os.Stderr, msg+":", err)
 	} else {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 	}
+
 	os.Exit(1)
 }
 
@@ -40,6 +42,7 @@ func RequireEnvVar(name string) string {
 		fmt.Fprintf(os.Stderr, "Please set %s\n", name)
 		os.Exit(1)
 	}
+
 	return value
 }
 
@@ -61,6 +64,7 @@ func NewAgent(
 	if len(temperature) > 0 {
 		temp = temperature[0]
 	}
+
 	agent, err := vision.NewAgent(vision.Config{
 		SystemPrompt: systemPrompt,
 		Model:        model,
@@ -69,6 +73,7 @@ func NewAgent(
 	if err != nil {
 		return nil, fmt.Errorf("create vision agent (systemPrompt=%q): %w", systemPrompt, err)
 	}
+
 	return agent, nil
 }
 
@@ -78,5 +83,6 @@ func NewAgent(
 func LoadImageArg() *vision.ImageSource {
 	img, err := vision.LoadImageFromFile(os.Args[1])
 	ExitOnError(err, "Error loading image")
+
 	return img
 }

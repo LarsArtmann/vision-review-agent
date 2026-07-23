@@ -19,18 +19,18 @@ import (
 
 // UIReview is the structured output type.
 type UIReview struct {
-	Layout      string   `json:"layout"      description:"Brief description of the overall layout"`
-	Components  []string `json:"components"  description:"List of UI components identified"`
-	Issues      []Issue  `json:"issues"      description:"List of issues found"`
-	Score       int      `json:"score"       description:"Overall UX score from 1-10"`
-	Suggestions []string `json:"suggestions" description:"Actionable improvement suggestions"`
+	Layout      string   `description:"Brief description of the overall layout" json:"layout"`
+	Components  []string `description:"List of UI components identified"        json:"components"`
+	Issues      []Issue  `description:"List of issues found"                    json:"issues"`
+	Score       int      `description:"Overall UX score from 1-10"              json:"score"`
+	Suggestions []string `description:"Actionable improvement suggestions"      json:"suggestions"`
 }
 
 // Issue represents a single UI issue.
 type Issue struct {
-	Severity    string `json:"severity"    description:"Severity: critical, major, minor, or info"`
-	Component   string `json:"component"   description:"Which component has the issue"`
-	Description string `json:"description" description:"Detailed description of the issue"`
+	Severity    string `description:"Severity: critical, major, minor, or info" json:"severity"`
+	Component   string `description:"Which component has the issue"             json:"component"`
+	Description string `description:"Detailed description of the issue"         json:"description"`
 }
 
 func main() {
@@ -49,6 +49,7 @@ func main() {
 	img := cli.LoadImageArg()
 
 	fmt.Println("Analyzing screenshot with structured output...")
+
 	result, err := vision.AnalyzeStructured[UIReview](
 		ctx,
 		agent,
@@ -63,16 +64,19 @@ func main() {
 
 	fmt.Println("Layout:", review.Layout)
 	fmt.Println("\nComponents:")
+
 	for _, c := range review.Components {
 		fmt.Printf("  - %s\n", c)
 	}
 
 	fmt.Println("\nIssues:")
+
 	for _, issue := range review.Issues {
 		fmt.Printf("  [%s] %s: %s\n", issue.Severity, issue.Component, issue.Description)
 	}
 
 	fmt.Println("\nSuggestions:")
+
 	for _, s := range review.Suggestions {
 		fmt.Printf("  - %s\n", s)
 	}

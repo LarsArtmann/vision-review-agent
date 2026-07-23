@@ -28,6 +28,7 @@ func main() {
 	img := cli.LoadImageArg()
 
 	fmt.Println("Analyzing screenshot...")
+
 	result, err := agent.Analyze(ctx, "Describe the UI and identify any usability issues.", img)
 	cli.ExitOnError(err, "")
 
