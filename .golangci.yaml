@@ -169,6 +169,7 @@ linters:
         - err
         - ok
         - tt
+        - tc
         - fn
         - t
         - i
@@ -189,6 +190,19 @@ linters:
           - funlen
           - cyclop
           - goconst
+          - err113
+      # CLI tools, their helpers, and examples legitimately write to stdout.
+      - path: (cmd|examples|internal/cli)/
+        linters:
+          - forbidigo
+      # Application entry points use factory functions returning interfaces by design.
+      - path: (cmd|examples|internal/cli)/
+        linters:
+          - ireturn
+      # Examples are illustrative; extracting every literal hurts readability.
+      - path: examples/
+        linters:
+          - mnd
       - path: _test\.go
         text: unused
         linters:

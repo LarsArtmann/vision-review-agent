@@ -102,7 +102,7 @@ func TestErrorsIs(t *testing.T) {
 				t,
 				tt.want,
 				errors.Is(tt.err, tt.target),
-			) //nolint:legacyerrors // value match testing
+			) // value match testing
 		})
 	}
 }

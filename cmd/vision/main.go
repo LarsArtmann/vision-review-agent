@@ -25,7 +25,15 @@ import (
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
-const version = "0.1.0"
+const (
+	version            = "0.1.0"
+	defaultTemperature = 0.3
+)
+
+var (
+	errEnvVarNotSet    = errors.New("environment variable not set")
+	errUnknownProvider = errors.New("unknown provider")
+)
 
 func main() {
 	cfg, err := parseFlags()
@@ -70,7 +78,7 @@ func parseFlags() (*config, error) { //nolint:unparam
 		)
 		systemPrompt = flag.String("system", "", "Custom system prompt (optional)")
 		stream       = flag.Bool("stream", false, "Stream the response")
-		temperature  = flag.Float64("temperature", 0.3, "Temperature (0.0-2.0)")
+		temperature  = flag.Float64("temperature", defaultTemperature, "Temperature (0.0-2.0)")
 		maxTokens    = flag.Int64("max-tokens", 0, "Max output tokens (0 = unlimited)")
 		jsonOutput   = flag.Bool("json", false, "Output result as JSON")
 		timeout      = flag.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
@@ -130,7 +138,7 @@ func usageFunc(name string) func() {
 }
 
 func buildConfig(model fantasy.LanguageModel, cfg *config) vision.Config {
-	config := vision.Config{
+	config := vision.Config{ //nolint:exhaustruct // optional fields intentionally use zero-value defaults
 		Model:           model,
 		Temperature:     cfg.temperature,
 		MaxOutputTokens: cfg.maxTokens,
@@ -152,14 +160,14 @@ func parseTimeout(seconds int64) time.Duration {
 }
 
 func loadImages() ([]*vision.ImageSource, error) {
-	images := make([]*vision.ImageSource, flag.NArg())
+	images := make([]*vision.ImageSource, 0, flag.NArg())
 	for i := range flag.NArg() {
 		img, err := vision.LoadImageFromFile(flag.Arg(i))
 		if err != nil {
 			return nil, fmt.Errorf("loading %s: %w", flag.Arg(i), err)
 		}
 
-		images[i] = img
+		images = append(images, img)
 	}
 
 	return images, nil
@@ -214,6 +222,7 @@ func printAnalysisError(err error, streamed bool) {
 	modelErr, ok := errors.AsType[*vision.ModelError](err)
 	if !ok {
 		fmt.Fprintln(os.Stderr, prefix, err)
+
 		return
 	}
 
@@ -221,6 +230,7 @@ func printAnalysisError(err error, streamed bool) {
 	if advice != "" {
 		fmt.Fprintf(os.Stderr, "%s [%s] %s\n", prefix, modelErr.Kind, advice)
 		fmt.Fprintf(os.Stderr, "  Details: %s\n", modelErr.Cause)
+
 		return
 	}
 
@@ -267,9 +277,9 @@ func printText(result *vision.AnalyzeResult, streamed bool) {
 
 // jsonUsage is the shape of the JSON output produced by `-json`.
 type jsonUsage struct {
-	InputTokens  int64 `json:"input_tokens"`
-	OutputTokens int64 `json:"output_tokens"`
-	TotalTokens  int64 `json:"total_tokens"`
+	InputTokens  int64 `json:"inputTokens"`
+	OutputTokens int64 `json:"outputTokens"`
+	TotalTokens  int64 `json:"totalTokens"`
 }
 
 // jsonOutput is the JSON document written when `-json` is set.
@@ -304,7 +314,7 @@ func newProviderFromEnv(
 ) (fantasy.Provider, error) {
 	apiKey := os.Getenv(envVar)
 	if apiKey == "" {
-		return nil, errors.New(envVar + " environment variable not set")
+		return nil, fmt.Errorf("%s: %w", envVar, errEnvVarNotSet)
 	}
 
 	provider, err := factory(apiKey)
@@ -348,6 +358,6 @@ func createProvider(name string) (fantasy.Provider, error) {
 	case "openrouter":
 		return newProviderFromEnv("OPENROUTER_API_KEY", createOpenRouterProvider)
 	default:
-		return nil, fmt.Errorf("unknown provider: %s (supported: openai, openrouter)", name)
+		return nil, fmt.Errorf("%s (supported: openai, openrouter): %w", name, errUnknownProvider)
 	}
 }

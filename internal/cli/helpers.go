@@ -65,7 +65,7 @@ func NewAgent(
 		temp = temperature[0]
 	}
 
-	agent, err := vision.NewAgent(vision.Config{
+	agent, err := vision.NewAgent(vision.Config{ //nolint:exhaustruct // optional fields intentionally use zero-value defaults
 		SystemPrompt: systemPrompt,
 		Model:        model,
 		Temperature:  temp,
