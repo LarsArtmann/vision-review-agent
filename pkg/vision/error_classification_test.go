@@ -38,13 +38,43 @@ func TestAnalyzeClassifiesModelError(t *testing.T) {
 		wantKind  apperrors.ErrorKind
 		wantRetry bool
 	}{
-		{name: "rate limited", modelErr: newTestProviderErr(http.StatusTooManyRequests), wantKind: apperrors.KindRateLimited, wantRetry: true},
-		{name: "authentication", modelErr: newTestProviderErr(http.StatusUnauthorized), wantKind: apperrors.KindAuthentication, wantRetry: false},
-		{name: "not found", modelErr: newTestProviderErr(http.StatusNotFound), wantKind: apperrors.KindNotFound, wantRetry: false},
-		{name: "server error", modelErr: newTestProviderErr(http.StatusInternalServerError), wantKind: apperrors.KindServerError, wantRetry: true},
-		{name: "bad request", modelErr: newTestProviderErr(http.StatusBadRequest), wantKind: apperrors.KindBadRequest, wantRetry: false},
+		{
+			name:      "rate limited",
+			modelErr:  newTestProviderErr(http.StatusTooManyRequests),
+			wantKind:  apperrors.KindRateLimited,
+			wantRetry: true,
+		},
+		{
+			name:      "authentication",
+			modelErr:  newTestProviderErr(http.StatusUnauthorized),
+			wantKind:  apperrors.KindAuthentication,
+			wantRetry: false,
+		},
+		{
+			name:      "not found",
+			modelErr:  newTestProviderErr(http.StatusNotFound),
+			wantKind:  apperrors.KindNotFound,
+			wantRetry: false,
+		},
+		{
+			name:      "server error",
+			modelErr:  newTestProviderErr(http.StatusInternalServerError),
+			wantKind:  apperrors.KindServerError,
+			wantRetry: true,
+		},
+		{
+			name:      "bad request",
+			modelErr:  newTestProviderErr(http.StatusBadRequest),
+			wantKind:  apperrors.KindBadRequest,
+			wantRetry: false,
+		},
 		{name: "context cancelled", modelErr: context.Canceled, wantKind: apperrors.KindCancelled, wantRetry: false},
-		{name: "deadline exceeded", modelErr: context.DeadlineExceeded, wantKind: apperrors.KindTimeout, wantRetry: true},
+		{
+			name:      "deadline exceeded",
+			modelErr:  context.DeadlineExceeded,
+			wantKind:  apperrors.KindTimeout,
+			wantRetry: true,
+		},
 		{name: "generic error", modelErr: errors.New("boom"), wantKind: apperrors.KindUnknown, wantRetry: false},
 	}
 

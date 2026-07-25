@@ -110,8 +110,15 @@ func TestConfigValidationExtended(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "valid config with all params",
-			config:  Config{Model: testModel(), Temperature: 0.5, TopP: 0.9, TopK: 40, PresencePenalty: 0.5, FrequencyPenalty: -0.5},
+			name: "valid config with all params",
+			config: Config{
+				Model:            testModel(),
+				Temperature:      0.5,
+				TopP:             0.9,
+				TopK:             40,
+				PresencePenalty:  0.5,
+				FrequencyPenalty: -0.5,
+			},
 			wantErr: nil,
 		},
 		{
