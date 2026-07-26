@@ -1,6 +1,6 @@
 module github.com/larsartmann/vision-review-agent
 
-go 1.26.5
+go 1.26.4
 
 require (
 	charm.land/fantasy v0.38.1
