@@ -176,6 +176,10 @@ true`; all `//nolint:` directives now carry explanations. `funlen` config
 - Centralized errors in `pkg/errors/`, re-exported from `pkg/vision/` for backward compat
 - `flake.nix` vendorHash updated to match current dependencies
 - License metadata corrected to `unfree` (matching PROPRIETARY LICENSE file)
+  > **Correction (retroactive, `[Unreleased]`):** the v0.2.0 tag shipped
+  > `flake.nix` with `licenses.mit`, so this line was inaccurate as published.
+  > The actual change to `licenses.unfree` landed in `[Unreleased]`. Recorded
+  > here for honesty, not to rewrite history.
 - README updated: removed non-existent Anthropic provider reference, added new error types, corrected license
 
 ### Removed

@@ -99,3 +99,15 @@ tasks. They are **not** TODO items until answered.
    in the next minor, or must `Hooks` stay stable?
 4. **Semver policy for 0.x** — is 0.x "anything goes" or semver-lite? Should
    breaking changes get a `### Breaking` callout in CHANGELOG?
+5. **Tag anomaly resolution (BLOCKED on user — destructive).** The tags
+   `v0.2.1` and `v0.3.0` both point to commit `d5dda4b` (2026-04-27), which is
+   an *ancestor* of the real `v0.2.0` (`003a256`, 2026-07-23) and even predates
+   `v0.1.0`. They do not represent real releases — the actual post-v0.2.0 body
+   of work is currently **untagged** in `[Unreleased]`. **Recommended action**
+   (needs approval because moving/deleting tags is destructive and affects
+   anyone who fetched them): once `[Unreleased]` is ready to ship, **delete**
+   both bogus tags locally and on the remote, then **create a fresh `v0.3.0`**
+   on the real release commit. Alternative: supersede them by force-moving
+   `v0.3.0` and deleting `v0.2.1`. Do **not** leave them as-is; a descending
+   tag order (`v0.3.0` < `v0.2.0` by date) breaks tooling that assumes tags are
+   monotonic. Until decided, this stays documented, not acted on.
