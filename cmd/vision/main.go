@@ -39,8 +39,18 @@ var (
 )
 
 func main() {
-	cfg, err := parseFlags()
+	cfg, err := parseFlags(flag.CommandLine, os.Args[1:])
 	cli.ExitOnError(err, "")
+
+	if cfg.showVersion {
+		fmt.Println("vision", version)
+		os.Exit(0)
+	}
+
+	if len(cfg.args) == 0 {
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	ctx := context.Background()
 	provider, err := createProvider(cfg.providerName)
@@ -52,7 +62,7 @@ func main() {
 	agent, err := vision.NewAgent(buildConfig(model, cfg))
 	cli.ExitOnError(err, "Error creating agent")
 
-	images, err := loadImages()
+	images, err := loadImages(cfg.args)
 	cli.ExitOnError(err, "")
 
 	runAnalysis(ctx, agent, cfg, images)
@@ -69,43 +79,39 @@ type config struct {
 	maxTokens    int64
 	jsonOutput   bool
 	timeout      int64
+	showVersion  bool
+	args         []string // positional image paths
 }
 
-func parseFlags() (*config, error) { //nolint:unparam // error is always nil now but kept for future validation
-	var (
-		providerName = flag.String(
-			"provider",
-			"openai",
-			"Provider: openai, openrouter, anthropic, google, openaicompat",
-		)
-		modelID = flag.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")
-		prompt  = flag.String(
-			"prompt",
-			"Describe what you see in this image.",
-			"Analysis prompt",
-		)
-		systemPrompt = flag.String("system", "", "Custom system prompt (optional)")
-		stream       = flag.Bool("stream", false, "Stream the response")
-		temperature  = flag.Float64("temperature", defaultTemperature, "Temperature (0.0-2.0)")
-		maxTokens    = flag.Int64("max-tokens", 0, "Max output tokens (0 = unlimited)")
-		jsonOutput   = flag.Bool("json", false, "Output result as JSON")
-		structured   = flag.Bool("structured", false, "Emit a structured UI review as JSON (built-in schema)")
-		timeout      = flag.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
-		showVersion  = flag.Bool("version", false, "Show version and exit")
+// parseFlags parses the CLI flags from args using fs. It does NOT call os.Exit:
+// version/usage decisions are returned via cfg.showVersion and cfg.args so the
+// caller (and tests) can act on them. Using a *flag.FlagSet lets tests pass a
+// fresh, isolated flag set.
+func parseFlags(fs *flag.FlagSet, args []string) (*config, error) {
+	providerName := fs.String(
+		"provider",
+		"openai",
+		"Provider: openai, openrouter, anthropic, google, openaicompat",
 	)
+	modelID := fs.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")
+	prompt := fs.String(
+		"prompt",
+		"Describe what you see in this image.",
+		"Analysis prompt",
+	)
+	systemPrompt := fs.String("system", "", "Custom system prompt (optional)")
+	stream := fs.Bool("stream", false, "Stream the response")
+	temperature := fs.Float64("temperature", defaultTemperature, "Temperature (0.0-2.0)")
+	maxTokens := fs.Int64("max-tokens", 0, "Max output tokens (0 = unlimited)")
+	jsonOutput := fs.Bool("json", false, "Output result as JSON")
+	structured := fs.Bool("structured", false, "Emit a structured UI review as JSON (built-in schema)")
+	timeout := fs.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
+	showVersion := fs.Bool("version", false, "Show version and exit")
 
-	flag.Usage = usageFunc(os.Args[0])
+	fs.Usage = usageFunc(fs)
 
-	flag.Parse()
-
-	if *showVersion {
-		fmt.Println("vision", version)
-		os.Exit(0)
-	}
-
-	if flag.NArg() == 0 {
-		flag.Usage()
-		os.Exit(1)
+	if err := fs.Parse(args); err != nil {
+		return nil, err
 	}
 
 	return &config{
@@ -119,32 +125,37 @@ func parseFlags() (*config, error) { //nolint:unparam // error is always nil now
 		jsonOutput:   *jsonOutput,
 		structured:   *structured,
 		timeout:      *timeout,
+		showVersion:  *showVersion,
+		args:         fs.Args(),
 	}, nil
 }
 
-func usageFunc(name string) func() {
+func usageFunc(fs *flag.FlagSet) func() {
+	name := fs.Name()
+
 	return func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] <image1.png> [image2.png ...]\n\n", name)
-		fmt.Fprint(os.Stderr, "Analyze images/screenshots with AI vision models.\n\n")
-		fmt.Fprintln(os.Stderr, "Environment variables:")
-		fmt.Fprintln(os.Stderr, "  OPENAI_API_KEY          - OpenAI provider")
-		fmt.Fprintln(os.Stderr, "  OPENROUTER_API_KEY      - OpenRouter provider")
-		fmt.Fprintln(os.Stderr, "  ANTHROPIC_API_KEY       - Anthropic provider")
-		fmt.Fprintln(os.Stderr, "  GOOGLE_APPLICATION_*    - Google provider (ADC)")
-		fmt.Fprintln(os.Stderr, "  OPENAICOMPAT_BASE_URL   - openaicompat provider (required)")
-		fmt.Fprint(os.Stderr, "  OPENAICOMPAT_API_KEY    - openaicompat provider (optional)\n\n")
-		fmt.Fprintln(os.Stderr, "Options:")
-		flag.PrintDefaults()
-		fmt.Fprintln(os.Stderr, "\nExamples:")
-		fmt.Fprintf(os.Stderr, "  %s -prompt \"Find UI bugs\" screenshot.png\n", name)
+		out := fs.Output()
+		fmt.Fprintf(out, "Usage: %s [options] <image1.png> [image2.png ...]\n\n", name)
+		fmt.Fprint(out, "Analyze images/screenshots with AI vision models.\n\n")
+		fmt.Fprintln(out, "Environment variables:")
+		fmt.Fprintln(out, "  OPENAI_API_KEY          - OpenAI provider")
+		fmt.Fprintln(out, "  OPENROUTER_API_KEY      - OpenRouter provider")
+		fmt.Fprintln(out, "  ANTHROPIC_API_KEY       - Anthropic provider")
+		fmt.Fprintln(out, "  GOOGLE_APPLICATION_*    - Google provider (ADC)")
+		fmt.Fprintln(out, "  OPENAICOMPAT_BASE_URL   - openaicompat provider (required)")
+		fmt.Fprint(out, "  OPENAICOMPAT_API_KEY    - openaicompat provider (optional)\n\n")
+		fmt.Fprintln(out, "Options:")
+		fs.PrintDefaults()
+		fmt.Fprintln(out, "\nExamples:")
+		fmt.Fprintf(out, "  %s -prompt \"Find UI bugs\" screenshot.png\n", name)
 		fmt.Fprintf(
-			os.Stderr,
+			out,
 			"  %s -provider openrouter -model anthropic/claude-3.5-sonnet screenshot.png\n",
 			name,
 		)
-		fmt.Fprintf(os.Stderr, "  %s -stream -prompt \"Describe this\" *.png\n", name)
+		fmt.Fprintf(out, "  %s -stream -prompt \"Describe this\" *.png\n", name)
 		fmt.Fprintf(
-			os.Stderr,
+			out,
 			"  %s -json -prompt \"Find bugs\" screenshot.png | jq '.text'\n",
 			name,
 		)
@@ -174,12 +185,12 @@ func parseTimeout(seconds int64) time.Duration {
 	return time.Duration(seconds) * time.Second
 }
 
-func loadImages() ([]*vision.ImageSource, error) {
-	images := make([]*vision.ImageSource, 0, flag.NArg())
-	for i := range flag.NArg() {
-		img, err := vision.LoadImageFromFile(flag.Arg(i))
+func loadImages(args []string) ([]*vision.ImageSource, error) {
+	images := make([]*vision.ImageSource, 0, len(args))
+	for _, path := range args {
+		img, err := vision.LoadImageFromFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("loading %s: %w", flag.Arg(i), err)
+			return nil, fmt.Errorf("loading %s: %w", path, err)
 		}
 
 		images = append(images, img)

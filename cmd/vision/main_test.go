@@ -1,12 +1,22 @@
 package main
 
 import (
+	"flag"
+	"io"
 	"testing"
 	"time"
 
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 	"github.com/stretchr/testify/require"
 )
+
+// newTestFlagSet returns an isolated, quiet FlagSet for parseFlags tests.
+func newTestFlagSet() *flag.FlagSet {
+	fs := flag.NewFlagSet("vision-test", flag.ContinueOnError)
+	fs.SetOutput(io.Discard) // silence usage output on parse errors
+
+	return fs
+}
 
 func TestAdviceForKind(t *testing.T) {
 	t.Parallel()
@@ -117,4 +127,83 @@ func TestCreateProviderOpenAIMissingKey(t *testing.T) {
 	_, err := createProvider("openai")
 	require.Error(t, err)
 	require.ErrorIs(t, err, errEnvVarNotSet)
+}
+
+func TestParseFlagsDefaults(t *testing.T) {
+	t.Parallel()
+
+	cfg, err := parseFlags(newTestFlagSet(), []string{"screenshot.png"})
+	require.NoError(t, err)
+
+	require.Equal(t, "openai", cfg.providerName)
+	require.Equal(t, "gpt-4o", cfg.modelID)
+	require.Equal(t, "Describe what you see in this image.", cfg.prompt)
+	require.Empty(t, cfg.systemPrompt)
+	require.False(t, cfg.stream)
+	require.False(t, cfg.jsonOutput)
+	require.False(t, cfg.structured)
+	require.InDelta(t, defaultTemperature, cfg.temperature, 0.0001)
+	require.Equal(t, int64(0), cfg.maxTokens)
+	require.Equal(t, int64(0), cfg.timeout)
+	require.Equal(t, []string{"screenshot.png"}, cfg.args)
+	require.False(t, cfg.showVersion)
+}
+
+func TestParseFlagsAllFlags(t *testing.T) {
+	t.Parallel()
+
+	args := []string{
+		"-provider", "openrouter",
+		"-model", "anthropic/claude-3.5-sonnet",
+		"-prompt", "Find UI bugs",
+		"-system", "You are an accessibility expert",
+		"-stream",
+		"-temperature", "0.7",
+		"-max-tokens", "2048",
+		"-json",
+		"-structured",
+		"-timeout", "45",
+		"a.png", "b.png",
+	}
+
+	cfg, err := parseFlags(newTestFlagSet(), args)
+	require.NoError(t, err)
+
+	require.Equal(t, "openrouter", cfg.providerName)
+	require.Equal(t, "anthropic/claude-3.5-sonnet", cfg.modelID)
+	require.Equal(t, "Find UI bugs", cfg.prompt)
+	require.Equal(t, "You are an accessibility expert", cfg.systemPrompt)
+	require.True(t, cfg.stream)
+	require.True(t, cfg.jsonOutput)
+	require.True(t, cfg.structured)
+	require.InDelta(t, 0.7, cfg.temperature, 0.0001)
+	require.Equal(t, int64(2048), cfg.maxTokens)
+	require.Equal(t, int64(45), cfg.timeout)
+	require.Equal(t, []string{"a.png", "b.png"}, cfg.args)
+}
+
+func TestParseFlagsVersion(t *testing.T) {
+	t.Parallel()
+
+	cfg, err := parseFlags(newTestFlagSet(), []string{"-version"})
+	require.NoError(t, err)
+	require.True(t, cfg.showVersion, "-version must set showVersion")
+	require.Empty(t, cfg.args)
+}
+
+func TestParseFlagsNoPositionalArgs(t *testing.T) {
+	t.Parallel()
+
+	// parseFlags does not exit on missing positional args — it returns an empty
+	// args slice. main() is responsible for printing usage and exiting.
+	cfg, err := parseFlags(newTestFlagSet(), []string{})
+	require.NoError(t, err)
+	require.Empty(t, cfg.args, "no positional args must yield empty cfg.args")
+}
+
+func TestParseFlagsRejectsUnknownFlag(t *testing.T) {
+	t.Parallel()
+
+	_, err := parseFlags(newTestFlagSet(), []string{"-bogus", "img.png"})
+	require.Error(t, err, "unknown flags must surface as a parse error")
 }
