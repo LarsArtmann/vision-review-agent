@@ -3,11 +3,13 @@ package vision
 import (
 	"context"
 	"errors"
+	"net/http"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"charm.land/fantasy"
+	apperrors "github.com/larsartmann/vision-review-agent/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
