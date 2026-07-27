@@ -266,15 +266,15 @@ Re-verified after the TODO_LIST execution pass (see
 unchanged; the config-hygiene debt is unchanged. One open question is now
 resolved.
 
-| Item | Status | Note |
-| ---- | ------ | ---- |
-| golangci-lint `run ./...` → 0 issues | **still 0** | re-verified; `go build`/`go vet`/`gofmt`/`go test` all clean |
-| depguard `$module` workaround (hardcoded path) | **still in place** — not root-caused | `.golangci.yaml` still hardcodes `github.com/larsartmann/vision-review-agent` |
-| c.1 `nix flake check` | **not run this pass** | flake defines `checks` (test, lint) at `flake.nix:115` |
-| c.3 `golangci-lint config verify` | **open** | never invoked |
-| c.6 / f.5 audit all `//nolint:` directives | **open** | not audited |
-| c.7 / f.3 tighten `nolintlint` (`require-explanation`, `allow-no-extra-linter`) | **open** | `nolintlint` enabled but not tightened |
-| Q3 — push the 3 unpushed commits? | **RESOLVED** — pushed | branch is now up to date with `origin/master` |
+| Item                                                                            | Status                               | Note                                                                          |
+| ------------------------------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
+| golangci-lint `run ./...` → 0 issues                                            | **still 0**                          | re-verified; `go build`/`go vet`/`gofmt`/`go test` all clean                  |
+| depguard `$module` workaround (hardcoded path)                                  | **still in place** — not root-caused | `.golangci.yaml` still hardcodes `github.com/larsartmann/vision-review-agent` |
+| c.1 `nix flake check`                                                           | **not run this pass**                | flake defines `checks` (test, lint) at `flake.nix:115`                        |
+| c.3 `golangci-lint config verify`                                               | **open**                             | never invoked                                                                 |
+| c.6 / f.5 audit all `//nolint:` directives                                      | **open**                             | not audited                                                                   |
+| c.7 / f.3 tighten `nolintlint` (`require-explanation`, `allow-no-extra-linter`) | **open**                             | `nolintlint` enabled but not tightened                                        |
+| Q3 — push the 3 unpushed commits?                                               | **RESOLVED** — pushed                | branch is now up to date with `origin/master`                                 |
 
 **Net:** the workaround held through the TODO execution; every config-hygiene
 item in section f remains open and is tracked in `TODO_LIST.md`.

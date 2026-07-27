@@ -269,59 +269,59 @@ shipped in the 2026-07-27 TODO_LIST execution pass (see
 
 ### Shipped cleanly (DONE)
 
-| Item | Claim in report | Resolution | Evidence |
-| ---- | --------------- | ---------- | -------- |
-| B1 | Hooks not wired into `AnalyzeConversation`/`Stream` | **DONE** | `TestHooksFireAcrossAllAnalysisMethods` |
-| B3 | `AnalyzeConversationStream` inline validation | **DONE** — uses `validateAnalyzeInput` | code review |
-| B4 | ScreenshotAnalyzer conversation delegation untested | **DONE** — BDD "Conversation Delegation" (3 specs) | `screenshot_bdd_test.go` |
-| B5 / F.25 | `applyOptionalPointers` too clever | **DONE** — removed; direct field assignment | `vision.go` |
-| B6 / F.11–F.15 | No examples for new features | **DONE** — 5 examples added (conversation, batch, hooks, structured-stream, url-loading) | `examples/` |
-| C1 / F.16 | Tool/function calling exposure | **DONE** — `Config.Tools` → `fantasy.WithTools` | `vision.go` |
-| C2 / F.18 | `PrepareStep` interceptor | **DONE** — `Config.PrepareStep` | `vision.go` |
-| C3 / F.19 | Stop conditions | **DONE** — `Config.StopConditions` | `vision.go` |
-| C4 / F.20–F.23 | Additional CLI providers | **DONE** — Anthropic, Google (ADC), openaicompat added | `cmd/vision/main.go` |
-| C8 / F.28 / Q3 | Custom HTTP client for `LoadImageFromURL` | **DONE** — chose separate `LoadImageFromURLWithClient` fn | `image.go` |
-| E2 / F.5 | Unify `AnalyzeConversationStream` validation | **DONE** | as B3 |
-| E4 / F.6 | ScreenshotAnalyzer conversation tests | **DONE** | as B4 |
-| E5 | Add examples | **DONE** | as B6 |
-| E6 / F.24 | CLI structured output | **DONE** — `-structured` flag + built-in `uiReview` schema | `cmd/vision/main.go` |
-| E7 / F.9 | `MediaTypeBMP` constant | **DONE** — added to enum (but see "still open" for decoder + ext detection) | `image.go:24` |
-| E8 / F.10 / F.27 | Validate image format in `LoadImageFromURL` | **DONE** — runs `ValidateImage` post-download | `image.go` |
-| E10 / F.7 | Remove dead `wrapWithPrompt` | **DONE** — deleted repo-wide | `grep` → 0 |
-| E11 / F.8 | Migrate ScreenshotAnalyzer errors to `classifyModelErr` | **DONE** — `wrapWithPrompt` gone; config errors returned directly | `screenshot.go` |
-| F.1–F.4 | Wire hooks into all four analysis methods | **DONE** | `TestHooksFireAcrossAllAnalysisMethods` |
-| F.17 | `ToolChoice` | **DONE** — `Config.ToolChoice` | `vision.go` |
-| F.33 | `Conversation.Clear` | **DONE** | `conversation.go` |
-| F.37 | `ScreenshotAnalyzer.WithHooks` | **DONE** — fluent builder + cache invalidation | `screenshot.go` |
-| F.40 | golangci-lint cleanup (39 warnings) | **DONE** — 0 issues | `.golangci.yaml` |
-| F.41 / F.42 | Fuzz tests for base64 + image format detection | **DONE** — `FuzzDecodeBase64Flex`, `FuzzDetectImageFormat` | `pkg/vision/` |
-| F.47 / F.48 | `Config.Headers` / `Config.UserAgent` | **DONE** — wired to fantasy | `vision.go` |
+| Item             | Claim in report                                         | Resolution                                                                               | Evidence                                |
+| ---------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------- |
+| B1               | Hooks not wired into `AnalyzeConversation`/`Stream`     | **DONE**                                                                                 | `TestHooksFireAcrossAllAnalysisMethods` |
+| B3               | `AnalyzeConversationStream` inline validation           | **DONE** — uses `validateAnalyzeInput`                                                   | code review                             |
+| B4               | ScreenshotAnalyzer conversation delegation untested     | **DONE** — BDD "Conversation Delegation" (3 specs)                                       | `screenshot_bdd_test.go`                |
+| B5 / F.25        | `applyOptionalPointers` too clever                      | **DONE** — removed; direct field assignment                                              | `vision.go`                             |
+| B6 / F.11–F.15   | No examples for new features                            | **DONE** — 5 examples added (conversation, batch, hooks, structured-stream, url-loading) | `examples/`                             |
+| C1 / F.16        | Tool/function calling exposure                          | **DONE** — `Config.Tools` → `fantasy.WithTools`                                          | `vision.go`                             |
+| C2 / F.18        | `PrepareStep` interceptor                               | **DONE** — `Config.PrepareStep`                                                          | `vision.go`                             |
+| C3 / F.19        | Stop conditions                                         | **DONE** — `Config.StopConditions`                                                       | `vision.go`                             |
+| C4 / F.20–F.23   | Additional CLI providers                                | **DONE** — Anthropic, Google (ADC), openaicompat added                                   | `cmd/vision/main.go`                    |
+| C8 / F.28 / Q3   | Custom HTTP client for `LoadImageFromURL`               | **DONE** — chose separate `LoadImageFromURLWithClient` fn                                | `image.go`                              |
+| E2 / F.5         | Unify `AnalyzeConversationStream` validation            | **DONE**                                                                                 | as B3                                   |
+| E4 / F.6         | ScreenshotAnalyzer conversation tests                   | **DONE**                                                                                 | as B4                                   |
+| E5               | Add examples                                            | **DONE**                                                                                 | as B6                                   |
+| E6 / F.24        | CLI structured output                                   | **DONE** — `-structured` flag + built-in `uiReview` schema                               | `cmd/vision/main.go`                    |
+| E7 / F.9         | `MediaTypeBMP` constant                                 | **DONE** — added to enum (but see "still open" for decoder + ext detection)              | `image.go:24`                           |
+| E8 / F.10 / F.27 | Validate image format in `LoadImageFromURL`             | **DONE** — runs `ValidateImage` post-download                                            | `image.go`                              |
+| E10 / F.7        | Remove dead `wrapWithPrompt`                            | **DONE** — deleted repo-wide                                                             | `grep` → 0                              |
+| E11 / F.8        | Migrate ScreenshotAnalyzer errors to `classifyModelErr` | **DONE** — `wrapWithPrompt` gone; config errors returned directly                        | `screenshot.go`                         |
+| F.1–F.4          | Wire hooks into all four analysis methods               | **DONE**                                                                                 | `TestHooksFireAcrossAllAnalysisMethods` |
+| F.17             | `ToolChoice`                                            | **DONE** — `Config.ToolChoice`                                                           | `vision.go`                             |
+| F.33             | `Conversation.Clear`                                    | **DONE**                                                                                 | `conversation.go`                       |
+| F.37             | `ScreenshotAnalyzer.WithHooks`                          | **DONE** — fluent builder + cache invalidation                                           | `screenshot.go`                         |
+| F.40             | golangci-lint cleanup (39 warnings)                     | **DONE** — 0 issues                                                                      | `.golangci.yaml`                        |
+| F.41 / F.42      | Fuzz tests for base64 + image format detection          | **DONE** — `FuzzDecodeBase64Flex`, `FuzzDetectImageFormat`                               | `pkg/vision/`                           |
+| F.47 / F.48      | `Config.Headers` / `Config.UserAgent`                   | **DONE** — wired to fantasy                                                              | `vision.go`                             |
 
 ### Shipped but flawed (PARTIALLY DONE)
 
-| Item | Claim in report | Resolution | Evidence |
-| ---- | --------------- | ---------- | -------- |
+| Item              | Claim in report                                   | Resolution                                                                                                                                                                                   | Evidence                                                 |
+| ----------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | B2 / E1 / F.3–F.4 | Hooks not wired into `AnalyzeStructured`/`Stream` | **DONE but flawed** — hooks fire, but `fireFinish` receives a synthesized `&AnalyzeResult{Text, Usage}` with **nil `RawResponse`** (nil-pointer hazard) and `Text` holds raw JSON, not prose | `pkg/vision/structured.go:106,226`; tracked in TODO_LIST |
-| C5 / F.29 | Retry middleware with backoff | **DONE but disjoint** — `WithRetry[T]` + `RetryConfig` shipped, but **conflicts with `Config.MaxRetries`** (two retry systems); not wired into `AnalyzeBatch`/`AnalyzeConversation` | `pkg/vision/retry.go`; tracked in TODO_LIST |
-| C6 / F.30 | Cost tracking | **DONE but detached** — `CostTracker` shipped but no `Agent` integration; caller must wire `Hooks.OnFinish` manually | `pkg/vision/cost.go`; tracked in TODO_LIST |
-| C7 / F.31 | Image preprocessing | **DONE but island** — `ResizeImage` shipped (Catmull-Rom) but never called by Agent; no `Config.Preprocess`; no compress/convert; BMP decode fails | `pkg/vision/preprocess.go`; tracked in TODO_LIST |
-| C4 (runtime) | CLI providers Anthropic/Google/openaicompat | **BUILD-VERIFIED ONLY** — compile + `-h` pass, no credentials to runtime-test | `cmd/vision/main.go` |
+| C5 / F.29         | Retry middleware with backoff                     | **DONE but disjoint** — `WithRetry[T]` + `RetryConfig` shipped, but **conflicts with `Config.MaxRetries`** (two retry systems); not wired into `AnalyzeBatch`/`AnalyzeConversation`          | `pkg/vision/retry.go`; tracked in TODO_LIST              |
+| C6 / F.30         | Cost tracking                                     | **DONE but detached** — `CostTracker` shipped but no `Agent` integration; caller must wire `Hooks.OnFinish` manually                                                                         | `pkg/vision/cost.go`; tracked in TODO_LIST               |
+| C7 / F.31         | Image preprocessing                               | **DONE but island** — `ResizeImage` shipped (Catmull-Rom) but never called by Agent; no `Config.Preprocess`; no compress/convert; BMP decode fails                                           | `pkg/vision/preprocess.go`; tracked in TODO_LIST         |
+| C4 (runtime)      | CLI providers Anthropic/Google/openaicompat       | **BUILD-VERIFIED ONLY** — compile + `-h` pass, no credentials to runtime-test                                                                                                                | `cmd/vision/main.go`                                     |
 
 ### Still open
 
-| Item | Status | Note |
-| ---- | ------ | ---- |
-| E9 / F.39 | Batch-level hooks (`OnBatchStart`/`OnBatchFinish`) | not added; per-image hooks fire via internal `Analyze` |
-| F.32 | Result caching by image hash | not started |
-| F.34 | Provider failover | not started |
-| F.35 | OpenTelemetry spans | not started |
-| F.36 | Prompt templates | not started |
-| F.38 | `ScreenshotAnalyzer.WithTopP` BDD test | BDD coverage expanded generally; this specific builder test not confirmed |
-| F.43 | Integration test with real httptest server | not started |
-| F.45 | `Conversation.LastMessage` helper | not added |
-| F.46 | `BatchResult.Duration` field | not added |
-| Q1 | Expand `Analyzer` interface with `AnalyzeConversation`? | **unresolved** — still concrete methods on `*Agent` only |
-| Q2 | Remove deprecated `VisionAgent` alias? | **unresolved** — still present |
+| Item      | Status                                                  | Note                                                                      |
+| --------- | ------------------------------------------------------- | ------------------------------------------------------------------------- |
+| E9 / F.39 | Batch-level hooks (`OnBatchStart`/`OnBatchFinish`)      | not added; per-image hooks fire via internal `Analyze`                    |
+| F.32      | Result caching by image hash                            | not started                                                               |
+| F.34      | Provider failover                                       | not started                                                               |
+| F.35      | OpenTelemetry spans                                     | not started                                                               |
+| F.36      | Prompt templates                                        | not started                                                               |
+| F.38      | `ScreenshotAnalyzer.WithTopP` BDD test                  | BDD coverage expanded generally; this specific builder test not confirmed |
+| F.43      | Integration test with real httptest server              | not started                                                               |
+| F.45      | `Conversation.LastMessage` helper                       | not added                                                                 |
+| F.46      | `BatchResult.Duration` field                            | not added                                                                 |
+| Q1        | Expand `Analyzer` interface with `AnalyzeConversation`? | **unresolved** — still concrete methods on `*Agent` only                  |
+| Q2        | Remove deprecated `VisionAgent` alias?                  | **unresolved** — still present                                            |
 
 **Net:** ~30 of the 50 follow-ups shipped; 5 shipped-but-flawed (the retry /
 cost / preprocess / structured-hooks cluster); the rest remain open and are

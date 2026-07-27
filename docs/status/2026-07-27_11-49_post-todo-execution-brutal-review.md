@@ -209,13 +209,13 @@ This is the **freshest** status report and the primary harvest source for
 `TODO_LIST.md`. Re-verified all five Critical items against code — **every one
 is still open**:
 
-| § | Critical item | Verified open | Evidence |
-| - | ------------- | ------------- | -------- |
-| F1 / f.2 | `applyModelParams*` duplication increased | **yes** — 2 helpers in `vision.go` + parallel blocks in `structured.go` | `vision.go:443,465`; `structured.go` |
-| F2 / f.1 | Nil `RawResponse` in structured `fireFinish` | **yes** — synthesized `&AnalyzeResult{Text, Usage}`, no nil guard | `structured.go:106,226` |
-| F3 / f.3 | BMP detection ≠ BMP decoding (`ResizeImage` fails on `.bmp`) | **yes** — no BMP decoder registered | `preprocess.go` |
-| F4 / f.4 | `mediaTypeFromExtension` mislabels `.bmp` (falls back to `MediaTypePNG`) | **yes** — relies on `mime.TypeByExtension`, falls back to PNG | `image.go:183-189` |
-| F5 / f.5 | `MaxRetries` vs `WithRetry` reconciliation | **yes** — both systems coexist, undocumented | `vision.go:61`; `retry.go` |
+| §        | Critical item                                                            | Verified open                                                           | Evidence                             |
+| -------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------ |
+| F1 / f.2 | `applyModelParams*` duplication increased                                | **yes** — 2 helpers in `vision.go` + parallel blocks in `structured.go` | `vision.go:443,465`; `structured.go` |
+| F2 / f.1 | Nil `RawResponse` in structured `fireFinish`                             | **yes** — synthesized `&AnalyzeResult{Text, Usage}`, no nil guard       | `structured.go:106,226`              |
+| F3 / f.3 | BMP detection ≠ BMP decoding (`ResizeImage` fails on `.bmp`)             | **yes** — no BMP decoder registered                                     | `preprocess.go`                      |
+| F4 / f.4 | `mediaTypeFromExtension` mislabels `.bmp` (falls back to `MediaTypePNG`) | **yes** — relies on `mime.TypeByExtension`, falls back to PNG           | `image.go:183-189`                   |
+| F5 / f.5 | `MaxRetries` vs `WithRetry` reconciliation                               | **yes** — both systems coexist, undocumented                            | `vision.go:61`; `retry.go`           |
 
 **Harvested:** section f's forward-looking list has been pulled into
 `TODO_LIST.md` (bounded/short-term items) and `ROADMAP.md` (long-term ideas),

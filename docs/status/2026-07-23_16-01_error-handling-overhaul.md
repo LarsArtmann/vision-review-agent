@@ -270,21 +270,21 @@ The `IsRetryable()` function exists but the CLI just prints and exits. Should I 
 Re-verified against code (`grep`, `go test`, CHANGELOG, AGENTS.md) four days
 after this report.
 
-| Section | Claim in report | Resolution | Evidence |
-| ------- | --------------- | ---------- | -------- |
-| b) screenshot.go wiring | 4 of 4 sites still use `wrapWithPrompt` | **DONE** — `wrapWithPrompt` deleted repo-wide; `grep wrapWithPrompt *.go` → 0 hits | `pkg/vision/screenshot.go`; TODO_LIST execution 2026-07-27 |
-| b) `wrapWithPrompt` cleanup | definition still exists | **DONE** — function removed from `vision.go` | `grep -rn wrapWithPrompt --include="*.go"` → empty |
-| c) AGENTS.md update | no mention of `ModelError`, `ErrorKind` | **DONE** — `AGENTS.md` "Classified Model Errors" section + Type Model entry | `AGENTS.md:37,130-137` |
-| c) CHANGELOG entry | not started | **DONE** — shipped under `[0.2.0] > Added` ("Classified model errors") | `CHANGELOG.md` `[0.2.0]` |
-| f.1–f.5 | Migrate screenshot.go 4 sites + delete `wrapWithPrompt` + remove dead imports | **DONE** | as above |
-| f.9 | Unify `AnalyzeConversationStream` validation → `validateAnalyzeInput` | **DONE** | `2026-07-27_11-49` report §a |
-| f.7 | Remove dead `errTestNoop` | **OPEN** — still defined, still unused | `pkg/errors/model_test.go:22` |
-| f.8 | Replace `wrapNoop` with real `fmt.Errorf("wrapped: %w", err)` | **OPEN** — still a no-op `return err` | `pkg/errors/model_test.go:316-320` |
-| c) / f.12 | BDD (Ginkgo) specs for error classification | **OPEN** — still testify table-driven only | `pkg/vision/error_classification_test.go` |
-| c) / f.14 | `AnalyzeBatch` classified-error test | **OPEN** — no batch error test exists | `pkg/vision/batch*test*` |
-| c) / f.37 | `examples/error-handling/main.go` | **OPEN** — not created | `examples/` |
-| f.23–f.27 | `KindNotImplemented`, `KindServiceUnavailable`, `KindContentFilter`, `RetryError`/`io.EOF` classification | **OPEN** — none added; 11 kinds unchanged | `pkg/errors/model.go` |
-| f.28–f.32 | CLI `--retry` / `--max-retries` / exit-code differentiation | **OPEN** — CLI prints advice only, no auto-retry | `cmd/vision/main.go` |
+| Section                     | Claim in report                                                                                           | Resolution                                                                         | Evidence                                                   |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| b) screenshot.go wiring     | 4 of 4 sites still use `wrapWithPrompt`                                                                   | **DONE** — `wrapWithPrompt` deleted repo-wide; `grep wrapWithPrompt *.go` → 0 hits | `pkg/vision/screenshot.go`; TODO_LIST execution 2026-07-27 |
+| b) `wrapWithPrompt` cleanup | definition still exists                                                                                   | **DONE** — function removed from `vision.go`                                       | `grep -rn wrapWithPrompt --include="*.go"` → empty         |
+| c) AGENTS.md update         | no mention of `ModelError`, `ErrorKind`                                                                   | **DONE** — `AGENTS.md` "Classified Model Errors" section + Type Model entry        | `AGENTS.md:37,130-137`                                     |
+| c) CHANGELOG entry          | not started                                                                                               | **DONE** — shipped under `[0.2.0] > Added` ("Classified model errors")             | `CHANGELOG.md` `[0.2.0]`                                   |
+| f.1–f.5                     | Migrate screenshot.go 4 sites + delete `wrapWithPrompt` + remove dead imports                             | **DONE**                                                                           | as above                                                   |
+| f.9                         | Unify `AnalyzeConversationStream` validation → `validateAnalyzeInput`                                     | **DONE**                                                                           | `2026-07-27_11-49` report §a                               |
+| f.7                         | Remove dead `errTestNoop`                                                                                 | **OPEN** — still defined, still unused                                             | `pkg/errors/model_test.go:22`                              |
+| f.8                         | Replace `wrapNoop` with real `fmt.Errorf("wrapped: %w", err)`                                             | **OPEN** — still a no-op `return err`                                              | `pkg/errors/model_test.go:316-320`                         |
+| c) / f.12                   | BDD (Ginkgo) specs for error classification                                                               | **OPEN** — still testify table-driven only                                         | `pkg/vision/error_classification_test.go`                  |
+| c) / f.14                   | `AnalyzeBatch` classified-error test                                                                      | **OPEN** — no batch error test exists                                              | `pkg/vision/batch*test*`                                   |
+| c) / f.37                   | `examples/error-handling/main.go`                                                                         | **OPEN** — not created                                                             | `examples/`                                                |
+| f.23–f.27                   | `KindNotImplemented`, `KindServiceUnavailable`, `KindContentFilter`, `RetryError`/`io.EOF` classification | **OPEN** — none added; 11 kinds unchanged                                          | `pkg/errors/model.go`                                      |
+| f.28–f.32                   | CLI `--retry` / `--max-retries` / exit-code differentiation                                               | **OPEN** — CLI prints advice only, no auto-retry                                   | `cmd/vision/main.go`                                       |
 
 **Net:** the wiring and documentation gaps are closed; the testing, example,
 and error-kind-refinement work remains open and is tracked in `TODO_LIST.md`.
