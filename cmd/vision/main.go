@@ -78,8 +78,8 @@ func parseFlags() (*config, error) { //nolint:unparam
 			"openai",
 			"Provider: openai, openrouter, anthropic, google, openaicompat",
 		)
-		modelID      = flag.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")
-		prompt       = flag.String(
+		modelID = flag.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")
+		prompt  = flag.String(
 			"prompt",
 			"Describe what you see in this image.",
 			"Analysis prompt",
@@ -132,7 +132,7 @@ func usageFunc(name string) func() {
 		fmt.Fprintln(os.Stderr, "  ANTHROPIC_API_KEY       - Anthropic provider")
 		fmt.Fprintln(os.Stderr, "  GOOGLE_APPLICATION_*    - Google provider (ADC)")
 		fmt.Fprintln(os.Stderr, "  OPENAICOMPAT_BASE_URL   - openaicompat provider (required)")
-		fmt.Fprintln(os.Stderr, "  OPENAICOMPAT_API_KEY    - openaicompat provider (optional)\n")
+		fmt.Fprint(os.Stderr, "  OPENAICOMPAT_API_KEY    - openaicompat provider (optional)\n\n")
 		fmt.Fprintln(os.Stderr, "Options:")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "\nExamples:")
@@ -194,6 +194,12 @@ func runAnalysis(
 	cfg *config,
 	images []*vision.ImageSource,
 ) {
+	if cfg.structured {
+		runStructured(ctx, agent, cfg, images)
+
+		return
+	}
+
 	var (
 		result *vision.AnalyzeResult
 		err    error
@@ -223,6 +229,45 @@ func runAnalysis(
 	} else {
 		printText(result, cfg.stream)
 	}
+}
+
+// runStructured performs a structured UI review and prints it as JSON.
+func runStructured(
+	ctx context.Context,
+	agent *vision.Agent,
+	cfg *config,
+	images []*vision.ImageSource,
+) {
+	fmt.Println("Analyzing (structured)...")
+
+	result, err := vision.AnalyzeStructured[uiReview](ctx, agent, cfg.prompt, images...)
+	if err != nil {
+		printAnalysisError(err, false)
+		os.Exit(1)
+	}
+
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+
+	if err := enc.Encode(result.Object); err != nil {
+		fmt.Fprintln(os.Stderr, "Error encoding JSON:", err)
+	}
+}
+
+// uiReview is the built-in structured schema emitted by the -structured flag.
+type uiReview struct {
+	Layout      string    `description:"Brief description of the overall layout" json:"layout"`
+	Components  []string  `description:"List of UI components identified"        json:"components"`
+	Issues      []uiIssue `description:"List of issues found"                    json:"issues"`
+	Score       int       `description:"Overall UX score from 1-10"              json:"score"`
+	Suggestions []string  `description:"Actionable improvement suggestions"      json:"suggestions"`
+}
+
+// uiIssue represents a single UI issue in a structured review.
+type uiIssue struct {
+	Severity    string `description:"Severity: critical, major, minor, or info" json:"severity"`
+	Component   string `description:"Which component has the issue"             json:"component"`
+	Description string `description:"Detailed description of the issue"         json:"description"`
 }
 
 // printAnalysisError prints a user-friendly error message with actionable
