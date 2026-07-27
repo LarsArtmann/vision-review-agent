@@ -79,7 +79,7 @@ func TestValidateImage(t *testing.T) {
 		); !errors.Is(
 			err,
 			ErrInvalidImage,
-		) { //nolint:legacyerrors // value sentinel
+		) {
 			t.Errorf("expected ErrInvalidImage, got %v", err)
 		}
 	})

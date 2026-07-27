@@ -52,7 +52,7 @@ func AssertErr(t *testing.T, wantErr bool, wantErrType, err error) bool {
 	if wantErr {
 		if err == nil {
 			t.Error("expected error, got nil")
-		} else if wantErrType != nil && !errors.Is(err, wantErrType) { //nolint:legacyerrors // generic helper, value or type
+		} else if wantErrType != nil && !errors.Is(err, wantErrType) {
 			t.Errorf("expected %v, got %v", wantErrType, err)
 		}
 		return true

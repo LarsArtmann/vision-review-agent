@@ -212,12 +212,12 @@ func TestClassifyContextSentinelsStillMatch(t *testing.T) {
 	require.Equal(t, KindCancelled, cancelled.Kind)
 
 	// errors.Is must still match the stdlib sentinel through the wrapper.
-	require.ErrorIs(t, cancelled, context.Canceled) //nolint:legacyerrors // stdlib sentinel match
+	require.ErrorIs(t, cancelled, context.Canceled)
 
 	deadline := Classify(context.DeadlineExceeded)
 	require.Equal(t, KindTimeout, deadline.Kind)
 
-	require.ErrorIs(t, deadline, context.DeadlineExceeded) //nolint:legacyerrors // stdlib sentinel match
+	require.ErrorIs(t, deadline, context.DeadlineExceeded)
 }
 
 func TestModelErrorError(t *testing.T) {

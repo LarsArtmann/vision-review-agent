@@ -202,11 +202,11 @@ func Classify(err error) *ModelError {
 		return nil
 	}
 
-	if errors.Is(err, context.Canceled) { //nolint:legacyerrors // stdlib sentinel match
+	if errors.Is(err, context.Canceled) {
 		return classified(KindCancelled, err)
 	}
 
-	if errors.Is(err, context.DeadlineExceeded) { //nolint:legacyerrors // stdlib sentinel match
+	if errors.Is(err, context.DeadlineExceeded) {
 		return classified(KindTimeout, err)
 	}
 
