@@ -57,9 +57,10 @@ type Config struct {
 	Model fantasy.LanguageModel
 
 	// MaxRetries sets the maximum number of retries on transient errors at the
-	// provider/HTTP layer (forwarded to fantasy via WithMaxRetries). Zero means
-	// use fantasy's default. For richer control (backoff, jitter, visibility),
-	// see Retry below; the two compose as layered retry if both are set.
+	// provider/HTTP layer (forwarded to fantasy via WithMaxRetries). Zero
+	// disables HTTP-layer retries entirely (errors surface immediately). For
+	// richer control (backoff, jitter, visibility), see Retry below; the two
+	// compose as layered retry if both are set.
 	MaxRetries int
 
 	// RequestTimeout sets a per-request timeout. Zero means no timeout.
@@ -192,9 +193,10 @@ func NewAgent(config Config) (*Agent, error) {
 		opts = append(opts, fantasy.WithTemperature(config.Temperature))
 	}
 
-	if config.MaxRetries > 0 {
-		opts = append(opts, fantasy.WithMaxRetries(config.MaxRetries))
-	}
+	// Always forward MaxRetries so that zero explicitly disables fantasy's
+	// HTTP-layer retry (its default of 3 attempts adds 5+10+20s of blocking
+	// backoff, which is a surprising default for callers who set nothing).
+	opts = append(opts, fantasy.WithMaxRetries(config.MaxRetries))
 
 	if config.TopP > 0 {
 		opts = append(opts, fantasy.WithTopP(config.TopP))
