@@ -21,6 +21,7 @@ const (
 	MediaTypeJPEG MediaType = "image/jpeg"
 	MediaTypeGIF  MediaType = "image/gif"
 	MediaTypeWebP MediaType = "image/webp"
+	MediaTypeBMP  MediaType = "image/bmp"
 )
 
 // ImageSource represents the source of an image for analysis.

@@ -231,6 +231,19 @@ func TestConversation(t *testing.T) {
 		returned := conv.AddUserMessage("test")
 		require.Same(t, conv, returned)
 	})
+
+	t.Run("Clear resets messages and returns same instance", func(t *testing.T) {
+		conv := NewConversation()
+		conv.AddUserMessage("first", ImageSrc())
+		conv.AddAssistantMessage("answer")
+		require.Equal(t, 2, conv.Len())
+
+		returned := conv.Clear()
+
+		require.Same(t, conv, returned)
+		require.Equal(t, 0, conv.Len())
+		require.Empty(t, conv.Messages())
+	})
 }
 
 func TestAnalyzeConversation(t *testing.T) {
@@ -697,6 +710,9 @@ func TestScreenshotAnalyzerCacheInvalidation(t *testing.T) {
 			func(s *ScreenshotAnalyzer) { s.WithFrequencyPenalty(-0.3) },
 			func(s *ScreenshotAnalyzer) { s.WithMaxRetries(5) },
 			func(s *ScreenshotAnalyzer) { s.WithRequestTimeout(30e9) },
+			func(s *ScreenshotAnalyzer) {
+				s.WithHooks(Hooks{OnError: func(context.Context, error) {}})
+			},
 		}
 
 		for i, m := range methods {

@@ -50,6 +50,13 @@ func (c *Conversation) Len() int {
 	return len(c.messages)
 }
 
+// Clear removes all messages, resetting the conversation to empty.
+// Returns the conversation for fluent chaining.
+func (c *Conversation) Clear() *Conversation {
+	c.messages = nil
+	return c
+}
+
 // newMessage builds a fantasy.Message with the given role, text, and optional image file parts.
 func newMessage(role fantasy.MessageRole, text string, images ...*ImageSource) fantasy.Message {
 	valid := filterValidImages(images)

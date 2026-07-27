@@ -108,6 +108,14 @@ func (sa *ScreenshotAnalyzer) WithRequestTimeout(timeout time.Duration) *Screens
 	return sa
 }
 
+// WithHooks sets lifecycle callbacks (OnStart, OnFinish, OnError) for
+// observability such as logging and metrics.
+func (sa *ScreenshotAnalyzer) WithHooks(hooks Hooks) *ScreenshotAnalyzer {
+	sa.config.Hooks = hooks
+	sa.cachedAgent = nil
+	return sa
+}
+
 // agent returns the underlying cached Agent, initializing it on first call.
 func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
 	if sa.cachedAgent != nil {
