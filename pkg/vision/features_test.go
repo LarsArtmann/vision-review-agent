@@ -428,6 +428,171 @@ func TestHooks(t *testing.T) {
 	})
 }
 
+func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
+	t.Parallel()
+
+	startTracker := func() (*sync.Mutex, *atomic.Int32) {
+		return &sync.Mutex{}, &atomic.Int32{}
+	}
+
+	t.Run("AnalyzeConversation fires OnStart/OnFinish", func(t *testing.T) {
+		t.Parallel()
+		mu, starts := startTracker()
+		var finished atomic.Bool
+
+		agent, err := NewAgent(Config{
+			Model: testModel(),
+			Hooks: Hooks{
+				OnStart: func(_ context.Context, _ string, _ int) {
+					mu.Lock()
+					defer mu.Unlock()
+					starts.Add(1)
+				},
+				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = agent.AnalyzeConversation(context.Background(), NewConversation(), "prompt", ImageSrc())
+		require.NoError(t, err)
+		require.Equal(t, int32(1), starts.Load(), "OnStart must fire exactly once")
+		require.True(t, finished.Load(), "OnFinish must fire")
+	})
+
+	t.Run("AnalyzeConversation fires OnError on model failure", func(t *testing.T) {
+		t.Parallel()
+		var gotErr atomic.Value
+
+		agent, err := NewAgent(Config{
+			Model: &mockModel{generateErr: errors.New("boom")},
+			Hooks: Hooks{OnError: func(_ context.Context, _ error) { gotErr.Store(errors.New("fired")) }},
+		})
+		require.NoError(t, err)
+
+		_, err = agent.AnalyzeConversation(context.Background(), NewConversation(), "prompt", ImageSrc())
+		require.Error(t, err)
+		require.NotNil(t, gotErr.Load(), "OnError must fire")
+	})
+
+	t.Run("AnalyzeConversationStream fires OnStart/OnFinish", func(t *testing.T) {
+		t.Parallel()
+		mu, starts := startTracker()
+		var finished atomic.Bool
+
+		agent, err := NewAgent(Config{
+			Model: testModel(),
+			Hooks: Hooks{
+				OnStart: func(_ context.Context, _ string, _ int) {
+					mu.Lock()
+					defer mu.Unlock()
+					starts.Add(1)
+				},
+				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = agent.AnalyzeConversationStream(
+			context.Background(),
+			NewConversation(),
+			"prompt",
+			func(string) error { return nil },
+			ImageSrc(),
+		)
+		require.NoError(t, err)
+		require.Equal(t, int32(1), starts.Load())
+		require.True(t, finished.Load())
+	})
+
+	t.Run("AnalyzeStructured fires OnStart/OnFinish", func(t *testing.T) {
+		t.Parallel()
+		mu, starts := startTracker()
+		var finished atomic.Bool
+
+		agent, err := NewAgent(Config{
+			Model: testModel(),
+			Hooks: Hooks{
+				OnStart: func(_ context.Context, _ string, _ int) {
+					mu.Lock()
+					defer mu.Unlock()
+					starts.Add(1)
+				},
+				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = AnalyzeStructured[testReview](context.Background(), agent, "prompt", ImageSrc())
+		require.NoError(t, err)
+		require.Equal(t, int32(1), starts.Load())
+		require.True(t, finished.Load())
+	})
+
+	t.Run("AnalyzeStructured fires OnError on model failure", func(t *testing.T) {
+		t.Parallel()
+		var gotErr atomic.Value
+
+		agent, err := NewAgent(Config{
+			Model: &mockModel{generateObjectErr: errors.New("structured boom")},
+			Hooks: Hooks{OnError: func(_ context.Context, _ error) { gotErr.Store(errors.New("fired")) }},
+		})
+		require.NoError(t, err)
+
+		_, err = AnalyzeStructured[testReview](context.Background(), agent, "prompt", ImageSrc())
+		require.Error(t, err)
+		require.NotNil(t, gotErr.Load(), "OnError must fire")
+	})
+
+	t.Run("AnalyzeStructuredStream fires OnStart/OnFinish", func(t *testing.T) {
+		t.Parallel()
+		mu, starts := startTracker()
+		var finished atomic.Bool
+
+		agent, err := NewAgent(Config{
+			Model: testModel(),
+			Hooks: Hooks{
+				OnStart: func(_ context.Context, _ string, _ int) {
+					mu.Lock()
+					defer mu.Unlock()
+					starts.Add(1)
+				},
+				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = AnalyzeStructuredStream[testReview](
+			context.Background(),
+			agent,
+			"prompt",
+			func(testReview) {},
+			ImageSrc(),
+		)
+		require.NoError(t, err)
+		require.Equal(t, int32(1), starts.Load())
+		require.True(t, finished.Load())
+	})
+
+	t.Run("hooks do not fire on validation errors in wired methods", func(t *testing.T) {
+		t.Parallel()
+		var fired atomic.Bool
+
+		agent, err := NewAgent(Config{
+			Model: testModel(),
+			Hooks: Hooks{OnStart: func(_ context.Context, _ string, _ int) { fired.Store(true) }},
+		})
+		require.NoError(t, err)
+
+		_, err = agent.AnalyzeConversation(context.Background(), NewConversation(), "", ImageSrc())
+		require.Error(t, err)
+		require.False(t, fired.Load(), "OnStart must not fire on validation error")
+
+		_, err = AnalyzeStructured[testReview](context.Background(), agent, "", ImageSrc())
+		require.Error(t, err)
+		require.False(t, fired.Load(), "OnStart must not fire on validation error")
+	})
+}
+
 func TestAnalyzeStructuredStream(t *testing.T) {
 	t.Run("streams partial objects via callback", func(t *testing.T) {
 		agent, err := NewAgent(Config{Model: testModel()})
