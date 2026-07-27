@@ -290,6 +290,8 @@ func (va *Agent) AnalyzeConversation(
 		return nil, err
 	}
 
+	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
+
 	ctx, cancel := va.withTimeout(ctx)
 	defer cancel()
 
@@ -297,14 +299,18 @@ func (va *Agent) AnalyzeConversation(
 
 	result, err := va.agent.Generate(ctx, call)
 	if err != nil {
-		return nil, classifyModelErr("vision agent conversation generate", prompt, err)
+		classified := classifyModelErr("vision agent conversation generate", prompt, err)
+		va.config.Hooks.fireError(ctx, classified)
+		return nil, classified
 	}
 
-	return &AnalyzeResult{
+	analysisResult := &AnalyzeResult{
 		Text:        result.Response.Content.Text(),
 		Usage:       result.TotalUsage,
 		RawResponse: result,
-	}, nil
+	}
+	va.config.Hooks.fireFinish(ctx, analysisResult)
+	return analysisResult, nil
 }
 
 // AnalyzeConversationStream streams analysis with conversation history for multi-turn interactions.
@@ -316,13 +322,12 @@ func (va *Agent) AnalyzeConversationStream(
 	onText func(text string) error,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	if prompt == "" {
-		return nil, ErrEmptyPrompt
-	}
-	validImages, err := requireImages(images)
+	validImages, err := validateAnalyzeInput(prompt, images)
 	if err != nil {
 		return nil, err
 	}
+
+	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
 
 	ctx, cancel := va.withTimeout(ctx)
 	defer cancel()
@@ -340,14 +345,18 @@ func (va *Agent) AnalyzeConversationStream(
 
 	result, err := va.agent.Stream(ctx, streamCall)
 	if err != nil {
-		return nil, classifyModelErr("vision agent conversation stream", prompt, err)
+		classified := classifyModelErr("vision agent conversation stream", prompt, err)
+		va.config.Hooks.fireError(ctx, classified)
+		return nil, classified
 	}
 
-	return &AnalyzeResult{
+	analysisResult := &AnalyzeResult{
 		Text:        builder.String(),
 		Usage:       result.TotalUsage,
 		RawResponse: result,
-	}, nil
+	}
+	va.config.Hooks.fireFinish(ctx, analysisResult)
+	return analysisResult, nil
 }
 
 // buildAgentCall constructs a fantasy.AgentCall with model parameters and optional history.

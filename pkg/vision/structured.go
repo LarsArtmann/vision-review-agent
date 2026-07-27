@@ -34,6 +34,8 @@ func AnalyzeStructured[T any](
 		return nil, err
 	}
 
+	agent.config.Hooks.fireStart(ctx, prompt, len(validImages))
+
 	ctx, cancel := agent.withTimeout(ctx)
 	defer cancel()
 
@@ -74,29 +76,38 @@ func AnalyzeStructured[T any](
 
 	result, err := agent.config.Model.GenerateObject(ctx, call)
 	if err != nil {
-		return nil, classifyModelErr("vision agent structured generate", prompt, err)
+		classified := classifyModelErr("vision agent structured generate", prompt, err)
+		agent.config.Hooks.fireError(ctx, classified)
+		return nil, classified
 	}
 
 	var typedResult T
 	if result.Object != nil {
 		if err := visionutil.UnmarshalToType(result.Object, &typedResult); err != nil {
-			return nil, apperrors.Wrap(
+			parseErr := apperrors.Wrap(
 				apperrors.KindStructuredParse,
 				"vision agent unmarshal result",
 				prompt,
 				err,
 			)
+			agent.config.Hooks.fireError(ctx, parseErr)
+			return nil, parseErr
 		}
 	}
 
-	return &fantasy.ObjectResult[T]{
+	finalResult := &fantasy.ObjectResult[T]{
 		Object:           typedResult,
 		RawText:          result.RawText,
 		Usage:            result.Usage,
 		FinishReason:     result.FinishReason,
 		Warnings:         result.Warnings,
 		ProviderMetadata: result.ProviderMetadata,
-	}, nil
+	}
+	agent.config.Hooks.fireFinish(ctx, &AnalyzeResult{
+		Text:  result.RawText,
+		Usage: result.Usage,
+	})
+	return finalResult, nil
 }
 
 // AnalyzeStructuredStream sends images to the agent and streams typed structured
@@ -124,6 +135,8 @@ func AnalyzeStructuredStream[T any](
 	if err != nil {
 		return nil, err
 	}
+
+	agent.config.Hooks.fireStart(ctx, prompt, len(validImages))
 
 	ctx, cancel := agent.withTimeout(ctx)
 	defer cancel()
@@ -165,7 +178,9 @@ func AnalyzeStructuredStream[T any](
 
 	stream, err := agent.config.Model.StreamObject(ctx, call)
 	if err != nil {
-		return nil, classifyModelErr("vision agent structured stream", prompt, err)
+		classified := classifyModelErr("vision agent structured stream", prompt, err)
+		agent.config.Hooks.fireError(ctx, classified)
+		return nil, classified
 	}
 
 	var (
@@ -189,7 +204,9 @@ func AnalyzeStructuredStream[T any](
 			rawText += part.Delta
 		case fantasy.ObjectStreamPartTypeError:
 			if part.Error != nil {
-				return nil, classifyModelErr("vision agent structured stream", prompt, part.Error)
+				classified := classifyModelErr("vision agent structured stream", prompt, part.Error)
+				agent.config.Hooks.fireError(ctx, classified)
+				return nil, classified
 			}
 		case fantasy.ObjectStreamPartTypeFinish:
 			usage = part.Usage
@@ -200,10 +217,15 @@ func AnalyzeStructuredStream[T any](
 		}
 	}
 
-	return &fantasy.ObjectResult[T]{
+	finalResult := &fantasy.ObjectResult[T]{
 		Object:       finalObject,
 		RawText:      rawText,
 		Usage:        usage,
 		FinishReason: finishReason,
-	}, nil
+	}
+	agent.config.Hooks.fireFinish(ctx, &AnalyzeResult{
+		Text:  rawText,
+		Usage: usage,
+	})
+	return finalResult, nil
 }
