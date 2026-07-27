@@ -131,6 +131,10 @@ linters:
     depguard:
       rules:
         main:
+          # Note: golangci-lint v2 does not support the $module variable for
+          # automatic module-path resolution (regression from v1). The module
+          # path is hardcoded below instead. Update it if the module path
+          # in go.mod changes.
           allow:
             - $gostd
             - github.com/larsartmann/vision-review-agent
@@ -167,6 +171,9 @@ linters:
         - generic
     makezero:
       always: true
+    nolintlint:
+      require-explanation: true
+      allow-no-extra-linter: false
     revive:
       rules:
         - disabled: true

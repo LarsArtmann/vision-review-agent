@@ -71,7 +71,7 @@ type config struct {
 	timeout      int64
 }
 
-func parseFlags() (*config, error) { //nolint:unparam
+func parseFlags() (*config, error) { //nolint:unparam // error is always nil now but kept for future validation
 	var (
 		providerName = flag.String(
 			"provider",
