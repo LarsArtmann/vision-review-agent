@@ -59,20 +59,20 @@ type (
 
 // Re-export ErrorKind constants for consumer convenience.
 const (
-	KindRateLimited       = apperrors.KindRateLimited
-	KindTimeout           = apperrors.KindTimeout
-	KindServerError       = apperrors.KindServerError
-	KindNotImplemented    = apperrors.KindNotImplemented
+	KindRateLimited        = apperrors.KindRateLimited
+	KindTimeout            = apperrors.KindTimeout
+	KindServerError        = apperrors.KindServerError
+	KindNotImplemented     = apperrors.KindNotImplemented
 	KindServiceUnavailable = apperrors.KindServiceUnavailable
-	KindNetwork           = apperrors.KindNetwork
-	KindAuthentication    = apperrors.KindAuthentication
-	KindNotFound          = apperrors.KindNotFound
-	KindBadRequest        = apperrors.KindBadRequest
-	KindContentFilter     = apperrors.KindContentFilter
-	KindContextTooLarge   = apperrors.KindContextTooLarge
-	KindCancelled         = apperrors.KindCancelled
-	KindStructuredParse   = apperrors.KindStructuredParse
-	KindUnknown           = apperrors.KindUnknown
+	KindNetwork            = apperrors.KindNetwork
+	KindAuthentication     = apperrors.KindAuthentication
+	KindNotFound           = apperrors.KindNotFound
+	KindBadRequest         = apperrors.KindBadRequest
+	KindContentFilter      = apperrors.KindContentFilter
+	KindContextTooLarge    = apperrors.KindContextTooLarge
+	KindCancelled          = apperrors.KindCancelled
+	KindStructuredParse    = apperrors.KindStructuredParse
+	KindUnknown            = apperrors.KindUnknown
 )
 
 // Classify inspects an error from a model invocation and returns a classified

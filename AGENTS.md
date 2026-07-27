@@ -85,10 +85,11 @@ errors pointing at a sibling module.
 
 ### Test Organization
 
-- `*_test.go` — Table-driven tests for pure functions (config validation, image format detection)
-- `*_bdd_test.go` — Ginkgo BDD specs for user-facing behavior (agent analysis, streaming, screenshot analyzer)
+- `*_test.go` — Table-driven tests for pure functions (config validation, image format detection, retry, cost tracking, CLI advice)
+- `*_bdd_test.go` — Ginkgo BDD specs for user-facing behavior (agent analysis, streaming, screenshot analyzer, error classification)
 - `agent_suite_test.go` — Ginkgo test runner (`TestGinkgo`)
-- `mock_test.go` — Shared test helpers and mock model
+- `mock_test.go` — Shared test helpers and mock model (supports retry sequences via `generateErrs`)
+- `cmd/vision/main_test.go` — CLI tests (advice mapping, config building, provider error paths)
 
 ## Dependencies
 
@@ -131,7 +132,7 @@ All in `pkg/errors/`, re-exported from `pkg/vision/`:
 
 Model invocation errors are wrapped in `*apperrors.ModelError` (re-exported as `vision.ModelError`):
 
-- `ErrorKind` — 11 categories: `KindRateLimited`, `KindTimeout`, `KindServerError`, `KindNetwork`, `KindAuthentication`, `KindNotFound`, `KindBadRequest`, `KindContextTooLarge`, `KindCancelled`, `KindStructuredParse`, `KindUnknown`
+- `ErrorKind` — 14 categories: `KindRateLimited`, `KindTimeout`, `KindServerError`, `KindNotImplemented`, `KindServiceUnavailable`, `KindNetwork`, `KindAuthentication`, `KindNotFound`, `KindBadRequest`, `KindContentFilter`, `KindContextTooLarge`, `KindCancelled`, `KindStructuredParse`, `KindUnknown`
 - `IsRetryable()` — Quick check for retry logic
 - `Unwrap()` — Preserves original cause for `errors.Is` / `errors.AsType`
 - Extract via `errors.AsType[*vision.ModelError](err)`

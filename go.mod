@@ -31,7 +31,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.33.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.38.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.0 // indirect
-	github.com/aws/smithy-go v1.27.4 // indirect
+	github.com/aws/smithy-go v1.27.5 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/anthropic-sdk-go v0.0.0-20260223140439-63879b0b8dab // indirect
 	github.com/charmbracelet/x/exp/slice v0.0.0-20260727090823-41c9e6be3365 // indirect
@@ -76,7 +76,7 @@ require (
 	golang.org/x/tools v0.47.0 // indirect
 	google.golang.org/api v0.290.0 // indirect
 	google.golang.org/genai v1.65.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260724162435-b2f20204f0df // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260727163830-6c54dddc4772 // indirect
 	google.golang.org/grpc v1.82.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

@@ -12,7 +12,8 @@ import (
 
 var _ = ginkgo.Describe("Error Classification", func() {
 	ginkgo.Describe("Consumer retry decisions", func() {
-		ginkgo.DescribeTable("should classify provider errors into actionable kinds",
+		ginkgo.DescribeTable(
+			"should classify provider errors into actionable kinds",
 			func(statusCode int, expectedKind ErrorKind, shouldRetry bool) {
 				model := &mockModel{generateErr: newTestProviderErr(statusCode)}
 				_, agent := setupAgentWithModel(model)
@@ -28,7 +29,12 @@ var _ = ginkgo.Describe("Error Classification", func() {
 			ginkgo.Entry("429 rate limited → retry", http.StatusTooManyRequests, KindRateLimited, true),
 			ginkgo.Entry("500 server error → retry", http.StatusInternalServerError, KindServerError, true),
 			ginkgo.Entry("502 bad gateway → retry", http.StatusBadGateway, KindServerError, true),
-			ginkgo.Entry("503 service unavailable → retry", http.StatusServiceUnavailable, KindServiceUnavailable, true),
+			ginkgo.Entry(
+				"503 service unavailable → retry",
+				http.StatusServiceUnavailable,
+				KindServiceUnavailable,
+				true,
+			),
 			ginkgo.Entry("408 request timeout → retry", http.StatusRequestTimeout, KindTimeout, true),
 			ginkgo.Entry("401 unauthorized → no retry", http.StatusUnauthorized, KindAuthentication, false),
 			ginkgo.Entry("403 forbidden → no retry", http.StatusForbidden, KindAuthentication, false),

@@ -133,7 +133,12 @@ func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
 	me, ok := errors.AsType[*apperrors.ModelError](err)
 	require.True(t, ok, "exhausted retry must still be a classified ModelError")
 	require.Equal(t, apperrors.KindRateLimited, me.Kind)
-	require.Greater(t, model.generateCalls.Load(), int32(1), "Config.Retry must trigger retries beyond the first attempt")
+	require.Greater(
+		t,
+		model.generateCalls.Load(),
+		int32(1),
+		"Config.Retry must trigger retries beyond the first attempt",
+	)
 }
 
 func TestConfigRetryWiredIntoStructured(t *testing.T) {

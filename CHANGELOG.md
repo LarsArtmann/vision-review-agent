@@ -86,7 +86,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `applyModelParamsStreamCall` replaced by a single `Config.optionalParams()`
   helper used across all 4 call sites (vision.go + structured.go).
 - **golangci-lint config: `nolintlint` tightened** with `require-explanation:
-  true`; all `//nolint:` directives now carry explanations. `funlen` config
+true`; all `//nolint:` directives now carry explanations. `funlen` config
   fixed for v2 schema. `golangci-lint config verify` passes.
 - `AnalyzeConversationStream` now uses the shared `validateAnalyzeInput`
   helper (was inline `prompt == ""` + `requireImages` checks).
