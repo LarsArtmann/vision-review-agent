@@ -66,6 +66,29 @@ type Config struct {
 	// Hooks defines optional lifecycle callbacks for observability (logging, metrics).
 	// All callbacks are optional; nil hooks are safe.
 	Hooks Hooks
+
+	// Tools defines callable tools the model may invoke during multi-step
+	// analysis (e.g. fetch a guideline, measure contrast ratio). Optional.
+	Tools []fantasy.AgentTool
+
+	// ToolChoice controls whether and how the model uses tools (none, auto,
+	// or a specific tool). Optional; empty means the provider default.
+	ToolChoice fantasy.ToolChoice
+
+	// StopConditions ends the agent loop early. Compose helpers from fantasy
+	// such as StepCountIs, HasToolCall, or MaxTokensUsed. Optional.
+	StopConditions []fantasy.StopCondition
+
+	// PrepareStep intercepts each agent step, allowing per-step mutation of
+	// the model, system prompt, or tools before invocation. Optional.
+	PrepareStep fantasy.PrepareStepFunction
+
+	// Headers sets extra HTTP headers sent on every provider request. Optional.
+	Headers map[string]string
+
+	// UserAgent overrides the default HTTP User-Agent for provider requests.
+	// Optional.
+	UserAgent string
 }
 
 // Validate checks the configuration for errors.
@@ -161,6 +184,30 @@ func NewAgent(config Config) (*Agent, error) {
 
 	if config.FrequencyPenalty != 0 {
 		opts = append(opts, fantasy.WithFrequencyPenalty(config.FrequencyPenalty))
+	}
+
+	if len(config.Tools) > 0 {
+		opts = append(opts, fantasy.WithTools(config.Tools...))
+	}
+
+	if config.ToolChoice != "" {
+		opts = append(opts, fantasy.WithToolChoice(config.ToolChoice))
+	}
+
+	if len(config.StopConditions) > 0 {
+		opts = append(opts, fantasy.WithStopConditions(config.StopConditions...))
+	}
+
+	if config.PrepareStep != nil {
+		opts = append(opts, fantasy.WithPrepareStep(config.PrepareStep))
+	}
+
+	if len(config.Headers) > 0 {
+		opts = append(opts, fantasy.WithHeaders(config.Headers))
+	}
+
+	if config.UserAgent != "" {
+		opts = append(opts, fantasy.WithUserAgent(config.UserAgent))
 	}
 
 	return &Agent{

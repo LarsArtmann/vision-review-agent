@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"charm.land/fantasy"
 	"github.com/stretchr/testify/require"
 )
 
@@ -670,6 +671,19 @@ func TestAnalyzeStructuredStream(t *testing.T) {
 		)
 		require.ErrorIs(t, err, ErrNoImages)
 	})
+}
+
+func TestConfigAcceptsAdvancedCapabilities(t *testing.T) {
+	t.Parallel()
+
+	agent, err := NewAgent(Config{
+		Model:          testModel(),
+		Headers:        map[string]string{"X-Custom": "vision"},
+		UserAgent:      "vision-test/1.0",
+		StopConditions: []fantasy.StopCondition{fantasy.StepCountIs(1)},
+	})
+	require.NoError(t, err, "NewAgent must accept capability fields")
+	require.NotNil(t, agent)
 }
 
 func TestScreenshotAnalyzerCacheInvalidation(t *testing.T) {
