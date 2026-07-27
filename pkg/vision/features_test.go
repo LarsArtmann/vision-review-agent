@@ -721,3 +721,37 @@ func TestScreenshotAnalyzerCacheInvalidation(t *testing.T) {
 		}
 	})
 }
+
+// FuzzDecodeBase64Flex asserts the flexible base64 decoder never panics and,
+// when it succeeds, round-trips through re-encoding and reproduces canonical
+// standard-encoded input exactly.
+func FuzzDecodeBase64Flex(f *testing.F) {
+	f.Add("aGVsbG8gd29ybGQ=") // "hello world"
+	f.Add("YWJjZGVm")        // raw-ish, unpadded
+	f.Add("")
+	f.Add("!!!not-base64!!!")
+
+	f.Fuzz(func(t *testing.T, b64 string) {
+		decoded, err := decodeBase64Flex(b64)
+		if err != nil {
+			return
+		}
+
+		// A successful decode must round-trip through the canonical encoding.
+		std := base64.StdEncoding.EncodeToString(decoded)
+		roundTrip, rtErr := decodeBase64Flex(std)
+		if rtErr != nil {
+			t.Fatalf("re-decoding canonical encoding failed: %v", rtErr)
+		}
+		if string(decoded) != string(roundTrip) {
+			t.Fatalf("round-trip mismatch: %q vs %q", decoded, roundTrip)
+		}
+
+		// Canonical standard input must reproduce the exact bytes.
+		if expected, eErr := base64.StdEncoding.DecodeString(b64); eErr == nil {
+			if string(decoded) != string(expected) {
+				t.Fatalf("standard base64 decoded to %q, expected %q", decoded, expected)
+			}
+		}
+	})
+}
