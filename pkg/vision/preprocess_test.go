@@ -297,8 +297,8 @@ func newBMP(t *testing.T, w, h int) *ImageSource {
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			off := x * 3
-			row[off+0] = byte((x * 30) & 0xff) // B
-			row[off+1] = byte((y * 30) & 0xff) // G
+			row[off+0] = byte((x * 30) & 0xff)       // B
+			row[off+1] = byte((y * 30) & 0xff)       // G
 			row[off+2] = byte(((x + y) * 15) & 0xff) // R
 		}
 		_, _ = buf.Write(row)
