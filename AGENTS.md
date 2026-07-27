@@ -42,6 +42,18 @@ examples/                Working examples for each provider
 - **Hooks are synchronous** — `Hooks` callbacks fire in the calling goroutine; keep them fast
 - **Batch uses semaphore** — `AnalyzeBatch` bounds concurrency via `golang.org/x/sync/semaphore`
 - **ScreenshotAnalyzer cache invalidation** — All `With*` builder methods set `cachedAgent = nil` to ensure config changes take effect
+- **Hooks fire in every analysis path** — Analyze, AnalyzeStream, AnalyzeConversation(Stream), AnalyzeStructured(Stream) all call fireStart/fireFinish/fireError after validation
+- **WithRetry[T] is external middleware** — Retries are opt-in via a generic wrapper (not baked into Agent); respects `IsRetryable()`
+- **CostTracker integrates via Hooks.OnFinish** — Thread-safe; no coupling to Agent internals
+- **Capability fields are passthrough** — `Config.Tools/ToolChoice/StopConditions/PrepareStep/Headers/UserAgent` map 1:1 to fantasy options; nil/empty means provider default
+- **ResizeImage returns the same instance when no resize is needed** — Avoids unnecessary re-encoding
+- **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
+- **Hooks fire in every analysis path** — Analyze, AnalyzeStream, AnalyzeConversation(Stream), AnalyzeStructured(Stream) all call fireStart/fireFinish/fireError after validation
+- **WithRetry[T] is external middleware** — Retries are opt-in via a generic wrapper (not baked into Agent) so callers control policy; respects `IsRetryable()`
+- **CostTracker integrates via Hooks.OnFinish** — Thread-safe; no coupling to Agent internals
+- **Capability fields are passthrough** — `Config.Tools/ToolChoice/StopConditions/PrepareStep/Headers/UserAgent` map 1:1 to fantasy options; nil/empty means provider default
+- **ResizeImage returns the same instance when no resize is needed** — Avoids unnecessary re-encoding
+- **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
 
 ## Build & Test Commands
 

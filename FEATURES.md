@@ -49,13 +49,35 @@
 - **Fluent builder** — Chainable configuration (WithSystemPrompt, WithTemperature, etc.)
 - **All model parameters** — TopP, TopK, PresencePenalty, FrequencyPenalty
 - **Cache invalidation** — Builder methods invalidate cached agent (bug fix)
+- **WithHooks** — Set lifecycle callbacks via the fluent builder
 - **Delegates to Agent** — Analyze, AnalyzeStream, AnalyzeConversation, AnalyzeConversationStream
+
+### Hooks & Observability
+
+- **Hooks across all methods** — OnStart/OnFinish/OnError fire in Analyze, AnalyzeStream, AnalyzeConversation, AnalyzeConversationStream, AnalyzeStructured, AnalyzeStructuredStream
+- **CostTracker** — Thread-safe accumulator for token usage across calls; integrates with Hooks.OnFinish
+
+### Reliability & Preprocessing
+
+- **WithRetry[T]** — Generic retry middleware with exponential backoff + jitter, respects IsRetryable()
+- **RetryConfig** — Configurable attempts, initial/max backoff, multiplier, jitter
+- **ResizeImage** — High-quality Catmull-Rom resize (longest-side cap), PNG/JPEG/WebP/GIF decode
+- **LoadImageFromURLWithClient** — Custom `*http.Client` for proxies/timeouts/TLS
+- **URL image validation** — LoadImageFromURL rejects non-image bodies via ValidateImage
+
+### Advanced Capabilities (fantasy passthrough)
+
+- **Tools / ToolChoice** — Typed tool/function calling wired to fantasy.WithTools / WithToolChoice
+- **StopConditions** — Composable agent-loop termination (StepCountIs, HasToolCall, MaxTokensUsed)
+- **PrepareStep** — Per-step interceptor for model/prompt/tool mutation
+- **Headers / UserAgent** — Extra HTTP headers and User-Agent on provider requests
 
 ### CLI
 
-- **Multi-provider** — OpenAI, OpenRouter
+- **Multi-provider** — OpenAI, OpenRouter, Anthropic, Google (ADC), openaicompat (local models)
 - **Streaming** — Real-time text output
 - **JSON output** — Machine-readable result format
+- **-structured** — Built-in UIReview schema with structured JSON output
 - **Classified errors** — User-friendly error messages with retry advice
 
 ### Infrastructure
@@ -66,9 +88,16 @@
 - **Testify tests** — Error classification and feature tests
 - **Mock model** — Comprehensive mock with error injection support
 
-## PARTIALLY DONE
+### Examples
 
-- **Examples** — OpenAI, OpenRouter, and structured examples exist, but no example for conversation, batch, hooks, URL/base64 loading, or structured streaming
+- **openai** — Basic OpenAI vision analysis
+- **openrouter** — OpenRouter multi-model routing
+- **structured** — Typed structured output (UIReview)
+- **conversation** — Multi-turn conversation with history
+- **batch** — Concurrent batch analysis with bounded parallelism
+- **hooks** — Lifecycle callbacks for logging/metrics
+- **structured-stream** — Structured streaming with partial objects
+- **url-loading** — Load from URL (custom client) and base64 round-trip
 
 ## PLANNED
 
