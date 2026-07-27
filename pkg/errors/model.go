@@ -312,7 +312,6 @@ func isContentFilterRejection(providerErr *fantasy.ProviderError) bool {
 	msg := strings.ToLower(providerErr.Message)
 	for _, signal := range signals {
 		if strings.Contains(msg, signal) {
-
 			return true
 		}
 	}

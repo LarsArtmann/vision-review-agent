@@ -49,44 +49,39 @@ func main() {
 	cli.PrintResult(result.Text, result.Usage.TotalTokens)
 }
 
-// handleError demonstrates the switch-on-Kind pattern: each ErrorKind maps to
-// a specific consumer action (retry, fix credentials, reduce input, etc.).
+// handleError demonstrates the map-lookup-on-Kind pattern: each ErrorKind maps
+// to a specific consumer action (retry, fix credentials, reduce input, etc.).
 func handleError(err error) {
 	modelErr, ok := errors.AsType[*vision.ModelError](err)
 	if !ok {
 		log.Fatalf("unexpected non-model error: %v", err)
 	}
 
-	switch modelErr.Kind {
-	case vision.KindRateLimited:
-		fmt.Println("Rate limited by the provider. Backing off and retrying later.")
-	case vision.KindTimeout:
-		fmt.Println("Request timed out. Try increasing the timeout or using smaller images.")
-	case vision.KindServerError, vision.KindServiceUnavailable:
-		fmt.Println("Provider is temporarily down. Retry with backoff.")
-	case vision.KindNetwork:
-		fmt.Println("Network error. Check your connection and retry.")
-	case vision.KindAuthentication:
-		fmt.Println("Authentication failed. Check your API key environment variable.")
-	case vision.KindNotFound:
-		fmt.Println("Model not found. Verify the model name in your config.")
-	case vision.KindBadRequest:
-		fmt.Println("Bad request. Check your prompt and image format.")
-	case vision.KindContentFilter:
-		fmt.Println("Content policy rejection. Modify your prompt or image.")
-	case vision.KindContextTooLarge:
-		fmt.Println("Input too large. Reduce the number or size of images.")
-	case vision.KindNotImplemented:
-		fmt.Println("Feature not implemented by this provider/model. Try a different model.")
-	case vision.KindCancelled:
-		fmt.Println("Request was cancelled.")
-	case vision.KindStructuredParse:
-		fmt.Println("Structured output parsing failed. Simplify your schema or prompt.")
-	case vision.KindUnknown:
-		fmt.Printf("Unclassified error: %v\n", modelErr.Cause)
-	default:
-		fmt.Printf("Unhandled error kind %q: %v\n", modelErr.Kind, modelErr.Cause)
+	adviceByKind := map[vision.ErrorKind]string{
+		vision.KindRateLimited:        "Rate limited by the provider. Backing off and retrying later.",
+		vision.KindTimeout:            "Request timed out. Try increasing the timeout or using smaller images.",
+		vision.KindServerError:        "Provider is temporarily down. Retry with backoff.",
+		vision.KindServiceUnavailable: "Provider is temporarily unavailable. Retry with backoff.",
+		vision.KindNetwork:            "Network error. Check your connection and retry.",
+		vision.KindAuthentication:     "Authentication failed. Check your API key environment variable.",
+		vision.KindNotFound:           "Model not found. Verify the model name in your config.",
+		vision.KindBadRequest:         "Bad request. Check your prompt and image format.",
+		vision.KindContentFilter:      "Content policy rejection. Modify your prompt or image.",
+		vision.KindContextTooLarge:    "Input too large. Reduce the number or size of images.",
+		vision.KindNotImplemented:     "Feature not implemented. Try a different model.",
+		vision.KindCancelled:          "Request was cancelled.",
+		vision.KindStructuredParse:    "Structured output parsing failed. Simplify your schema or prompt.",
+		vision.KindUnknown:            "Unclassified error.",
 	}
+
+	advice, found := adviceByKind[modelErr.Kind]
+	if !found {
+		fmt.Printf("Unhandled error kind %q: %v\n", modelErr.Kind, modelErr.Cause)
+
+		log.Fatalf("details: %v", err)
+	}
+
+	fmt.Println(advice)
 
 	log.Fatalf("details: %v", err)
 }
