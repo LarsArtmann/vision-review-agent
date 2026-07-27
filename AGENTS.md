@@ -43,16 +43,33 @@ examples/                Working examples for each provider
 - **Batch uses semaphore** — `AnalyzeBatch` bounds concurrency via `golang.org/x/sync/semaphore`
 - **ScreenshotAnalyzer cache invalidation** — All `With*` builder methods set `cachedAgent = nil` to ensure config changes take effect
 
-## Testing
+## Build & Test Commands
+
+There is **no justfile/makefile** in this repo. Use `go` directly or the nix flake.
 
 ```bash
-just test        # Run tests with coverage
-just test-race   # Run with race detector
-just coverage    # Run tests and enforce 70% threshold
-just vet         # Run go vet
-just fmt         # Run gofmt
-just lint        # Run golangci-lint
+# Go toolchain (preferred for fast iteration)
+go build ./...              # Build everything
+go test ./...               # Run all tests
+go test -race ./...         # Run with race detector
+go vet ./...                # Run go vet
+gofmt -l .                  # Check formatting
+golangci-lint run ./...     # Lint (matches flake `lint` app)
+
+# Nix flake (reproducible)
+nix run .#test              # go test -race -v -coverprofile=coverage.out ./...
+nix run .#lint              # golangci-lint run ./...
+nix build .                 # Build the package
 ```
+
+### GOWORK
+
+This repo has **no `go.work`** — it is a single module. `go build`/`go test`
+work without any special env. The nix devShell sets `GOWORK=off` defensively:
+if a **parent** directory (e.g. `~/projects/go.work`) defines a workspace that
+pulls this repo in, `GOWORK=off` isolates the build. Outside the nix shell, set
+`GOWORK=off` only if you hit `go.work file ... not found` or module-resolution
+errors pointing at a sibling module.
 
 ### Test Organization
 
@@ -111,19 +128,19 @@ Model invocation errors are wrapped in `*apperrors.ModelError` (re-exported as `
 
 ```bash
 # Build
-just cli
+go build -o vision ./cmd/vision
 
 # Basic analysis
-./vision-cli -prompt "Find UI bugs" screenshot.png
+./vision -prompt "Find UI bugs" screenshot.png
 
 # JSON output
-./vision-cli -json -prompt "Analyze" screenshot.png
+./vision -json -prompt "Analyze" screenshot.png
 
 # Streaming
-./vision-cli -stream -prompt "Describe this" screenshot.png
+./vision -stream -prompt "Describe this" screenshot.png
 
 # With timeout
-./vision-cli -timeout 30s -prompt "Review" screenshot.png
+./vision -timeout 30s -prompt "Review" screenshot.png
 ```
 
 ## Code Duplication
