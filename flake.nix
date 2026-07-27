@@ -41,7 +41,7 @@
             inherit system;
             config.allowUnfree = true;
           };
-          lib = pkgs.lib;
+          inherit (pkgs) lib;
           version = self.rev or self.dirtyRev or "dev";
         in
         {

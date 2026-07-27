@@ -5,7 +5,11 @@ run:
   build-tags:
     - goexperiment.arenas
     - goexperiment.goroutineleakprofile
-    - goexperiment.jsonv2
+    # goexperiment.jsonv2 intentionally omitted: json/v2 is still an
+    # experimental GOEXPERIMENT and no source uses it. Its presence here
+    # misled go-auto-upgrade into a broken encoding/json -> encoding/json/v2
+    # migration (jsontext.Encoder has no SetIndent). Add it back only when
+    # the codebase deliberately adopts json/v2 with GOEXPERIMENT=jsonv2.
     - goexperiment.runtimesecret
     - goexperiment.simd
   allow-parallel-runners: true
