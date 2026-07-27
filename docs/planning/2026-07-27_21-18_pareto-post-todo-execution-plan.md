@@ -3,7 +3,9 @@
 **Created:** 2026-07-27 21:18
 **Source:** `docs/status/2026-07-27_20-40_full-todo-list-completion.md` (50 next things)
 **Author:** Crush planning session
-**Status:** Planning only — no execution yet.
+**Status:** **EXECUTED — all E1-E7 complete and verified** (see
+`docs/status/2026-07-27_pareto-execution-complete.md`). E2.5 (tag anomaly)
+remains blocked on a user decision.
 
 > **Guiding principle: do not verschlimmbessern.** Every task below either
 > (a) completes something already shipped, (b) removes a concrete friction

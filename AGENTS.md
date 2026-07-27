@@ -56,6 +56,8 @@ examples/                Working examples for each provider
 - **ResizeImage returns the same instance when no resize is needed** — Avoids unnecessary re-encoding
 - **Quality wired end-to-end** — `PreprocessConfig.JPEGQuality` flows through `ResizeImageWithQuality` → shared `encodeImage` helper. `ResizeImage` is a thin wrapper using the default quality (85). `CompressImage` re-encodes JPEGs without resizing (PNG preserves format via `png.BestCompression`). `encodeImage` is the single encode path shared by resize + compress
 - **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
+- **CLI parseFlags is testable** — `parseFlags(fs *flag.FlagSet, args []string) (*config, error)` takes a FlagSet and returns errors instead of calling `os.Exit`. `main()` passes `flag.CommandLine`; tests pass a fresh `flag.ContinueOnError` set with `io.Discard` output. Version/no-args decisions surface as `cfg.showVersion` / `cfg.args` so the caller acts on them.
+- **Retry tests must NOT set MaxRetries** — Vision-layer retry tests leave `MaxRetries` at 0 (default) and rely solely on `Config.Retry`. Setting `MaxRetries: 1` re-enables fantasy's HTTP-layer retry (~5s backoff per retryable mock call) and makes call counts non-deterministic. The full race suite is ~3.6s.
 
 ## Build & Test Commands
 

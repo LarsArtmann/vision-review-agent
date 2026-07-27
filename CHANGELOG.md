@@ -32,7 +32,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `KindServiceUnavailable` (HTTP 503, retryable), `KindContentFilter` (content
   policy rejection from 400 with signal-phrase detection, not retryable).
 - **CLI tests** — `cmd/vision/main_test.go` covering `adviceForKind`,
-  `buildConfig`, `parseTimeout`, `createProvider` error paths.
+  `buildConfig`, `parseTimeout`, `createProvider` error paths, and a full
+  `parseFlags` table (defaults, all flags, `-version`, missing args, unknown
+  flag). `parseFlags` was refactored to accept a `*flag.FlagSet` and return
+  errors instead of calling `os.Exit`, enabling isolated testing.
+- **Coverage for new code** — `mediaTypeFromExtension` table test, BMP
+  decode→resize roundtrip, `PreprocessImage` passthrough, `Config.Preprocess`
+  end-to-end wiring in `Analyze`/`AnalyzeStructured`, `NewAgentWithCostTracker`
+  nil-`RawResponse` contract, `contentFilter` signal detection, 501/503 via full
+  `Analyze` path, and a genuine `AnalyzeBatch` mixed success+error test.
 - **BDD error-classification specs** — `error_classification_bdd_test.go` with
   10 table entries covering consumer retry decisions via Ginkgo.
 - **Batch classified-error tests** — `AnalyzeBatch` per-image error
@@ -40,7 +48,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`examples/error-handling/main.go`** — consumer-facing example showing
   `errors.AsType[*ModelError]` → kind-lookup pattern.
 - **CI workflow** — `.github/workflows/ci.yml` with build, vet, race test,
-  coverage gate (≥70%), lint, and format check.
+  coverage gate (≥70%), lint, format check, **plus** a `go mod tidy` diff
+  check, a `golangci-lint config verify` step, and a dedicated
+  `nix-flake-check` job.
 - **Hooks across all analysis methods** — `OnStart`/`OnFinish`/`OnError` now
   fire in `AnalyzeConversation`, `AnalyzeConversationStream`,
   `AnalyzeStructured`, and `AnalyzeStructuredStream` (previously only
@@ -75,6 +85,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Retry tests are fast and deterministic** — removed `MaxRetries: 1` from the
+  vision-layer retry tests (it was enabling fantasy's ~5s HTTP backoff on every
+  retryable mock call). Vision-layer retry is now exercised in isolation with
+  exact call-count assertions. Full race suite dropped from ~11s to ~3.6s.
+- **Shared encode path** — `ResizeImage`/`ResizeImageWithQuality`/`CompressImage`
+  now share a single `encodeImage` helper; PNG output uses `BestCompression`.
 - **License metadata corrected** — `flake.nix` now reads `licenses.unfree`
   matching the PROPRIETARY `LICENSE` file. The `[0.2.0]` false claim is
   resolved.
