@@ -133,7 +133,12 @@ linters:
         main:
           allow:
             - $gostd
-            - $module
+            - github.com/larsartmann/vision-review-agent
+            - charm.land/fantasy
+            - github.com/onsi/ginkgo
+            - github.com/onsi/gomega
+            - github.com/stretchr/testify
+            - golang.org/x/sync
     exhaustruct:
       exclude:
         - os/exec.Cmd
