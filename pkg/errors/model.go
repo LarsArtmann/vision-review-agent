@@ -299,25 +299,24 @@ func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind 
 	}
 }
 
-// contentFilterSignals are substrings in a ProviderError message that indicate
-// a content-policy rejection rather than a generic bad request. Providers use
-// varied phrasing; we match case-insensitively on the most common signals.
-var contentFilterSignals = []string{
-	"content filter",
-	"content policy",
-	"content_filter",
-	"safety",
-}
-
 // isContentFilterRejection checks whether a 400 ProviderError is actually a
 // content-policy rejection by scanning its message for known signal phrases.
 func isContentFilterRejection(providerErr *fantasy.ProviderError) bool {
+	signals := []string{
+		"content filter",
+		"content policy",
+		"content_filter",
+		"safety",
+	}
+
 	msg := strings.ToLower(providerErr.Message)
-	for _, signal := range contentFilterSignals {
+	for _, signal := range signals {
 		if strings.Contains(msg, signal) {
+
 			return true
 		}
 	}
+
 	return false
 }
 

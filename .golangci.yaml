@@ -147,7 +147,6 @@ linters:
       exclude:
         - os/exec.Cmd
     funlen:
-      functions: 80
       lines: 70
       statements: 40
     ginkgolinter:
@@ -173,7 +172,6 @@ linters:
       always: true
     nolintlint:
       require-explanation: true
-      allow-no-extra-linter: false
     revive:
       rules:
         - disabled: true

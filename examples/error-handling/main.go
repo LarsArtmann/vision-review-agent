@@ -82,8 +82,10 @@ func handleError(err error) {
 		fmt.Println("Request was cancelled.")
 	case vision.KindStructuredParse:
 		fmt.Println("Structured output parsing failed. Simplify your schema or prompt.")
+	case vision.KindUnknown:
+		fmt.Printf("Unclassified error: %v\n", modelErr.Cause)
 	default:
-		fmt.Printf("Unknown error kind %q: %v\n", modelErr.Kind, modelErr.Cause)
+		fmt.Printf("Unhandled error kind %q: %v\n", modelErr.Kind, modelErr.Cause)
 	}
 
 	log.Fatalf("details: %v", err)

@@ -1,67 +1,86 @@
 # Domain Language
 
-A **Unified Language** for `.` — shared across Customer, Product Owner, Developer, and AI.
-Inspired by Domain-Driven Design (DDD) Ubiquitous Language.
+A **Unified Language** for Vision Review Agent — shared across Product Owner,
+Developer, and AI. Inspired by Domain-Driven Design (DDD) Ubiquitous Language.
 
 Every term below should mean the **same thing** to everyone who reads it.
 If a word means something different to a developer than to a customer, define it here.
 
 ## Glossary
 
-| Term         | Definition               | Context                        |
-| ------------ | ------------------------ | ------------------------------ |
-| .            | The project/product name | What we call this system       |
-| Example Term | A placeholder definition | Replace with your actual terms |
+| Term | Definition | Context |
+| --- | --- | --- |
+| **Agent** | The core type that analyzes images using a vision-capable language model | `pkg/vision.Agent` |
+| **ImageSource** | A validated image (data + media type + filename) ready for analysis | `pkg/vision.ImageSource` |
+| **Analysis** | A single model invocation that sends images + a prompt and receives a text or structured result | User-facing concept |
+| **AnalyzeResult** | The outcome of a text analysis: response text, token usage, and raw provider result | `pkg/vision.AnalyzeResult` |
+| **ScreenshotAnalyzer** | A fluent builder for screenshot-analysis use cases; wraps `Agent` with UI-focused defaults | `pkg/vision.ScreenshotAnalyzer` |
+| **Conversation** | Multi-turn history accumulator for follow-up questions with prior context | `pkg/vision.Conversation` |
 
 ## Entities
 
-Objects with identity and lifecycle (e.g., User, Order, Account).
+Objects with identity and lifecycle:
 
-<!-- Add your entities here:
 | Term | Definition | Context |
-|------|-----------|---------|
-| User | A person who interacts with the system | Customer-facing |
--->
+| --- | --- | --- |
+| **Agent** | Owns a `Config` and an underlying `fantasy.Agent`. Created once, reused across calls. | Single per analysis configuration |
+| **ScreenshotAnalyzer** | Holds a cached `Agent` that is rebuilt when any `With*` builder method changes config. | Builder pattern, cache-safe |
 
 ## Value Objects
 
-Immutable objects defined by attributes (e.g., Email, Money, Address).
+Immutable objects defined by their attributes:
 
-<!-- Add your value objects here:
 | Term | Definition | Context |
-|------|-----------|---------|
-| Email | A validated email address | Unique identifier for users |
--->
+| --- | --- | --- |
+| **ImageSource** | `Data []byte` + `MediaType` + `Filename`. Created via constructors that validate non-empty data. | Immutable after construction |
+| **Config** | All agent configuration: model, prompts, sampling params, hooks, retry, preprocessing. Validated at `NewAgent`. | Value object, copied by the agent |
+| **MediaType** | Defined string type for image formats: PNG, JPEG, GIF, WebP, BMP. | Type safety over raw strings |
+| **PreprocessConfig** | Image preprocessing settings: max dimension, JPEG quality. Zero-value disables. | Applied automatically by the agent |
+| **RetryConfig** | Retry policy: max attempts, initial backoff, cap, multiplier, jitter. Zero-value falls back to defaults. | Used by `Config.Retry` and `WithRetry[T]` |
+| **Usage** | Token usage from a single call: input, output, total. | Accumulated by `CostTracker` |
+| **ErrorKind** | Classified category of a model error (14 kinds). Drives retry vs. fix-input decisions. | Enum-like string type |
+
+## Error Classification
+
+| Term | Definition | Context |
+| --- | --- | --- |
+| **ModelError** | A classified error wrapping a provider/context error with an `ErrorKind`. Extracted via `errors.AsType`. | Domain-level error type |
+| **Classify** | The function that inspects a raw provider error and returns a `*ModelError` with the appropriate `Kind`. | `pkg/errors.Classify` |
+| **IsRetryable** | Quick check: does this error represent a transient failure worth retrying? | `ModelError.IsRetryable()` |
 
 ## Events
 
-Things that happen in the domain (e.g., UserRegistered, PaymentProcessed).
+Things that happen in the domain:
 
-<!-- Add your events here:
 | Term | Definition | Context |
-|------|-----------|---------|
-| UserRegistered | A new user completed signup | Triggers welcome email |
--->
+| --- | --- | --- |
+| **OnStart** | Hook fired before analysis begins, after validation passes. Receives prompt + image count. | `Hooks.OnStart` |
+| **OnFinish** | Hook fired after a successful analysis. Receives `*AnalyzeResult` (RawResponse may be nil for structured calls). | `Hooks.OnFinish` |
+| **OnError** | Hook fired when analysis fails with a non-validation error. Receives the classified `*ModelError`. | `Hooks.OnError` |
 
 ## Commands
 
-Actions the system can perform (e.g., CreateUser, ProcessPayment).
+Actions the system performs:
 
-<!-- Add your commands here:
 | Term | Definition | Context |
-|------|-----------|---------|
-| CreateUser | Registers a new user account | Admin action |
--->
+| --- | --- | --- |
+| **Analyze** | Send images + prompt → get text analysis. | `Agent.Analyze` |
+| **AnalyzeStream** | Same as Analyze but streams text chunks via a callback. | `Agent.AnalyzeStream` |
+| **AnalyzeStructured[T]** | Send images + prompt → get typed JSON result. Generic, package-level. | `vision.AnalyzeStructured[T]` |
+| **AnalyzeConversation** | Analyze with multi-turn conversation history. | `Agent.AnalyzeConversation` |
+| **AnalyzeBatch** | Analyze many images concurrently with bounded concurrency. | `Agent.AnalyzeBatch` |
+| **ResizeImage** | Downscale an image to a max dimension (Catmull-Rom, aspect-preserving). | `vision.ResizeImage` |
+| **WithRetry[T]** | Wrap any analysis call with exponential-backoff retry on transient errors. | `vision.WithRetry[T]` |
 
 ## Bounded Contexts
 
-Subsystems with distinct vocabulary (e.g., Billing vs. Shipping).
-
-<!-- Define contexts where the same word means different things:
 | Context | Description |
-|---------|------------|
-| Billing | Handles payments and invoices |
--->
+| --- | --- |
+| **Analysis** | Core image-analysis lifecycle: validation → preprocessing → model call → hooks → result |
+| **Error Classification** | Translating provider-specific errors into domain-level `ErrorKind` categories |
+| **Preprocessing** | Image transformation (resize, compress) before model invocation |
+| **Retry** | Transient-failure retry with exponential backoff + jitter |
+| **Cost Tracking** | Token usage accumulation across analysis calls |
 
 ---
 
