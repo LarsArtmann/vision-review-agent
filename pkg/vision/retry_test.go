@@ -166,12 +166,6 @@ func TestCostTrackerIntegratesWithHooks(t *testing.T) {
 	require.Greater(t, tracker.Total().TotalTokens, int64(0))
 }
 
-func toolsUsage(in, out int64) fantasyUsageShim {
-	return fantasyUsageShim{input: in, output: out, total: in + out}
-}
-
-// fantasyUsageShim mirrors fantasy.Usage fields for test construction without
-// importing the package in every assertion.
-type fantasyUsageShim struct {
-	input, output, total int64
+func toolsUsage(in, out int64) fantasy.Usage {
+	return fantasy.Usage{InputTokens: in, OutputTokens: out, TotalTokens: in + out}
 }

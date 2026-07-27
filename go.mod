@@ -7,6 +7,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.41.0
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/image v0.44.0
 	golang.org/x/sync v0.22.0
 )
 
