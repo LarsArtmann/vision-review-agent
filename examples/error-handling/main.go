@@ -31,8 +31,8 @@ func main() {
 	rc.InitialBackoff = time.Second
 
 	agent, err := vision.NewAgent(vision.Config{ //nolint:exhaustruct // optional fields use zero-value defaults
-		Model:  model,
-		Retry:  &rc,
+		Model:       model,
+		Retry:       &rc,
 		Temperature: 0.3,
 	})
 	cli.ExitOnError(err, "Error creating agent")
@@ -42,6 +42,7 @@ func main() {
 	result, err := agent.Analyze(ctx, "Find the top UI issues in this screenshot.", img)
 	if err != nil {
 		handleError(err)
+
 		return
 	}
 
