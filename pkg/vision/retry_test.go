@@ -109,14 +109,17 @@ func TestConfigRetryRetriesTransientAnalyze(t *testing.T) {
 			newTestProviderErr(http.StatusBadGateway),
 		},
 	}
+	// MaxRetries is left at zero (default) on purpose: these tests exercise
+	// vision-layer retry, so fantasy's HTTP-layer retry is disabled to keep
+	// call counts deterministic and avoid its ~5s backoff per retryable call.
 	rc := RetryConfig{MaxAttempts: 3, InitialBackoff: time.Millisecond, Jitter: false}
-	agent, err := NewAgent(Config{Model: model, Retry: &rc, MaxRetries: 1})
+	agent, err := NewAgent(Config{Model: model, Retry: &rc})
 	require.NoError(t, err)
 
 	result, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 	require.NoError(t, err)
 	require.Contains(t, result.Text, "mock response")
-	require.Equal(t, int32(3), model.generateCalls.Load(), "2 transient errors + 1 success = exactly 3 calls")
+	require.Equal(t, int32(3), model.generateCalls.Load(), "2 transient errors + 1 success = exactly 3 vision-layer calls")
 }
 
 func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
@@ -124,7 +127,7 @@ func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
 
 	model := &mockModel{generateErr: newTestProviderErr(http.StatusTooManyRequests)}
 	rc := RetryConfig{MaxAttempts: 2, InitialBackoff: time.Millisecond, Jitter: false}
-	agent, err := NewAgent(Config{Model: model, Retry: &rc, MaxRetries: 1})
+	agent, err := NewAgent(Config{Model: model, Retry: &rc})
 	require.NoError(t, err)
 
 	_, err = agent.Analyze(context.Background(), "prompt", ImageSrc())
@@ -135,9 +138,9 @@ func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
 	require.Equal(t, apperrors.KindRateLimited, me.Kind)
 	require.Equal(
 		t,
-		int32(4),
+		int32(2),
 		model.generateCalls.Load(),
-		"Config.Retry (MaxAttempts=2) with fantasy MaxRetries=1 on a retryable 429 = 2 vision attempts x 2 model calls",
+		"MaxAttempts=2 with fantasy retry disabled = exactly 2 vision-layer calls",
 	)
 }
 
@@ -146,19 +149,19 @@ func TestConfigRetryWiredIntoStructured(t *testing.T) {
 
 	model := &mockModel{generateObjectErr: newTestProviderErr(http.StatusServiceUnavailable)}
 	rc := RetryConfig{MaxAttempts: 2, InitialBackoff: time.Millisecond, Jitter: false}
-	agent, err := NewAgent(Config{Model: model, Retry: &rc, MaxRetries: 1})
+	agent, err := NewAgent(Config{Model: model, Retry: &rc})
 	require.NoError(t, err)
 
 	_, err = AnalyzeStructured[testReview](context.Background(), agent, "prompt", ImageSrc())
 	require.Error(t, err)
-	require.Equal(t, int32(4), model.generateObjectCalls.Load(), "MaxAttempts=2 x (1 + fantasy MaxRetries=1) on retryable 503 = exactly 4 object calls")
+	require.Equal(t, int32(2), model.generateObjectCalls.Load(), "MaxAttempts=2 with fantasy retry disabled = exactly 2 vision-layer object calls")
 }
 
 func TestConfigRetryOffByDefault(t *testing.T) {
 	t.Parallel()
 
 	model := &mockModel{generateErr: newTestProviderErr(http.StatusInternalServerError)}
-	agent, err := NewAgent(Config{Model: model, MaxRetries: 1}) // no Retry
+	agent, err := NewAgent(Config{Model: model}) // no Retry, no MaxRetries
 	require.NoError(t, err)
 	require.Nil(t, agent.config.Retry, "Retry must be nil when not configured")
 

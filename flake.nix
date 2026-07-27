@@ -70,6 +70,7 @@
             default = {
               type = "app";
               program = lib.getExe config.packages.default;
+              meta.description = "Run the vision-review-agent CLI";
             };
 
             test = {
@@ -79,6 +80,7 @@
                 runtimeInputs = [ pkgs.go_1_26 ];
                 text = "go test -race -v -coverprofile=coverage.out ./...";
               };
+              meta.description = "Run the full Go test suite with race detector and coverage";
             };
 
             lint = {
@@ -91,6 +93,7 @@
                 ];
                 text = "golangci-lint run ./...";
               };
+              meta.description = "Run golangci-lint over the whole module";
             };
           };
 
