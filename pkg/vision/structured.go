@@ -29,49 +29,18 @@ func AnalyzeStructured[T any](
 	prompt string,
 	images ...*ImageSource,
 ) (*fantasy.ObjectResult[T], error) {
-	validImages, err := validateAnalyzeInput(prompt, images)
+	prep, err := agent.prepare(ctx, prompt, images...)
 	if err != nil {
 		return nil, err
 	}
+	defer prep.cancel()
 
-	validImages, err = agent.preprocessImages(validImages)
-	if err != nil {
-		return nil, err
-	}
+	call := buildObjectCall[T](agent, prompt, prep.files)
 
-	agent.config.Hooks.fireStart(ctx, prompt, len(validImages))
-
-	ctx, cancel := agent.withTimeout(ctx)
-	defer cancel()
-
-	files := toFileParts(validImages)
-
-	var zero T
-	schemaDef := schema.Generate(reflect.TypeOf(zero))
-
-	call := fantasy.ObjectCall{
-		Prompt: visionutil.AppendSystemAndPrompt(
-			agent.config.SystemPrompt,
-			prompt,
-			files,
-		),
-		Schema:            schemaDef,
-		SchemaName:        reflect.TypeOf(zero).Name(),
-		SchemaDescription: "Structured analysis result for " + reflect.TypeOf(zero).Name(),
-	}
-
-	p := agent.config.optionalParams()
-	call.MaxOutputTokens = p.maxOutputTokens
-	call.Temperature = p.temperature
-	call.TopP = p.topP
-	call.TopK = p.topK
-	call.PresencePenalty = p.presencePenalty
-	call.FrequencyPenalty = p.frequencyPenalty
-
-	result, err := generateObject(ctx, agent, call)
+	result, err := generateObject(prep.ctx, agent, call)
 	if err != nil {
 		classified := classifyModelErr("vision agent structured generate", prompt, err)
-		agent.config.Hooks.fireError(ctx, classified)
+		agent.config.Hooks.fireError(prep.ctx, classified)
 		return nil, classified
 	}
 
@@ -84,7 +53,7 @@ func AnalyzeStructured[T any](
 				prompt,
 				err,
 			)
-			agent.config.Hooks.fireError(ctx, parseErr)
+			agent.config.Hooks.fireError(prep.ctx, parseErr)
 			return nil, parseErr
 		}
 	}
@@ -100,7 +69,7 @@ func AnalyzeStructured[T any](
 	// Structured methods have no *fantasy.AgentResult, so the synthesized
 	// AnalyzeResult carries only Text/Usage; RawResponse is intentionally nil
 	// (see AnalyzeResult.RawResponse doc). Hooks must nil-check it.
-	agent.config.Hooks.fireFinish(ctx, &AnalyzeResult{
+	agent.config.Hooks.fireFinish(prep.ctx, &AnalyzeResult{
 		Text:  result.RawText,
 		Usage: result.Usage,
 	})
@@ -128,49 +97,18 @@ func AnalyzeStructuredStream[T any](
 	onObject func(partial T),
 	images ...*ImageSource,
 ) (*fantasy.ObjectResult[T], error) {
-	validImages, err := validateAnalyzeInput(prompt, images)
+	prep, err := agent.prepare(ctx, prompt, images...)
 	if err != nil {
 		return nil, err
 	}
+	defer prep.cancel()
 
-	validImages, err = agent.preprocessImages(validImages)
-	if err != nil {
-		return nil, err
-	}
+	call := buildObjectCall[T](agent, prompt, prep.files)
 
-	agent.config.Hooks.fireStart(ctx, prompt, len(validImages))
-
-	ctx, cancel := agent.withTimeout(ctx)
-	defer cancel()
-
-	files := toFileParts(validImages)
-
-	var zero T
-	schemaDef := schema.Generate(reflect.TypeOf(zero))
-
-	call := fantasy.ObjectCall{
-		Prompt: visionutil.AppendSystemAndPrompt(
-			agent.config.SystemPrompt,
-			prompt,
-			files,
-		),
-		Schema:            schemaDef,
-		SchemaName:        reflect.TypeOf(zero).Name(),
-		SchemaDescription: "Structured analysis result for " + reflect.TypeOf(zero).Name(),
-	}
-
-	p := agent.config.optionalParams()
-	call.MaxOutputTokens = p.maxOutputTokens
-	call.Temperature = p.temperature
-	call.TopP = p.topP
-	call.TopK = p.topK
-	call.PresencePenalty = p.presencePenalty
-	call.FrequencyPenalty = p.frequencyPenalty
-
-	stream, err := agent.config.Model.StreamObject(ctx, call)
+	stream, err := agent.config.Model.StreamObject(prep.ctx, call)
 	if err != nil {
 		classified := classifyModelErr("vision agent structured stream", prompt, err)
-		agent.config.Hooks.fireError(ctx, classified)
+		agent.config.Hooks.fireError(prep.ctx, classified)
 		return nil, classified
 	}
 
@@ -196,7 +134,7 @@ func AnalyzeStructuredStream[T any](
 		case fantasy.ObjectStreamPartTypeError:
 			if part.Error != nil {
 				classified := classifyModelErr("vision agent structured stream", prompt, part.Error)
-				agent.config.Hooks.fireError(ctx, classified)
+				agent.config.Hooks.fireError(prep.ctx, classified)
 				return nil, classified
 			}
 		case fantasy.ObjectStreamPartTypeFinish:
@@ -215,11 +153,36 @@ func AnalyzeStructuredStream[T any](
 		FinishReason: finishReason,
 	}
 	// Synthesized AnalyzeResult: RawResponse is nil (see AnalyzeResult.RawResponse doc).
-	agent.config.Hooks.fireFinish(ctx, &AnalyzeResult{
+	agent.config.Hooks.fireFinish(prep.ctx, &AnalyzeResult{
 		Text:  rawText,
 		Usage: usage,
 	})
 	return finalResult, nil
+}
+
+// buildObjectCall constructs a fantasy.ObjectCall for a typed structured
+// analysis, embedding the JSON schema for T and forwarding optional model
+// parameters. Shared by AnalyzeStructured and AnalyzeStructuredStream.
+func buildObjectCall[T any](agent *Agent, prompt string, files []fantasy.FilePart) fantasy.ObjectCall {
+	t := reflect.TypeOf(*new(T))
+	call := fantasy.ObjectCall{
+		Prompt: visionutil.AppendSystemAndPrompt(
+			agent.config.SystemPrompt,
+			prompt,
+			files,
+		),
+		Schema:            schema.Generate(t),
+		SchemaName:        t.Name(),
+		SchemaDescription: "Structured analysis result for " + t.Name(),
+	}
+	p := agent.config.optionalParams()
+	call.MaxOutputTokens = p.maxOutputTokens
+	call.Temperature = p.temperature
+	call.TopP = p.topP
+	call.TopK = p.topK
+	call.PresencePenalty = p.presencePenalty
+	call.FrequencyPenalty = p.frequencyPenalty
+	return call
 }
 
 // generateObject invokes the model's GenerateObject, applying Config.Retry when

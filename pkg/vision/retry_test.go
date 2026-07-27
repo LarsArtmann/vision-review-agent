@@ -116,7 +116,7 @@ func TestConfigRetryRetriesTransientAnalyze(t *testing.T) {
 	result, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 	require.NoError(t, err)
 	require.Contains(t, result.Text, "mock response")
-	require.GreaterOrEqual(t, model.generateCalls.Load(), int32(3), "must retry until success")
+	require.Equal(t, int32(3), model.generateCalls.Load(), "2 transient errors + 1 success = exactly 3 calls")
 }
 
 func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
@@ -133,11 +133,11 @@ func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
 	me, ok := errors.AsType[*apperrors.ModelError](err)
 	require.True(t, ok, "exhausted retry must still be a classified ModelError")
 	require.Equal(t, apperrors.KindRateLimited, me.Kind)
-	require.Greater(
+	require.Equal(
 		t,
+		int32(4),
 		model.generateCalls.Load(),
-		int32(1),
-		"Config.Retry must trigger retries beyond the first attempt",
+		"Config.Retry (MaxAttempts=2) with fantasy MaxRetries=1 on a retryable 429 = 2 vision attempts x 2 model calls",
 	)
 }
 
@@ -151,7 +151,7 @@ func TestConfigRetryWiredIntoStructured(t *testing.T) {
 
 	_, err = AnalyzeStructured[testReview](context.Background(), agent, "prompt", ImageSrc())
 	require.Error(t, err)
-	require.Greater(t, model.generateObjectCalls.Load(), int32(1), "structured generate must be retried")
+	require.Equal(t, int32(4), model.generateObjectCalls.Load(), "MaxAttempts=2 x (1 + fantasy MaxRetries=1) on retryable 503 = exactly 4 object calls")
 }
 
 func TestConfigRetryOffByDefault(t *testing.T) {
