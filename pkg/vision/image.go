@@ -81,15 +81,33 @@ func LoadImageFromReader(r io.Reader, mediaType MediaType, filename string) (*Im
 }
 
 // LoadImageFromURL downloads an image from a URL and returns an ImageSource.
+// It uses [http.DefaultClient]. For a custom client (proxy, timeout, TLS), use
+// [LoadImageFromURLWithClient].
 // The media type is detected from the Content-Type header, falling back to
-// the URL path extension. Returns ErrImageTooLarge if the data exceeds 50 MB.
+// the URL path extension. Returns ErrImageTooLarge if the data exceeds 50 MB
+// and ErrInvalidImage if the body is not a recognized image format.
 func LoadImageFromURL(ctx context.Context, url string) (*ImageSource, error) {
+	return LoadImageFromURLWithClient(ctx, url, http.DefaultClient)
+}
+
+// LoadImageFromURLWithClient downloads an image from a URL using the given
+// *http.Client, allowing custom transport configuration (proxies, timeouts,
+// TLS roots). A nil client falls back to [http.DefaultClient].
+func LoadImageFromURLWithClient(
+	ctx context.Context,
+	url string,
+	client *http.Client,
+) (*ImageSource, error) {
+	if client == nil {
+		client = http.DefaultClient
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request for url %q: %w", url, err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("download image from %q: %w", url, err)
 	}

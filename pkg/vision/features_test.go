@@ -113,6 +113,23 @@ func TestLoadImageFromURL(t *testing.T) {
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrInvalidImage)
 	})
+
+	t.Run("LoadImageFromURLWithClient uses custom client", func(t *testing.T) {
+		t.Parallel()
+		imageData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write(imageData)
+		}))
+		defer server.Close()
+
+		img, err := LoadImageFromURLWithClient(context.Background(), server.URL+"/x.png", &http.Client{})
+		require.NoError(t, err)
+		require.Equal(t, imageData, img.Data)
+
+		// nil client falls back to default without panicking.
+		_, err = LoadImageFromURLWithClient(context.Background(), server.URL+"/x.png", nil)
+		require.NoError(t, err)
+	})
 }
 
 func TestConfigValidationExtended(t *testing.T) {

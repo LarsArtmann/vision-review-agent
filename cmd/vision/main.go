@@ -19,7 +19,10 @@ import (
 	"time"
 
 	"charm.land/fantasy"
+	"charm.land/fantasy/providers/anthropic"
+	"charm.land/fantasy/providers/google"
 	"charm.land/fantasy/providers/openai"
+	"charm.land/fantasy/providers/openaicompat"
 	"charm.land/fantasy/providers/openrouter"
 	"github.com/larsartmann/vision-review-agent/internal/cli"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
@@ -61,6 +64,7 @@ type config struct {
 	prompt       string
 	systemPrompt string
 	stream       bool
+	structured   bool
 	temperature  float64
 	maxTokens    int64
 	jsonOutput   bool
@@ -69,7 +73,11 @@ type config struct {
 
 func parseFlags() (*config, error) { //nolint:unparam
 	var (
-		providerName = flag.String("provider", "openai", "Provider: openai, openrouter")
+		providerName = flag.String(
+			"provider",
+			"openai",
+			"Provider: openai, openrouter, anthropic, google, openaicompat",
+		)
 		modelID      = flag.String("model", "gpt-4o", "Model ID (e.g., gpt-4o, openai/gpt-4o)")
 		prompt       = flag.String(
 			"prompt",
@@ -81,6 +89,7 @@ func parseFlags() (*config, error) { //nolint:unparam
 		temperature  = flag.Float64("temperature", defaultTemperature, "Temperature (0.0-2.0)")
 		maxTokens    = flag.Int64("max-tokens", 0, "Max output tokens (0 = unlimited)")
 		jsonOutput   = flag.Bool("json", false, "Output result as JSON")
+		structured   = flag.Bool("structured", false, "Emit a structured UI review as JSON (built-in schema)")
 		timeout      = flag.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
 		showVersion  = flag.Bool("version", false, "Show version and exit")
 	)
@@ -108,6 +117,7 @@ func parseFlags() (*config, error) { //nolint:unparam
 		temperature:  *temperature,
 		maxTokens:    *maxTokens,
 		jsonOutput:   *jsonOutput,
+		structured:   *structured,
 		timeout:      *timeout,
 	}, nil
 }
@@ -117,8 +127,12 @@ func usageFunc(name string) func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] <image1.png> [image2.png ...]\n\n", name)
 		fmt.Fprint(os.Stderr, "Analyze images/screenshots with AI vision models.\n\n")
 		fmt.Fprintln(os.Stderr, "Environment variables:")
-		fmt.Fprintln(os.Stderr, "  OPENAI_API_KEY     - Required for OpenAI provider")
-		fmt.Fprint(os.Stderr, "  OPENROUTER_API_KEY - Required for OpenRouter provider\n\n")
+		fmt.Fprintln(os.Stderr, "  OPENAI_API_KEY          - OpenAI provider")
+		fmt.Fprintln(os.Stderr, "  OPENROUTER_API_KEY      - OpenRouter provider")
+		fmt.Fprintln(os.Stderr, "  ANTHROPIC_API_KEY       - Anthropic provider")
+		fmt.Fprintln(os.Stderr, "  GOOGLE_APPLICATION_*    - Google provider (ADC)")
+		fmt.Fprintln(os.Stderr, "  OPENAICOMPAT_BASE_URL   - openaicompat provider (required)")
+		fmt.Fprintln(os.Stderr, "  OPENAICOMPAT_API_KEY    - openaicompat provider (optional)\n")
 		fmt.Fprintln(os.Stderr, "Options:")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "\nExamples:")
@@ -338,6 +352,41 @@ func createOpenRouterProvider(apiKey string) (fantasy.Provider, error) {
 	return wrapProvider("openrouter", provider, err)
 }
 
+func createAnthropicProvider(apiKey string) (fantasy.Provider, error) {
+	provider, err := anthropic.New(anthropic.WithAPIKey(apiKey))
+
+	return wrapProvider("anthropic", provider, err)
+}
+
+// createGoogleProvider builds the Google (Gemini) provider using Application
+// Default Credentials. Set GOOGLE_APPLICATION_CREDENTIALS or run `gcloud auth
+// application-default login` before use.
+func createGoogleProvider() (fantasy.Provider, error) {
+	provider, err := google.New()
+
+	return wrapProvider("google", provider, err)
+}
+
+// createOpenAICompatProvider builds an OpenAI-compatible provider for local
+// model servers (Ollama, LM Studio). OPENAICOMPAT_BASE_URL is required;
+// OPENAICOMPAT_API_KEY is optional (most local servers ignore it).
+func createOpenAICompatProvider() (fantasy.Provider, error) {
+	baseURL := os.Getenv("OPENAICOMPAT_BASE_URL")
+	if baseURL == "" {
+		return nil, fmt.Errorf("OPENAICOMPAT_BASE_URL: %w", errEnvVarNotSet)
+	}
+
+	opts := []openaicompat.Option{openaicompat.WithBaseURL(baseURL)}
+
+	if apiKey := os.Getenv("OPENAICOMPAT_API_KEY"); apiKey != "" {
+		opts = append(opts, openaicompat.WithAPIKey(apiKey))
+	}
+
+	provider, err := openaicompat.New(opts...)
+
+	return wrapProvider("openaicompat", provider, err)
+}
+
 // wrapProvider pairs a provider constructor's (Provider, error) result with a
 // consistent error message naming the provider that failed.
 func wrapProvider(
@@ -358,7 +407,17 @@ func createProvider(name string) (fantasy.Provider, error) {
 		return newProviderFromEnv("OPENAI_API_KEY", createOpenAIProvider)
 	case "openrouter":
 		return newProviderFromEnv("OPENROUTER_API_KEY", createOpenRouterProvider)
+	case "anthropic":
+		return newProviderFromEnv("ANTHROPIC_API_KEY", createAnthropicProvider)
+	case "google":
+		return createGoogleProvider()
+	case "openaicompat":
+		return createOpenAICompatProvider()
 	default:
-		return nil, fmt.Errorf("%s (supported: openai, openrouter): %w", name, errUnknownProvider)
+		return nil, fmt.Errorf(
+			"%s (supported: openai, openrouter, anthropic, google, openaicompat): %w",
+			name,
+			errUnknownProvider,
+		)
 	}
 }
