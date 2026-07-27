@@ -7,6 +7,7 @@
 ## A) FULLY DONE (verified: build + vet + race + lint = 0 issues)
 
 ### Critical Fixes (6)
+
 1. **License metadata lie fixed** — `flake.nix` `licenses.mit` → `licenses.unfree` with explanatory comment. Release blocker resolved.
 2. **BMP decoder registered** — `golang.org/x/image/bmp` blank import in `preprocess.go`. `image.Decode` can now decode BMP for resize.
 3. **BMP media-type detection fixed** — `mediaTypeFromExtension` now has an explicit known-extension table (PNG/JPEG/GIF/WebP/BMP) checked before the system-dependent `mime.TypeByExtension` fallback. A `.bmp` file is no longer mislabeled as PNG.
@@ -15,6 +16,7 @@
 6. **Retry systems reconciled** — `Config.Retry *RetryConfig` added. Non-streaming analysis methods (`Analyze`, `AnalyzeConversation`, `AnalyzeStructured`) now auto-retry via internal `va.generate()` / `generateObject()` helpers. `MaxRetries` (fantasy HTTP-layer) documented as distinct and composable. Streaming methods deliberately excluded.
 
 ### High-Value Features (6)
+
 7. **3 new ErrorKinds** — `KindNotImplemented` (HTTP 501, not retryable), `KindServiceUnavailable` (HTTP 503, retryable), `KindContentFilter` (400 with signal-phrase detection: "content filter", "content policy", "content_filter", "safety"). Total ErrorKinds: 11 → 14. Re-exported from `pkg/vision/errors.go`.
 8. **Auto-wired preprocessing** — `Config.Preprocess *PreprocessConfig` applied automatically inside every `Analyze*` (text + structured). `PreprocessImage()` exported. `ScreenshotAnalyzer.WithMaxDimension()` builder added. All wired via `va.preprocessImages()`.
 9. **CostTracker agent integration** — `NewAgentWithCostTracker(Config) (*Agent, *CostTracker, error)` auto-wires tracker into `Hooks.OnFinish`, composing with any user-supplied `OnFinish`.
@@ -23,12 +25,14 @@
 12. **GitHub Release for v0.2.0 created** — `gh release create v0.2.0` with title and notes summarizing major features.
 
 ### Testing (4)
+
 13. **BDD error-classification specs** — `error_classification_bdd_test.go`: 10-entry DescribeTable covering all HTTP status code → kind mappings + context cancellation + deadline exceeded + cause-chain preservation. Uses `setupAgentWithModel`.
 14. **AnalyzeBatch classified-error tests** — `TestAnalyzeBatchClassifiesPerImageErrors` and `TestAnalyzeBatchMixedSuccessAndError` verifying per-image `*ModelError` extraction and `ErrorKind`/`IsRetryable()` checks.
 15. **Dead `errTestNoop` sentinel removed** — from `pkg/errors/model_test.go`.
 16. **`wrapNoop` → `wrapChain`** — Now uses `fmt.Errorf("wrapped: %w", err)` to actually test error-chain traversal through `Classify` and `IsRetryable`.
 
 ### Config & Tooling (5)
+
 17. **depguard `$module` documented** — Explanatory comment added explaining the v2 regression and hardcoded module path.
 18. **`nolintlint` tightened** — `require-explanation: true` enabled. All `//nolint:` directives now carry explanations (`VisionAgent` alias, `parseFlags` unparam).
 19. **`golangci-lint config verify` passes** — Fixed `funlen` schema (`functions` → removed, kept `lines`/`statements`) and `nolintlint` schema (`allow-no-extra-linter` removed as invalid in v2).
@@ -36,12 +40,14 @@
 21. **Lint driven to 0 issues** — Fixed `exhaustive`, `gochecknoglobals`, `nlreturn`, `cyclop`, `gofumpt`, `whitespace`, `testifylint` (float-compare → `InDelta`).
 
 ### Documentation (4)
+
 22. **`docs/DOMAIN_LANGUAGE.md` rewritten** — Real ubiquitous language: glossary, entities, value objects, error classification, events, commands, bounded contexts. All terms mapped to code.
 23. **`CONTRIBUTING.md` updated** — Flake commands (`nix run .#test`, `nix run .#lint`, `nix build .`, `nix flake check`), formatting section, code-style guidance.
 24. **`CHANGELOG.md` updated** — `[Unreleased]` section rewritten: known-issues trimmed (license + structured-hooks resolved), Added/Changed/Removed sections reflect all session work.
 25. **`AGENTS.md` updated** — Duplicated design-decision entries consolidated; new decisions added (Config.Retry, Config.Preprocess, NewAgentWithCostTracker, optionalParams, BMP support, structured RawResponse contract). ErrorKind count corrected 11 → 14. Test organization section updated.
 
 ### Verification Metrics
+
 - **Build:** `go build ./...` — pass
 - **Vet:** `go vet ./...` — pass
 - **Tests:** 139 test cases (`go test -v` RUN count), all pass with `-race`
@@ -91,6 +97,7 @@ Nothing. All changes compile, pass tests, pass lint, and are verified.
 ## F) NEXT 50 THINGS TO GET DONE
 
 ### Release & Tagging
+
 1. Run `nix flake check` and fix anything it flags
 2. Run `go mod verify` to confirm dependency integrity
 3. Resolve the `v0.2.1`/`v0.3.0` tag anomaly (requires user approval)
@@ -98,6 +105,7 @@ Nothing. All changes compile, pass tests, pass lint, and are verified.
 5. Annotate the `[0.2.0]` CHANGELOG license claim as retrospectively false (non-destructive)
 
 ### Code Quality
+
 6. Make `parseFlags` testable: refactor to accept `*flag.FlagSet`, return errors
 7. Add flag-parsing tests (all flags, `-version`, missing args)
 8. Add `-structured` branch integration test in `cmd/vision`
@@ -112,6 +120,7 @@ Nothing. All changes compile, pass tests, pass lint, and are verified.
 17. Add `nix flake check` to CI workflow (Nix job)
 
 ### Testing Gaps
+
 18. Add tests for `mediaTypeFromExtension` with all extensions (including `.bmp`)
 19. Add test for BMP decode → resize roundtrip in `preprocess.go`
 20. Add test for `PreprocessImage` with nil config (passthrough)
@@ -126,6 +135,7 @@ Nothing. All changes compile, pass tests, pass lint, and are verified.
 29. Add streaming method retry-exclusion test (verify streaming does NOT retry)
 
 ### Error Handling
+
 30. Add `KindOverloaded` for HTTP 529 (Cloudflare/Anthropic)
 31. Add `KindPaymentRequired` for HTTP 402
 32. Add structured content-filter detection (parse JSON error bodies, not just strings)
@@ -133,6 +143,7 @@ Nothing. All changes compile, pass tests, pass lint, and are verified.
 34. Add `Errors.AsType` documentation example in README
 
 ### Architecture
+
 35. Consider `Analyzer` interface expansion: add `AnalyzeConversation` and `AnalyzeStructured` (breaking decision)
 36. Remove deprecated `VisionAgent` alias (timeline decision)
 37. Add `Agent.Close()` for resource cleanup
@@ -143,12 +154,14 @@ Nothing. All changes compile, pass tests, pass lint, and are verified.
 42. Add result caching by image hash + prompt (ROADMAP item)
 
 ### Observability
+
 43. Add OpenTelemetry spans for the analysis lifecycle (ROADMAP item)
 44. Add `Hooks.OnBatchStart` / `OnBatchFinish` for batch-scoped observability
 45. Add `Agent.Cost()` method returning the tracker total (alternative to `NewAgentWithCostTracker`)
 46. Add structured logging hook example
 
 ### Documentation
+
 47. Rewrite `README.md` with new features (Config.Retry, Config.Preprocess, new ErrorKinds)
 48. Update `FEATURES.md` with the new feature inventory
 49. Add `docs/` page for error-handling patterns

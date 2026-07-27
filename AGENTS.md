@@ -46,6 +46,7 @@ examples/                Working examples for each provider
 - **Structured hooks RawResponse is nil** — `AnalyzeResult.RawResponse` is nil for synthesized results from AnalyzeStructured/AnalyzeStructuredStream (those return `*fantasy.ObjectResult`, not `*fantasy.AgentResult`). See the field doc.
 - **WithRetry[T] is external middleware** — Retries are opt-in via a generic wrapper (not baked into Agent) so callers control policy; respects `IsRetryable()`
 - **Config.Retry layers vision-level retry** — When set, retries the whole model invocation with `RetryConfig` backoff+jitter; composes with `MaxRetries` (fantasy HTTP-layer retry). Streaming methods do NOT auto-retry.
+- **MaxRetries defaults to 0 (no HTTP-layer retry)** — `NewAgent` always forwards `MaxRetries` to fantasy; the zero value disables retries entirely (fantasy's `MaxRetries==0 → no retry`). Previously zero meant "fantasy default" (3 retries, 5+10+20s backoff), which caused 35s test stalls and OOM under `-race`. Set `MaxRetries` explicitly or use `Config.Retry` for retry behavior.
 - **Config.Preprocess auto-applies** — When set, `PreprocessConfig.MaxDimension` resizes images before every `Analyze*` call. `ScreenshotAnalyzer.WithMaxDimension` sets it fluently.
 - **CostTracker integrates via Hooks.OnFinish** — Thread-safe; `NewAgentWithCostTracker` auto-wires it
 - **NewAgentWithCostTracker** — Convenience constructor that composes cost tracking with user hooks
