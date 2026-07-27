@@ -274,39 +274,22 @@ func (va *Agent) Analyze(
 	prompt string,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	validImages, err := validateAnalyzeInput(prompt, images)
+	prep, err := va.prepare(ctx, prompt, images...)
 	if err != nil {
 		return nil, err
 	}
+	defer prep.cancel()
 
-	validImages, err = va.preprocessImages(validImages)
-	if err != nil {
-		return nil, err
-	}
+	call := va.buildAgentCall(prompt, prep.files, nil)
 
-	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
-
-	ctx, cancel := va.withTimeout(ctx)
-	defer cancel()
-
-	files := toFileParts(validImages)
-
-	call := va.buildAgentCall(prompt, files, nil)
-
-	result, err := va.generate(ctx, call)
+	result, err := va.generate(prep.ctx, call)
 	if err != nil {
 		classified := classifyModelErr("vision agent generate", prompt, err)
-		va.config.Hooks.fireError(ctx, classified)
+		va.config.Hooks.fireError(prep.ctx, classified)
 		return nil, classified
 	}
 
-	analysisResult := &AnalyzeResult{
-		Text:        result.Response.Content.Text(),
-		Usage:       result.TotalUsage,
-		RawResponse: result,
-	}
-	va.config.Hooks.fireFinish(ctx, analysisResult)
-	return analysisResult, nil
+	return va.finishResult(prep.ctx, result.Response.Content.Text(), result), nil
 }
 
 // AnalyzeStream sends images to the agent and streams the response.
@@ -317,26 +300,15 @@ func (va *Agent) AnalyzeStream(
 	onText func(text string) error,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	validImages, err := validateAnalyzeInput(prompt, images)
+	prep, err := va.prepare(ctx, prompt, images...)
 	if err != nil {
 		return nil, err
 	}
-
-	validImages, err = va.preprocessImages(validImages)
-	if err != nil {
-		return nil, err
-	}
-
-	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
-
-	ctx, cancel := va.withTimeout(ctx)
-	defer cancel()
-
-	files := toFileParts(validImages)
+	defer prep.cancel()
 
 	var builder strings.Builder
 
-	streamCall := va.buildAgentStreamCall(prompt, files, nil)
+	streamCall := va.buildAgentStreamCall(prompt, prep.files, nil)
 	streamCall.OnTextDelta = func(_, text string) error {
 		builder.WriteString(text)
 		if onText != nil {
@@ -345,20 +317,14 @@ func (va *Agent) AnalyzeStream(
 		return nil
 	}
 
-	result, err := va.agent.Stream(ctx, streamCall)
+	result, err := va.agent.Stream(prep.ctx, streamCall)
 	if err != nil {
 		classified := classifyModelErr("vision agent stream", prompt, err)
-		va.config.Hooks.fireError(ctx, classified)
+		va.config.Hooks.fireError(prep.ctx, classified)
 		return nil, classified
 	}
 
-	analysisResult := &AnalyzeResult{
-		Text:        builder.String(),
-		Usage:       result.TotalUsage,
-		RawResponse: result,
-	}
-	va.config.Hooks.fireFinish(ctx, analysisResult)
-	return analysisResult, nil
+	return va.finishResult(prep.ctx, builder.String(), result), nil
 }
 
 // AnalyzeConversation analyzes images with the given prompt, incorporating
@@ -376,37 +342,22 @@ func (va *Agent) AnalyzeConversation(
 	prompt string,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	validImages, err := validateAnalyzeInput(prompt, images)
+	prep, err := va.prepare(ctx, prompt, images...)
 	if err != nil {
 		return nil, err
 	}
+	defer prep.cancel()
 
-	validImages, err = va.preprocessImages(validImages)
-	if err != nil {
-		return nil, err
-	}
+	call := va.buildAgentCall(prompt, prep.files, conv.Messages())
 
-	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
-
-	ctx, cancel := va.withTimeout(ctx)
-	defer cancel()
-
-	call := va.buildAgentCall(prompt, toFileParts(validImages), conv.Messages())
-
-	result, err := va.generate(ctx, call)
+	result, err := va.generate(prep.ctx, call)
 	if err != nil {
 		classified := classifyModelErr("vision agent conversation generate", prompt, err)
-		va.config.Hooks.fireError(ctx, classified)
+		va.config.Hooks.fireError(prep.ctx, classified)
 		return nil, classified
 	}
 
-	analysisResult := &AnalyzeResult{
-		Text:        result.Response.Content.Text(),
-		Usage:       result.TotalUsage,
-		RawResponse: result,
-	}
-	va.config.Hooks.fireFinish(ctx, analysisResult)
-	return analysisResult, nil
+	return va.finishResult(prep.ctx, result.Response.Content.Text(), result), nil
 }
 
 // AnalyzeConversationStream streams analysis with conversation history for multi-turn interactions.
@@ -418,6 +369,49 @@ func (va *Agent) AnalyzeConversationStream(
 	onText func(text string) error,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
+	prep, err := va.prepare(ctx, prompt, images...)
+	if err != nil {
+		return nil, err
+	}
+	defer prep.cancel()
+
+	var builder strings.Builder
+
+	streamCall := va.buildAgentStreamCall(prompt, prep.files, conv.Messages())
+	streamCall.OnTextDelta = func(_, text string) error {
+		builder.WriteString(text)
+		if onText != nil {
+			return onText(text)
+		}
+		return nil
+	}
+
+	result, err := va.agent.Stream(prep.ctx, streamCall)
+	if err != nil {
+		classified := classifyModelErr("vision agent conversation stream", prompt, err)
+		va.config.Hooks.fireError(prep.ctx, classified)
+		return nil, classified
+	}
+
+	return va.finishResult(prep.ctx, builder.String(), result), nil
+}
+
+// preparedRequest bundles the validated inputs and derived context produced
+// by prepare, so every analysis method shares the same prologue.
+type preparedRequest struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+	files  []fantasy.FilePart
+}
+
+// prepare runs the shared prologue every analysis method performs: input
+// validation, image preprocessing, hook firing, timeout setup, and FilePart
+// conversion. The caller must defer prep.cancel().
+func (va *Agent) prepare(
+	ctx context.Context,
+	prompt string,
+	images ...*ImageSource,
+) (*preparedRequest, error) {
 	validImages, err := validateAnalyzeInput(prompt, images)
 	if err != nil {
 		return nil, err
@@ -431,33 +425,29 @@ func (va *Agent) AnalyzeConversationStream(
 	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
 
 	ctx, cancel := va.withTimeout(ctx)
-	defer cancel()
 
-	var builder strings.Builder
+	return &preparedRequest{
+		ctx:    ctx,
+		cancel: cancel,
+		files:  toFileParts(validImages),
+	}, nil
+}
 
-	streamCall := va.buildAgentStreamCall(prompt, toFileParts(validImages), conv.Messages())
-	streamCall.OnTextDelta = func(_, text string) error {
-		builder.WriteString(text)
-		if onText != nil {
-			return onText(text)
-		}
-		return nil
-	}
-
-	result, err := va.agent.Stream(ctx, streamCall)
-	if err != nil {
-		classified := classifyModelErr("vision agent conversation stream", prompt, err)
-		va.config.Hooks.fireError(ctx, classified)
-		return nil, classified
-	}
-
-	analysisResult := &AnalyzeResult{
-		Text:        builder.String(),
+// finishResult builds an AnalyzeResult from a completed model response, fires
+// the OnFinish hook, and returns the result. Shared by every non-streaming
+// and streaming analysis method that terminates with a *fantasy.AgentResult.
+func (va *Agent) finishResult(
+	ctx context.Context,
+	text string,
+	result *fantasy.AgentResult,
+) *AnalyzeResult {
+	ar := &AnalyzeResult{
+		Text:        text,
 		Usage:       result.TotalUsage,
 		RawResponse: result,
 	}
-	va.config.Hooks.fireFinish(ctx, analysisResult)
-	return analysisResult, nil
+	va.config.Hooks.fireFinish(ctx, ar)
+	return ar
 }
 
 // buildAgentCall constructs a fantasy.AgentCall with model parameters and optional history.
