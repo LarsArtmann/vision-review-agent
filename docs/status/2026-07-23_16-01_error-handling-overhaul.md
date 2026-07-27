@@ -4,6 +4,15 @@
 **Session focus:** Improve error handling for AI model calls
 **Verdict:** Foundation is solid and tested, but **wiring is incomplete** (screenshot.go missed) and several polish items remain.
 
+> **Update 2026-07-27:** the wiring gap is CLOSED — `screenshot.go` is fully
+> migrated, `wrapWithPrompt` is deleted repo-wide, `AnalyzeConversationStream`
+> validation is unified, and AGENTS.md now documents the `ModelError` /
+> `ErrorKind` system (the classification shipped in CHANGELOG `[0.2.0]`). Still
+> open: BDD specs for errors (still testify-only), `AnalyzeBatch` error test,
+> `examples/error-handling/`, the dead `errTestNoop` sentinel, and the
+> no-op `wrapNoop` helper. Full item-by-item status in
+> [Resolution](#resolution-2026-07-27) below.
+
 ---
 
 ## a) FULLY DONE
@@ -253,3 +262,29 @@ Tests injecting 429/500 ProviderErrors trigger fantasy's built-in retry middlewa
 ### Q3: Should the CLI auto-retry on transient errors?
 
 The `IsRetryable()` function exists but the CLI just prints and exits. Should I add a `--retry` flag that auto-retries `KindRateLimited`, `KindTimeout`, `KindServerError`, `KindNetwork` with exponential backoff? Or is retry the consumer's responsibility (keep the SDK simple)?
+
+---
+
+## Resolution (2026-07-27)
+
+Re-verified against code (`grep`, `go test`, CHANGELOG, AGENTS.md) four days
+after this report.
+
+| Section | Claim in report | Resolution | Evidence |
+| ------- | --------------- | ---------- | -------- |
+| b) screenshot.go wiring | 4 of 4 sites still use `wrapWithPrompt` | **DONE** — `wrapWithPrompt` deleted repo-wide; `grep wrapWithPrompt *.go` → 0 hits | `pkg/vision/screenshot.go`; TODO_LIST execution 2026-07-27 |
+| b) `wrapWithPrompt` cleanup | definition still exists | **DONE** — function removed from `vision.go` | `grep -rn wrapWithPrompt --include="*.go"` → empty |
+| c) AGENTS.md update | no mention of `ModelError`, `ErrorKind` | **DONE** — `AGENTS.md` "Classified Model Errors" section + Type Model entry | `AGENTS.md:37,130-137` |
+| c) CHANGELOG entry | not started | **DONE** — shipped under `[0.2.0] > Added` ("Classified model errors") | `CHANGELOG.md` `[0.2.0]` |
+| f.1–f.5 | Migrate screenshot.go 4 sites + delete `wrapWithPrompt` + remove dead imports | **DONE** | as above |
+| f.9 | Unify `AnalyzeConversationStream` validation → `validateAnalyzeInput` | **DONE** | `2026-07-27_11-49` report §a |
+| f.7 | Remove dead `errTestNoop` | **OPEN** — still defined, still unused | `pkg/errors/model_test.go:22` |
+| f.8 | Replace `wrapNoop` with real `fmt.Errorf("wrapped: %w", err)` | **OPEN** — still a no-op `return err` | `pkg/errors/model_test.go:316-320` |
+| c) / f.12 | BDD (Ginkgo) specs for error classification | **OPEN** — still testify table-driven only | `pkg/vision/error_classification_test.go` |
+| c) / f.14 | `AnalyzeBatch` classified-error test | **OPEN** — no batch error test exists | `pkg/vision/batch*test*` |
+| c) / f.37 | `examples/error-handling/main.go` | **OPEN** — not created | `examples/` |
+| f.23–f.27 | `KindNotImplemented`, `KindServiceUnavailable`, `KindContentFilter`, `RetryError`/`io.EOF` classification | **OPEN** — none added; 11 kinds unchanged | `pkg/errors/model.go` |
+| f.28–f.32 | CLI `--retry` / `--max-retries` / exit-code differentiation | **OPEN** — CLI prints advice only, no auto-retry | `cmd/vision/main.go` |
+
+**Net:** the wiring and documentation gaps are closed; the testing, example,
+and error-kind-refinement work remains open and is tracked in `TODO_LIST.md`.
