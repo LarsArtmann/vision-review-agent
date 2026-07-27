@@ -3,6 +3,7 @@ package apperrors
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -19,7 +20,6 @@ var (
 	errTestParseFail = errors.New("parse failure")
 	errTestSimple    = errors.New("err")
 	errTestBoom      = errors.New("boom")
-	errTestNoop      = errors.New("noop")
 )
 
 // newProviderErr builds a fantasy.ProviderError with the given status code
@@ -74,7 +74,7 @@ func TestClassify(t *testing.T) {
 		},
 		{
 			name:      "wrapped context cancelled",
-			err:       wrapNoop(context.Canceled),
+			err:       wrapChain(context.Canceled),
 			wantKind:  KindCancelled,
 			wantRetry: false,
 		},
@@ -305,7 +305,7 @@ func TestIsRetryableFunction(t *testing.T) {
 		{name: "raw provider error retryable", err: newProviderErr(http.StatusTooManyRequests), want: true},
 		{name: "raw provider error not retryable", err: newProviderErr(http.StatusBadRequest), want: false},
 		{name: "generic error", err: errTestBoom, want: false},
-		{name: "wrapped model error", err: wrapNoop(Classify(newProviderErr(500))), want: true},
+		{name: "wrapped model error", err: wrapChain(Classify(newProviderErr(500))), want: true},
 	}
 
 	for _, tt := range tests {
@@ -329,9 +329,9 @@ func TestWrap(t *testing.T) {
 	require.False(t, modelErr.IsRetryable())
 }
 
-// wrapNoop wraps an error in a trivial function for testing that
-// classification traverses the error chain. The wrapper itself adds no
-// additional error value so the original sentinel/type is still matched.
-func wrapNoop(err error) error {
-	return err
+// wrapChain wraps an error using fmt.Errorf("%w") so tests verify that
+// Classify and IsRetryable traverse the error chain through intermediate
+// wrappers, not just match the top-level type.
+func wrapChain(err error) error {
+	return fmt.Errorf("wrapped: %w", err)
 }

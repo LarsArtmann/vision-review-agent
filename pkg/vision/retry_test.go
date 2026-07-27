@@ -230,6 +230,36 @@ func TestCostTrackerIntegratesWithHooks(t *testing.T) {
 	require.Greater(t, tracker.Total().TotalTokens, int64(0))
 }
 
+func TestNewAgentWithCostTrackerAutoWires(t *testing.T) {
+	t.Parallel()
+
+	agent, tracker, err := NewAgentWithCostTracker(Config{Model: testModel()})
+	require.NoError(t, err)
+
+	_, err = agent.Analyze(context.Background(), "prompt", ImageSrc())
+	require.NoError(t, err)
+
+	require.Equal(t, 1, tracker.Calls(), "tracker must record the call automatically")
+	require.Greater(t, tracker.Total().TotalTokens, int64(0))
+}
+
+func TestNewAgentWithCostTrackerPreservesUserHooks(t *testing.T) {
+	t.Parallel()
+
+	var userHookCalled atomic.Int32
+	agent, tracker, err := NewAgentWithCostTracker(Config{
+		Model: testModel(),
+		Hooks: Hooks{OnFinish: func(_ context.Context, _ *AnalyzeResult) { userHookCalled.Add(1) }},
+	})
+	require.NoError(t, err)
+
+	_, err = agent.Analyze(context.Background(), "prompt", ImageSrc())
+	require.NoError(t, err)
+
+	require.Equal(t, int32(1), userHookCalled.Load(), "user OnFinish must still fire")
+	require.Equal(t, 1, tracker.Calls(), "cost tracker must also fire")
+}
+
 func toolsUsage(in, out int64) fantasy.Usage {
 	return fantasy.Usage{InputTokens: in, OutputTokens: out, TotalTokens: in + out}
 }

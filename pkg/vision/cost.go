@@ -1,6 +1,7 @@
 package vision
 
 import (
+	"context"
 	"sync"
 
 	"charm.land/fantasy"
@@ -69,4 +70,33 @@ func (c *CostTracker) Reset() {
 
 	c.total = fantasy.Usage{}
 	c.calls = 0
+}
+
+// NewAgentWithCostTracker creates an Agent whose Hooks.OnFinish automatically
+// feeds every analysis result's token usage into the returned CostTracker.
+// It composes any caller-supplied Hooks: the cost-tracker callback runs first,
+// then the caller's OnFinish (if any) runs, so both see the result.
+//
+// Usage:
+//
+//	agent, tracker, _ := vision.NewAgentWithCostTracker(vision.Config{Model: model})
+//	agent.Analyze(ctx, "review this", img)
+//	fmt.Printf("tokens: %d\n", tracker.Total().TotalTokens)
+func NewAgentWithCostTracker(config Config) (*Agent, *CostTracker, error) {
+	tracker := NewCostTracker()
+	userOnFinish := config.Hooks.OnFinish
+
+	config.Hooks.OnFinish = func(ctx context.Context, result *AnalyzeResult) {
+		tracker.AddResult(result)
+		if userOnFinish != nil {
+			userOnFinish(ctx, result)
+		}
+	}
+
+	agent, err := NewAgent(config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return agent, tracker, nil
 }

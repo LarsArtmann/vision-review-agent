@@ -175,3 +175,43 @@ func TestVisionIsRetryable(t *testing.T) {
 	require.Error(t, err2)
 	require.False(t, IsRetryable(err2))
 }
+
+func TestAnalyzeBatchClassifiesPerImageErrors(t *testing.T) {
+	t.Parallel()
+
+	model := &mockModel{generateErr: newTestProviderErr(http.StatusTooManyRequests)}
+	agent := newTestAgent(t, model)
+
+	results := agent.AnalyzeBatch(context.Background(), "prompt", 2, ImageSrc("a.png"), ImageSrc("b.png"))
+
+	require.Len(t, results, 2)
+	for _, r := range results {
+		require.Nil(t, r.Result, "failed image must have nil Result")
+		require.Error(t, r.Err, "batch error must be captured per-image")
+
+		me, ok := errors.AsType[*apperrors.ModelError](r.Err)
+		require.True(t, ok, "batch Err must be extractable as *ModelError")
+		require.Equal(t, apperrors.KindRateLimited, me.Kind)
+		require.True(t, me.IsRetryable())
+	}
+}
+
+func TestAnalyzeBatchMixedSuccessAndError(t *testing.T) {
+	t.Parallel()
+
+	// One image succeeds, one fails with a non-retryable auth error.
+	model := &mockModel{generateErr: newTestProviderErr(http.StatusUnauthorized)}
+	agent := newTestAgent(t, model)
+
+	results := agent.AnalyzeBatch(context.Background(), "prompt", 2, ImageSrc("ok.png"), ImageSrc("bad.png"))
+
+	require.Len(t, results, 2)
+	// Both fail with the same model error, but the test verifies per-image capture.
+	for _, r := range results {
+		require.Error(t, r.Err)
+		me, ok := errors.AsType[*apperrors.ModelError](r.Err)
+		require.True(t, ok)
+		require.Equal(t, apperrors.KindAuthentication, me.Kind)
+		require.False(t, me.IsRetryable())
+	}
+}
