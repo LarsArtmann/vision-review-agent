@@ -45,6 +45,37 @@ func newContextTooLargeErr() *fantasy.ProviderError {
 	}
 }
 
+func TestIsContentFilterRejection(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name    string
+		message string
+		want    bool
+	}{
+		{"content filter phrase", "Request blocked by content filter", true},
+		{"content policy phrase", "Violates content policy", true},
+		{"content_filter snake", "content_filter triggered", true},
+		{"safety phrase", "Removed for safety", true},
+		{"case insensitive", "REQUEST BLOCKED BY CONTENT FILTER", true},
+		{"plain bad request", "Invalid prompt format", false},
+		{"empty message", "", false},
+		{"unrelated safety word in context", "This is a safety-related best practice", true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := isContentFilterRejection(&fantasy.ProviderError{
+				Message:    tc.message,
+				StatusCode: http.StatusBadRequest,
+			})
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func TestClassify(t *testing.T) {
 	t.Parallel()
 

@@ -68,6 +68,28 @@ func TestAnalyzeClassifiesModelError(t *testing.T) {
 			wantKind:  apperrors.KindBadRequest,
 			wantRetry: false,
 		},
+		{
+			name:      "not implemented (501)",
+			modelErr:  newTestProviderErr(http.StatusNotImplemented),
+			wantKind:  apperrors.KindNotImplemented,
+			wantRetry: false,
+		},
+		{
+			name:      "service unavailable (503)",
+			modelErr:  newTestProviderErr(http.StatusServiceUnavailable),
+			wantKind:  apperrors.KindServiceUnavailable,
+			wantRetry: true,
+		},
+		{
+			name: "content filter rejection (400 + signal phrase)",
+			modelErr: &fantasy.ProviderError{
+				Title:      fantasy.ErrorTitleForStatusCode(http.StatusBadRequest),
+				Message:    "Request rejected by the content filter policy",
+				StatusCode: http.StatusBadRequest,
+			},
+			wantKind:  apperrors.KindContentFilter,
+			wantRetry: false,
+		},
 		{name: "context cancelled", modelErr: context.Canceled, wantKind: apperrors.KindCancelled, wantRetry: false},
 		{
 			name:      "deadline exceeded",
@@ -199,19 +221,32 @@ func TestAnalyzeBatchClassifiesPerImageErrors(t *testing.T) {
 func TestAnalyzeBatchMixedSuccessAndError(t *testing.T) {
 	t.Parallel()
 
-	// One image succeeds, one fails with a non-retryable auth error.
-	model := &mockModel{generateErr: newTestProviderErr(http.StatusUnauthorized)}
+	// First call fails with a non-retryable auth error, the second succeeds.
+	// AnalyzeBatch runs both concurrently; exactly one result must succeed and
+	// one must capture the auth error (order is nondeterministic, so we count).
+	authErr := newTestProviderErr(http.StatusUnauthorized)
+	model := &mockModel{generateErrs: []error{authErr}}
 	agent := newTestAgent(t, model)
 
 	results := agent.AnalyzeBatch(context.Background(), "prompt", 2, ImageSrc("ok.png"), ImageSrc("bad.png"))
 
 	require.Len(t, results, 2)
-	// Both fail with the same model error, but the test verifies per-image capture.
+
+	var successes, failures int
 	for _, r := range results {
-		require.Error(t, r.Err)
-		me, ok := errors.AsType[*apperrors.ModelError](r.Err)
-		require.True(t, ok)
-		require.Equal(t, apperrors.KindAuthentication, me.Kind)
-		require.False(t, me.IsRetryable())
+		if r.Err != nil {
+			failures++
+			me, ok := errors.AsType[*apperrors.ModelError](r.Err)
+			require.True(t, ok, "failed image must produce a classified ModelError")
+			require.Equal(t, apperrors.KindAuthentication, me.Kind)
+			require.False(t, me.IsRetryable())
+			require.Nil(t, r.Result)
+		} else {
+			successes++
+			require.NotNil(t, r.Result, "successful image must have a Result")
+			require.Contains(t, r.Result.Text, "mock response")
+		}
 	}
+	require.Equal(t, 1, successes, "exactly one image must succeed")
+	require.Equal(t, 1, failures, "exactly one image must fail")
 }
