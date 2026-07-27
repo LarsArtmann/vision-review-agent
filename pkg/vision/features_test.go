@@ -758,7 +758,7 @@ func TestScreenshotAnalyzerCacheInvalidation(t *testing.T) {
 // standard-encoded input exactly.
 func FuzzDecodeBase64Flex(f *testing.F) {
 	f.Add("aGVsbG8gd29ybGQ=") // "hello world"
-	f.Add("YWJjZGVm")        // raw-ish, unpadded
+	f.Add("YWJjZGVm")         // raw-ish, unpadded
 	f.Add("")
 	f.Add("!!!not-base64!!!")
 

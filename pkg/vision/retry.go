@@ -46,11 +46,11 @@ type RetryConfig struct {
 // 500ms, doubling up to a 30s cap, with jitter.
 func DefaultRetryConfig() RetryConfig {
 	return RetryConfig{
-		MaxAttempts:   defaultRetryAttempts,
+		MaxAttempts:    defaultRetryAttempts,
 		InitialBackoff: defaultRetryInitial,
-		MaxBackoff:    defaultRetryMaxBackoff,
-		Multiplier:    defaultRetryMultiplier,
-		Jitter:        true,
+		MaxBackoff:     defaultRetryMaxBackoff,
+		Multiplier:     defaultRetryMultiplier,
+		Jitter:         true,
 	}
 }
 

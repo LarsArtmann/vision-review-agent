@@ -101,11 +101,11 @@ func TestRetryConfigDelayForRespectsCap(t *testing.T) {
 	t.Parallel()
 
 	cfg := RetryConfig{
-		MaxAttempts:   3,
+		MaxAttempts:    3,
 		InitialBackoff: 10 * time.Millisecond,
-		MaxBackoff:    50 * time.Millisecond,
-		Multiplier:    10,
-		Jitter:        false,
+		MaxBackoff:     50 * time.Millisecond,
+		Multiplier:     10,
+		Jitter:         false,
 	}
 
 	// 10ms * 10^2 = 1000ms, but capped at 50ms.

@@ -90,10 +90,7 @@ type dimensions struct {
 // scaleDimensions computes the largest aspect-preserving size whose longest
 // side is maxDimension, never smaller than 1x1.
 func scaleDimensions(width, height, maxDimension int) dimensions {
-	longest := width
-	if height > width {
-		longest = height
-	}
+	longest := max(height, width)
 
 	scale := float64(maxDimension) / float64(longest)
 
