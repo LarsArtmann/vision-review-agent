@@ -30,11 +30,18 @@
       perSystem =
         {
           config,
-          pkgs,
-          lib,
+          system,
           ...
         }:
         let
+          # This project is proprietary (see LICENSE). Import nixpkgs with
+          # allowUnfree so `nix build` succeeds in pure evaluation without
+          # needing --impure / NIXPKGS_ALLOW_UNFREE at the call site.
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
+          lib = pkgs.lib;
           version = self.rev or self.dirtyRev or "dev";
         in
         {
