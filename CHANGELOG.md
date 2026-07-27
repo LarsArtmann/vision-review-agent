@@ -8,25 +8,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 > **Known issues carried forward (not yet fixed):**
 >
-> - **License metadata is still incorrect.** `flake.nix:49` reads
->   `license = licenses.mit;` while `LICENSE` is PROPRIETARY. The `[0.2.0]`
->   claim "License metadata corrected to `unfree`" was **never applied** — it
->   remains false. This is a tracked TODO_LIST item.
 > - **Tag anomaly.** `v0.2.1` and `v0.3.0` (below) both point to a pre-`[0.2.0]`
 >   commit and do not represent real releases. The work in this `[Unreleased]`
 >   section is the actual post-v0.2.0 body of work and is **untagged**.
-> - **Structured hooks nil-pointer hazard.** `AnalyzeStructured` /
->   `AnalyzeStructuredStream` synthesize an `*AnalyzeResult` with a nil
->   `RawResponse` for `Hooks.OnFinish`. A consumer touching
->   `result.RawResponse.Response` will panic. Tracked TODO_LIST item.
 
 ### Added
 
+- **Config.Retry** — optional `*RetryConfig` field on `Config` that enables
+  vision-layer automatic retry of transient failures across all non-streaming
+  analysis methods (Analyze, AnalyzeConversation, AnalyzeStructured,
+  AnalyzeBatch). Composes with `MaxRetries` (fantasy HTTP-layer retry) for
+  layered retry. Streaming methods do not auto-retry (ambiguous delta
+  semantics).
+- **Config.Preprocess** — optional `*PreprocessConfig` field on `Config` that
+  auto-resizes images before every `Analyze*` call. `PreprocessImage` function
+  and `ScreenshotAnalyzer.WithMaxDimension` builder also added.
+- **NewAgentWithCostTracker** — convenience constructor that auto-wires a
+  `CostTracker` into `Hooks.OnFinish`, composing with any user-supplied hooks.
+- **New ErrorKinds** — `KindNotImplemented` (HTTP 501, not retryable),
+  `KindServiceUnavailable` (HTTP 503, retryable), `KindContentFilter` (content
+  policy rejection from 400 with signal-phrase detection, not retryable).
+- **CLI tests** — `cmd/vision/main_test.go` covering `adviceForKind`,
+  `buildConfig`, `parseTimeout`, `createProvider` error paths.
+- **BDD error-classification specs** — `error_classification_bdd_test.go` with
+  10 table entries covering consumer retry decisions via Ginkgo.
+- **Batch classified-error tests** — `AnalyzeBatch` per-image error
+  classification verified.
+- **`examples/error-handling/main.go`** — consumer-facing example showing
+  `errors.AsType[*ModelError]` → kind-lookup pattern.
+- **CI workflow** — `.github/workflows/ci.yml` with build, vet, race test,
+  coverage gate (≥70%), lint, and format check.
 - **Hooks across all analysis methods** — `OnStart`/`OnFinish`/`OnError` now
   fire in `AnalyzeConversation`, `AnalyzeConversationStream`,
   `AnalyzeStructured`, and `AnalyzeStructuredStream` (previously only
   `Analyze`/`AnalyzeStream`). Structured methods use a synthesized
-  `*AnalyzeResult` — see known issue above.
+  `*AnalyzeResult` — see `AnalyzeResult.RawResponse` doc for the nil contract.
 - **Retry middleware** — `WithRetry[T]` generic function with `RetryConfig`
   (exponential backoff + jitter, honors `IsRetryable()`). Zero-value
   `RetryConfig` falls back to `DefaultRetryConfig()` (3 attempts).
@@ -56,6 +72,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **License metadata corrected** — `flake.nix` now reads `licenses.unfree`
+  matching the PROPRIETARY `LICENSE` file. The `[0.2.0]` false claim is
+  resolved.
+- **BMP decoder registered** — `golang.org/x/image/bmp` blank import added to
+  `preprocess.go`, so `image.Decode` can decode BMP. Previously BMP was
+  detected by magic bytes but could not be decoded for resize.
+- **`mediaTypeFromExtension` now has explicit known-extension table** — PNG,
+  JPEG, GIF, WebP, BMP are matched deterministically before falling back to
+  system-dependent `mime.TypeByExtension`. A `.bmp` file is no longer
+  mislabeled as PNG.
+- **Model parameter duplication eliminated** — `applyModelParamsAgentCall` and
+  `applyModelParamsStreamCall` replaced by a single `Config.optionalParams()`
+  helper used across all 4 call sites (vision.go + structured.go).
+- **golangci-lint config: `nolintlint` tightened** with `require-explanation:
+  true`; all `//nolint:` directives now carry explanations. `funlen` config
+  fixed for v2 schema. `golangci-lint config verify` passes.
 - `AnalyzeConversationStream` now uses the shared `validateAnalyzeInput`
   helper (was inline `prompt == ""` + `requireImages` checks).
 - AGENTS.md rewritten: all deprecated `just` command references replaced with
@@ -67,6 +99,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
+- **`applyModelParamsAgentCall` / `applyModelParamsStreamCall`** — replaced by
+  `Config.optionalParams()`.
+- **Dead `errTestNoop` sentinel** — removed from `pkg/errors/model_test.go`.
+- **`wrapNoop`** — replaced by `wrapChain` (real `fmt.Errorf("%w")` wrapper)
+  that actually tests error-chain traversal through classification.
 - **`wrapWithPrompt`** function — deleted from `vision.go`; `ScreenshotAnalyzer`
   call sites now return config-validation errors directly (model errors are
   already classified via delegation).

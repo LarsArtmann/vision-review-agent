@@ -43,15 +43,15 @@ examples/                Working examples for each provider
 - **Batch uses semaphore** — `AnalyzeBatch` bounds concurrency via `golang.org/x/sync/semaphore`
 - **ScreenshotAnalyzer cache invalidation** — All `With*` builder methods set `cachedAgent = nil` to ensure config changes take effect
 - **Hooks fire in every analysis path** — Analyze, AnalyzeStream, AnalyzeConversation(Stream), AnalyzeStructured(Stream) all call fireStart/fireFinish/fireError after validation
-- **WithRetry[T] is external middleware** — Retries are opt-in via a generic wrapper (not baked into Agent); respects `IsRetryable()`
-- **CostTracker integrates via Hooks.OnFinish** — Thread-safe; no coupling to Agent internals
-- **Capability fields are passthrough** — `Config.Tools/ToolChoice/StopConditions/PrepareStep/Headers/UserAgent` map 1:1 to fantasy options; nil/empty means provider default
-- **ResizeImage returns the same instance when no resize is needed** — Avoids unnecessary re-encoding
-- **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
-- **Hooks fire in every analysis path** — Analyze, AnalyzeStream, AnalyzeConversation(Stream), AnalyzeStructured(Stream) all call fireStart/fireFinish/fireError after validation
+- **Structured hooks RawResponse is nil** — `AnalyzeResult.RawResponse` is nil for synthesized results from AnalyzeStructured/AnalyzeStructuredStream (those return `*fantasy.ObjectResult`, not `*fantasy.AgentResult`). See the field doc.
 - **WithRetry[T] is external middleware** — Retries are opt-in via a generic wrapper (not baked into Agent) so callers control policy; respects `IsRetryable()`
-- **CostTracker integrates via Hooks.OnFinish** — Thread-safe; no coupling to Agent internals
+- **Config.Retry layers vision-level retry** — When set, retries the whole model invocation with `RetryConfig` backoff+jitter; composes with `MaxRetries` (fantasy HTTP-layer retry). Streaming methods do NOT auto-retry.
+- **Config.Preprocess auto-applies** — When set, `PreprocessConfig.MaxDimension` resizes images before every `Analyze*` call. `ScreenshotAnalyzer.WithMaxDimension` sets it fluently.
+- **CostTracker integrates via Hooks.OnFinish** — Thread-safe; `NewAgentWithCostTracker` auto-wires it
+- **NewAgentWithCostTracker** — Convenience constructor that composes cost tracking with user hooks
 - **Capability fields are passthrough** — `Config.Tools/ToolChoice/StopConditions/PrepareStep/Headers/UserAgent` map 1:1 to fantasy options; nil/empty means provider default
+- **optionalParams() eliminates duplication** — Single `Config.optionalParams()` helper feeds model params to all 4 call sites (AgentCall, AgentStreamCall, ObjectCall x2)
+- **BMP fully supported** — Decoder registered via `golang.org/x/image/bmp` blank import; `mediaTypeFromExtension` has explicit table for PNG/JPEG/GIF/WebP/BMP
 - **ResizeImage returns the same instance when no resize is needed** — Avoids unnecessary re-encoding
 - **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
 
