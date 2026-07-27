@@ -56,12 +56,28 @@ type Config struct {
 	// Required.
 	Model fantasy.LanguageModel
 
-	// MaxRetries sets the maximum number of retries on transient errors.
-	// Zero means use fantasy's default.
+	// MaxRetries sets the maximum number of retries on transient errors at the
+	// provider/HTTP layer (forwarded to fantasy via WithMaxRetries). Zero means
+	// use fantasy's default. For richer control (backoff, jitter, visibility),
+	// see Retry below; the two compose as layered retry if both are set.
 	MaxRetries int
 
 	// RequestTimeout sets a per-request timeout. Zero means no timeout.
 	RequestTimeout time.Duration
+
+	// Retry, when non-nil, enables vision-layer automatic retry of transient
+	// ([IsRetryable]) failures across the non-streaming analysis methods —
+	// Analyze, AnalyzeConversation, AnalyzeStructured, and AnalyzeBatch (which
+	// retries per image via Analyze). Streaming methods (AnalyzeStream,
+	// AnalyzeConversationStream, AnalyzeStructuredStream) do NOT auto-retry,
+	// because retrying a partial stream has ambiguous delta semantics; wrap
+	// those calls in WithRetry manually if needed.
+	//
+	// This is distinct from MaxRetries: MaxRetries retries individual HTTP
+	// requests inside fantasy; Retry retries the whole model invocation at the
+	// vision layer with a configurable RetryConfig (backoff + jitter). For most
+	// use cases pick one; set both only when you want layered retry.
+	Retry *RetryConfig
 
 	// Hooks defines optional lifecycle callbacks for observability (logging, metrics).
 	// All callbacks are optional; nil hooks are safe.
@@ -260,7 +276,7 @@ func (va *Agent) Analyze(
 
 	call := va.buildAgentCall(prompt, files, nil)
 
-	result, err := va.agent.Generate(ctx, call)
+	result, err := va.generate(ctx, call)
 	if err != nil {
 		classified := classifyModelErr("vision agent generate", prompt, err)
 		va.config.Hooks.fireError(ctx, classified)
@@ -350,7 +366,7 @@ func (va *Agent) AnalyzeConversation(
 
 	call := va.buildAgentCall(prompt, toFileParts(validImages), conv.Messages())
 
-	result, err := va.agent.Generate(ctx, call)
+	result, err := va.generate(ctx, call)
 	if err != nil {
 		classified := classifyModelErr("vision agent conversation generate", prompt, err)
 		va.config.Hooks.fireError(ctx, classified)
@@ -493,6 +509,21 @@ func (c *Config) optionalParams() optionalModelParams {
 		p.frequencyPenalty = &c.FrequencyPenalty
 	}
 	return p
+}
+
+// generate invokes the agent's Generate, applying Config.Retry when configured.
+// When Retry is nil it is a plain pass-through; otherwise the call is wrapped in
+// WithRetry so transient (IsRetryable) failures are retried with backoff.
+// Classification and hook firing stay in the caller so they happen once per
+// logical request, not per attempt.
+func (va *Agent) generate(ctx context.Context, call fantasy.AgentCall) (*fantasy.AgentResult, error) {
+	if va.config.Retry == nil {
+		return va.agent.Generate(ctx, call)
+	}
+
+	return WithRetry(ctx, *va.config.Retry, func(ctx context.Context) (*fantasy.AgentResult, error) {
+		return va.agent.Generate(ctx, call)
+	})
 }
 
 // withTimeout applies the configured request timeout if set.

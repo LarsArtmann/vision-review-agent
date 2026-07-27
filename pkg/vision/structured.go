@@ -63,7 +63,7 @@ func AnalyzeStructured[T any](
 	call.PresencePenalty = p.presencePenalty
 	call.FrequencyPenalty = p.frequencyPenalty
 
-	result, err := agent.config.Model.GenerateObject(ctx, call)
+	result, err := generateObject(ctx, agent, call)
 	if err != nil {
 		classified := classifyModelErr("vision agent structured generate", prompt, err)
 		agent.config.Hooks.fireError(ctx, classified)
@@ -210,4 +210,21 @@ func AnalyzeStructuredStream[T any](
 		Usage: usage,
 	})
 	return finalResult, nil
+}
+
+// generateObject invokes the model's GenerateObject, applying Config.Retry when
+// configured. Package-level because AnalyzeStructured is generic and lives
+// outside a method receiver. Classification stays in the caller.
+func generateObject(
+	ctx context.Context,
+	agent *Agent,
+	call fantasy.ObjectCall,
+) (*fantasy.ObjectResponse, error) {
+	if agent.config.Retry == nil {
+		return agent.config.Model.GenerateObject(ctx, call)
+	}
+
+	return WithRetry(ctx, *agent.config.Retry, func(ctx context.Context) (*fantasy.ObjectResponse, error) {
+		return agent.config.Model.GenerateObject(ctx, call)
+	})
 }
