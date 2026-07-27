@@ -238,3 +238,109 @@ func TestCompressImageRejectsNilAndBadInput(t *testing.T) {
 	_, err = CompressImage(bad, 50)
 	require.Error(t, err)
 }
+
+// newBMP builds a minimal valid 24-bit BMP of the given dimensions for testing
+// the BMP decode path. Go has no BMP encoder, so the bytes are assembled by
+// hand (file header + DIB header + bottom-up padded pixel rows).
+func newBMP(t *testing.T, w, h int) *ImageSource {
+	t.Helper()
+
+	const (
+		fileHeaderSize = 14
+		dibHeaderSize  = 40
+		bitsPerPixel   = 24
+	)
+	rowSize := (w*bitsPerPixel + 7) / 8
+	rowSize = (rowSize + 3) &^ 3 // rows are padded to a multiple of 4 bytes
+	pixelDataSize := rowSize * h
+	pixelOffset := fileHeaderSize + dibHeaderSize
+	fileSize := pixelOffset + pixelDataSize
+
+	buf := bytes.Buffer{}
+	// BITMAPFILEHEADER
+	buf.WriteString("BM")
+	write32(&buf, fileSize)
+	write32(&buf, 0) // reserved
+	write32(&buf, pixelOffset)
+	// BITMAPINFOHEADER
+	write32(&buf, dibHeaderSize)
+	write32(&buf, w)
+	write32(&buf, h)
+	write16(&buf, 1) // planes
+	write16(&buf, bitsPerPixel)
+	write32(&buf, 0) // compression (BI_RGB)
+	write32(&buf, pixelDataSize)
+	write32(&buf, 2835) // x ppm (72 DPI)
+	write32(&buf, 2835) // y ppm
+	write32(&buf, 0)    // colors used
+	write32(&buf, 0)    // important colors
+
+	// Pixel rows, bottom-up, blue/green/red order, padded to rowSize.
+	row := make([]byte, rowSize)
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			off := x * 3
+			row[off+0] = byte((x * 30) & 0xff) // B
+			row[off+1] = byte((y * 30) & 0xff) // G
+			row[off+2] = byte(((x + y) * 15) & 0xff) // R
+		}
+		_, _ = buf.Write(row)
+	}
+
+	src, err := NewImageSource(buf.Bytes(), MediaTypeBMP, "test.bmp")
+	require.NoError(t, err)
+	return src
+}
+
+func write16(buf *bytes.Buffer, v int) {
+	buf.Write([]byte{byte(v), byte(v >> 8)})
+}
+
+func write32(buf *bytes.Buffer, v int) {
+	buf.Write([]byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24)})
+}
+
+func TestResizeImageDecodesAndResizesBMP(t *testing.T) {
+	t.Parallel()
+
+	big := newBMP(t, 300, 200) // exceeds maxDimension
+
+	resized, err := ResizeImage(big, 100)
+	require.NoError(t, err)
+
+	// BMP is re-encoded as JPEG (non-PNG/JPEG input → JPEG).
+	require.Equal(t, MediaTypeJPEG, resized.MediaType)
+	require.True(t, len(resized.Data) > 0, "resized BMP must produce non-empty output")
+
+	// The output must decode to a 100-wide (longest side capped) image.
+	config, _, err := image.DecodeConfig(bytes.NewReader(resized.Data))
+	require.NoError(t, err)
+	require.Equal(t, 100, config.Width, "longest side must be capped at maxDimension")
+}
+
+func TestPreprocessImagePassthroughNilAndZeroConfig(t *testing.T) {
+	t.Parallel()
+
+	img := newPNG(t, 50, 50)
+
+	// nil config → unchanged (same pointer).
+	out, err := PreprocessImage(img, nil)
+	require.NoError(t, err)
+	require.Same(t, img, out)
+
+	// zero-value config (MaxDimension 0) → unchanged (same pointer).
+	out, err = PreprocessImage(img, &PreprocessConfig{})
+	require.NoError(t, err)
+	require.Same(t, img, out)
+
+	// nil image → nil image, no error.
+	out, err = PreprocessImage(nil, &PreprocessConfig{MaxDimension: 100})
+	require.NoError(t, err)
+	require.Nil(t, out)
+
+	// image already within bounds → unchanged (same pointer).
+	small := newPNG(t, 40, 40)
+	out, err = PreprocessImage(small, &PreprocessConfig{MaxDimension: 100})
+	require.NoError(t, err)
+	require.Same(t, small, out)
+}
