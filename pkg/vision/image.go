@@ -180,12 +180,30 @@ func detectMediaTypeFromResponse(resp *http.Response, url string) MediaType {
 	return mediaTypeFromExtension(url)
 }
 
+// mediaTypeFromExtension maps a file path's extension to a MediaType. It first
+// checks the project's explicit known-image extension table (deterministic,
+// independent of the host's mime.TypeByExtension database), then falls back to
+// the system registry, and finally to PNG. The explicit table prevents
+// mislabeling on systems where .bmp, .webp, or .gif are not registered.
 func mediaTypeFromExtension(path string) MediaType {
-	mt := MediaType(mime.TypeByExtension(filepath.Ext(path)))
-	if mt == "" {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".png":
 		return MediaTypePNG
+	case ".jpg", ".jpeg":
+		return MediaTypeJPEG
+	case ".gif":
+		return MediaTypeGIF
+	case ".webp":
+		return MediaTypeWebP
+	case ".bmp":
+		return MediaTypeBMP
 	}
-	return mt
+
+	if mt := MediaType(mime.TypeByExtension(filepath.Ext(path))); mt != "" {
+		return mt
+	}
+
+	return MediaTypePNG
 }
 
 func filenameFromURL(url string) string {

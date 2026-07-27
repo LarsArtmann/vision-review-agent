@@ -55,24 +55,13 @@ func AnalyzeStructured[T any](
 		SchemaDescription: "Structured analysis result for " + reflect.TypeOf(zero).Name(),
 	}
 
-	if agent.config.MaxOutputTokens > 0 {
-		call.MaxOutputTokens = &agent.config.MaxOutputTokens
-	}
-	if agent.config.Temperature != 0 {
-		call.Temperature = &agent.config.Temperature
-	}
-	if agent.config.TopP > 0 {
-		call.TopP = &agent.config.TopP
-	}
-	if agent.config.TopK > 0 {
-		call.TopK = &agent.config.TopK
-	}
-	if agent.config.PresencePenalty != 0 {
-		call.PresencePenalty = &agent.config.PresencePenalty
-	}
-	if agent.config.FrequencyPenalty != 0 {
-		call.FrequencyPenalty = &agent.config.FrequencyPenalty
-	}
+	p := agent.config.optionalParams()
+	call.MaxOutputTokens = p.maxOutputTokens
+	call.Temperature = p.temperature
+	call.TopP = p.topP
+	call.TopK = p.topK
+	call.PresencePenalty = p.presencePenalty
+	call.FrequencyPenalty = p.frequencyPenalty
 
 	result, err := agent.config.Model.GenerateObject(ctx, call)
 	if err != nil {
@@ -103,6 +92,9 @@ func AnalyzeStructured[T any](
 		Warnings:         result.Warnings,
 		ProviderMetadata: result.ProviderMetadata,
 	}
+	// Structured methods have no *fantasy.AgentResult, so the synthesized
+	// AnalyzeResult carries only Text/Usage; RawResponse is intentionally nil
+	// (see AnalyzeResult.RawResponse doc). Hooks must nil-check it.
 	agent.config.Hooks.fireFinish(ctx, &AnalyzeResult{
 		Text:  result.RawText,
 		Usage: result.Usage,
@@ -157,24 +149,13 @@ func AnalyzeStructuredStream[T any](
 		SchemaDescription: "Structured analysis result for " + reflect.TypeOf(zero).Name(),
 	}
 
-	if agent.config.MaxOutputTokens > 0 {
-		call.MaxOutputTokens = &agent.config.MaxOutputTokens
-	}
-	if agent.config.Temperature != 0 {
-		call.Temperature = &agent.config.Temperature
-	}
-	if agent.config.TopP > 0 {
-		call.TopP = &agent.config.TopP
-	}
-	if agent.config.TopK > 0 {
-		call.TopK = &agent.config.TopK
-	}
-	if agent.config.PresencePenalty != 0 {
-		call.PresencePenalty = &agent.config.PresencePenalty
-	}
-	if agent.config.FrequencyPenalty != 0 {
-		call.FrequencyPenalty = &agent.config.FrequencyPenalty
-	}
+	p := agent.config.optionalParams()
+	call.MaxOutputTokens = p.maxOutputTokens
+	call.Temperature = p.temperature
+	call.TopP = p.topP
+	call.TopK = p.topK
+	call.PresencePenalty = p.presencePenalty
+	call.FrequencyPenalty = p.frequencyPenalty
 
 	stream, err := agent.config.Model.StreamObject(ctx, call)
 	if err != nil {
@@ -223,6 +204,7 @@ func AnalyzeStructuredStream[T any](
 		Usage:        usage,
 		FinishReason: finishReason,
 	}
+	// Synthesized AnalyzeResult: RawResponse is nil (see AnalyzeResult.RawResponse doc).
 	agent.config.Hooks.fireFinish(ctx, &AnalyzeResult{
 		Text:  rawText,
 		Usage: usage,

@@ -225,6 +225,12 @@ type AnalyzeResult struct {
 	Usage fantasy.Usage
 
 	// RawResponse contains the full response from the model.
+	//
+	// It is populated by Analyze / AnalyzeStream / AnalyzeConversation /
+	// AnalyzeConversationStream. It is nil for the synthesized AnalyzeResult
+	// passed to Hooks.OnFinish by AnalyzeStructured and AnalyzeStructuredStream
+	// (those methods return a *fantasy.ObjectResult, which has no AgentResult).
+	// OnFinish hooks must nil-check this field before dereferencing it.
 	RawResponse *fantasy.AgentResult
 }
 
@@ -417,7 +423,13 @@ func (va *Agent) buildAgentCall(
 		Files:    files,
 		Messages: messages,
 	}
-	va.applyModelParamsAgentCall(&call)
+	p := va.config.optionalParams()
+	call.MaxOutputTokens = p.maxOutputTokens
+	call.Temperature = p.temperature
+	call.TopP = p.topP
+	call.TopK = p.topK
+	call.PresencePenalty = p.presencePenalty
+	call.FrequencyPenalty = p.frequencyPenalty
 	return call
 }
 
@@ -432,55 +444,55 @@ func (va *Agent) buildAgentStreamCall(
 		Files:    files,
 		Messages: messages,
 	}
-	va.applyModelParamsStreamCall(&call)
+	p := va.config.optionalParams()
+	call.MaxOutputTokens = p.maxOutputTokens
+	call.Temperature = p.temperature
+	call.TopP = p.topP
+	call.TopK = p.topK
+	call.PresencePenalty = p.presencePenalty
+	call.FrequencyPenalty = p.frequencyPenalty
 	return call
 }
 
-// applyModelParamsAgentCall sets optional model parameters on an AgentCall.
-// Zero-valued config fields are skipped, leaving the destination pointer nil
-// so the provider uses its own default. Fields are assigned directly to avoid
-// the fragile positional double-pointer passing of the former helper.
-func (va *Agent) applyModelParamsAgentCall(call *fantasy.AgentCall) {
-	if va.config.MaxOutputTokens > 0 {
-		call.MaxOutputTokens = &va.config.MaxOutputTokens
-	}
-	if va.config.Temperature != 0 {
-		call.Temperature = &va.config.Temperature
-	}
-	if va.config.TopP > 0 {
-		call.TopP = &va.config.TopP
-	}
-	if va.config.TopK > 0 {
-		call.TopK = &va.config.TopK
-	}
-	if va.config.PresencePenalty != 0 {
-		call.PresencePenalty = &va.config.PresencePenalty
-	}
-	if va.config.FrequencyPenalty != 0 {
-		call.FrequencyPenalty = &va.config.FrequencyPenalty
-	}
+// optionalModelParams holds the optional model-generation parameters as
+// pointers computed once from Config. A nil field means "use the provider's
+// default". Centralising the zero-value checks here keeps the four call sites
+// (AgentCall, AgentStreamCall, and the two ObjectCall builds in structured.go)
+// from drifting out of sync.
+type optionalModelParams struct {
+	maxOutputTokens  *int64
+	temperature      *float64
+	topP             *float64
+	topK             *int64
+	presencePenalty  *float64
+	frequencyPenalty *float64
 }
 
-// applyModelParamsStreamCall sets optional model parameters on an AgentStreamCall.
-func (va *Agent) applyModelParamsStreamCall(call *fantasy.AgentStreamCall) {
-	if va.config.MaxOutputTokens > 0 {
-		call.MaxOutputTokens = &va.config.MaxOutputTokens
+// optionalParams returns the optional model parameters as pointers into c.
+// Fields left at their zero value yield nil pointers so the provider applies
+// its own default. The receiver is *Config so the returned pointers reference
+// stable storage (the agent's config), matching the prior direct &field usage.
+func (c *Config) optionalParams() optionalModelParams {
+	var p optionalModelParams
+	if c.MaxOutputTokens > 0 {
+		p.maxOutputTokens = &c.MaxOutputTokens
 	}
-	if va.config.Temperature != 0 {
-		call.Temperature = &va.config.Temperature
+	if c.Temperature != 0 {
+		p.temperature = &c.Temperature
 	}
-	if va.config.TopP > 0 {
-		call.TopP = &va.config.TopP
+	if c.TopP > 0 {
+		p.topP = &c.TopP
 	}
-	if va.config.TopK > 0 {
-		call.TopK = &va.config.TopK
+	if c.TopK > 0 {
+		p.topK = &c.TopK
 	}
-	if va.config.PresencePenalty != 0 {
-		call.PresencePenalty = &va.config.PresencePenalty
+	if c.PresencePenalty != 0 {
+		p.presencePenalty = &c.PresencePenalty
 	}
-	if va.config.FrequencyPenalty != 0 {
-		call.FrequencyPenalty = &va.config.FrequencyPenalty
+	if c.FrequencyPenalty != 0 {
+		p.frequencyPenalty = &c.FrequencyPenalty
 	}
+	return p
 }
 
 // withTimeout applies the configured request timeout if set.

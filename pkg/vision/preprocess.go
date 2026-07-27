@@ -8,6 +8,7 @@ import (
 	"image/png"
 
 	"golang.org/x/image/draw"
+	_ "golang.org/x/image/bmp"  // register BMP decoder
 	_ "golang.org/x/image/webp" // register WebP decoder
 
 	_ "image/gif" // register GIF decoder

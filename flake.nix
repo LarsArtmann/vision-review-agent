@@ -46,7 +46,9 @@
             proxyVendor = true;
             meta = with lib; {
               description = "AI-powered screenshot and image analysis SDK";
-              license = licenses.mit;
+              # PROPRIETARY license — see LICENSE. The repo is source-available,
+              # not open-source. `licenses.unfree` is the honest nixpkgs marker.
+              license = licenses.unfree;
               maintainers = [
                 {
                   name = "Lars Artmann";
