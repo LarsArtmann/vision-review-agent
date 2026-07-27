@@ -6,6 +6,101 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+> **Known issues carried forward (not yet fixed):**
+>
+> - **License metadata is still incorrect.** `flake.nix:49` reads
+>   `license = licenses.mit;` while `LICENSE` is PROPRIETARY. The `[0.2.0]`
+>   claim "License metadata corrected to `unfree`" was **never applied** — it
+>   remains false. This is a tracked TODO_LIST item.
+> - **Tag anomaly.** `v0.2.1` and `v0.3.0` (below) both point to a pre-`[0.2.0]`
+>   commit and do not represent real releases. The work in this `[Unreleased]`
+>   section is the actual post-v0.2.0 body of work and is **untagged**.
+> - **Structured hooks nil-pointer hazard.** `AnalyzeStructured` /
+>   `AnalyzeStructuredStream` synthesize an `*AnalyzeResult` with a nil
+>   `RawResponse` for `Hooks.OnFinish`. A consumer touching
+>   `result.RawResponse.Response` will panic. Tracked TODO_LIST item.
+
+### Added
+
+- **Hooks across all analysis methods** — `OnStart`/`OnFinish`/`OnError` now
+  fire in `AnalyzeConversation`, `AnalyzeConversationStream`,
+  `AnalyzeStructured`, and `AnalyzeStructuredStream` (previously only
+  `Analyze`/`AnalyzeStream`). Structured methods use a synthesized
+  `*AnalyzeResult` — see known issue above.
+- **Retry middleware** — `WithRetry[T]` generic function with `RetryConfig`
+  (exponential backoff + jitter, honors `IsRetryable()`). Zero-value
+  `RetryConfig` falls back to `DefaultRetryConfig()` (3 attempts).
+- **Cost tracking** — `CostTracker` thread-safe token accumulator;
+  `NewCostTracker()`, `Add`, `AddResult`, `Total`, `Calls`. Integrates with
+  `Hooks.OnFinish` via `AddResult`.
+- **Image preprocessing** — `ResizeImage` Catmull-Rom downscale
+  (aspect-preserving, longest-side cap); decodes PNG/JPEG/WebP/GIF.
+- **Custom HTTP client** — `LoadImageFromURLWithClient` variant of
+  `LoadImageFromURL` accepting a `*http.Client` (proxies, timeouts, TLS).
+- **`MediaTypeBMP`** constant added to the `MediaType` enum.
+- **`Conversation.Clear`** — resets message history, returns the same instance.
+- **`ScreenshotAnalyzer.WithHooks`** — fluent builder method with cache
+  invalidation.
+- **Advanced config capabilities (fantasy passthrough):** `Config.Tools`,
+  `Config.ToolChoice`, `Config.StopConditions`, `Config.PrepareStep`,
+  `Config.Headers`, `Config.UserAgent`.
+- **CLI providers** — Anthropic (`ANTHROPIC_API_KEY`), Google (Application
+  Default Credentials), `openaicompat` (`OPENAICOMPAT_BASE_URL`) added to the
+  CLI (build-verified; no runtime credentials tested).
+- **CLI `-structured` flag** — built-in `uiReview` schema producing structured
+  JSON output.
+- **Fuzz tests** — `FuzzDetectImageFormat`, `FuzzDecodeBase64Flex`.
+- **Examples** — `examples/conversation`, `examples/batch`, `examples/hooks`,
+  `examples/structured-stream`, `examples/url-loading`.
+- `.editorconfig` for consistent formatting across editors.
+
+### Changed
+
+- `AnalyzeConversationStream` now uses the shared `validateAnalyzeInput`
+  helper (was inline `prompt == ""` + `requireImages` checks).
+- AGENTS.md rewritten: all deprecated `just` command references replaced with
+  flake equivalents; `GOWORK=off` requirement documented.
+- golangci-lint config: depguard `$module` variable replaced with the
+  hardcoded module path (works around a golangci-lint v2 regression);
+  6 dead `//nolint:legacyerrors` directives removed; project-wide lint issues
+  driven from 39 to 0.
+
+### Removed
+
+- **`wrapWithPrompt`** function — deleted from `vision.go`; `ScreenshotAnalyzer`
+  call sites now return config-validation errors directly (model errors are
+  already classified via delegation).
+- **`applyOptionalPointers`** helper — replaced with direct field assignment in
+  `applyModelParamsAgentCall` / `applyModelParamsStreamCall`.
+
+### Fixed
+
+- `LoadImageFromURL` now runs `ValidateImage` after download, rejecting non-image
+  response bodies.
+- ScreenshotAnalyzer cache invalidation: all `With*` builder methods now set
+  `cachedAgent = nil`.
+
+## [0.3.0] - 2026-07-27
+
+> **Tag anomaly:** this tag points to commit `d5dda4b` ("Improve test formatting
+> and readability across vision package", dated 2026-04-27), which is an
+> **ancestor** of `[0.2.0]`. It does not represent a real post-v0.2.0 release.
+> The actual post-v0.2.0 work is in `[Unreleased]` above.
+
+### Changed
+
+- Test formatting and readability improvements across the vision package (same
+  commit as `[0.2.1]`).
+
+## [0.2.1] - 2026-07-27
+
+> **Tag anomaly:** this tag points to the **same commit** as `[0.3.0]`
+> (`d5dda4b`). See the note under `[0.3.0]`.
+
+### Changed
+
+- Test formatting and readability improvements across the vision package.
+
 ## [0.2.0] - 2026-07-23
 
 ### Added
