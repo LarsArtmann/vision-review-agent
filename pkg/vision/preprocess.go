@@ -14,12 +14,25 @@ import (
 	_ "image/gif" // register GIF decoder
 )
 
-// resizeJPEGQuality is the quality used when re-encoding resized images as
-// JPEG. 85 is a good perceptual/size trade-off for vision model input.
-const resizeJPEGQuality = 85
+// defaultJPEGQuality is the quality used when the caller passes zero or an
+// out-of-range value. 85 is a good perceptual/size trade-off for vision model
+// input.
+const defaultJPEGQuality = 85
+
+// effectiveJPEGQuality returns q clamped to the valid JPEG quality range
+// [1, 100], defaulting to defaultJPEGQuality when q is zero or out of range.
+func effectiveJPEGQuality(q int) int {
+	if q < 1 || q > 100 {
+		return defaultJPEGQuality
+	}
+
+	return q
+}
 
 // ResizeImage resizes img so that its longest side is at most maxDimension
-// pixels, preserving aspect ratio with high-quality Catmull-Rom interpolation.
+// pixels, preserving aspect ratio with high-quality Catmull-Rom interpolation,
+// re-encoding JPEG output at the default quality (85). For control over JPEG
+// quality, use [ResizeImageWithQuality].
 //
 // Images already within bounds are returned unchanged (no re-encode, no copy).
 // The output format follows the input media type when it is PNG or JPEG;
@@ -32,6 +45,13 @@ const resizeJPEGQuality = 85
 //	small, _ := vision.ResizeImage(img, 1568)
 //	result, _ := agent.Analyze(ctx, "review this", small)
 func ResizeImage(img *ImageSource, maxDimension int) (*ImageSource, error) {
+	return ResizeImageWithQuality(img, maxDimension, defaultJPEGQuality)
+}
+
+// ResizeImageWithQuality is like [ResizeImage] but lets the caller control the
+// JPEG encoding quality (1-100; zero or out-of-range defaults to 85). Quality
+// only affects JPEG output; PNG output is lossless and ignores it.
+func ResizeImageWithQuality(img *ImageSource, maxDimension, jpegQuality int) (*ImageSource, error) {
 	if img == nil {
 		return nil, ErrEmptyImageData
 	}
@@ -40,7 +60,7 @@ func ResizeImage(img *ImageSource, maxDimension int) (*ImageSource, error) {
 		return nil, fmt.Errorf("resize: maxDimension must be positive, got %d", maxDimension)
 	}
 
-	decoded, _, err := decodeImageForResize(img.Data)
+	decoded, _, err := decodeImage(img.Data)
 	if err != nil {
 		return nil, fmt.Errorf("resize: decode (mediaType=%v): %w", img.MediaType, err)
 	}
@@ -57,29 +77,72 @@ func ResizeImage(img *ImageSource, maxDimension int) (*ImageSource, error) {
 	resized := image.NewRGBA(image.Rect(0, 0, scaled.width, scaled.height))
 	draw.CatmullRom.Scale(resized, resized.Bounds(), decoded, bounds, draw.Src, nil)
 
-	var buf bytes.Buffer
-
-	mediaType := img.MediaType
-
-	switch mediaType {
-	case MediaTypePNG:
-		if err := png.Encode(&buf, resized); err != nil {
-			return nil, fmt.Errorf("resize: encode png: %w", err)
-		}
-	case MediaTypeJPEG:
-		if err := jpeg.Encode(&buf, resized, &jpeg.Options{Quality: resizeJPEGQuality}); err != nil {
-			return nil, fmt.Errorf("resize: encode jpeg: %w", err)
-		}
-	default:
-		// GIF/WebP/BMP and unknowns re-encode as JPEG for size efficiency.
-		if err := jpeg.Encode(&buf, resized, &jpeg.Options{Quality: resizeJPEGQuality}); err != nil {
-			return nil, fmt.Errorf("resize: encode jpeg: %w", err)
-		}
-
-		mediaType = MediaTypeJPEG
+	data, mediaType, err := encodeImage(resized, img.MediaType, jpegQuality)
+	if err != nil {
+		return nil, fmt.Errorf("resize: %w", err)
 	}
 
-	return NewImageSource(buf.Bytes(), mediaType, img.Filename)
+	return NewImageSource(data, mediaType, img.Filename)
+}
+
+// CompressImage re-encodes img to reduce its byte size without resizing.
+//
+// JPEG, GIF, WebP, and BMP inputs are re-encoded as JPEG at the given quality
+// (1-100; zero or out-of-range defaults to 85). PNG input is re-encoded as PNG
+// using best compression — the quality is ignored because PNG is lossless, so
+// the output format is preserved.
+//
+// Use this to cut token cost before [Agent.Analyze] when an image is already
+// the right dimensions but too large in bytes:
+//
+//	img, _ := vision.LoadImageFromFile("photo.jpg")
+//	smaller, _ := vision.CompressImage(img, 60)
+//	result, _ := agent.Analyze(ctx, "review this", smaller)
+func CompressImage(img *ImageSource, jpegQuality int) (*ImageSource, error) {
+	if img == nil {
+		return nil, ErrEmptyImageData
+	}
+
+	decoded, _, err := decodeImage(img.Data)
+	if err != nil {
+		return nil, fmt.Errorf("compress: decode (mediaType=%v): %w", img.MediaType, err)
+	}
+
+	data, mediaType, err := encodeImage(decoded, img.MediaType, jpegQuality)
+	if err != nil {
+		return nil, fmt.Errorf("compress: %w", err)
+	}
+
+	return NewImageSource(data, mediaType, img.Filename)
+}
+
+// encodeImage encodes src according to mediaType, returning the encoded bytes
+// and the effective output media type. PNG stays PNG (lossless); JPEG, GIF,
+// WebP, BMP, and unknown formats are re-encoded as JPEG at jpegQuality.
+func encodeImage(
+	src image.Image,
+	mediaType MediaType,
+	jpegQuality int,
+) ([]byte, MediaType, error) {
+	quality := effectiveJPEGQuality(jpegQuality)
+
+	if mediaType == MediaTypePNG {
+		var buf bytes.Buffer
+		enc := png.Encoder{CompressionLevel: png.BestCompression}
+		if err := enc.Encode(&buf, src); err != nil {
+			return nil, mediaType, fmt.Errorf("encode png: %w", err)
+		}
+
+		return buf.Bytes(), MediaTypePNG, nil
+	}
+
+	// JPEG, GIF, WebP, BMP, and unknowns re-encode as JPEG for size efficiency.
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, src, &jpeg.Options{Quality: quality}); err != nil {
+		return nil, MediaTypeJPEG, fmt.Errorf("encode jpeg: %w", err)
+	}
+
+	return buf.Bytes(), MediaTypeJPEG, nil
 }
 
 // dimensions holds a width/height pair.
@@ -91,7 +154,7 @@ type dimensions struct {
 // scaleDimensions computes the largest aspect-preserving size whose longest
 // side is maxDimension, never smaller than 1x1.
 func scaleDimensions(width, height, maxDimension int) dimensions {
-	longest := max(height, width)
+	longest := maxInt(height, width)
 
 	scale := float64(maxDimension) / float64(longest)
 
@@ -101,9 +164,9 @@ func scaleDimensions(width, height, maxDimension int) dimensions {
 	}
 }
 
-// decodeImageForResize decodes an image, returning the image, its format name,
-// and any error. PNG/JPEG/GIF/WebP are registered via blank imports.
-func decodeImageForResize(data []byte) (image.Image, string, error) {
+// decodeImage decodes an image, returning the image, its format name, and any
+// error. PNG/JPEG/GIF/WebP/BMP are registered via blank imports.
+func decodeImage(data []byte) (image.Image, string, error) {
 	return image.Decode(bytes.NewReader(data))
 }
 
@@ -113,6 +176,7 @@ func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}
+
 	return b
 }
 
@@ -139,10 +203,12 @@ func PreprocessImage(img *ImageSource, cfg *PreprocessConfig) (*ImageSource, err
 	if img == nil || cfg == nil {
 		return img, nil
 	}
+
 	if cfg.MaxDimension <= 0 {
 		return img, nil
 	}
-	return ResizeImage(img, cfg.MaxDimension)
+
+	return ResizeImageWithQuality(img, cfg.MaxDimension, cfg.JPEGQuality)
 }
 
 // preprocessAll applies PreprocessConfig to a slice of images, returning a new
@@ -158,11 +224,14 @@ func preprocessAll(images []*ImageSource, cfg *PreprocessConfig) ([]*ImageSource
 			result[i] = nil
 			continue
 		}
+
 		processed, err := PreprocessImage(img, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("preprocess image %d (%q): %w", i, img.Filename, err)
 		}
+
 		result[i] = processed
 	}
+
 	return result, nil
 }
