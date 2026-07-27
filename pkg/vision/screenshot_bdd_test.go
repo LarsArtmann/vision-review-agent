@@ -51,6 +51,18 @@ var _ = ginkgo.Describe("ScreenshotAnalyzer", func() {
 			gomega.Expect(sa.config.RequestTimeout).To(gomega.Equal(30 * time.Second))
 		})
 
+		ginkgo.It("should allow setting hooks and fire them via delegation", func() {
+			var fired int
+			sa := NewScreenshotAnalyzer(model).WithHooks(Hooks{
+				OnStart: func(context.Context, string, int) { fired++ },
+			})
+			gomega.Expect(sa.config.Hooks.OnStart).NotTo(gomega.BeNil())
+
+			_, err := sa.AnalyzeScreenshotImages(ctx, "describe", ImageSrc())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(fired).To(gomega.Equal(1), "OnStart must fire via delegation")
+		})
+
 		ginkgo.It("should support fluent chaining", func() {
 			sa := NewScreenshotAnalyzer(model).
 				WithSystemPrompt("expert").
@@ -140,6 +152,50 @@ var _ = ginkgo.Describe("ScreenshotAnalyzer", func() {
 
 			_, err := sa.AnalyzeScreenshotImage(ctx, "", img)
 
+			gomega.Expect(err).To(gomega.Equal(ErrEmptyPrompt))
+		})
+	})
+
+	ginkgo.Describe("Conversation Delegation", func() {
+		ginkgo.It("should delegate AnalyzeConversation to the underlying agent", func() {
+			sa := NewScreenshotAnalyzer(model)
+			conv := NewConversation()
+			conv.AddUserMessage("previous turn", ImageSrc())
+
+			result, err := sa.AnalyzeConversation(ctx, conv, "follow up", ImageSrc())
+
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(result).NotTo(gomega.BeNil())
+			gomega.Expect(result.Text).To(gomega.Equal(mockResponseText))
+		})
+
+		ginkgo.It("should delegate AnalyzeConversationStream to the underlying agent", func() {
+			sa := NewScreenshotAnalyzer(model)
+			conv := NewConversation()
+			conv.AddUserMessage("previous turn", ImageSrc())
+
+			var chunks []string
+			result, err := sa.AnalyzeConversationStream(
+				ctx,
+				conv,
+				"follow up",
+				func(text string) error {
+					chunks = append(chunks, text)
+					return nil
+				},
+				ImageSrc(),
+			)
+
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(result).NotTo(gomega.BeNil())
+			gomega.Expect(chunks).NotTo(gomega.BeEmpty())
+		})
+
+		ginkgo.It("should return validation errors from AnalyzeConversation", func() {
+			sa := NewScreenshotAnalyzer(model)
+			conv := NewConversation()
+
+			_, err := sa.AnalyzeConversation(ctx, conv, "", ImageSrc())
 			gomega.Expect(err).To(gomega.Equal(ErrEmptyPrompt))
 		})
 	})
