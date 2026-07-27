@@ -103,7 +103,16 @@ func LoadImageFromURL(ctx context.Context, url string) (*ImageSource, error) {
 	mediaType := detectMediaTypeFromResponse(resp, url)
 	filename := filenameFromURL(url)
 
-	return LoadImageFromReader(resp.Body, mediaType, filename)
+	img, err := LoadImageFromReader(resp.Body, mediaType, filename)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ValidateImage(img.Data); err != nil {
+		return nil, fmt.Errorf("download image from %q: %w", url, err)
+	}
+
+	return img, nil
 }
 
 // LoadImageFromBase64 decodes a base64-encoded image string and returns an ImageSource.

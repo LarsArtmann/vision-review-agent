@@ -99,6 +99,19 @@ func TestLoadImageFromURL(t *testing.T) {
 		_, err := LoadImageFromURL(context.Background(), "http://[::1]:namedport")
 		require.Error(t, err)
 	})
+
+	t.Run("rejects non-image response body", func(t *testing.T) {
+		t.Parallel()
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write([]byte("<html>not an image</html>"))
+		}))
+		defer server.Close()
+
+		_, err := LoadImageFromURL(context.Background(), server.URL+"/fake.png")
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrInvalidImage)
+	})
 }
 
 func TestConfigValidationExtended(t *testing.T) {

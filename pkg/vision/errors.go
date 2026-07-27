@@ -85,9 +85,9 @@ func IsRetryable(err error) bool {
 }
 
 // classifyModelErr wraps a model-invocation error into a classified ModelError
-// annotated with the operation name and prompt. It replaces the opaque
-// wrapWithPrompt at every model call-site, preserving the original cause via
-// Unwrap while adding a domain-level ErrorKind for consumer decision-making.
+// annotated with the operation name and prompt. It is used at every model
+// call-site, preserving the original cause via Unwrap while adding a
+// domain-level ErrorKind for consumer decision-making.
 func classifyModelErr(op, prompt string, err error) error {
 	modelErr := apperrors.Classify(err)
 	modelErr.Op = op

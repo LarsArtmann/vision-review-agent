@@ -30,7 +30,6 @@ Before refactoring any clone group, answer:
 | Helper                                                                                        | Location                  | Purpose                                              |
 | --------------------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------- |
 | `requireImages`                                                                               | `pkg/vision/vision.go`    | Single source for `ErrNoImages` guard                |
-| `wrapWithPrompt`                                                                              | `pkg/vision/vision.go`    | Standard `op (prompt=%q): %w` error wrap             |
 | `imageSignature` (named type)                                                                 | `pkg/vision/validate.go`  | Named struct replaces double anonymous declaration   |
 | `jsonOutput` / `jsonUsage` (named types)                                                      | `cmd/vision/main.go`      | Named structs replace inline anonymous struct        |
 | `newProviderFromEnv` / `wrapProvider`                                                         | `cmd/vision/main.go`      | API-key-from-env + provider factory + error wrapping |

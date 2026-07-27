@@ -452,13 +452,6 @@ func (va *Agent) withTimeout(ctx context.Context) (context.Context, context.Canc
 	return ctx, func() {}
 }
 
-// wrapWithPrompt wraps an error with the operation name and prompt for context.
-// It standardises the format used at every public call-site in this package so
-// that errors are easy to grep and stack traces remain consistent.
-func wrapWithPrompt(op, prompt string, err error) error {
-	return fmt.Errorf("%s (prompt=%q): %w", op, prompt, err)
-}
-
 // requireImages filters nil images and returns ErrNoImages if the result is empty.
 // It is the shared guard at the entry of every public analysis method.
 func requireImages(images []*ImageSource) ([]*ImageSource, error) {

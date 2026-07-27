@@ -139,7 +139,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeStream(
 ) (*AnalyzeResult, error) {
 	a, err := sa.agent()
 	if err != nil {
-		return nil, wrapWithPrompt("AnalyzeStream", prompt, err)
+		return nil, err
 	}
 	return a.AnalyzeStream(ctx, prompt, onText, images...)
 }
@@ -179,7 +179,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
 ) (*AnalyzeResult, error) {
 	agent, err := sa.agent()
 	if err != nil {
-		return nil, wrapWithPrompt("AnalyzeScreenshotImages", prompt, err)
+		return nil, err
 	}
 	return agent.Analyze(ctx, prompt, images...)
 }
@@ -210,7 +210,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeConversation(
 ) (*AnalyzeResult, error) {
 	a, err := sa.agent()
 	if err != nil {
-		return nil, wrapWithPrompt("AnalyzeConversation", prompt, err)
+		return nil, err
 	}
 	return a.AnalyzeConversation(ctx, conv, prompt, images...)
 }
@@ -225,7 +225,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeConversationStream(
 ) (*AnalyzeResult, error) {
 	a, err := sa.agent()
 	if err != nil {
-		return nil, wrapWithPrompt("AnalyzeConversationStream", prompt, err)
+		return nil, err
 	}
 	return a.AnalyzeConversationStream(ctx, conv, prompt, onText, images...)
 }
