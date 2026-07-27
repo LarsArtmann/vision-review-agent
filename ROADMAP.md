@@ -12,20 +12,19 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Near-term direction
 
-- **Auto-wired preprocessing pipeline** — `ResizeImage` shipped standalone; the
-  next step is a composable `Config.Preprocess` (max dimension, quality, format
-  conversion) applied automatically inside every `Analyze*`, plus
-  `ScreenshotAnalyzer.WithMaxDimension`. Goal: reduce token usage and support
-  provider-specific limits without callers wrapping every call.
-- **Unified retry strategy** — reconcile `Config.MaxRetries` (fantasy HTTP retry)
-  with `WithRetry[T]` / `RetryConfig` (external wrapper). One system, documented,
-  wired into `AnalyzeBatch` / `AnalyzeConversation`. See Open questions.
-- **Structured hooks done right** — replace the synthesized `*AnalyzeResult`
-  hack with a proper discriminated payload (`HooksEvent` with a `Kind`) or
-  `StructuredHooks[T]`. See Open questions.
+The actionable near-term work (preprocessing auto-wiring, retry reconciliation,
+structured-hooks redesign, CLI tests, CostTracker integration, license fix,
+config-hygiene cleanup) lives in [TODO_LIST.md](TODO_LIST.md). The themes:
+
+- **Make preprocessing composable** — `ResizeImage` shipped standalone; it
+  needs `Config.Preprocess` wiring so every `Analyze*` can auto-resize. Blocked
+  on a design decision (see Open questions for the breaking-change question).
+- **One retry system, not two** — `Config.MaxRetries` and `WithRetry[T]` must
+  be reconciled. Blocked on a design decision (see Open questions).
 - **catwalk integration for CLI** — replace hand-rolled CLI providers
   (Anthropic, Google, openaicompat) with `charmbracelet/catwalk` to avoid rot
-  as fantasy adds providers. See Open questions.
+  as fantasy adds providers. Blocked on a direction decision (see Open
+  questions).
 
 ## Mid-term ideas
 
