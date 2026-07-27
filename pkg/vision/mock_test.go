@@ -3,6 +3,7 @@ package vision
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 
 	"charm.land/fantasy"
@@ -71,14 +72,22 @@ func AssertGotEq(t *testing.T, name string, got, want any) {
 
 // mockModel is a mock implementation of fantasy.LanguageModel for testing.
 // By default it returns canned success responses. Set the *Err fields to
-// inject errors for testing classified error paths.
+// inject errors for testing classified error paths. Set generateErrs to a
+// sequence of errors consumed before generateErr (used to exercise retry).
 type mockModel struct {
-	generateErr       error
-	streamErr         error
-	generateObjectErr error
+	generateErr         error
+	generateErrs        []error // consumed in order (1-based) before generateErr
+	generateCalls       atomic.Int32
+	streamErr           error
+	generateObjectErr   error
+	generateObjectCalls atomic.Int32
 }
 
 func (m *mockModel) Generate(_ context.Context, _ fantasy.Call) (*fantasy.Response, error) {
+	n := int(m.generateCalls.Add(1)) // 1-based attempt index
+	if n <= len(m.generateErrs) {
+		return nil, m.generateErrs[n-1]
+	}
 	if m.generateErr != nil {
 		return nil, m.generateErr
 	}
@@ -121,6 +130,7 @@ func (m *mockModel) GenerateObject(
 	_ context.Context,
 	_ fantasy.ObjectCall,
 ) (*fantasy.ObjectResponse, error) {
+	m.generateObjectCalls.Add(1)
 	if m.generateObjectErr != nil {
 		return nil, m.generateObjectErr
 	}

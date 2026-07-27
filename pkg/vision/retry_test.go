@@ -97,6 +97,68 @@ func TestWithRetryRespectsContextCancellation(t *testing.T) {
 	require.Less(t, elapsed, time.Second, "must abort quickly on context cancellation")
 }
 
+func TestConfigRetryRetriesTransientAnalyze(t *testing.T) {
+	t.Parallel()
+
+	// Model fails twice with retryable server errors, then succeeds on the 3rd.
+	model := &mockModel{
+		generateErrs: []error{
+			newTestProviderErr(http.StatusInternalServerError),
+			newTestProviderErr(http.StatusBadGateway),
+		},
+	}
+	rc := RetryConfig{MaxAttempts: 3, InitialBackoff: time.Millisecond, Jitter: false}
+	agent, err := NewAgent(Config{Model: model, Retry: &rc})
+	require.NoError(t, err)
+
+	result, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
+	require.NoError(t, err)
+	require.Contains(t, result.Text, "mock response")
+	require.Equal(t, int32(3), model.generateCalls.Load(), "must retry until success")
+}
+
+func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
+	t.Parallel()
+
+	model := &mockModel{generateErr: newTestProviderErr(http.StatusTooManyRequests)}
+	rc := RetryConfig{MaxAttempts: 2, InitialBackoff: time.Millisecond, Jitter: false}
+	agent, err := NewAgent(Config{Model: model, Retry: &rc})
+	require.NoError(t, err)
+
+	_, err = agent.Analyze(context.Background(), "prompt", ImageSrc())
+	require.Error(t, err)
+
+	me, ok := errors.AsType[*apperrors.ModelError](err)
+	require.True(t, ok, "exhausted retry must still be a classified ModelError")
+	require.Equal(t, apperrors.KindRateLimited, me.Kind)
+	require.Equal(t, int32(2), model.generateCalls.Load(), "must attempt exactly MaxAttempts")
+}
+
+func TestConfigRetryWiredIntoStructured(t *testing.T) {
+	t.Parallel()
+
+	model := &mockModel{generateObjectErr: newTestProviderErr(http.StatusServiceUnavailable)}
+	rc := RetryConfig{MaxAttempts: 2, InitialBackoff: time.Millisecond, Jitter: false}
+	agent, err := NewAgent(Config{Model: model, Retry: &rc})
+	require.NoError(t, err)
+
+	_, err = AnalyzeStructured[testReview](context.Background(), agent, "prompt", ImageSrc())
+	require.Error(t, err)
+	require.Equal(t, int32(2), model.generateObjectCalls.Load(), "structured generate must be retried")
+}
+
+func TestConfigRetryOffByDefault(t *testing.T) {
+	t.Parallel()
+
+	model := &mockModel{generateErr: newTestProviderErr(http.StatusInternalServerError)}
+	agent, err := NewAgent(Config{Model: model}) // no Retry
+	require.NoError(t, err)
+
+	_, err = agent.Analyze(context.Background(), "prompt", ImageSrc())
+	require.Error(t, err)
+	require.Equal(t, int32(1), model.generateCalls.Load(), "without Config.Retry there is exactly one attempt")
+}
+
 func TestRetryConfigDelayForRespectsCap(t *testing.T) {
 	t.Parallel()
 
