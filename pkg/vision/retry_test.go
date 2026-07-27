@@ -271,3 +271,26 @@ func TestNewAgentWithCostTrackerPreservesUserHooks(t *testing.T) {
 func toolsUsage(in, out int64) fantasy.Usage {
 	return fantasy.Usage{InputTokens: in, OutputTokens: out, TotalTokens: in + out}
 }
+
+// TestNewAgentWithCostTrackerStructuredNilRawResponse verifies the documented
+// contract for structured methods: OnFinish receives a synthesized
+// *AnalyzeResult whose RawResponse is nil (and Text holds raw JSON). The
+// CostTracker must still capture token usage from that synthesized result.
+func TestNewAgentWithCostTrackerStructuredNilRawResponse(t *testing.T) {
+	t.Parallel()
+
+	var seen *AnalyzeResult
+	agent, tracker, err := NewAgentWithCostTracker(Config{
+		Model: testModel(),
+		Hooks: Hooks{OnFinish: func(_ context.Context, r *AnalyzeResult) { seen = r }},
+	})
+	require.NoError(t, err)
+
+	_, err = AnalyzeStructured[testReview](context.Background(), agent, "prompt", ImageSrc())
+	require.NoError(t, err)
+
+	require.NotNil(t, seen, "OnFinish must fire for structured analysis")
+	require.Nil(t, seen.RawResponse, "structured methods must synthesize a nil RawResponse")
+	require.Equal(t, 1, tracker.Calls(), "cost tracker must still record usage")
+	require.Greater(t, tracker.Total().TotalTokens, int64(0))
+}

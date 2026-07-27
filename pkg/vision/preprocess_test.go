@@ -2,14 +2,31 @@ package vision
 
 import (
 	"bytes"
+	"context"
 	"image"
 	"image/color"
 	"image/jpeg"
 	"image/png"
 	"testing"
 
+	"charm.land/fantasy"
 	"github.com/stretchr/testify/require"
 )
+
+// totalImageBytes sums the Data length of every FilePart across a Prompt's
+// messages. Used to verify that preprocessing actually resized the images
+// before they reached the model.
+func totalImageBytes(p fantasy.Prompt) int {
+	total := 0
+	for _, msg := range p {
+		for _, part := range msg.Content {
+			if file, ok := fantasy.AsContentType[fantasy.FilePart](part); ok {
+				total += len(file.Data)
+			}
+		}
+	}
+	return total
+}
 
 // newPNG builds an RGBA PNG of the given dimensions for testing.
 func newPNG(t *testing.T, w, h int) *ImageSource {
@@ -343,4 +360,44 @@ func TestPreprocessImagePassthroughNilAndZeroConfig(t *testing.T) {
 	out, err = PreprocessImage(small, &PreprocessConfig{MaxDimension: 100})
 	require.NoError(t, err)
 	require.Same(t, small, out)
+}
+
+func TestConfigPreprocessAppliedInAnalyze(t *testing.T) {
+	t.Parallel()
+
+	big := newPNG(t, 800, 600) // ~1.4 MB raw PNG
+	model := &mockModel{capture: true}
+	agent := newTestAgent(t, model)
+	agent.config.Preprocess = &PreprocessConfig{MaxDimension: 100}
+
+	_, err := agent.Analyze(context.Background(), "describe", big)
+	require.NoError(t, err)
+
+	sent := totalImageBytes(model.capturedPrompt)
+	require.Less(
+		t,
+		sent,
+		len(big.Data),
+		"Config.Preprocess must resize the image before it reaches the model",
+	)
+}
+
+func TestConfigPreprocessAppliedInAnalyzeStructured(t *testing.T) {
+	t.Parallel()
+
+	big := newPNG(t, 800, 600) // exceeds the cap
+	model := &mockModel{capture: true}
+	agent := newTestAgent(t, model)
+	agent.config.Preprocess = &PreprocessConfig{MaxDimension: 100}
+
+	_, err := AnalyzeStructured[testReview](context.Background(), agent, "review", big)
+	require.NoError(t, err)
+
+	sent := totalImageBytes(model.capturedPrompt)
+	require.Less(
+		t,
+		sent,
+		len(big.Data),
+		"Config.Preprocess must resize the image before structured generate too",
+	)
 }

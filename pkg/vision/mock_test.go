@@ -81,9 +81,18 @@ type mockModel struct {
 	streamErr           error
 	generateObjectErr   error
 	generateObjectCalls atomic.Int32
+
+	// capture, when true, records the Prompt of the most recent Generate /
+	// GenerateObject call into capturedPrompt. Intended for single-call
+	// (non-concurrent) tests only — not safe for concurrent use.
+	capture        bool
+	capturedPrompt fantasy.Prompt
 }
 
-func (m *mockModel) Generate(_ context.Context, _ fantasy.Call) (*fantasy.Response, error) {
+func (m *mockModel) Generate(_ context.Context, in fantasy.Call) (*fantasy.Response, error) {
+	if m.capture {
+		m.capturedPrompt = in.Prompt
+	}
 	n := int(m.generateCalls.Add(1)) // 1-based attempt index
 	if n <= len(m.generateErrs) {
 		return nil, m.generateErrs[n-1]
@@ -128,8 +137,11 @@ func (m *mockModel) Stream(_ context.Context, _ fantasy.Call) (fantasy.StreamRes
 
 func (m *mockModel) GenerateObject(
 	_ context.Context,
-	_ fantasy.ObjectCall,
+	in fantasy.ObjectCall,
 ) (*fantasy.ObjectResponse, error) {
+	if m.capture {
+		m.capturedPrompt = in.Prompt
+	}
 	m.generateObjectCalls.Add(1)
 	if m.generateObjectErr != nil {
 		return nil, m.generateObjectErr
