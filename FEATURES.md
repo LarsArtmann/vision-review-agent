@@ -19,7 +19,7 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 - **AnalyzeStructuredStream[T]** — Stream partial typed objects as they arrive
 - **AnalyzeConversation** — Multi-turn analysis with conversation history
 - **AnalyzeConversationStream** — Streaming multi-turn analysis
-- **AnalyzeBatch** — Concurrent analysis of multiple images with bounded parallelism
+- **AnalyzeBatch** — Concurrent analysis of multiple images with bounded parallelism (per-image error capture + classification)
 
 ### Image Loading
 
@@ -32,6 +32,15 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 - **DetectImageFormat** — Magic byte detection (PNG, JPEG, GIF, WebP, BMP)
 - **ValidateImage** — Validate image data against known magic bytes
 
+### Image Preprocessing
+
+- **PreprocessConfig** — `Config.Preprocess` auto-resizes (and re-encodes JPEG) before every `Analyze*` call
+- **PreprocessImage** — Apply a `PreprocessConfig` to an `ImageSource` (called automatically by the Agent)
+- **ResizeImage** — Catmull-Rom downscale, aspect-preserving, longest-side cap; decodes PNG/JPEG/GIF/WebP/BMP
+- **ResizeImageWithQuality** — `ResizeImage` with caller-controlled JPEG quality (1-100)
+- **CompressImage** — Re-encode JPEG at lower quality without resizing; preserves PNG format
+- **ScreenshotAnalyzer.WithMaxDimension** — Fluent builder that sets `Config.Preprocess`
+
 ### Configuration
 
 - **Config.Validate** — Full validation of all parameters at construction
@@ -42,15 +51,24 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 - **PresencePenalty** — Token presence penalty (-2.0 to 2.0)
 - **FrequencyPenalty** — Token frequency penalty (-2.0 to 2.0)
 - **MaxOutputTokens** — Response length limit
-- **MaxRetries** — Transient error retry count (fantasy HTTP-level retry)
+- **MaxRetries** — Fantasy HTTP-layer retry count (0 disables)
+- **Retry** — Vision-layer `*RetryConfig` (backoff + jitter) auto-applied to all non-streaming analysis methods; composes with `MaxRetries`
 - **RequestTimeout** — Per-request timeout
-- **Hooks** — Lifecycle callbacks (OnStart, OnFinish, OnError)
+- **Preprocess** — `*PreprocessConfig` auto-applied before every `Analyze*` call
+- **Hooks** — Lifecycle callbacks (OnStart, OnFinish, OnError), fire in every analysis path
+
+### Retry & Cost
+
+- **WithRetry[T]** — Generic external retry middleware (exponential backoff + jitter, honors `IsRetryable()`)
+- **DefaultRetryConfig** — Sensible defaults (3 attempts, capped backoff, jitter on)
+- **CostTracker** — Thread-safe token accumulator (`Add`, `AddResult`, `Total`, `Calls`, `Reset`)
+- **NewAgentWithCostTracker** — Convenience constructor that auto-wires `CostTracker` into `Hooks.OnFinish`, composing with user-supplied hooks
 
 ### Error Handling
 
-- **ModelError** — Classified errors with ErrorKind, StatusCode, IsRetryable()
-- **ErrorKind** — 11 error categories (rate-limited, timeout, auth, etc.)
-- **Classify** — Automatic error classification from provider responses
+- **ModelError** — Classified errors with ErrorKind, StatusCode, IsRetryable(), Unwrap()
+- **ErrorKind** — 14 error categories (rate-limited, timeout, server-error, service-unavailable, network, authentication, not-found, bad-request, content-filter, not-implemented, context-too-large, cancelled, structured-parse, unknown)
+- **Classify** — Automatic error classification from provider responses (HTTP status + content-filter signal detection)
 - **IsRetryable** — Quick retryability check
 - **Sentinel errors** — 12 validation sentinel errors (ErrNoModel, ErrEmptyPrompt, etc.)
 
@@ -58,18 +76,36 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 
 - **Fluent builder** — Chainable configuration (WithSystemPrompt, WithTemperature, etc.)
 - **All model parameters** — TopP, TopK, PresencePenalty, FrequencyPenalty
-- **Cache invalidation** — Builder methods invalidate cached agent (bug fix)
+- **Cache invalidation** — All builder methods invalidate cached agent
 - **WithHooks** — Set lifecycle callbacks via the fluent builder
+- **WithMaxDimension** — Set `Config.Preprocess` via the builder
 - **Delegates to Agent** — Analyze, AnalyzeStream, AnalyzeConversation, AnalyzeConversationStream
+
+### Advanced Capabilities (fantasy passthrough)
+
+- **Tools / ToolChoice** — Typed tool/function calling wired to fantasy.WithTools / WithToolChoice
+- **StopConditions** — Composable agent-loop termination (StepCountIs, HasToolCall, MaxTokensUsed)
+- **PrepareStep** — Per-step interceptor for model/prompt/tool mutation
+- **Headers / UserAgent** — Extra HTTP headers and User-Agent on provider requests
 
 ### Infrastructure
 
-- **Nix flake** — Reproducible build environment with `nix run .#test` and `nix run .#lint`
+- **Nix flake** — Reproducible build environment with `nix run .#test`, `nix run .#lint`, `nix flake check`
+- **CI workflow** — `.github/workflows/ci.yml` (build, vet, race test, coverage gate, lint, format check)
 - **Table-driven tests** — Pure function tests
 - **BDD tests** — User-facing behavior tests (Ginkgo + Gomega)
 - **Testify tests** — Error classification and feature tests
 - **Fuzz tests** — `FuzzDetectImageFormat`, `FuzzDecodeBase64Flex`
-- **Mock model** — Comprehensive mock with error injection support
+- **Mock model** — Comprehensive mock with error injection + call counting
+
+### CLI
+
+- **Multi-provider** — OpenAI, OpenRouter (DONE); Anthropic, Google (ADC), openaicompat (PARTIALLY DONE — build-verified only)
+- **Streaming** — Real-time text output
+- **JSON output** — Machine-readable result format
+- **-structured** — Built-in UIReview schema with structured JSON output
+- **Classified errors** — User-friendly error messages with per-kind retry advice
+- **CLI tests** — `adviceForKind`, `buildConfig`, `parseTimeout`, `createProvider` error paths
 
 ### Examples
 
@@ -81,6 +117,7 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 - **hooks** — Lifecycle callbacks for logging/metrics
 - **structured-stream** — Structured streaming with partial objects
 - **url-loading** — Load from URL (custom client) and base64 round-trip
+- **error-handling** — Classified error handling with kind-to-action lookup
 
 ## PARTIALLY DONE
 
@@ -89,41 +126,18 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 
 - **Hooks across structured methods** — `OnStart`/`OnFinish`/`OnError` fire in
   `AnalyzeStructured` / `AnalyzeStructuredStream`, but `OnFinish` receives a
-  **synthesized** `*AnalyzeResult` with nil `RawResponse` (nil-pointer hazard
-  for consumers) and `Text` holding raw JSON, not prose. Hooks in
-  `Analyze`/`AnalyzeStream`/`AnalyzeConversation` are fully DONE.
-- **WithRetry[T] / RetryConfig** — Generic retry middleware with exponential
-  backoff + jitter works, but **conflicts conceptually with `Config.MaxRetries`**
-  (two retry systems, undocumented relationship). Not wired into
-  `AnalyzeBatch` / `AnalyzeConversation`.
-- **CostTracker** — Thread-safe token accumulator works, but is **detached** —
-  no `Agent` integration; caller must manually wire `Hooks.OnFinish`.
-- **ResizeImage** — High-quality Catmull-Rom resize works for PNG/JPEG/WebP/GIF,
-  but is an **island feature** (never called by Agent; no `Config.Preprocess`
-  wiring), has **no compress/convert**, and **cannot decode BMP** despite
-  `MediaTypeBMP` existing.
-- **MediaTypeBMP** — Constant exists and `DetectImageFormat` recognizes BMP
-  magic bytes, but `mediaTypeFromExtension` does **not** map `.bmp` →
-  `MediaTypeBMP` (falls back to `MediaTypePNG`), and no BMP decoder is
-  registered for `ResizeImage`.
+  **synthesized** `*AnalyzeResult` with nil `RawResponse` (documented contract,
+  but a nil-pointer hazard for consumers that dereference it) and `Text`
+  holding raw JSON, not prose. Hooks in `Analyze`/`AnalyzeStream`/
+  `AnalyzeConversation` are fully DONE. A proper `HooksEvent` redesign is a
+  breaking change deferred to ROADMAP.
 - **CLI providers (Anthropic, Google, openaicompat)** — Compile and appear in
   `-h`, but are **build-verified only** — no runtime credentials tested. Google
   uses ADC (environment-specific); openaicompat expects a local server.
-
-### Advanced Capabilities (fantasy passthrough) — DONE
-
-- **Tools / ToolChoice** — Typed tool/function calling wired to fantasy.WithTools / WithToolChoice
-- **StopConditions** — Composable agent-loop termination (StepCountIs, HasToolCall, MaxTokensUsed)
-- **PrepareStep** — Per-step interceptor for model/prompt/tool mutation
-- **Headers / UserAgent** — Extra HTTP headers and User-Agent on provider requests
-
-### CLI — DONE (except providers noted above)
-
-- **Multi-provider** — OpenAI, OpenRouter (DONE); Anthropic, Google (ADC), openaicompat (PARTIALLY DONE)
-- **Streaming** — Real-time text output
-- **JSON output** — Machine-readable result format
-- **-structured** — Built-in UIReview schema with structured JSON output
-- **Classified errors** — User-friendly error messages with retry advice
+- **Streaming auto-retry** — Deliberately excluded. `AnalyzeStream`,
+  `AnalyzeConversationStream`, and `AnalyzeStructuredStream` do NOT auto-retry
+  on `Config.Retry` (partial-stream + retry has ambiguous delta semantics).
+  Documented; callers wrap in `WithRetry` manually if needed.
 
 ## PLANNED
 

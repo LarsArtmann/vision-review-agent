@@ -54,6 +54,7 @@ examples/                Working examples for each provider
 - **optionalParams() eliminates duplication** — Single `Config.optionalParams()` helper feeds model params to all 4 call sites (AgentCall, AgentStreamCall, ObjectCall x2)
 - **BMP fully supported** — Decoder registered via `golang.org/x/image/bmp` blank import; `mediaTypeFromExtension` has explicit table for PNG/JPEG/GIF/WebP/BMP
 - **ResizeImage returns the same instance when no resize is needed** — Avoids unnecessary re-encoding
+- **Quality wired end-to-end** — `PreprocessConfig.JPEGQuality` flows through `ResizeImageWithQuality` → shared `encodeImage` helper. `ResizeImage` is a thin wrapper using the default quality (85). `CompressImage` re-encodes JPEGs without resizing (PNG preserves format via `png.BestCompression`). `encodeImage` is the single encode path shared by resize + compress
 - **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
 
 ## Build & Test Commands

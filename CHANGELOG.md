@@ -22,7 +22,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   semantics).
 - **Config.Preprocess** — optional `*PreprocessConfig` field on `Config` that
   auto-resizes images before every `Analyze*` call. `PreprocessImage` function
-  and `ScreenshotAnalyzer.WithMaxDimension` builder also added.
+  and `ScreenshotAnalyzer.WithMaxDimension` builder also added. `JPEGQuality`
+  is now wired through the full resize/encode path.
+- **Image compression** — `CompressImage(img, quality)` re-encodes JPEGs at a
+  lower quality without resizing (PNG input preserves its format).
 - **NewAgentWithCostTracker** — convenience constructor that auto-wires a
   `CostTracker` into `Hooks.OnFinish`, composing with any user-supplied hooks.
 - **New ErrorKinds** — `KindNotImplemented` (HTTP 501, not retryable),
