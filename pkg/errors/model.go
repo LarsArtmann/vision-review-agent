@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"charm.land/fantasy"
 )
@@ -12,13 +13,16 @@ import (
 // Defined as named constants rather than net/http imports to keep the
 // classification logic self-documenting and free of magic numbers.
 const (
-	statusUnauthorized    = 401
-	statusForbidden       = 403
-	statusNotFound        = 404
-	statusRequestTimeout  = 408
-	statusTooManyRequests = 429
-	statusServerError     = 500
-	statusBadRequest      = 400
+	statusUnauthorized         = 401
+	statusForbidden            = 403
+	statusNotFound             = 404
+	statusRequestTimeout       = 408
+	statusTooManyRequests      = 429
+	statusServerError          = 500
+	statusNotImplemented       = 501
+	statusServiceUnavailable   = 503
+	statusBadRequest           = 400
+	statusContentFilterSignals = 400 // some providers use 400 for content-filter
 )
 
 // maxPromptDisplayLen is the maximum number of characters of the prompt
@@ -40,9 +44,19 @@ const (
 	// Transient — retry, possibly with a longer timeout.
 	KindTimeout ErrorKind = "timeout"
 
-	// KindServerError: the provider returned a 5xx response.
-	// Transient — retry with backoff.
+	// KindServerError: the provider returned a 5xx response (excluding 501/503
+	// which have their own kinds). Transient — retry with backoff.
 	KindServerError ErrorKind = "server_error"
+
+	// KindNotImplemented: the provider returned 501 Not Implemented. The model
+	// or feature does not exist on this endpoint. Not retryable — use a
+	// different model or provider.
+	KindNotImplemented ErrorKind = "not_implemented"
+
+	// KindServiceUnavailable: the provider returned 503 Service Unavailable.
+	// The service is temporarily overloaded or down. Transient — retry with
+	// backoff (usually longer than for generic 5xx).
+	KindServiceUnavailable ErrorKind = "service_unavailable"
 
 	// KindNetwork: a transport-level failure with no HTTP status code
 	// (e.g. connection reset, unexpected EOF mid-stream).
@@ -60,6 +74,12 @@ const (
 	// KindBadRequest: the provider rejected the request payload (400).
 	// Not retryable — fix the request parameters.
 	KindBadRequest ErrorKind = "bad_request"
+
+	// KindContentFilter: the provider's content policy rejected the request or
+	// response. Some providers return 400 with a content-filter message; others
+	// use 200 with a content_filter finish reason. Not retryable without
+	// changing the prompt or image.
+	KindContentFilter ErrorKind = "content_filter"
 
 	// KindContextTooLarge: the input exceeded the model's context window.
 	// Not retryable without reducing input size.
@@ -138,15 +158,15 @@ func (e *ModelError) Unwrap() error {
 }
 
 // IsRetryable reports whether a retry of the same operation might succeed.
-// Rate limits, timeouts, server errors, and network failures are retryable;
-// authentication, bad-request, context-too-large, cancellation, and parse
-// errors are not.
+// Rate limits, timeouts, server errors, service-unavailability, and network
+// failures are retryable; not-implemented, authentication, bad-request,
+// content-filter, context-too-large, cancellation, and parse errors are not.
 func (e *ModelError) IsRetryable() bool {
 	switch e.Kind {
-	case KindRateLimited, KindTimeout, KindServerError, KindNetwork:
+	case KindRateLimited, KindTimeout, KindServerError, KindServiceUnavailable, KindNetwork:
 		return true
-	case KindAuthentication, KindNotFound, KindBadRequest,
-		KindContextTooLarge, KindCancelled, KindStructuredParse, KindUnknown:
+	case KindNotImplemented, KindAuthentication, KindNotFound, KindBadRequest,
+		KindContentFilter, KindContextTooLarge, KindCancelled, KindStructuredParse, KindUnknown:
 		return false
 	}
 
@@ -247,8 +267,16 @@ func classifyProviderError(providerErr *fantasy.ProviderError, err error) *Model
 		modelErr.Kind = KindRateLimited
 	case statusRequestTimeout:
 		modelErr.Kind = KindTimeout
+	case statusNotImplemented:
+		modelErr.Kind = KindNotImplemented
+	case statusServiceUnavailable:
+		modelErr.Kind = KindServiceUnavailable
 	case statusBadRequest:
-		modelErr.Kind = KindBadRequest
+		if isContentFilterRejection(providerErr) {
+			modelErr.Kind = KindContentFilter
+		} else {
+			modelErr.Kind = KindBadRequest
+		}
 	default:
 		modelErr.Kind = kindFromStatusOrRetryability(providerErr)
 	}
@@ -257,9 +285,9 @@ func classifyProviderError(providerErr *fantasy.ProviderError, err error) *Model
 }
 
 // kindFromStatusOrRetryability handles status codes outside the explicit
-// switch above: 5xx maps to KindServerError, a missing status code with a
-// retryable transport failure maps to KindNetwork, and everything else falls
-// back to KindUnknown.
+// switch above: 5xx (except 501/503 which have their own kinds) maps to
+// KindServerError, a missing status code with a retryable transport failure
+// maps to KindNetwork, and everything else falls back to KindUnknown.
 func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind {
 	switch {
 	case providerErr.StatusCode >= statusServerError:
@@ -269,6 +297,28 @@ func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind 
 	default:
 		return KindUnknown
 	}
+}
+
+// contentFilterSignals are substrings in a ProviderError message that indicate
+// a content-policy rejection rather than a generic bad request. Providers use
+// varied phrasing; we match case-insensitively on the most common signals.
+var contentFilterSignals = []string{
+	"content filter",
+	"content policy",
+	"content_filter",
+	"safety",
+}
+
+// isContentFilterRejection checks whether a 400 ProviderError is actually a
+// content-policy rejection by scanning its message for known signal phrases.
+func isContentFilterRejection(providerErr *fantasy.ProviderError) bool {
+	msg := strings.ToLower(providerErr.Message)
+	for _, signal := range contentFilterSignals {
+		if strings.Contains(msg, signal) {
+			return true
+		}
+	}
+	return false
 }
 
 // IsRetryable reports whether an error — possibly wrapped in one or more

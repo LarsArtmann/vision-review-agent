@@ -307,6 +307,10 @@ func adviceForKind(kind vision.ErrorKind) string {
 		return "The request timed out. Increase the -timeout flag or use fewer/smaller images."
 	case vision.KindServerError:
 		return "The AI provider is experiencing issues. Retry later."
+	case vision.KindServiceUnavailable:
+		return "The AI provider is temporarily unavailable (503). Retry with backoff; consider a different model if persistent."
+	case vision.KindNotImplemented:
+		return "The provider does not implement this model or feature (501). Use a different model or provider."
 	case vision.KindNetwork:
 		return "Could not reach the AI provider. Check your internet connection and retry."
 	case vision.KindAuthentication:
@@ -315,6 +319,8 @@ func adviceForKind(kind vision.ErrorKind) string {
 		return "The requested model was not found. Check the -model flag."
 	case vision.KindBadRequest:
 		return "The provider rejected the request. Check your prompt and image formats."
+	case vision.KindContentFilter:
+		return "The provider's content policy rejected the request. Modify your prompt or image."
 	case vision.KindContextTooLarge:
 		return "The input exceeds the model's context window. Use fewer or smaller images."
 	case vision.KindCancelled:

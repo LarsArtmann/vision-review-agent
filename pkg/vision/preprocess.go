@@ -115,3 +115,54 @@ func maxInt(a, b int) int {
 	}
 	return b
 }
+
+// PreprocessConfig controls automatic image preprocessing applied before every
+// Analyze* call when set via Config.Preprocess. The zero value disables
+// preprocessing (images are sent as-is).
+type PreprocessConfig struct {
+	// MaxDimension caps the longest side in pixels. Images exceeding this are
+	// downsampled with Catmull-Rom interpolation, preserving aspect ratio.
+	// Zero means no resize. A common value is 1568 (OpenAI's recommended max).
+	MaxDimension int
+
+	// JPEGQuality controls re-encoding quality for JPEG output (1-100). Only
+	// used when the image is resized or converted. Zero defaults to 85.
+	JPEGQuality int
+}
+
+// PreprocessImage applies the given PreprocessConfig to an ImageSource,
+// returning a new ImageSource if any transformation occurred, or the original
+// if no change was needed. A nil config or zero-value config returns the image
+// unchanged. This is the function called automatically by the Agent when
+// Config.Preprocess is set.
+func PreprocessImage(img *ImageSource, cfg *PreprocessConfig) (*ImageSource, error) {
+	if img == nil || cfg == nil {
+		return img, nil
+	}
+	if cfg.MaxDimension <= 0 {
+		return img, nil
+	}
+	return ResizeImage(img, cfg.MaxDimension)
+}
+
+// preprocessAll applies PreprocessConfig to a slice of images, returning a new
+// slice. Images that need no change retain their original pointer.
+func preprocessAll(images []*ImageSource, cfg *PreprocessConfig) ([]*ImageSource, error) {
+	if cfg == nil || cfg.MaxDimension <= 0 {
+		return images, nil
+	}
+
+	result := make([]*ImageSource, len(images))
+	for i, img := range images {
+		if img == nil {
+			result[i] = nil
+			continue
+		}
+		processed, err := PreprocessImage(img, cfg)
+		if err != nil {
+			return nil, fmt.Errorf("preprocess image %d (%q): %w", i, img.Filename, err)
+		}
+		result[i] = processed
+	}
+	return result, nil
+}

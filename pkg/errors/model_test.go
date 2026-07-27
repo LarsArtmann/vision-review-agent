@@ -129,8 +129,24 @@ func TestClassify(t *testing.T) {
 		{
 			name:      "provider 503 service unavailable",
 			err:       newProviderErr(http.StatusServiceUnavailable),
-			wantKind:  KindServerError,
+			wantKind:  KindServiceUnavailable,
 			wantRetry: true,
+		},
+		{
+			name:      "provider 501 not implemented",
+			err:       newProviderErr(http.StatusNotImplemented),
+			wantKind:  KindNotImplemented,
+			wantRetry: false,
+		},
+		{
+			name: "provider 400 content filter",
+			err: &fantasy.ProviderError{
+				Title:      fantasy.ErrorTitleForStatusCode(400),
+				Message:    "content filter triggered",
+				StatusCode: 400,
+			},
+			wantKind:  KindContentFilter,
+			wantRetry: false,
 		},
 		{
 			name:      "provider context too large",
