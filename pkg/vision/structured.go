@@ -34,6 +34,11 @@ func AnalyzeStructured[T any](
 		return nil, err
 	}
 
+	validImages, err = agent.preprocessImages(validImages)
+	if err != nil {
+		return nil, err
+	}
+
 	agent.config.Hooks.fireStart(ctx, prompt, len(validImages))
 
 	ctx, cancel := agent.withTimeout(ctx)
@@ -124,6 +129,11 @@ func AnalyzeStructuredStream[T any](
 	images ...*ImageSource,
 ) (*fantasy.ObjectResult[T], error) {
 	validImages, err := validateAnalyzeInput(prompt, images)
+	if err != nil {
+		return nil, err
+	}
+
+	validImages, err = agent.preprocessImages(validImages)
 	if err != nil {
 		return nil, err
 	}

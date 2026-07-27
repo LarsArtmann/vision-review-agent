@@ -105,6 +105,16 @@ type Config struct {
 	// UserAgent overrides the default HTTP User-Agent for provider requests.
 	// Optional.
 	UserAgent string
+
+	// Preprocess controls automatic image preprocessing (resize, compress)
+	// applied to every image before analysis. When nil (the default), images
+	// are sent as-is. Set MaxDimension to auto-resize large images:
+	//
+	//	agent, _ := vision.NewAgent(vision.Config{
+	//	    Model: model,
+	//	    Preprocess: &vision.PreprocessConfig{MaxDimension: 1568},
+	//	})
+	Preprocess *PreprocessConfig
 }
 
 // Validate checks the configuration for errors.
@@ -267,6 +277,11 @@ func (va *Agent) Analyze(
 		return nil, err
 	}
 
+	validImages, err = va.preprocessImages(validImages)
+	if err != nil {
+		return nil, err
+	}
+
 	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
 
 	ctx, cancel := va.withTimeout(ctx)
@@ -301,6 +316,11 @@ func (va *Agent) AnalyzeStream(
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
 	validImages, err := validateAnalyzeInput(prompt, images)
+	if err != nil {
+		return nil, err
+	}
+
+	validImages, err = va.preprocessImages(validImages)
 	if err != nil {
 		return nil, err
 	}
@@ -359,6 +379,11 @@ func (va *Agent) AnalyzeConversation(
 		return nil, err
 	}
 
+	validImages, err = va.preprocessImages(validImages)
+	if err != nil {
+		return nil, err
+	}
+
 	va.config.Hooks.fireStart(ctx, prompt, len(validImages))
 
 	ctx, cancel := va.withTimeout(ctx)
@@ -392,6 +417,11 @@ func (va *Agent) AnalyzeConversationStream(
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
 	validImages, err := validateAnalyzeInput(prompt, images)
+	if err != nil {
+		return nil, err
+	}
+
+	validImages, err = va.preprocessImages(validImages)
 	if err != nil {
 		return nil, err
 	}
@@ -553,6 +583,12 @@ func validateAnalyzeInput(prompt string, images []*ImageSource) ([]*ImageSource,
 		return nil, ErrEmptyPrompt
 	}
 	return requireImages(images)
+}
+
+// preprocessImages applies Config.Preprocess to the validated image slice.
+// When no preprocessing is configured, images pass through unchanged.
+func (va *Agent) preprocessImages(images []*ImageSource) ([]*ImageSource, error) {
+	return preprocessAll(images, va.config.Preprocess)
 }
 
 // filterValidImages removes nil images from the slice.

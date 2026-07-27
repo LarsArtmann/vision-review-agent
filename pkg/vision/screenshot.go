@@ -116,6 +116,19 @@ func (sa *ScreenshotAnalyzer) WithHooks(hooks Hooks) *ScreenshotAnalyzer {
 	return sa
 }
 
+// WithMaxDimension sets automatic preprocessing that resizes images so their
+// longest side does not exceed maxDimension pixels before every analysis call.
+// Zero disables preprocessing (images sent as-is).
+func (sa *ScreenshotAnalyzer) WithMaxDimension(maxDimension int) *ScreenshotAnalyzer {
+	if maxDimension > 0 {
+		sa.config.Preprocess = &PreprocessConfig{MaxDimension: maxDimension}
+	} else {
+		sa.config.Preprocess = nil
+	}
+	sa.cachedAgent = nil
+	return sa
+}
+
 // agent returns the underlying cached Agent, initializing it on first call.
 func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
 	if sa.cachedAgent != nil {
