@@ -95,54 +95,6 @@ func testImage() *vision.ImageSource {
 	return img
 }
 
-// captureStdout runs fn with os.Stdout redirected to a pipe and returns what
-// was written. It mutates global state so callers MUST NOT run in parallel.
-func captureStdout(t *testing.T, fn func()) string {
-	t.Helper()
-
-	original := os.Stdout
-	reader, writer, err := os.Pipe()
-	require.NoError(t, err)
-
-	os.Stdout = writer
-
-	fn()
-
-	_ = writer.Close()
-	os.Stdout = original
-
-	var buffer bytes.Buffer
-
-	_, _ = io.Copy(&buffer, reader)
-	_ = reader.Close()
-
-	return buffer.String()
-}
-
-// captureStderr runs fn with os.Stderr redirected to a pipe and returns what
-// was written. It mutates global state so callers MUST NOT run in parallel.
-func captureStderr(t *testing.T, fn func()) string {
-	t.Helper()
-
-	original := os.Stderr
-	reader, writer, err := os.Pipe()
-	require.NoError(t, err)
-
-	os.Stderr = writer
-
-	fn()
-
-	_ = writer.Close()
-	os.Stderr = original
-
-	var buffer bytes.Buffer
-
-	_, _ = io.Copy(&buffer, reader)
-	_ = reader.Close()
-
-	return buffer.String()
-}
-
 func TestLoadImagesValidFile(t *testing.T) {
 	t.Parallel()
 
@@ -188,8 +140,9 @@ func TestLoadImagesEmptyArgsReturnsEmpty(t *testing.T) {
 	require.Empty(t, images)
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestPrintJSON(t *testing.T) {
+	t.Parallel()
+
 	result := &vision.AnalyzeResult{
 		Text: "hello world",
 		Usage: fantasy.Usage{
@@ -199,107 +152,124 @@ func TestPrintJSON(t *testing.T) {
 		},
 	}
 
-	out := captureStdout(t, func() {
-		printJSON(result)
-	})
+	var buf bytes.Buffer
+	printJSON(&buf, result)
+
+	out := buf.String()
 	require.Contains(t, out, "hello world")
 	require.Contains(t, out, `"totalTokens": 12`)
 	require.Contains(t, out, `"inputTokens": 5`)
 	require.Contains(t, out, `"outputTokens": 7`)
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestPrintTextNonStreamed(t *testing.T) {
+	t.Parallel()
+
 	result := &vision.AnalyzeResult{
 		Text:  "the analysis",
 		Usage: fantasy.Usage{TotalTokens: 99},
 	}
 
-	out := captureStdout(t, func() {
-		printText(result, false)
-	})
+	var buf bytes.Buffer
+	printText(&buf, result, false)
+
+	out := buf.String()
 	require.Contains(t, out, "--- Analysis ---")
 	require.Contains(t, out, "the analysis")
 	require.Contains(t, out, "Tokens used: 99")
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestPrintTextStreamedOmitsAnalysisHeader(t *testing.T) {
+	t.Parallel()
+
 	result := &vision.AnalyzeResult{
 		Text:  "already streamed",
 		Usage: fantasy.Usage{TotalTokens: 3},
 	}
 
-	out := captureStdout(t, func() {
-		printText(result, true)
-	})
+	var buf bytes.Buffer
+	printText(&buf, result, true)
+
+	out := buf.String()
 	require.NotContains(t, out, "already streamed", "streamed output must not reprint text")
 	require.Contains(t, out, "Tokens used: 3")
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestRunAnalysisText(t *testing.T) {
+	t.Parallel()
+
 	agent := newTestAgent(t, &cliMockModel{})
 	cfg := &config{prompt: "review this"}
 	images := []*vision.ImageSource{testImage()}
 
-	out := captureStdout(t, func() {
-		runAnalysis(context.Background(), agent, cfg, images)
-	})
+	var buf bytes.Buffer
+	runAnalysis(context.Background(), agent, cfg, images, &buf, io.Discard)
+
+	out := buf.String()
 	require.Contains(t, out, "mock analysis")
 	require.Contains(t, out, "Tokens used: 42")
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestRunAnalysisJSON(t *testing.T) {
+	t.Parallel()
+
 	agent := newTestAgent(t, &cliMockModel{})
 	cfg := &config{prompt: "review this", jsonOutput: true}
 	images := []*vision.ImageSource{testImage()}
 
-	out := captureStdout(t, func() {
-		runAnalysis(context.Background(), agent, cfg, images)
-	})
+	var buf bytes.Buffer
+	runAnalysis(context.Background(), agent, cfg, images, &buf, io.Discard)
+
+	out := buf.String()
 	require.Contains(t, out, `"text": "mock analysis"`)
 	require.Contains(t, out, `"totalTokens": 42`)
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestRunAnalysisStream(t *testing.T) {
+	t.Parallel()
+
 	agent := newTestAgent(t, &cliMockModel{})
 	cfg := &config{prompt: "review this", stream: true}
 	images := []*vision.ImageSource{testImage()}
 
-	out := captureStdout(t, func() {
-		runAnalysis(context.Background(), agent, cfg, images)
-	})
+	var buf bytes.Buffer
+	runAnalysis(context.Background(), agent, cfg, images, &buf, io.Discard)
+
+	out := buf.String()
 	require.Contains(t, out, "mock stream")
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestRunAnalysisStructuredDispatchesToRunStructured(t *testing.T) {
+	t.Parallel()
+
 	agent := newTestAgent(t, &cliMockModel{})
 	cfg := &config{prompt: "review this", structured: true}
 	images := []*vision.ImageSource{testImage()}
 
-	out := captureStdout(t, func() {
-		runAnalysis(context.Background(), agent, cfg, images)
-	})
+	var buf bytes.Buffer
+	runAnalysis(context.Background(), agent, cfg, images, &buf, io.Discard)
+
+	out := buf.String()
 	require.Contains(t, out, "test layout")
 }
 
-//nolint:paralleltest // captureStdout mutates os.Stdout; cannot run concurrently
 func TestRunStructured(t *testing.T) {
+	t.Parallel()
+
 	agent := newTestAgent(t, &cliMockModel{})
 	cfg := &config{prompt: "review this"}
 	images := []*vision.ImageSource{testImage()}
 
-	out := captureStdout(t, func() {
-		runStructured(context.Background(), agent, cfg, images)
-	})
+	var buf bytes.Buffer
+	runStructured(context.Background(), agent, cfg, images, &buf, io.Discard)
+
+	out := buf.String()
 	require.Contains(t, out, "test layout")
 }
 
 func TestCreateProviderOpenAICompatWithBaseURL(t *testing.T) {
+	t.Parallel()
+
 	t.Setenv("OPENAICOMPAT_BASE_URL", "http://localhost:8080/v1")
 	t.Setenv("OPENAICOMPAT_API_KEY", "")
 
@@ -309,6 +279,8 @@ func TestCreateProviderOpenAICompatWithBaseURL(t *testing.T) {
 }
 
 func TestCreateProviderOpenAICompatMissingBaseURL(t *testing.T) {
+	t.Parallel()
+
 	t.Setenv("OPENAICOMPAT_BASE_URL", "")
 
 	_, err := createProvider("openaicompat")
@@ -316,8 +288,9 @@ func TestCreateProviderOpenAICompatMissingBaseURL(t *testing.T) {
 	require.ErrorIs(t, err, errEnvVarNotSet)
 }
 
-//nolint:paralleltest // captureStderr mutates os.Stderr; cannot run concurrently
 func TestPrintAnalysisErrorClassifiedModelError(t *testing.T) {
+	t.Parallel()
+
 	modelErr := &vision.ModelError{
 		Kind:       vision.KindRateLimited,
 		Op:         "analyze",
@@ -325,18 +298,21 @@ func TestPrintAnalysisErrorClassifiedModelError(t *testing.T) {
 		StatusCode: 429,
 	}
 
-	out := captureStderr(t, func() {
-		printAnalysisError(modelErr, false)
-	})
+	var buf bytes.Buffer
+	printAnalysisError(&buf, modelErr, false)
+
+	out := buf.String()
 	require.Contains(t, out, string(vision.KindRateLimited))
 	require.Contains(t, out, "rate-limiting")
 }
 
-//nolint:paralleltest // captureStderr mutates os.Stderr; cannot run concurrently
 func TestPrintAnalysisErrorUnclassified(t *testing.T) {
-	out := captureStderr(t, func() {
-		printAnalysisError(errors.New("uncategorized boom"), false)
-	})
+	t.Parallel()
+
+	var buf bytes.Buffer
+	printAnalysisError(&buf, errors.New("uncategorized boom"), false)
+
+	out := buf.String()
 	require.Contains(t, out, "Error:")
 	require.Contains(t, out, "uncategorized boom")
 }

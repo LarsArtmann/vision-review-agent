@@ -14,6 +14,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -70,7 +71,7 @@ func main() {
 	images, err := loadImages(cfg.args)
 	cli.ExitOnError(err, "")
 
-	runAnalysis(ctx, agent, cfg, images)
+	runAnalysis(ctx, agent, cfg, images, os.Stdout, os.Stderr)
 }
 
 type config struct {
@@ -207,9 +208,10 @@ func runAnalysis(
 	agent *vision.Agent,
 	cfg *config,
 	images []*vision.ImageSource,
+	stdout, stderr io.Writer,
 ) {
 	if cfg.structured {
-		runStructured(ctx, agent, cfg, images)
+		runStructured(ctx, agent, cfg, images, stdout, stderr)
 
 		return
 	}
@@ -220,28 +222,28 @@ func runAnalysis(
 	)
 
 	if cfg.stream {
-		fmt.Println("Analyzing (streaming)...")
+		fmt.Fprintln(stdout, "Analyzing (streaming)...")
 
 		result, err = agent.AnalyzeStream(ctx, cfg.prompt, func(text string) error {
-			fmt.Print(text)
+			fmt.Fprint(stdout, text)
 
 			return nil
 		}, images...)
 	} else {
-		fmt.Println("Analyzing...")
+		fmt.Fprintln(stdout, "Analyzing...")
 
 		result, err = agent.Analyze(ctx, cfg.prompt, images...)
 	}
 
 	if err != nil {
-		printAnalysisError(err, cfg.stream)
+		printAnalysisError(stderr, err, cfg.stream)
 		os.Exit(1)
 	}
 
 	if cfg.jsonOutput {
-		printJSON(result)
+		printJSON(stdout, result)
 	} else {
-		printText(result, cfg.stream)
+		printText(stdout, result, cfg.stream)
 	}
 }
 
@@ -251,20 +253,21 @@ func runStructured(
 	agent *vision.Agent,
 	cfg *config,
 	images []*vision.ImageSource,
+	stdout, stderr io.Writer,
 ) {
-	fmt.Println("Analyzing (structured)...")
+	fmt.Fprintln(stdout, "Analyzing (structured)...")
 
 	result, err := vision.AnalyzeStructured[uiReview](ctx, agent, cfg.prompt, images...)
 	if err != nil {
-		printAnalysisError(err, false)
+		printAnalysisError(stderr, err, false)
 		os.Exit(1)
 	}
 
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(stdout)
 	enc.SetIndent("", "  ")
 
 	if err := enc.Encode(result.Object); err != nil {
-		fmt.Fprintln(os.Stderr, "Error encoding JSON:", err)
+		fmt.Fprintln(stderr, "Error encoding JSON:", err)
 	}
 }
 
@@ -287,7 +290,7 @@ type uiIssue struct {
 // printAnalysisError prints a user-friendly error message with actionable
 // advice when the error is a classified ModelError, or falls back to the raw
 // error string for unclassified errors.
-func printAnalysisError(err error, streamed bool) {
+func printAnalysisError(w io.Writer, err error, streamed bool) {
 	prefix := "Error:"
 	if streamed {
 		prefix = "\nError:"
@@ -295,20 +298,20 @@ func printAnalysisError(err error, streamed bool) {
 
 	modelErr, ok := errors.AsType[*vision.ModelError](err)
 	if !ok {
-		fmt.Fprintln(os.Stderr, prefix, err)
+		fmt.Fprintln(w, prefix, err)
 
 		return
 	}
 
 	advice := adviceForKind(modelErr.Kind)
 	if advice != "" {
-		fmt.Fprintf(os.Stderr, "%s [%s] %s\n", prefix, modelErr.Kind, advice)
-		fmt.Fprintf(os.Stderr, "  Details: %s\n", modelErr.Cause)
+		fmt.Fprintf(w, "%s [%s] %s\n", prefix, modelErr.Kind, advice)
+		fmt.Fprintf(w, "  Details: %s\n", modelErr.Cause)
 
 		return
 	}
 
-	fmt.Fprintln(os.Stderr, prefix, err)
+	fmt.Fprintln(w, prefix, err)
 }
 
 // adviceForKind returns a user-actionable hint for a given error kind,
@@ -346,13 +349,13 @@ func adviceForKind(kind vision.ErrorKind) string {
 	}
 }
 
-func printText(result *vision.AnalyzeResult, streamed bool) {
+func printText(w io.Writer, result *vision.AnalyzeResult, streamed bool) {
 	if !streamed {
-		fmt.Println("\n--- Analysis ---")
-		fmt.Println(result.Text)
+		fmt.Fprintln(w, "\n--- Analysis ---")
+		fmt.Fprintln(w, result.Text)
 	}
 
-	fmt.Printf("\nTokens used: %d\n", result.Usage.TotalTokens)
+	fmt.Fprintf(w, "\nTokens used: %d\n", result.Usage.TotalTokens)
 }
 
 // jsonUsage is the shape of the JSON output produced by `-json`.
@@ -368,7 +371,7 @@ type jsonOutput struct {
 	Usage jsonUsage `json:"usage"`
 }
 
-func printJSON(result *vision.AnalyzeResult) {
+func printJSON(w io.Writer, result *vision.AnalyzeResult) {
 	output := jsonOutput{
 		Text: result.Text,
 		Usage: jsonUsage{
@@ -377,7 +380,7 @@ func printJSON(result *vision.AnalyzeResult) {
 			TotalTokens:  result.Usage.TotalTokens,
 		},
 	}
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 
 	if err := enc.Encode(output); err != nil {

@@ -86,7 +86,7 @@ func TestAnalyzeClassifiesModelError(t *testing.T) {
 			name: "content filter rejection (400 + signal phrase)",
 			modelErr: &fantasy.ProviderError{
 				Title:      fantasy.ErrorTitleForStatusCode(http.StatusBadRequest),
-				Message:    "Request rejected by the content filter policy",
+				Message:    "Your request was rejected as a result of our safety system.",
 				StatusCode: http.StatusBadRequest,
 			},
 			wantKind:  apperrors.KindContentFilter,
