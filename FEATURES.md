@@ -19,7 +19,7 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 - **AnalyzeStructuredStream[T]** — Stream partial typed objects as they arrive
 - **AnalyzeConversation** — Multi-turn analysis with conversation history
 - **AnalyzeConversationStream** — Streaming multi-turn analysis
-- **AnalyzeBatch** — Concurrent analysis of multiple images with bounded parallelism (per-image error capture + classification)
+- **AnalyzeBatch** — Concurrent analysis of multiple images with bounded parallelism (per-image error capture + classification + timing via `BatchResult.Duration`)
 
 ### Image Loading
 
@@ -66,9 +66,9 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 
 ### Error Handling
 
-- **ModelError** — Classified errors with ErrorKind, StatusCode, IsRetryable(), Unwrap()
-- **ErrorKind** — 14 error categories (rate-limited, timeout, server-error, service-unavailable, network, authentication, not-found, bad-request, content-filter, not-implemented, context-too-large, cancelled, structured-parse, unknown)
-- **Classify** — Automatic error classification from provider responses (HTTP status + content-filter signal detection)
+- **ModelError** — Classified errors with ErrorKind, StatusCode, RetryAfter, IsRetryable(), Unwrap()
+- **ErrorKind** — 16 error categories (rate-limited, timeout, server-error, service-unavailable, overloaded, network, authentication, payment-required, not-found, bad-request, content-filter, not-implemented, context-too-large, cancelled, structured-parse, unknown)
+- **Classify** — Automatic error classification from provider responses (HTTP status + content-filter signal detection from verified provider messages)
 - **IsRetryable** — Quick retryability check
 - **Sentinel errors** — 12 validation sentinel errors (ErrNoModel, ErrEmptyPrompt, etc.)
 

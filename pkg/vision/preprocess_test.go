@@ -533,7 +533,7 @@ func newGIF(t *testing.T, w, h int) *ImageSource {
 		for x := range w {
 			r := byte((x * 255) / max(w, 1)) //nolint:gosec // G115: test helper, bounded by division
 			g := byte((y * 255) / max(h, 1)) //nolint:gosec // G115: test helper, bounded by division
-			b := byte((x ^ y) & 0xFF)        //nolint:gosec // G115: test helper, masked to 0xFF
+			b := byte((x ^ y) & 0xFF)
 			img.SetRGBA(x, y, color.RGBA{R: r, G: g, B: b, A: 255})
 		}
 	}

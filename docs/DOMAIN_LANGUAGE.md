@@ -38,7 +38,7 @@ Immutable objects defined by their attributes:
 | **PreprocessConfig** | Image preprocessing settings: max dimension, JPEG quality. Zero-value disables.                                 | Applied automatically by the agent        |
 | **RetryConfig**      | Retry policy: max attempts, initial backoff, cap, multiplier, jitter. Zero-value falls back to defaults.        | Used by `Config.Retry` and `WithRetry[T]` |
 | **Usage**            | Token usage from a single call: input, output, total.                                                           | Accumulated by `CostTracker`              |
-| **ErrorKind**        | Classified category of a model error (14 kinds). Drives retry vs. fix-input decisions.                          | Enum-like string type                     |
+| **ErrorKind**        | Classified category of a model error (16 kinds). Drives retry vs. fix-input decisions.                          | Enum-like string type                     |
 
 ## Error Classification
 
@@ -47,6 +47,41 @@ Immutable objects defined by their attributes:
 | **ModelError**  | A classified error wrapping a provider/context error with an `ErrorKind`. Extracted via `errors.AsType`. | Domain-level error type    |
 | **Classify**    | The function that inspects a raw provider error and returns a `*ModelError` with the appropriate `Kind`. | `pkg/errors.Classify`      |
 | **IsRetryable** | Quick check: does this error represent a transient failure worth retrying?                               | `ModelError.IsRetryable()` |
+
+## Retry Architecture
+
+The SDK uses a **two-layer retry** design:
+
+### Layer 1: Fantasy HTTP-layer (`Config.MaxRetries`)
+
+- Provider-level retry built into `charm.land/fantasy`
+- Retries at the **HTTP transport** level (connection reset, 5xx, 429)
+- Default: `0` (disabled)
+- Handles low-level transient failures before the error reaches vision code
+
+### Layer 2: Vision-layer (`Config.Retry` / `WithRetry[T]`)
+
+- Domain-level retry with exponential backoff + jitter
+- Honors `ModelError.IsRetryable()` — only retries transient errors
+- Applied automatically when `Config.Retry *RetryConfig` is set
+- `WithRetry[T]` is the explicit middleware wrapper for per-call control
+- Default: 3 attempts, capped backoff, jitter on (see `DefaultRetryConfig`)
+
+### Composition
+
+When both layers are active:
+1. Fantasy retries first (HTTP-level)
+2. If fantasy exhausts retries, the error is classified into a `*ModelError`
+3. Vision-layer retry kicks in with backoff + jitter
+4. Non-retryable errors (`KindAuthentication`, `KindBadRequest`, etc.) are
+   never retried
+
+### Streaming Exclusion
+
+`AnalyzeStream`, `AnalyzeConversationStream`, and `AnalyzeStructuredStream`
+do **not** auto-retry. Partial-stream + retry has ambiguous delta semantics
+(the caller has already received some chunks). Callers wrap these in
+`WithRetry[T]` manually if needed.
 
 ## Events
 
