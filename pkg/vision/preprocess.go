@@ -2,6 +2,7 @@ package vision
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/gif" // register GIF decoder
@@ -17,6 +18,10 @@ import (
 // out-of-range value. 85 is a good perceptual/size trade-off for vision model
 // input.
 const defaultJPEGQuality = 85
+
+// errInvalidMaxDimension is returned when ResizeImageWithQuality receives a
+// non-positive maxDimension.
+var errInvalidMaxDimension = errors.New("maxDimension must be positive")
 
 // effectiveJPEGQuality returns q clamped to the valid JPEG quality range
 // [1, 100], defaulting to defaultJPEGQuality when q is zero or out of range.
@@ -56,7 +61,7 @@ func ResizeImageWithQuality(img *ImageSource, maxDimension, jpegQuality int) (*I
 	}
 
 	if maxDimension <= 0 {
-		return nil, fmt.Errorf("resize: maxDimension must be positive, got %d", maxDimension)
+		return nil, fmt.Errorf("%w: got %d", errInvalidMaxDimension, maxDimension)
 	}
 
 	decoded, _, err := decodeImage(img.Data)
@@ -178,7 +183,12 @@ func scaleDimensions(width, height, maxDimension int) dimensions {
 // decodeImage decodes an image, returning the image, its format name, and any
 // error. PNG/JPEG/GIF/WebP/BMP are registered via blank imports.
 func decodeImage(data []byte) (image.Image, string, error) {
-	return image.Decode(bytes.NewReader(data))
+	img, format, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, "", fmt.Errorf("decode image: %w", err)
+	}
+
+	return img, format, nil
 }
 
 // maxInt returns the larger of two ints. Prefer this over the builtin where the

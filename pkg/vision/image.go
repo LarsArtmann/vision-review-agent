@@ -3,6 +3,7 @@ package vision
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -10,6 +11,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+)
+
+// Sentinel errors for image loading operations.
+var (
+	errImageDownloadFailed = errors.New("image download failed")
 )
 
 // MediaType represents a valid image media type.
@@ -117,7 +123,7 @@ func LoadImageFromURLWithClient(
 	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("download image from %q: HTTP %d", url, resp.StatusCode)
+		return nil, fmt.Errorf("%w: %q (HTTP %d)", errImageDownloadFailed, url, resp.StatusCode)
 	}
 
 	mediaType := detectMediaTypeFromResponse(resp, url)
