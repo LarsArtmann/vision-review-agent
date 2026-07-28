@@ -302,20 +302,22 @@ func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind 
 // isContentFilterRejection checks whether a 400 ProviderError is actually a
 // content-policy rejection by scanning its message for known signal phrases.
 //
-// The signals are intentionally specific: a bare word like "safety" matches
-// benign provider messages (e.g. "this model has safety best practices"), which
-// would misclassify a retryable request as a non-retryable content rejection.
-// Each signal therefore names the rejection mechanism ("filter", "policy",
-// "blocked", "removed") alongside the topic.
+// Signals are verified against real provider error messages:
+//   - OpenAI: "content_filter" (finish_reason), "content_policy_violation"
+//     (error code), "rejected as a result of our safety system" (DALL-E),
+//     "flagged as potentially violating our usage policy" (invalid_prompt).
+//   - Anthropic: "content filtering policy" (consumer-facing message).
+//
+// Anthropic API and Google Gemini return HTTP 200 for safety refusals (via
+// stop_reason/finishReason), not 400 errors. Those paths are handled
+// separately by the provider layer.
 func isContentFilterRejection(providerErr *fantasy.ProviderError) bool {
 	signals := []string{
-		"content filter",
-		"content policy",
 		"content_filter",
-		"safety filter",
-		"safety policy",
-		"blocked for safety",
-		"removed for safety",
+		"content_policy_violation",
+		"content filtering policy",
+		"safety system",
+		"flagged as potentially violating",
 	}
 
 	msg := strings.ToLower(providerErr.Message)

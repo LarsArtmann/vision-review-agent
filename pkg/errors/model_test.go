@@ -53,13 +53,12 @@ func TestIsContentFilterRejection(t *testing.T) {
 		message string
 		want    bool
 	}{
-		{"content filter phrase", "Request blocked by content filter", true},
-		{"content policy phrase", "Violates content policy", true},
-		{"content_filter snake", "content_filter triggered", true},
-		{"safety filter phrase", "Blocked by safety filter", true},
-		{"safety policy phrase", "Violates safety policy", true},
-		{"removed for safety", "Removed for safety", true},
-		{"case insensitive", "REQUEST BLOCKED BY CONTENT FILTER", true},
+		{"content_filter (openai finish_reason)", "content_filter", true},
+		{"content_policy_violation (openai code)", "content_policy_violation", true},
+		{"safety system (openai message)", "Your request was rejected as a result of our safety system.", true},
+		{"flagged as potentially violating (openai invalid_prompt)", "Your prompt was flagged as potentially violating our usage policy.", true},
+		{"content filtering policy (anthropic consumer)", "Output blocked by content filtering policy", true},
+		{"case insensitive", "YOUR REQUEST WAS REJECTED AS A RESULT OF OUR SAFETY SYSTEM.", true},
 		{"plain bad request", "Invalid prompt format", false},
 		{"empty message", "", false},
 		{"benign safety mention", "This model has safety-related best practices", false},
@@ -175,7 +174,7 @@ func TestClassify(t *testing.T) {
 			name: "provider 400 content filter",
 			err: &fantasy.ProviderError{
 				Title:      fantasy.ErrorTitleForStatusCode(400),
-				Message:    "content filter triggered",
+				Message:    "content_filter triggered",
 				StatusCode: 400,
 			},
 			wantKind:  KindContentFilter,
