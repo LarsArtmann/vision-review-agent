@@ -327,7 +327,7 @@ func write16(buf *bytes.Buffer, v int) {
 
 func write32(buf *bytes.Buffer, v int) {
 	buf.Write(
-		[]byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24)},
+		[]byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24)}, //nolint:gosec // G115: controlled test values
 	)
 }
 

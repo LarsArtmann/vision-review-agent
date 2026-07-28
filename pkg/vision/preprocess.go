@@ -64,7 +64,7 @@ func ResizeImageWithQuality(img *ImageSource, maxDimension, jpegQuality int) (*I
 		return nil, fmt.Errorf("%w: got %d", errInvalidMaxDimension, maxDimension)
 	}
 
-	decoded, _, err := decodeImage(img.Data)
+	decoded, err := decodeImage(img.Data)
 	if err != nil {
 		return nil, fmt.Errorf("resize: decode (mediaType=%v): %w", img.MediaType, err)
 	}
@@ -110,7 +110,7 @@ func CompressImage(img *ImageSource, jpegQuality int) (*ImageSource, error) {
 		return nil, ErrEmptyImageData
 	}
 
-	decoded, _, err := decodeImage(img.Data)
+	decoded, err := decodeImage(img.Data)
 	if err != nil {
 		return nil, fmt.Errorf("compress: decode (mediaType=%v): %w", img.MediaType, err)
 	}
@@ -182,13 +182,13 @@ func scaleDimensions(width, height, maxDimension int) dimensions {
 
 // decodeImage decodes an image, returning the image, its format name, and any
 // error. PNG/JPEG/GIF/WebP/BMP are registered via blank imports.
-func decodeImage(data []byte) (image.Image, string, error) {
-	img, format, err := image.Decode(bytes.NewReader(data))
+func decodeImage(data []byte) (image.Image, error) {
+	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
-		return nil, "", fmt.Errorf("decode image: %w", err)
+		return nil, fmt.Errorf("decode image: %w", err)
 	}
 
-	return img, format, nil
+	return img, nil
 }
 
 // maxInt returns the larger of two ints. Prefer this over the builtin where the

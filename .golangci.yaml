@@ -262,7 +262,6 @@ linters:
     paths:
       - \.gen\.go$
       - _templ\.go$
-      - pkg/vision/
       - vendor/
 formatters:
   enable:
@@ -277,7 +276,6 @@ formatters:
     generated: lax
     paths:
       - _templ\.go$
-      - pkg/vision/
 issues:
   max-issues-per-linter: 50
   max-same-issues: 10
