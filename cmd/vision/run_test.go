@@ -268,8 +268,6 @@ func TestRunStructured(t *testing.T) {
 }
 
 func TestCreateProviderOpenAICompatWithBaseURL(t *testing.T) {
-	t.Parallel()
-
 	t.Setenv("OPENAICOMPAT_BASE_URL", "http://localhost:8080/v1")
 	t.Setenv("OPENAICOMPAT_API_KEY", "")
 
@@ -279,8 +277,6 @@ func TestCreateProviderOpenAICompatWithBaseURL(t *testing.T) {
 }
 
 func TestCreateProviderOpenAICompatMissingBaseURL(t *testing.T) {
-	t.Parallel()
-
 	t.Setenv("OPENAICOMPAT_BASE_URL", "")
 
 	_, err := createProvider("openaicompat")

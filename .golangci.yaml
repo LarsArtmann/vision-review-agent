@@ -259,6 +259,9 @@ linters:
         text: unused
         linters:
           - unused
+      - text: "Error return value of `fmt.F(println|printf|print).*` is not checked"
+        linters:
+          - errcheck
     paths:
       - \.gen\.go$
       - _templ\.go$
