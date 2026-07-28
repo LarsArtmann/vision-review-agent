@@ -16,10 +16,8 @@ import (
 
 func TestLoadImageFromBase64(t *testing.T) {
 	t.Parallel()
-	t.Parallel()
 
 	t.Run("standard encoding", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		data := []byte("fake image data")
@@ -34,7 +32,6 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 	t.Run("url-safe encoding", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		data := []byte("url-safe data")
 		b64 := base64.URLEncoding.EncodeToString(data)
@@ -45,7 +42,6 @@ func TestLoadImageFromBase64(t *testing.T) {
 	})
 
 	t.Run("raw encoding without padding", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		data := []byte("raw data")
@@ -58,7 +54,6 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 	t.Run("empty string returns ErrEmptyImageData", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		_, err := LoadImageFromBase64("", MediaTypePNG, "test.png")
 		require.Error(t, err)
@@ -66,7 +61,6 @@ func TestLoadImageFromBase64(t *testing.T) {
 	})
 
 	t.Run("invalid base64 returns error", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		_, err := LoadImageFromBase64("!!!not-base64!!!", MediaTypePNG, "test.png")
@@ -76,10 +70,8 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 func TestLoadImageFromURL(t *testing.T) {
 	t.Parallel()
-	t.Parallel()
 
 	t.Run("downloads image successfully", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		imageData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
@@ -99,7 +91,6 @@ func TestLoadImageFromURL(t *testing.T) {
 
 	t.Run("returns error on HTTP 404", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
@@ -113,14 +104,12 @@ func TestLoadImageFromURL(t *testing.T) {
 
 	t.Run("returns error on invalid URL", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		_, err := LoadImageFromURL(context.Background(), "http://[::1]:namedport")
 		require.Error(t, err)
 	})
 
 	t.Run("rejects non-image response body", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -135,7 +124,6 @@ func TestLoadImageFromURL(t *testing.T) {
 	})
 
 	t.Run("LoadImageFromURLWithClient uses custom client", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		imageData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
@@ -156,7 +144,6 @@ func TestLoadImageFromURL(t *testing.T) {
 }
 
 func TestConfigValidationExtended(t *testing.T) {
-	t.Parallel()
 	t.Parallel()
 
 	tests := []struct {
@@ -215,7 +202,6 @@ func TestConfigValidationExtended(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-		t.Parallel()
 			t.Parallel()
 
 			err := tt.config.Validate()
@@ -232,6 +218,7 @@ func TestConversation(t *testing.T) {
 	t.Parallel()
 	t.Run("empty conversation has zero messages", func(t *testing.T) {
 		t.Parallel()
+
 		conv := NewConversation()
 		require.Equal(t, 0, conv.Len())
 		require.Empty(t, conv.Messages())
@@ -239,6 +226,7 @@ func TestConversation(t *testing.T) {
 
 	t.Run("AddUserMessage appends user message", func(t *testing.T) {
 		t.Parallel()
+
 		conv := NewConversation()
 		conv.AddUserMessage("describe this", ImageSrc())
 
@@ -250,6 +238,7 @@ func TestConversation(t *testing.T) {
 
 	t.Run("AddAssistantMessage appends assistant message", func(t *testing.T) {
 		t.Parallel()
+
 		conv := NewConversation()
 		conv.AddAssistantMessage("here is the analysis")
 
@@ -258,6 +247,7 @@ func TestConversation(t *testing.T) {
 
 	t.Run("multi-turn conversation accumulates messages", func(t *testing.T) {
 		t.Parallel()
+
 		conv := NewConversation()
 		conv.AddUserMessage("first question", ImageSrc())
 		conv.AddAssistantMessage("first answer")
@@ -268,6 +258,7 @@ func TestConversation(t *testing.T) {
 
 	t.Run("nil images filtered in AddUserMessage", func(t *testing.T) {
 		t.Parallel()
+
 		conv := NewConversation()
 		conv.AddUserMessage("test", nil, nil)
 
@@ -278,6 +269,7 @@ func TestConversation(t *testing.T) {
 
 	t.Run("fluent chaining returns same conversation", func(t *testing.T) {
 		t.Parallel()
+
 		conv := NewConversation()
 		returned := conv.AddUserMessage("test")
 		require.Same(t, conv, returned)
@@ -285,6 +277,7 @@ func TestConversation(t *testing.T) {
 
 	t.Run("Clear resets messages and returns same instance", func(t *testing.T) {
 		t.Parallel()
+
 		conv := NewConversation()
 		conv.AddUserMessage("first", ImageSrc())
 		conv.AddAssistantMessage("answer")
@@ -302,6 +295,7 @@ func TestAnalyzeConversation(t *testing.T) {
 	t.Parallel()
 	t.Run("analyzes with conversation history", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -323,6 +317,7 @@ func TestAnalyzeConversation(t *testing.T) {
 
 	t.Run("returns error for empty prompt", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -333,6 +328,7 @@ func TestAnalyzeConversation(t *testing.T) {
 
 	t.Run("returns error for no images", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -346,6 +342,7 @@ func TestAnalyzeConversationStream(t *testing.T) {
 	t.Parallel()
 	t.Run("streams with conversation history", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -376,6 +373,7 @@ func TestBatchAnalysis(t *testing.T) {
 	t.Parallel()
 	t.Run("analyzes multiple images concurrently", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -398,6 +396,7 @@ func TestBatchAnalysis(t *testing.T) {
 
 	t.Run("handles nil images gracefully", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -418,6 +417,7 @@ func TestBatchAnalysis(t *testing.T) {
 
 	t.Run("captures errors per-image", func(t *testing.T) {
 		t.Parallel()
+
 		model := &mockModel{generateErr: errors.New("model down")}
 		agent, err := NewAgent(Config{Model: model})
 		require.NoError(t, err)
@@ -439,6 +439,7 @@ func TestHooks(t *testing.T) {
 	t.Parallel()
 	t.Run("OnStart fires with prompt and image count", func(t *testing.T) {
 		t.Parallel()
+
 		var (
 			mu        sync.Mutex
 			gotPrompt string
@@ -470,6 +471,7 @@ func TestHooks(t *testing.T) {
 
 	t.Run("OnFinish fires with result", func(t *testing.T) {
 		t.Parallel()
+
 		var gotResult *AnalyzeResult
 
 		agent, err := NewAgent(Config{
@@ -491,6 +493,7 @@ func TestHooks(t *testing.T) {
 
 	t.Run("OnError fires on model failure", func(t *testing.T) {
 		t.Parallel()
+
 		var gotErr error
 
 		agent, err := NewAgent(Config{
@@ -511,6 +514,7 @@ func TestHooks(t *testing.T) {
 
 	t.Run("hooks do not fire on validation errors", func(t *testing.T) {
 		t.Parallel()
+
 		var fired atomic.Bool
 
 		agent, err := NewAgent(Config{
@@ -529,14 +533,12 @@ func TestHooks(t *testing.T) {
 
 func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 	t.Parallel()
-	t.Parallel()
 
 	startTracker := func() (*sync.Mutex, *atomic.Int32) {
 		return &sync.Mutex{}, &atomic.Int32{}
 	}
 
 	t.Run("AnalyzeConversation fires OnStart/OnFinish", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		mu, starts := startTracker()
@@ -565,7 +567,6 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeConversation fires OnError on model failure", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		var gotErr atomic.Value
 
@@ -581,7 +582,6 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 	})
 
 	t.Run("AnalyzeConversationStream fires OnStart/OnFinish", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		mu, starts := startTracker()
@@ -616,7 +616,6 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeStructured fires OnStart/OnFinish", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		mu, starts := startTracker()
 
@@ -644,7 +643,6 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeStructured fires OnError on model failure", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		var gotErr atomic.Value
 
@@ -660,7 +658,6 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 	})
 
 	t.Run("AnalyzeStructuredStream fires OnStart/OnFinish", func(t *testing.T) {
-		t.Parallel()
 		t.Parallel()
 
 		mu, starts := startTracker()
@@ -695,7 +692,6 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("hooks do not fire on validation errors in wired methods", func(t *testing.T) {
 		t.Parallel()
-		t.Parallel()
 
 		var fired atomic.Bool
 
@@ -719,6 +715,7 @@ func TestAnalyzeStructuredStream(t *testing.T) {
 	t.Parallel()
 	t.Run("streams partial objects via callback", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -744,6 +741,7 @@ func TestAnalyzeStructuredStream(t *testing.T) {
 
 	t.Run("returns error for empty prompt", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -759,6 +757,7 @@ func TestAnalyzeStructuredStream(t *testing.T) {
 
 	t.Run("returns error for no images", func(t *testing.T) {
 		t.Parallel()
+
 		agent, err := NewAgent(Config{Model: testModel()})
 		require.NoError(t, err)
 
@@ -773,7 +772,6 @@ func TestAnalyzeStructuredStream(t *testing.T) {
 }
 
 func TestConfigAcceptsAdvancedCapabilities(t *testing.T) {
-	t.Parallel()
 	t.Parallel()
 
 	agent, err := NewAgent(Config{
@@ -790,6 +788,7 @@ func TestScreenshotAnalyzerCacheInvalidation(t *testing.T) {
 	t.Parallel()
 	t.Run("config change after first analysis takes effect", func(t *testing.T) {
 		t.Parallel()
+
 		sa := NewScreenshotAnalyzer(testModel())
 
 		_, err := sa.AnalyzeScreenshotImages(context.Background(), "first", ImageSrc())
@@ -810,6 +809,7 @@ func TestScreenshotAnalyzerCacheInvalidation(t *testing.T) {
 
 	t.Run("all builder methods invalidate cache", func(t *testing.T) {
 		t.Parallel()
+
 		sa := NewScreenshotAnalyzer(testModel())
 
 		// Force cache initialization
