@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"charm.land/fantasy"
 	"github.com/stretchr/testify/require"
@@ -85,10 +86,11 @@ func TestClassify(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		err       error
-		wantKind  ErrorKind
-		wantRetry bool
+		name           string
+		err            error
+		wantKind       ErrorKind
+		wantRetry      bool
+		wantRetryAfter time.Duration
 	}{
 		{
 			name:      "nil returns nil",
@@ -169,6 +171,30 @@ func TestClassify(t *testing.T) {
 			wantRetry: true,
 		},
 		{
+			name:      "provider 402 payment required",
+			err:       newProviderErr(http.StatusPaymentRequired),
+			wantKind:  KindPaymentRequired,
+			wantRetry: false,
+		},
+		{
+			name:      "provider 529 overloaded",
+			err:       newProviderErr(529),
+			wantKind:  KindOverloaded,
+			wantRetry: true,
+		},
+		{
+			name: "provider 429 with retry-after header",
+			err: &fantasy.ProviderError{
+				Title:           fantasy.ErrorTitleForStatusCode(429),
+				Message:         "rate limited",
+				StatusCode:      429,
+				ResponseHeaders: map[string]string{"Retry-After": "30"},
+			},
+			wantKind:     KindRateLimited,
+			wantRetry:    true,
+			wantRetryAfter: 30 * time.Second,
+		},
+		{
 			name:      "provider 501 not implemented",
 			err:       newProviderErr(http.StatusNotImplemented),
 			wantKind:  KindNotImplemented,
@@ -237,6 +263,7 @@ func TestClassify(t *testing.T) {
 			require.Equal(t, tt.wantKind, result.Kind, "kind mismatch")
 			require.Equal(t, tt.wantRetry, result.IsRetryable(), "retryability mismatch")
 			require.Equal(t, tt.err, result.Cause, "cause must be preserved")
+			require.Equal(t, tt.wantRetryAfter, result.RetryAfter, "retry-after mismatch")
 		})
 	}
 }
