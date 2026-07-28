@@ -5,6 +5,7 @@ import (
 	"context"
 	"image"
 	"image/color"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"testing"
@@ -518,4 +519,151 @@ func FuzzEncodeImage(f *testing.F) {
 		require.NotEmpty(t, data, "successful encode must produce non-empty data")
 		require.NotEmpty(t, outType, "output media type must be set")
 	})
+}
+
+// newGIF builds a minimal single-frame GIF of the given dimensions for testing
+// the GIF decode + JPEG re-encode path.
+func newGIF(t *testing.T, w, h int) *ImageSource {
+	t.Helper()
+
+	var buf bytes.Buffer
+
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	err := gif.Encode(&buf, img, &gif.Options{NumColors: 256})
+	require.NoError(t, err)
+
+	imgSrc, err := NewImageSource(buf.Bytes(), MediaTypeGIF, "test.gif")
+	require.NoError(t, err)
+
+	return imgSrc
+}
+
+func TestCompressImageOnGIFReEncodesAsJPEG(t *testing.T) {
+	t.Parallel()
+
+	src := newGIF(t, 200, 200)
+
+	compressed, err := CompressImage(src, 50)
+	require.NoError(t, err)
+	require.Equal(t, MediaTypeJPEG, compressed.MediaType, "GIF must be re-encoded as JPEG")
+
+	decoded, err := jpeg.Decode(bytes.NewReader(compressed.Data))
+	require.NoError(t, err)
+	require.Equal(t, 200, decoded.Bounds().Dx())
+	require.Equal(t, 200, decoded.Bounds().Dy())
+}
+
+func TestResizeImageWithQualityOnGIFReEncodesAsJPEG(t *testing.T) {
+	t.Parallel()
+
+	src := newGIF(t, 400, 300)
+
+	resized, err := ResizeImageWithQuality(src, 200, 80)
+	require.NoError(t, err)
+	require.Equal(t, MediaTypeJPEG, resized.MediaType, "GIF must be re-encoded as JPEG after resize")
+
+	decoded, err := jpeg.Decode(bytes.NewReader(resized.Data))
+	require.NoError(t, err)
+	require.Equal(t, 200, decoded.Bounds().Dx(), "longest side capped at maxDimension")
+}
+
+func FuzzResizeImage(f *testing.F) {
+	f.Add(800, 600, 100)
+	f.Add(100, 100, 50)
+	f.Add(1, 1, 10)
+	f.Add(10000, 10000, 500)
+	f.Add(300, 500, 0)
+	f.Add(0, 0, -1)
+
+	f.Fuzz(func(t *testing.T, width, height, maxDim int) {
+		t.Parallel()
+
+		if width <= 0 || height <= 0 || width > 10000 || height > 10000 {
+			return
+		}
+
+		src := newPNG(t, width, height)
+
+		result, err := ResizeImage(src, maxDim)
+		if maxDim <= 0 {
+			require.Error(t, err)
+
+			return
+		}
+
+		require.NoError(t, err)
+
+		// If the image was within bounds, it should be returned unchanged.
+		if width <= maxDim && height <= maxDim {
+			require.Same(t, src, result)
+
+			return
+		}
+
+		// Otherwise the longest side must be at most maxDim.
+		decoded, err := png.Decode(bytes.NewReader(result.Data))
+		require.NoError(t, err)
+		bounds := decoded.Bounds()
+		require.LessOrEqual(t, bounds.Dx(), maxDim)
+		require.LessOrEqual(t, bounds.Dy(), maxDim)
+	})
+}
+
+func FuzzCompressImage(f *testing.F) {
+	f.Add(100, 100, 50)
+	f.Add(50, 50, 90)
+	f.Add(200, 300, 10)
+	f.Add(10, 10, 0)
+	f.Add(500, 500, -5)
+
+	f.Fuzz(func(t *testing.T, width, height, quality int) {
+		t.Parallel()
+
+		if width <= 0 || height <= 0 || width > 5000 || height > 5000 {
+			return
+		}
+
+		src := newJPEG(t, width, height, 95)
+
+		result, err := CompressImage(src, quality)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotEmpty(t, result.Data)
+	})
+}
+
+func BenchmarkEncodeImage(b *testing.B) {
+	b.StopTimer()
+
+	src := image.NewRGBA(image.Rect(0, 0, 512, 512))
+	// Fill with a gradient for realistic encoding workload.
+	for y := range 512 {
+		for x := range 512 {
+			src.Set(x, y, color.RGBA{R: uint8(x / 2), G: uint8(y / 2), B: 128, A: 255})
+		}
+	}
+
+	benchmarks := []struct {
+		name      string
+		mediaType MediaType
+		quality   int
+	}{
+		{"PNG", MediaTypePNG, 0},
+		{"JPEG_q85", MediaTypeJPEG, 85},
+		{"JPEG_q50", MediaTypeJPEG, 50},
+		{"JPEG_q100", MediaTypeJPEG, 100},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			b.StartTimer()
+
+			for range b.N {
+				_, _, err := encodeImage(src, bm.mediaType, bm.quality)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
 }
