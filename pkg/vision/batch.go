@@ -4,6 +4,7 @@ import (
 	"context"
 	"runtime"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/semaphore"
 )
@@ -18,6 +19,10 @@ type BatchResult struct {
 
 	// Err is the error encountered for this image, or nil on success.
 	Err error
+
+	// Duration is the wall-clock time spent analyzing this image.
+	// Zero when the image was skipped (nil input).
+	Duration time.Duration
 }
 
 // AnalyzeBatch analyzes multiple images concurrently with the same prompt.
@@ -58,11 +63,14 @@ func (va *Agent) AnalyzeBatch(
 			_ = sem.Acquire(ctx, 1)
 			defer sem.Release(1)
 
+			start := time.Now()
 			result, err := va.Analyze(ctx, prompt, image)
+
 			results[index] = BatchResult{
-				Index:  index,
-				Result: result,
-				Err:    err,
+				Index:    index,
+				Result:   result,
+				Err:      err,
+				Duration: time.Since(start),
 			}
 		}(i, img)
 	}

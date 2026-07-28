@@ -52,6 +52,17 @@ func (c *Conversation) Len() int {
 	return len(c.messages)
 }
 
+// LastMessage returns the most recent message in the conversation, or false if
+// the conversation is empty. This is useful for inspecting the assistant's
+// latest response or the user's last question without indexing into Messages().
+func (c *Conversation) LastMessage() (fantasy.Message, bool) {
+	if len(c.messages) == 0 {
+		return fantasy.Message{}, false
+	}
+
+	return c.messages[len(c.messages)-1], true
+}
+
 // Clear removes all messages, resetting the conversation to empty.
 // Returns the conversation for fluent chaining.
 func (c *Conversation) Clear() *Conversation {

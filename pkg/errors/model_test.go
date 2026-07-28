@@ -56,7 +56,11 @@ func TestIsContentFilterRejection(t *testing.T) {
 		{"content_filter (openai finish_reason)", "content_filter", true},
 		{"content_policy_violation (openai code)", "content_policy_violation", true},
 		{"safety system (openai message)", "Your request was rejected as a result of our safety system.", true},
-		{"flagged as potentially violating (openai invalid_prompt)", "Your prompt was flagged as potentially violating our usage policy.", true},
+		{
+			"flagged as potentially violating (openai invalid_prompt)",
+			"Your prompt was flagged as potentially violating our usage policy.",
+			true,
+		},
 		{"content filtering policy (anthropic consumer)", "Output blocked by content filtering policy", true},
 		{"case insensitive", "YOUR REQUEST WAS REJECTED AS A RESULT OF OUR SAFETY SYSTEM.", true},
 		{"plain bad request", "Invalid prompt format", false},
