@@ -8,9 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 > **Known issues carried forward (not yet fixed):**
 >
-> - **Tag anomaly.** `v0.2.1` and `v0.3.0` (below) both point to a pre-`[0.2.0]`
->   commit and do not represent real releases. The work in this `[Unreleased]`
->   section is the actual post-v0.2.0 body of work and is **untagged**.
+> - **Tag anomaly (partial).** `v0.2.1` (below) still points to commit
+>   `d5dda4b`, a pre-`[0.2.0]` ancestor, and does not represent a real release.
+>   The `v0.3.0` ghost was deleted in `[0.4.0]` (see that section). Deleting
+>   `v0.2.1` too is deferred — destructive remote-tag op with no functional
+>   impact (it sorts below `[0.2.0]`/`[0.4.0]`).
+
+## [0.4.0] - 2026-07-28
+
+> **Release note — tag cleanup.** The `v0.3.0` tag was a ghost: it pointed at
+> commit `d5dda4b` ("Improve test formatting and readability across vision
+> package", dated 2026-04-27), an ancestor of `[0.2.0]` (`003a256`, 2026-07-23),
+> and never represented a real release. As part of this release the bogus
+> `v0.3.0` tag was deleted (local + remote) and the real post-v0.2.0 body of
+> work ships here. It ships as `[0.4.0]` rather than a fresh `v0.3.0` because
+> `v0.3.0` is permanently burned on `proxy.golang.org` as `d5dda4b`; reusing
+> the number would cause checksum mismatches for any consumer who already
+> resolved the ghost. `v0.2.1` remains a ghost on the same commit for now (see
+> "Known issues" above).
 
 ### Added
 
@@ -172,10 +187,12 @@ safety"`, `"removed for safety"`) that only match real content-policy rejections
 
 ## [0.3.0] - 2026-07-27
 
-> **Tag anomaly:** this tag points to commit `d5dda4b` ("Improve test formatting
-> and readability across vision package", dated 2026-04-27), which is an
-> **ancestor** of `[0.2.0]`. It does not represent a real post-v0.2.0 release.
-> The actual post-v0.2.0 work is in `[Unreleased]` above.
+> **Tag anomaly (resolved in `[0.4.0]`).** This tag pointed to commit
+> `d5dda4b` ("Improve test formatting and readability across vision package",
+> dated 2026-04-27), an **ancestor** of `[0.2.0]`. It never represented a real
+> release. The tag was **deleted** in `[0.4.0]`; the real post-v0.2.0 work ships
+> there. Kept here as a historical record — the version number is permanently
+> burned on `proxy.golang.org` as `d5dda4b`.
 
 ### Changed
 

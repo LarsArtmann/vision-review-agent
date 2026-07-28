@@ -37,7 +37,7 @@ const (
 // tooling can override it at build time via -ldflags "-X main.version=...".
 // The default reflects an unreleased working tree; tagged builds inject the
 // real semver (see flake.nix buildGoModule ldflags).
-var version = "0.3.0-dev"
+var version = "0.4.0"
 
 var (
 	errEnvVarNotSet    = errors.New("environment variable not set")
