@@ -11,6 +11,10 @@ const (
 	formatGIF  = "gif"
 	formatWebP = "webp"
 	formatBMP  = "bmp"
+
+	// minImageHeaderBytes is the minimum data length needed to check any
+	// magic-byte signature. DetectImageFormat returns empty below this.
+	minImageHeaderBytes = 4
 )
 
 // webpSignature returns the RIFF header shared by all RIFF containers.
@@ -41,7 +45,7 @@ func imageSignatures() []imageSignature {
 // For WebP, also verifies the WEBP identifier at offset 8 to reject other
 // RIFF containers like WAV and AVI.
 func DetectImageFormat(data []byte) string {
-	if len(data) < 4 {
+	if len(data) < minImageHeaderBytes {
 		return ""
 	}
 

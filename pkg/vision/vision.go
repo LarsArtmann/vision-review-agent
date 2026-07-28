@@ -119,7 +119,7 @@ type Config struct {
 }
 
 // Validate checks the configuration for errors.
-func (c Config) Validate() error {
+func (c *Config) Validate() error {
 	if c.Model == nil {
 		return ErrNoModel
 	}
@@ -397,6 +397,8 @@ func (va *Agent) AnalyzeConversationStream(
 
 // preparedRequest bundles the validated inputs and derived context produced
 // by prepare, so every analysis method shares the same prologue.
+//
+//nolint:containedctx // ctx is request-scoped, used immediately by the caller, not stored long-term
 type preparedRequest struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -438,12 +440,12 @@ func (va *Agent) prepare(
 func (va *Agent) finishResult(
 	ctx context.Context,
 	text string,
-	result *fantasy.AgentResult,
+	rawResult *fantasy.AgentResult,
 ) *AnalyzeResult {
 	result := &AnalyzeResult{
 		Text:        text,
-		Usage:       result.TotalUsage,
-		RawResponse: result,
+		Usage:       rawResult.TotalUsage,
+		RawResponse: rawResult,
 	}
 	va.config.Hooks.fireFinish(ctx, result)
 
@@ -575,7 +577,7 @@ func (c *Config) optionalParams() optionalModelParams {
 // logical request, not per attempt.
 func (va *Agent) generate(ctx context.Context, call fantasy.AgentCall) (*fantasy.AgentResult, error) {
 	if va.config.Retry == nil {
-		return va.agent.Generate(ctx, call)
+		return va.agent.Generate(ctx, call) //nolint:wrapcheck // classified by caller
 	}
 
 	return WithRetry(ctx, *va.config.Retry, func(ctx context.Context) (*fantasy.AgentResult, error) {

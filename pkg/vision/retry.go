@@ -95,7 +95,7 @@ func (c RetryConfig) delayFor(attempt int) time.Duration {
 	}
 
 	if c.Jitter {
-		grown *= jitterFloor + jitterRange*rand.Float64()
+		grown *= jitterFloor + jitterRange*rand.Float64() //nolint:gosec // G404: jitter intentionally uses math/rand, not crypto-sensitive
 	}
 
 	return time.Duration(grown)
@@ -118,9 +118,9 @@ func WithRetry[T any](
 ) (*T, error) {
 	var lastErr error
 
-	for attempt := 0; attempt < cfg.attempts(); attempt++ {
+	for attempt := range cfg.attempts() {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return nil, err //nolint:wrapcheck // context sentinel errors are idiomatic to return raw
 		}
 
 		result, err := fn(ctx)
@@ -140,7 +140,7 @@ func WithRetry[T any](
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, ctx.Err() //nolint:wrapcheck // context sentinel errors are idiomatic to return raw
 		case <-time.After(cfg.delayFor(attempt)):
 		}
 	}
