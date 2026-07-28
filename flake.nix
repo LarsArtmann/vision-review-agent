@@ -66,7 +66,7 @@
                   github = "LarsArtmann";
                 }
               ];
-              mainProgram = "vision-review-agent";
+              mainProgram = "vision";
             };
           };
 
