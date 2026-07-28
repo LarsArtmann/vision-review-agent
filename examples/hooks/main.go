@@ -22,7 +22,7 @@ import (
 func main() {
 	ctx, model := cli.NewCLIContext(2)
 
-	agent, err := vision.NewAgent(vision.Config{ //nolint:exhaustruct // optional fields use zero-value defaults
+	agent, err := vision.NewAgent(vision.Config{
 		Model:        model,
 		SystemPrompt: "You are a UI/UX expert. Provide actionable feedback.",
 		Temperature:  0.3,

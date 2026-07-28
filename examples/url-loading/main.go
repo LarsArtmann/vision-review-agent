@@ -26,7 +26,7 @@ func main() {
 	url := os.Args[1]
 
 	// Custom client with a timeout; pass nil to use http.DefaultClient.
-	client := &http.Client{Timeout: 30 * time.Second} //nolint:exhaustruct // only Timeout is relevant here
+	client := &http.Client{Timeout: 30 * time.Second}
 
 	img, err := vision.LoadImageFromURLWithClient(ctx, url, client)
 	cli.ExitOnError(err, "Error loading image from URL")

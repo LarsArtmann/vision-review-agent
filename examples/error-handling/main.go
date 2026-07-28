@@ -26,7 +26,7 @@ func main() {
 	rc := vision.DefaultRetryConfig()
 	rc.InitialBackoff = time.Second
 
-	agent, err := vision.NewAgent(vision.Config{ //nolint:exhaustruct // optional fields use zero-value defaults
+	agent, err := vision.NewAgent(vision.Config{
 		Model:       model,
 		Retry:       &rc,
 		Temperature: 0.3,

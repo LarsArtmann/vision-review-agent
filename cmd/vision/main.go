@@ -167,7 +167,6 @@ func usageFunc(flagSet *flag.FlagSet) func() {
 }
 
 func buildConfig(model fantasy.LanguageModel, cfg *config) vision.Config {
-	//nolint:exhaustruct // optional fields intentionally use zero-value defaults
 	config := vision.Config{
 		Model:           model,
 		Temperature:     cfg.temperature,
