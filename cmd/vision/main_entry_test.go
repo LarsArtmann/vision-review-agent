@@ -19,11 +19,11 @@ func TestMainEntryVersionFlag(t *testing.T) {
 
 	binary := filepath.Join(t.TempDir(), "vision")
 
-	cmd := exec.Command("go", "build", "-o", binary, "./") //nolint:gosec // test binary path is controlled
+	cmd := exec.Command("go", "build", "-o", binary, "./") //nolint:gosec,noctx // test binary, timeout not needed
 	cmd.Stderr = os.Stderr
 	require.NoError(t, cmd.Run(), "go build must succeed")
 
-	out, err := exec.Command(binary, "-version").Output() //nolint:gosec // test binary path is controlled
+	out, err := exec.Command(binary, "-version").Output() //nolint:gosec,noctx // test binary, completes instantly
 	require.NoError(t, err, "binary must exit 0 with -version")
 	require.True(t, strings.HasPrefix(string(out), "vision "), "output must start with 'vision '")
 }
@@ -35,10 +35,10 @@ func TestMainEntryNoArgsExitsNonZero(t *testing.T) {
 
 	binary := filepath.Join(t.TempDir(), "vision")
 
-	build := exec.Command("go", "build", "-o", binary, "./") //nolint:gosec // test binary path is controlled
+	build := exec.Command("go", "build", "-o", binary, "./") //nolint:gosec,noctx // test binary, timeout not needed
 	build.Stderr = os.Stderr
 	require.NoError(t, build.Run())
 
-	err := exec.Command(binary).Run() //nolint:gosec // test binary path is controlled
+	err := exec.Command(binary).Run() //nolint:gosec,noctx // test binary, completes instantly
 	require.Error(t, err, "binary must exit non-zero when no images provided")
 }

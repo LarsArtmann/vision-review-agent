@@ -221,6 +221,8 @@ linters:
         - w
         - va
         - sa
+        - x
+        - y
     wrapcheck:
       ignoreSigs:
         - .Errorf(
