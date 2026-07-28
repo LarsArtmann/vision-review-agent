@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"charm.land/fantasy"
 )
@@ -17,10 +20,12 @@ const (
 	statusForbidden            = 403
 	statusNotFound             = 404
 	statusRequestTimeout       = 408
+	statusPaymentRequired      = 402
 	statusTooManyRequests      = 429
 	statusServerError          = 500
 	statusNotImplemented       = 501
 	statusServiceUnavailable   = 503
+	statusOverloaded           = 529 // Anthropic-specific: site is overloaded
 	statusBadRequest           = 400
 	statusContentFilterSignals = 400 // some providers use 400 for content-filter
 )
@@ -58,6 +63,11 @@ const (
 	// backoff (usually longer than for generic 5xx).
 	KindServiceUnavailable ErrorKind = "service_unavailable"
 
+	// KindOverloaded: the provider returned 529 (Anthropic-specific). The API
+	// is temporarily overloaded. Transient — retry with backoff, preferably
+	// after the RetryAfter duration if the provider includes one.
+	KindOverloaded ErrorKind = "overloaded"
+
 	// KindNetwork: a transport-level failure with no HTTP status code
 	// (e.g. connection reset, unexpected EOF mid-stream).
 	// Transient — retry.
@@ -66,6 +76,11 @@ const (
 	// KindAuthentication: the provider rejected credentials (401/403).
 	// Not retryable — fix the API key or permissions.
 	KindAuthentication ErrorKind = "authentication"
+
+	// KindPaymentRequired: the provider returned 402 Payment Required.
+	// The account has insufficient credits or billing is not set up.
+	// Not retryable — add credits or configure billing.
+	KindPaymentRequired ErrorKind = "payment_required"
 
 	// KindNotFound: the requested model or resource does not exist (404).
 	// Not retryable — check the model name.
@@ -125,6 +140,11 @@ type ModelError struct {
 	// provider response. Zero when not applicable.
 	StatusCode int
 
+	// RetryAfter is the duration the provider recommends waiting before
+	// retrying, parsed from the `Retry-After` HTTP header (RFC 7231 §7.1.3).
+	// Zero when not provided or not applicable.
+	RetryAfter time.Duration
+
 	// Cause is the original underlying error.
 	Cause error
 }
@@ -163,9 +183,9 @@ func (e *ModelError) Unwrap() error {
 // content-filter, context-too-large, cancellation, and parse errors are not.
 func (e *ModelError) IsRetryable() bool {
 	switch e.Kind {
-	case KindRateLimited, KindTimeout, KindServerError, KindServiceUnavailable, KindNetwork:
+	case KindRateLimited, KindTimeout, KindServerError, KindServiceUnavailable, KindOverloaded, KindNetwork:
 		return true
-	case KindNotImplemented, KindAuthentication, KindNotFound, KindBadRequest,
+	case KindNotImplemented, KindAuthentication, KindPaymentRequired, KindNotFound, KindBadRequest,
 		KindContentFilter, KindContextTooLarge, KindCancelled, KindStructuredParse, KindUnknown:
 		return false
 	}
@@ -249,6 +269,7 @@ func classifyProviderError(providerErr *fantasy.ProviderError, err error) *Model
 		Op:         "",
 		Prompt:     "",
 		StatusCode: providerErr.StatusCode,
+		RetryAfter: parseRetryAfter(providerErr.ResponseHeaders),
 		Cause:      err,
 	}
 
@@ -261,6 +282,8 @@ func classifyProviderError(providerErr *fantasy.ProviderError, err error) *Model
 	switch providerErr.StatusCode {
 	case statusUnauthorized, statusForbidden:
 		modelErr.Kind = KindAuthentication
+	case statusPaymentRequired:
+		modelErr.Kind = KindPaymentRequired
 	case statusNotFound:
 		modelErr.Kind = KindNotFound
 	case statusTooManyRequests:
@@ -271,6 +294,8 @@ func classifyProviderError(providerErr *fantasy.ProviderError, err error) *Model
 		modelErr.Kind = KindNotImplemented
 	case statusServiceUnavailable:
 		modelErr.Kind = KindServiceUnavailable
+	case statusOverloaded:
+		modelErr.Kind = KindOverloaded
 	case statusBadRequest:
 		if isContentFilterRejection(providerErr) {
 			modelErr.Kind = KindContentFilter
@@ -297,6 +322,35 @@ func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind 
 	default:
 		return KindUnknown
 	}
+}
+
+// parseRetryAfter extracts the Retry-After header value (RFC 7231 §7.1.3)
+// from provider response headers. Supports both delta-seconds and HTTP-date
+// formats. Returns zero when the header is absent or unparseable.
+func parseRetryAfter(headers map[string]string) time.Duration {
+	for k, v := range headers {
+		if !strings.EqualFold(k, "retry-after") {
+			continue
+		}
+
+		v = strings.TrimSpace(v)
+
+		// Try delta-seconds (most common).
+		if seconds, err := strconv.Atoi(v); err == nil && seconds >= 0 {
+			return time.Duration(seconds) * time.Second
+		}
+
+		// Try HTTP-date (RFC 7231).
+		if t, err := http.ParseTime(v); err == nil {
+			if d := time.Until(t); d > 0 {
+				return d
+			}
+		}
+
+		return 0
+	}
+
+	return 0
 }
 
 // isContentFilterRejection checks whether a 400 ProviderError is actually a
