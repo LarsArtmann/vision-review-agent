@@ -532,9 +532,13 @@ func newGIF(t *testing.T, w, h int) *ImageSource {
 	for y := range h {
 		for x := range w {
 			img.SetRGBA(x, y, color.RGBA{
-				R: uint8((x * 255) / max(w, 1)),
-				G: uint8((y * 255) / max(h, 1)),
-				B: uint8((x ^ y) & 0xFF),
+				R: uint8(
+					(x * 255) / max(w, 1),
+				), //nolint:gosec // G115: safe in test helper, values are clamped by division
+				G: uint8(
+					(y * 255) / max(h, 1),
+				), //nolint:gosec // G115: safe in test helper, values are clamped by division
+				B: uint8((x ^ y) & 0xFF), //nolint:gosec // G115: safe in test helper, masked to 0xFF
 				A: 255,
 			})
 		}
@@ -614,6 +618,7 @@ func FuzzResizeImage(f *testing.F) {
 		// Otherwise the longest side must be at most maxDim.
 		decoded, err := png.Decode(bytes.NewReader(result.Data))
 		require.NoError(t, err)
+
 		bounds := decoded.Bounds()
 		require.LessOrEqual(t, bounds.Dx(), maxDim)
 		require.LessOrEqual(t, bounds.Dy(), maxDim)

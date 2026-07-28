@@ -212,6 +212,7 @@ func Wrap(kind ErrorKind, op, prompt string, cause error) *ModelError {
 		Op:         op,
 		Prompt:     prompt,
 		StatusCode: 0,
+		RetryAfter: 0,
 		Cause:      cause,
 	}
 }
@@ -224,6 +225,7 @@ func classified(kind ErrorKind, cause error) *ModelError {
 		Op:         "",
 		Prompt:     "",
 		StatusCode: 0,
+		RetryAfter: 0,
 		Cause:      cause,
 	}
 }

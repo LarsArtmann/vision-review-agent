@@ -190,8 +190,8 @@ func TestClassify(t *testing.T) {
 				StatusCode:      429,
 				ResponseHeaders: map[string]string{"Retry-After": "30"},
 			},
-			wantKind:     KindRateLimited,
-			wantRetry:    true,
+			wantKind:       KindRateLimited,
+			wantRetry:      true,
 			wantRetryAfter: 30 * time.Second,
 		},
 		{
