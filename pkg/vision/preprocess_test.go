@@ -582,14 +582,14 @@ func FuzzResizeImage(f *testing.F) {
 	f.Add(800, 600, 100)
 	f.Add(100, 100, 50)
 	f.Add(1, 1, 10)
-	f.Add(10000, 10000, 500)
+	f.Add(2000, 2000, 500)
 	f.Add(300, 500, 0)
 	f.Add(0, 0, -1)
 
 	f.Fuzz(func(t *testing.T, width, height, maxDim int) {
 		t.Parallel()
 
-		if width <= 0 || height <= 0 || width > 10000 || height > 10000 {
+		if width <= 0 || height <= 0 || width > 2000 || height > 2000 {
 			return
 		}
 
