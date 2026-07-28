@@ -398,3 +398,38 @@ func TestWrap(t *testing.T) {
 func wrapChain(err error) error {
 	return fmt.Errorf("wrapped: %w", err)
 }
+
+func TestParseRetryAfter(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name    string
+		headers map[string]string
+		wantMin time.Duration // minimum expected duration (0 = no header)
+		wantOK  bool          // whether a non-zero duration is expected
+	}{
+		{"nil headers", nil, 0, false},
+		{"empty headers", map[string]string{}, 0, false},
+		{"unrelated headers only", map[string]string{"Content-Type": "application/json"}, 0, false},
+		{"delta-seconds", map[string]string{"Retry-After": "30"}, 29 * time.Second, true},
+		{"zero seconds", map[string]string{"Retry-After": "0"}, 0, false},
+		{"case-insensitive header", map[string]string{"retry-after": "15"}, 14 * time.Second, true},
+		{"garbage value", map[string]string{"Retry-After": "not-a-number"}, 0, false},
+		{"negative seconds", map[string]string{"Retry-After": "-5"}, 0, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := parseRetryAfter(tc.headers)
+			if !tc.wantOK {
+				require.Equal(t, time.Duration(0), got, "expected zero duration when no valid Retry-After")
+
+				return
+			}
+
+			require.GreaterOrEqual(t, got, tc.wantMin, "duration must be at least the expected minimum")
+		})
+	}
+}

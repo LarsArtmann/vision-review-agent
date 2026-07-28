@@ -289,6 +289,26 @@ func TestConversation(t *testing.T) {
 		require.Equal(t, 0, conv.Len())
 		require.Empty(t, conv.Messages())
 	})
+
+	t.Run("LastMessage returns false on empty conversation", func(t *testing.T) {
+		t.Parallel()
+
+		conv := NewConversation()
+		_, ok := conv.LastMessage()
+		require.False(t, ok)
+	})
+
+	t.Run("LastMessage returns most recent message", func(t *testing.T) {
+		t.Parallel()
+
+		conv := NewConversation()
+		conv.AddUserMessage("first question", ImageSrc())
+		conv.AddAssistantMessage("final answer")
+
+		msg, ok := conv.LastMessage()
+		require.True(t, ok)
+		require.Equal(t, fantasy.MessageRoleAssistant, msg.Role)
+	})
 }
 
 func TestAnalyzeConversation(t *testing.T) {
