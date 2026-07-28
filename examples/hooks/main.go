@@ -20,10 +20,7 @@ import (
 )
 
 func main() {
-	cli.RequireArgc(2)
-
-	ctx := context.Background()
-	model := cli.NewOpenAIModel(ctx, "gpt-4o")
+	ctx, model := cli.NewCLIContext(2)
 
 	agent, err := vision.NewAgent(vision.Config{ //nolint:exhaustruct // optional fields use zero-value defaults
 		Model:        model,
@@ -43,12 +40,7 @@ func main() {
 	})
 	cli.ExitOnError(err, "Error creating agent")
 
-	img := cli.LoadImageArg()
-
 	fmt.Println("Analyzing (hooks log to stderr)...")
 
-	result, err := agent.Analyze(ctx, "Find the top UI issues in this screenshot.", img)
-	cli.ExitOnError(err, "")
-
-	cli.PrintResult(result.Text, result.Usage.TotalTokens)
+	cli.AnalyzeAndPrint(ctx, agent, "Find the top UI issues in this screenshot.")
 }
