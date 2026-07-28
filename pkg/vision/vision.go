@@ -440,14 +440,14 @@ func (va *Agent) finishResult(
 	text string,
 	result *fantasy.AgentResult,
 ) *AnalyzeResult {
-	ar := &AnalyzeResult{
+	result := &AnalyzeResult{
 		Text:        text,
 		Usage:       result.TotalUsage,
 		RawResponse: result,
 	}
-	va.config.Hooks.fireFinish(ctx, ar)
+	va.config.Hooks.fireFinish(ctx, result)
 
-	return ar
+	return result
 }
 
 // withPrepared runs the shared prologue (validate → preprocess → fireStart →
@@ -488,13 +488,13 @@ func (va *Agent) buildAgentCall(
 		Files:    files,
 		Messages: messages,
 	}
-	p := va.config.optionalParams()
-	call.MaxOutputTokens = p.maxOutputTokens
-	call.Temperature = p.temperature
-	call.TopP = p.topP
-	call.TopK = p.topK
-	call.PresencePenalty = p.presencePenalty
-	call.FrequencyPenalty = p.frequencyPenalty
+	params := va.config.optionalParams()
+	call.MaxOutputTokens = params.maxOutputTokens
+	call.Temperature = params.temperature
+	call.TopP = params.topP
+	call.TopK = params.topK
+	call.PresencePenalty = params.presencePenalty
+	call.FrequencyPenalty = params.frequencyPenalty
 
 	return call
 }
@@ -510,13 +510,13 @@ func (va *Agent) buildAgentStreamCall(
 		Files:    files,
 		Messages: messages,
 	}
-	p := va.config.optionalParams()
-	call.MaxOutputTokens = p.maxOutputTokens
-	call.Temperature = p.temperature
-	call.TopP = p.topP
-	call.TopK = p.topK
-	call.PresencePenalty = p.presencePenalty
-	call.FrequencyPenalty = p.frequencyPenalty
+	params := va.config.optionalParams()
+	call.MaxOutputTokens = params.maxOutputTokens
+	call.Temperature = params.temperature
+	call.TopP = params.topP
+	call.TopK = params.topK
+	call.PresencePenalty = params.presencePenalty
+	call.FrequencyPenalty = params.frequencyPenalty
 
 	return call
 }
@@ -540,32 +540,32 @@ type optionalModelParams struct {
 // its own default. The receiver is *Config so the returned pointers reference
 // stable storage (the agent's config), matching the prior direct &field usage.
 func (c *Config) optionalParams() optionalModelParams {
-	var p optionalModelParams
+	var params optionalModelParams
 	if c.MaxOutputTokens > 0 {
-		p.maxOutputTokens = &c.MaxOutputTokens
+		params.maxOutputTokens = &c.MaxOutputTokens
 	}
 
 	if c.Temperature != 0 {
-		p.temperature = &c.Temperature
+		params.temperature = &c.Temperature
 	}
 
 	if c.TopP > 0 {
-		p.topP = &c.TopP
+		params.topP = &c.TopP
 	}
 
 	if c.TopK > 0 {
-		p.topK = &c.TopK
+		params.topK = &c.TopK
 	}
 
 	if c.PresencePenalty != 0 {
-		p.presencePenalty = &c.PresencePenalty
+		params.presencePenalty = &c.PresencePenalty
 	}
 
 	if c.FrequencyPenalty != 0 {
-		p.frequencyPenalty = &c.FrequencyPenalty
+		params.frequencyPenalty = &c.FrequencyPenalty
 	}
 
-	return p
+	return params
 }
 
 // generate invokes the agent's Generate, applying Config.Retry when configured.

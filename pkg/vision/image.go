@@ -167,14 +167,14 @@ func decodeBase64Flex(b64 string) ([]byte, error) {
 // detectMediaTypeFromResponse determines the media type from the Content-Type
 // header, falling back to the URL path extension, then to PNG.
 func detectMediaTypeFromResponse(resp *http.Response, url string) MediaType {
-	ct := resp.Header.Get("Content-Type")
-	if ct != "" {
-		mediaType, _, err := mime.ParseMediaType(ct)
+	contentType := resp.Header.Get("Content-Type")
+	if contentType != "" {
+		mediaType, _, err := mime.ParseMediaType(contentType)
 		if err == nil && mediaType != "" {
 			return MediaType(mediaType)
 		}
 
-		if mediaType := MediaType(strings.TrimSpace(ct)); mediaType != "" {
+		if mediaType := MediaType(strings.TrimSpace(contentType)); mediaType != "" {
 			return mediaType
 		}
 	}

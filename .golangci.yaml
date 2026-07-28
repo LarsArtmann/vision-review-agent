@@ -220,6 +220,7 @@ linters:
         - h
         - w
         - va
+        - sa
     wrapcheck:
       ignoreSigs:
         - .Errorf(

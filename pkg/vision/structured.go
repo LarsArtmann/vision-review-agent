@@ -174,13 +174,13 @@ func buildObjectCall[T any](agent *Agent, prompt string, files []fantasy.FilePar
 		SchemaName:        t.Name(),
 		SchemaDescription: "Structured analysis result for " + t.Name(),
 	}
-	p := agent.config.optionalParams()
-	call.MaxOutputTokens = p.maxOutputTokens
-	call.Temperature = p.temperature
-	call.TopP = p.topP
-	call.TopK = p.topK
-	call.PresencePenalty = p.presencePenalty
-	call.FrequencyPenalty = p.frequencyPenalty
+	params := agent.config.optionalParams()
+	call.MaxOutputTokens = params.maxOutputTokens
+	call.Temperature = params.temperature
+	call.TopP = params.topP
+	call.TopK = params.topK
+	call.PresencePenalty = params.presencePenalty
+	call.FrequencyPenalty = params.frequencyPenalty
 
 	return call
 }
