@@ -31,12 +31,14 @@ func NewConversation() *Conversation {
 // Nil images are filtered out automatically.
 func (c *Conversation) AddUserMessage(text string, images ...*ImageSource) *Conversation {
 	c.messages = append(c.messages, newMessage(fantasy.MessageRoleUser, text, images...))
+
 	return c
 }
 
 // AddAssistantMessage appends an assistant response to the history.
 func (c *Conversation) AddAssistantMessage(text string) *Conversation {
 	c.messages = append(c.messages, newMessage(fantasy.MessageRoleAssistant, text))
+
 	return c
 }
 
@@ -54,6 +56,7 @@ func (c *Conversation) Len() int {
 // Returns the conversation for fluent chaining.
 func (c *Conversation) Clear() *Conversation {
 	c.messages = nil
+
 	return c
 }
 

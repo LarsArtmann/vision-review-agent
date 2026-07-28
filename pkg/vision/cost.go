@@ -46,6 +46,7 @@ func (c *CostTracker) AddResult(result *AnalyzeResult) {
 	if result == nil {
 		return
 	}
+
 	c.Add(result.Usage)
 }
 
@@ -53,6 +54,7 @@ func (c *CostTracker) AddResult(result *AnalyzeResult) {
 func (c *CostTracker) Total() fantasy.Usage {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	return c.total
 }
 
@@ -60,6 +62,7 @@ func (c *CostTracker) Total() fantasy.Usage {
 func (c *CostTracker) Calls() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	return c.calls
 }
 
@@ -88,6 +91,7 @@ func NewAgentWithCostTracker(config Config) (*Agent, *CostTracker, error) {
 
 	config.Hooks.OnFinish = func(ctx context.Context, result *AnalyzeResult) {
 		tracker.AddResult(result)
+
 		if userOnFinish != nil {
 			userOnFinish(ctx, result)
 		}

@@ -123,24 +123,31 @@ func (c Config) Validate() error {
 	if c.Model == nil {
 		return ErrNoModel
 	}
+
 	if c.Temperature < 0 || c.Temperature > 2.0 {
 		return ErrInvalidTemperature
 	}
+
 	if c.MaxOutputTokens < 0 {
 		return ErrInvalidMaxTokens
 	}
+
 	if c.TopP < 0 || c.TopP > 1.0 {
 		return ErrInvalidTopP
 	}
+
 	if c.TopK < 0 {
 		return ErrInvalidTopK
 	}
+
 	if c.PresencePenalty < -2.0 || c.PresencePenalty > 2.0 {
 		return ErrInvalidPresencePenalty
 	}
+
 	if c.FrequencyPenalty < -2.0 || c.FrequencyPenalty > 2.0 {
 		return ErrInvalidFrequencyPenalty
 	}
+
 	return nil
 }
 
@@ -172,7 +179,7 @@ type Agent struct {
 // VisionAgent is an alias for Agent for backwards compatibility.
 //
 // Deprecated: Use Agent instead.
-type VisionAgent = Agent //nolint:revive // kept for backwards compatibility with pre-v0.2.0 consumers
+type VisionAgent = Agent
 
 // NewAgent creates a new Agent with the given configuration.
 // Returns an error if the configuration is invalid.
@@ -281,6 +288,7 @@ func (va *Agent) Analyze(
 		if err != nil {
 			classified := classifyModelErr("vision agent generate", prompt, err)
 			va.config.Hooks.fireError(prep.ctx, classified)
+
 			return nil, classified
 		}
 
@@ -302,9 +310,11 @@ func (va *Agent) AnalyzeStream(
 		streamCall := va.buildAgentStreamCall(prompt, prep.files, nil)
 		streamCall.OnTextDelta = func(_, text string) error {
 			builder.WriteString(text)
+
 			if onText != nil {
 				return onText(text)
 			}
+
 			return nil
 		}
 
@@ -312,6 +322,7 @@ func (va *Agent) AnalyzeStream(
 		if err != nil {
 			classified := classifyModelErr("vision agent stream", prompt, err)
 			va.config.Hooks.fireError(prep.ctx, classified)
+
 			return nil, classified
 		}
 
@@ -341,6 +352,7 @@ func (va *Agent) AnalyzeConversation(
 		if err != nil {
 			classified := classifyModelErr("vision agent conversation generate", prompt, err)
 			va.config.Hooks.fireError(prep.ctx, classified)
+
 			return nil, classified
 		}
 
@@ -363,9 +375,11 @@ func (va *Agent) AnalyzeConversationStream(
 		streamCall := va.buildAgentStreamCall(prompt, prep.files, conv.Messages())
 		streamCall.OnTextDelta = func(_, text string) error {
 			builder.WriteString(text)
+
 			if onText != nil {
 				return onText(text)
 			}
+
 			return nil
 		}
 
@@ -373,6 +387,7 @@ func (va *Agent) AnalyzeConversationStream(
 		if err != nil {
 			classified := classifyModelErr("vision agent conversation stream", prompt, err)
 			va.config.Hooks.fireError(prep.ctx, classified)
+
 			return nil, classified
 		}
 
@@ -431,6 +446,7 @@ func (va *Agent) finishResult(
 		RawResponse: result,
 	}
 	va.config.Hooks.fireFinish(ctx, ar)
+
 	return ar
 }
 
@@ -453,9 +469,11 @@ func withPrepared[T any](
 	prep, err := va.prepare(ctx, prompt, images...)
 	if err != nil {
 		var zero T
+
 		return zero, err
 	}
 	defer prep.cancel()
+
 	return fn(prep)
 }
 
@@ -477,6 +495,7 @@ func (va *Agent) buildAgentCall(
 	call.TopK = p.topK
 	call.PresencePenalty = p.presencePenalty
 	call.FrequencyPenalty = p.frequencyPenalty
+
 	return call
 }
 
@@ -498,6 +517,7 @@ func (va *Agent) buildAgentStreamCall(
 	call.TopK = p.topK
 	call.PresencePenalty = p.presencePenalty
 	call.FrequencyPenalty = p.frequencyPenalty
+
 	return call
 }
 
@@ -524,21 +544,27 @@ func (c *Config) optionalParams() optionalModelParams {
 	if c.MaxOutputTokens > 0 {
 		p.maxOutputTokens = &c.MaxOutputTokens
 	}
+
 	if c.Temperature != 0 {
 		p.temperature = &c.Temperature
 	}
+
 	if c.TopP > 0 {
 		p.topP = &c.TopP
 	}
+
 	if c.TopK > 0 {
 		p.topK = &c.TopK
 	}
+
 	if c.PresencePenalty != 0 {
 		p.presencePenalty = &c.PresencePenalty
 	}
+
 	if c.FrequencyPenalty != 0 {
 		p.frequencyPenalty = &c.FrequencyPenalty
 	}
+
 	return p
 }
 
@@ -563,6 +589,7 @@ func (va *Agent) withTimeout(ctx context.Context) (context.Context, context.Canc
 	if va.config.RequestTimeout > 0 {
 		return context.WithTimeout(ctx, va.config.RequestTimeout)
 	}
+
 	return ctx, func() {}
 }
 
@@ -573,6 +600,7 @@ func requireImages(images []*ImageSource) ([]*ImageSource, error) {
 	if len(valid) == 0 {
 		return nil, ErrNoImages
 	}
+
 	return valid, nil
 }
 
@@ -583,6 +611,7 @@ func validateAnalyzeInput(prompt string, images []*ImageSource) ([]*ImageSource,
 	if prompt == "" {
 		return nil, ErrEmptyPrompt
 	}
+
 	return requireImages(images)
 }
 
@@ -595,11 +624,13 @@ func (va *Agent) preprocessImages(images []*ImageSource) ([]*ImageSource, error)
 // filterValidImages removes nil images from the slice.
 func filterValidImages(images []*ImageSource) []*ImageSource {
 	var valid []*ImageSource
+
 	for _, img := range images {
 		if img != nil {
 			valid = append(valid, img)
 		}
 	}
+
 	return valid
 }
 
@@ -614,5 +645,6 @@ func toFileParts(images []*ImageSource) []fantasy.FilePart {
 			ProviderOptions: nil,
 		}
 	}
+
 	return files
 }

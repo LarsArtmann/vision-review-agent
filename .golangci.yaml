@@ -152,7 +152,7 @@ linters:
       exclude:
         - os/exec.Cmd
         # External types we construct partially (can't control their fields)
-        - fantasy\..*
+        - charm\.land/fantasy\..*
         - net/http\..*
         - image/png\..*
         # Own types with many optional fields where zero-value = default/unset.

@@ -19,6 +19,7 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 	t.Run("standard encoding", func(t *testing.T) {
 		t.Parallel()
+
 		data := []byte("fake image data")
 		b64 := base64.StdEncoding.EncodeToString(data)
 
@@ -31,6 +32,7 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 	t.Run("url-safe encoding", func(t *testing.T) {
 		t.Parallel()
+
 		data := []byte("url-safe data")
 		b64 := base64.URLEncoding.EncodeToString(data)
 
@@ -41,6 +43,7 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 	t.Run("raw encoding without padding", func(t *testing.T) {
 		t.Parallel()
+
 		data := []byte("raw data")
 		b64 := base64.RawStdEncoding.EncodeToString(data)
 
@@ -51,6 +54,7 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 	t.Run("empty string returns ErrEmptyImageData", func(t *testing.T) {
 		t.Parallel()
+
 		_, err := LoadImageFromBase64("", MediaTypePNG, "test.png")
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrEmptyImageData)
@@ -58,6 +62,7 @@ func TestLoadImageFromBase64(t *testing.T) {
 
 	t.Run("invalid base64 returns error", func(t *testing.T) {
 		t.Parallel()
+
 		_, err := LoadImageFromBase64("!!!not-base64!!!", MediaTypePNG, "test.png")
 		require.Error(t, err)
 	})
@@ -68,6 +73,7 @@ func TestLoadImageFromURL(t *testing.T) {
 
 	t.Run("downloads image successfully", func(t *testing.T) {
 		t.Parallel()
+
 		imageData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +91,7 @@ func TestLoadImageFromURL(t *testing.T) {
 
 	t.Run("returns error on HTTP 404", func(t *testing.T) {
 		t.Parallel()
+
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 		}))
@@ -97,12 +104,14 @@ func TestLoadImageFromURL(t *testing.T) {
 
 	t.Run("returns error on invalid URL", func(t *testing.T) {
 		t.Parallel()
+
 		_, err := LoadImageFromURL(context.Background(), "http://[::1]:namedport")
 		require.Error(t, err)
 	})
 
 	t.Run("rejects non-image response body", func(t *testing.T) {
 		t.Parallel()
+
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "image/png")
 			_, _ = w.Write([]byte("<html>not an image</html>"))
@@ -116,7 +125,9 @@ func TestLoadImageFromURL(t *testing.T) {
 
 	t.Run("LoadImageFromURLWithClient uses custom client", func(t *testing.T) {
 		t.Parallel()
+
 		imageData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write(imageData)
 		}))
@@ -192,6 +203,7 @@ func TestConfigValidationExtended(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			err := tt.config.Validate()
 			if tt.wantErr != nil {
 				require.ErrorIs(t, err, tt.wantErr)
@@ -313,12 +325,14 @@ func TestAnalyzeConversationStream(t *testing.T) {
 		conv.AddUserMessage("previous", ImageSrc())
 
 		var chunks []string
+
 		result, err := agent.AnalyzeConversationStream(
 			context.Background(),
 			conv,
 			"describe",
 			func(text string) error {
 				chunks = append(chunks, text)
+
 				return nil
 			},
 			ImageSrc(),
@@ -344,6 +358,7 @@ func TestBatchAnalysis(t *testing.T) {
 		results := agent.AnalyzeBatch(context.Background(), "describe", 2, images...)
 
 		require.Len(t, results, 3)
+
 		for i, r := range results {
 			require.NoError(t, r.Err, "image %d should succeed", i)
 			require.NotNil(t, r.Result)
@@ -390,9 +405,11 @@ func TestBatchAnalysis(t *testing.T) {
 
 func TestHooks(t *testing.T) {
 	t.Run("OnStart fires with prompt and image count", func(t *testing.T) {
-		var mu sync.Mutex
-		var gotPrompt string
-		var gotCount int
+		var (
+			mu        sync.Mutex
+			gotPrompt string
+			gotCount  int
+		)
 
 		agent, err := NewAgent(Config{
 			Model: testModel(),
@@ -400,6 +417,7 @@ func TestHooks(t *testing.T) {
 				OnStart: func(_ context.Context, prompt string, count int) {
 					mu.Lock()
 					defer mu.Unlock()
+
 					gotPrompt = prompt
 					gotCount = count
 				},
@@ -481,7 +499,9 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeConversation fires OnStart/OnFinish", func(t *testing.T) {
 		t.Parallel()
+
 		mu, starts := startTracker()
+
 		var finished atomic.Bool
 
 		agent, err := NewAgent(Config{
@@ -490,6 +510,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 				OnStart: func(_ context.Context, _ string, _ int) {
 					mu.Lock()
 					defer mu.Unlock()
+
 					starts.Add(1)
 				},
 				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
@@ -505,6 +526,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeConversation fires OnError on model failure", func(t *testing.T) {
 		t.Parallel()
+
 		var gotErr atomic.Value
 
 		agent, err := NewAgent(Config{
@@ -520,7 +542,9 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeConversationStream fires OnStart/OnFinish", func(t *testing.T) {
 		t.Parallel()
+
 		mu, starts := startTracker()
+
 		var finished atomic.Bool
 
 		agent, err := NewAgent(Config{
@@ -529,6 +553,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 				OnStart: func(_ context.Context, _ string, _ int) {
 					mu.Lock()
 					defer mu.Unlock()
+
 					starts.Add(1)
 				},
 				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
@@ -550,7 +575,9 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeStructured fires OnStart/OnFinish", func(t *testing.T) {
 		t.Parallel()
+
 		mu, starts := startTracker()
+
 		var finished atomic.Bool
 
 		agent, err := NewAgent(Config{
@@ -559,6 +586,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 				OnStart: func(_ context.Context, _ string, _ int) {
 					mu.Lock()
 					defer mu.Unlock()
+
 					starts.Add(1)
 				},
 				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
@@ -574,6 +602,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeStructured fires OnError on model failure", func(t *testing.T) {
 		t.Parallel()
+
 		var gotErr atomic.Value
 
 		agent, err := NewAgent(Config{
@@ -589,7 +618,9 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("AnalyzeStructuredStream fires OnStart/OnFinish", func(t *testing.T) {
 		t.Parallel()
+
 		mu, starts := startTracker()
+
 		var finished atomic.Bool
 
 		agent, err := NewAgent(Config{
@@ -598,6 +629,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 				OnStart: func(_ context.Context, _ string, _ int) {
 					mu.Lock()
 					defer mu.Unlock()
+
 					starts.Add(1)
 				},
 				OnFinish: func(_ context.Context, _ *AnalyzeResult) { finished.Store(true) },
@@ -619,6 +651,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 
 	t.Run("hooks do not fire on validation errors in wired methods", func(t *testing.T) {
 		t.Parallel()
+
 		var fired atomic.Bool
 
 		agent, err := NewAgent(Config{
@@ -770,10 +803,12 @@ func FuzzDecodeBase64Flex(f *testing.F) {
 
 		// A successful decode must round-trip through the canonical encoding.
 		std := base64.StdEncoding.EncodeToString(decoded)
+
 		roundTrip, rtErr := decodeBase64Flex(std)
 		if rtErr != nil {
 			t.Fatalf("re-decoding canonical encoding failed: %v", rtErr)
 		}
+
 		if string(decoded) != string(roundTrip) {
 			t.Fatalf("round-trip mismatch: %q vs %q", decoded, roundTrip)
 		}

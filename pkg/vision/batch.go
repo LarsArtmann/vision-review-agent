@@ -40,11 +40,13 @@ func (va *Agent) AnalyzeBatch(
 
 	results := make([]BatchResult, len(images))
 	sem := semaphore.NewWeighted(int64(maxConcurrency))
+
 	var wg sync.WaitGroup
 
 	for i, img := range images {
 		if img == nil {
 			results[i] = BatchResult{Index: i}
+
 			continue
 		}
 
@@ -66,5 +68,6 @@ func (va *Agent) AnalyzeBatch(
 	}
 
 	wg.Wait()
+
 	return results
 }

@@ -33,6 +33,7 @@ func ImageSrc(filename ...string) *ImageSource {
 	if len(filename) > 0 {
 		name = filename[0]
 	}
+
 	return &ImageSource{
 		Data:      []byte("test"),
 		MediaType: MediaTypePNG,
@@ -50,14 +51,17 @@ func testModel() *mockModel {
 // Returns true if an expected error was found and test should return early.
 func AssertErr(t *testing.T, wantErr bool, wantErrType, err error) bool {
 	t.Helper()
+
 	if wantErr {
 		if err == nil {
 			t.Error("expected error, got nil")
 		} else if wantErrType != nil && !errors.Is(err, wantErrType) {
 			t.Errorf("expected %v, got %v", wantErrType, err)
 		}
+
 		return true
 	}
+
 	return false
 }
 
@@ -65,6 +69,7 @@ func AssertErr(t *testing.T, wantErr bool, wantErrType, err error) bool {
 // name is a description of what is being tested (e.g. "DetectImageFormat()").
 func AssertGotEq(t *testing.T, name string, got, want any) {
 	t.Helper()
+
 	if got != want {
 		t.Errorf("%s = %v, want %v", name, got, want)
 	}
@@ -98,13 +103,16 @@ func (m *mockModel) Generate(_ context.Context, in fantasy.Call) (*fantasy.Respo
 	if m.capture {
 		m.capturedPrompt = in.Prompt
 	}
+
 	n := int(m.generateCalls.Add(1)) // 1-based attempt index
 	if n <= len(m.generateErrs) {
 		return nil, m.generateErrs[n-1]
 	}
+
 	if m.generateErr != nil {
 		return nil, m.generateErr
 	}
+
 	return &fantasy.Response{
 		Content: []fantasy.Content{
 			fantasy.TextContent{Text: "mock response"},
@@ -118,6 +126,7 @@ func (m *mockModel) Stream(_ context.Context, _ fantasy.Call) (fantasy.StreamRes
 	if m.streamErr != nil {
 		return nil, m.streamErr
 	}
+
 	return func(yield func(fantasy.StreamPart) bool) {
 		_ = yield(fantasy.StreamPart{
 			Type: fantasy.StreamPartTypeTextStart,
@@ -147,10 +156,13 @@ func (m *mockModel) GenerateObject(
 	if m.capture {
 		m.capturedPrompt = in.Prompt
 	}
+
 	m.generateObjectCalls.Add(1)
+
 	if m.generateObjectErr != nil {
 		return nil, m.generateObjectErr
 	}
+
 	return &fantasy.ObjectResponse{
 		Object: map[string]any{
 			"layout": testLayout,
@@ -185,6 +197,7 @@ func setupAgent() (context.Context, *Agent) {
 	ctx := context.Background()
 	agent, err := NewAgent(Config{Model: testModel()})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
 	return ctx, agent
 }
 
@@ -194,6 +207,7 @@ func setupAgentWithModel(model *mockModel) (context.Context, *Agent) {
 	ctx := context.Background()
 	agent, err := NewAgent(Config{Model: model})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
 	return ctx, agent
 }
 

@@ -128,10 +128,12 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 		ginkgo.It("should stream analysis results via callback", func() {
 			ctx, agent := setupAgent()
 			img := ImageSrc()
+
 			var chunks []string
 
 			result, err := agent.AnalyzeStream(ctx, "describe", func(text string) error {
 				chunks = append(chunks, text)
+
 				return nil
 			}, img)
 

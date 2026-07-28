@@ -37,6 +37,7 @@ func NewImageSource(data []byte, mediaType MediaType, filename string) (*ImageSo
 	if len(data) == 0 {
 		return nil, ErrEmptyImageData
 	}
+
 	return &ImageSource{
 		Data:      data,
 		MediaType: mediaType,
@@ -172,6 +173,7 @@ func detectMediaTypeFromResponse(resp *http.Response, url string) MediaType {
 		if err == nil && mediaType != "" {
 			return MediaType(mediaType)
 		}
+
 		if mediaType := MediaType(strings.TrimSpace(ct)); mediaType != "" {
 			return mediaType
 		}
@@ -211,8 +213,10 @@ func filenameFromURL(url string) string {
 	if idx := strings.LastIndex(path, "/"); idx >= 0 {
 		path = path[idx+1:]
 	}
+
 	if path == "" {
 		return "image"
 	}
+
 	return path
 }

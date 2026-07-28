@@ -48,54 +48,63 @@ func NewScreenshotAnalyzer(model fantasy.LanguageModel) *ScreenshotAnalyzer {
 // WithSystemPrompt sets a custom system prompt.
 func (sa *ScreenshotAnalyzer) WithSystemPrompt(prompt string) *ScreenshotAnalyzer {
 	sa.config.SystemPrompt = prompt
+
 	return sa.invalidate()
 }
 
 // WithMaxOutputTokens sets the maximum output tokens.
 func (sa *ScreenshotAnalyzer) WithMaxOutputTokens(tokens int64) *ScreenshotAnalyzer {
 	sa.config.MaxOutputTokens = tokens
+
 	return sa.invalidate()
 }
 
 // WithTemperature sets the temperature.
 func (sa *ScreenshotAnalyzer) WithTemperature(temp float64) *ScreenshotAnalyzer {
 	sa.config.Temperature = temp
+
 	return sa.invalidate()
 }
 
 // WithTopP sets the top-p (nucleus sampling) parameter.
 func (sa *ScreenshotAnalyzer) WithTopP(topP float64) *ScreenshotAnalyzer {
 	sa.config.TopP = topP
+
 	return sa.invalidate()
 }
 
 // WithTopK sets the top-k sampling parameter.
 func (sa *ScreenshotAnalyzer) WithTopK(topK int64) *ScreenshotAnalyzer {
 	sa.config.TopK = topK
+
 	return sa.invalidate()
 }
 
 // WithPresencePenalty sets the presence penalty.
 func (sa *ScreenshotAnalyzer) WithPresencePenalty(penalty float64) *ScreenshotAnalyzer {
 	sa.config.PresencePenalty = penalty
+
 	return sa.invalidate()
 }
 
 // WithFrequencyPenalty sets the frequency penalty.
 func (sa *ScreenshotAnalyzer) WithFrequencyPenalty(penalty float64) *ScreenshotAnalyzer {
 	sa.config.FrequencyPenalty = penalty
+
 	return sa.invalidate()
 }
 
 // WithMaxRetries sets the maximum number of retries on transient errors.
 func (sa *ScreenshotAnalyzer) WithMaxRetries(retries int) *ScreenshotAnalyzer {
 	sa.config.MaxRetries = retries
+
 	return sa.invalidate()
 }
 
 // WithRequestTimeout sets a per-request timeout.
 func (sa *ScreenshotAnalyzer) WithRequestTimeout(timeout time.Duration) *ScreenshotAnalyzer {
 	sa.config.RequestTimeout = timeout
+
 	return sa.invalidate()
 }
 
@@ -103,6 +112,7 @@ func (sa *ScreenshotAnalyzer) WithRequestTimeout(timeout time.Duration) *Screens
 // observability such as logging and metrics.
 func (sa *ScreenshotAnalyzer) WithHooks(hooks Hooks) *ScreenshotAnalyzer {
 	sa.config.Hooks = hooks
+
 	return sa.invalidate()
 }
 
@@ -115,6 +125,7 @@ func (sa *ScreenshotAnalyzer) WithMaxDimension(maxDimension int) *ScreenshotAnal
 	} else {
 		sa.config.Preprocess = nil
 	}
+
 	return sa.invalidate()
 }
 
@@ -123,6 +134,7 @@ func (sa *ScreenshotAnalyzer) WithMaxDimension(maxDimension int) *ScreenshotAnal
 // after mutating config fields.
 func (sa *ScreenshotAnalyzer) invalidate() *ScreenshotAnalyzer {
 	sa.cachedAgent = nil
+
 	return sa
 }
 
@@ -131,11 +143,14 @@ func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
 	if sa.cachedAgent != nil {
 		return sa.cachedAgent, nil
 	}
+
 	agent, err := NewAgent(sa.config)
 	if err != nil {
 		return nil, err
 	}
+
 	sa.cachedAgent = agent
+
 	return agent, nil
 }
 
@@ -159,6 +174,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeStream(
 	if err != nil {
 		return nil, err
 	}
+
 	return a.AnalyzeStream(ctx, prompt, onText, images...)
 }
 
@@ -186,6 +202,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshot(
 			err,
 		)
 	}
+
 	return sa.AnalyzeScreenshotImage(ctx, prompt, img)
 }
 
@@ -199,6 +216,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshotImages(
 	if err != nil {
 		return nil, err
 	}
+
 	return agent.Analyze(ctx, prompt, images...)
 }
 
@@ -214,8 +232,10 @@ func (sa *ScreenshotAnalyzer) AnalyzeScreenshots(
 		if err != nil {
 			return nil, fmt.Errorf("AnalyzeScreenshots: path=%q, prompt=%q: %w", path, prompt, err)
 		}
+
 		images[i] = img
 	}
+
 	return sa.AnalyzeScreenshotImages(ctx, prompt, images...)
 }
 
@@ -230,6 +250,7 @@ func (sa *ScreenshotAnalyzer) AnalyzeConversation(
 	if err != nil {
 		return nil, err
 	}
+
 	return a.AnalyzeConversation(ctx, conv, prompt, images...)
 }
 
@@ -245,5 +266,6 @@ func (sa *ScreenshotAnalyzer) AnalyzeConversationStream(
 	if err != nil {
 		return nil, err
 	}
+
 	return a.AnalyzeConversationStream(ctx, conv, prompt, onText, images...)
 }

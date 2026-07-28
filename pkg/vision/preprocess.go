@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	_ "image/gif" // register GIF decoder
 	"image/jpeg"
 	"image/png"
 
 	_ "golang.org/x/image/bmp" // register BMP decoder
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/webp" // register WebP decoder
-
-	_ "image/gif" // register GIF decoder
 )
 
 // defaultJPEGQuality is the quality used when the caller passes zero or an
@@ -139,6 +138,7 @@ func encodeImage(
 
 	if mediaType == MediaTypePNG {
 		var buf bytes.Buffer
+
 		enc := png.Encoder{CompressionLevel: png.BestCompression}
 		if err := enc.Encode(&buf, src); err != nil {
 			return nil, mediaType, fmt.Errorf("encode png: %w", err)
@@ -233,6 +233,7 @@ func preprocessAll(images []*ImageSource, cfg *PreprocessConfig) ([]*ImageSource
 	for i, img := range images {
 		if img == nil {
 			result[i] = nil
+
 			continue
 		}
 

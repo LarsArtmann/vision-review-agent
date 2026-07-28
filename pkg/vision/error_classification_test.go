@@ -24,8 +24,10 @@ func newTestProviderErr(statusCode int) *fantasy.ProviderError {
 // Unlike setupAgentWithModel, it does not require a gomega fail handler.
 func newTestAgent(t *testing.T, model *mockModel) *Agent {
 	t.Helper()
+
 	agent, err := NewAgent(Config{Model: model})
 	require.NoError(t, err)
+
 	return agent
 }
 
@@ -207,6 +209,7 @@ func TestAnalyzeBatchClassifiesPerImageErrors(t *testing.T) {
 	results := agent.AnalyzeBatch(context.Background(), "prompt", 2, ImageSrc("a.png"), ImageSrc("b.png"))
 
 	require.Len(t, results, 2)
+
 	for _, r := range results {
 		require.Nil(t, r.Result, "failed image must have nil Result")
 		require.Error(t, r.Err, "batch error must be captured per-image")
@@ -233,6 +236,7 @@ func TestAnalyzeBatchMixedSuccessAndError(t *testing.T) {
 	require.Len(t, results, 2)
 
 	var successes, failures int
+
 	for _, r := range results {
 		if r.Err != nil {
 			failures++
@@ -243,10 +247,12 @@ func TestAnalyzeBatchMixedSuccessAndError(t *testing.T) {
 			require.Nil(t, r.Result)
 		} else {
 			successes++
+
 			require.NotNil(t, r.Result, "successful image must have a Result")
 			require.Contains(t, r.Result.Text, "mock response")
 		}
 	}
+
 	require.Equal(t, 1, successes, "exactly one image must succeed")
 	require.Equal(t, 1, failures, "exactly one image must fail")
 }

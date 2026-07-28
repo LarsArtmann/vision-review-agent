@@ -44,6 +44,7 @@ func DetectImageFormat(data []byte) string {
 	if len(data) < 4 {
 		return ""
 	}
+
 	for _, sig := range imageSignatures() {
 		if bytes.HasPrefix(data, sig.signature) {
 			if sig.format == formatWebP {
@@ -51,9 +52,11 @@ func DetectImageFormat(data []byte) string {
 					return ""
 				}
 			}
+
 			return sig.format
 		}
 	}
+
 	return ""
 }
 
@@ -68,8 +71,10 @@ func ValidateImage(data []byte) error {
 	if len(data) == 0 {
 		return ErrEmptyImageData
 	}
+
 	if !IsValidImage(data) {
 		return ErrInvalidImage
 	}
+
 	return nil
 }

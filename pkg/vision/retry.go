@@ -58,6 +58,7 @@ func (c RetryConfig) attempts() int {
 	if c.MaxAttempts <= 0 {
 		return defaultRetryAttempts
 	}
+
 	return c.MaxAttempts
 }
 
@@ -65,6 +66,7 @@ func (c RetryConfig) initial() time.Duration {
 	if c.InitialBackoff <= 0 {
 		return defaultRetryInitial
 	}
+
 	return c.InitialBackoff
 }
 
@@ -72,6 +74,7 @@ func (c RetryConfig) cap() time.Duration {
 	if c.MaxBackoff <= 0 {
 		return defaultRetryMaxBackoff
 	}
+
 	return c.MaxBackoff
 }
 
@@ -79,6 +82,7 @@ func (c RetryConfig) multiplier() float64 {
 	if c.Multiplier <= 0 {
 		return defaultRetryMultiplier
 	}
+
 	return c.Multiplier
 }
 

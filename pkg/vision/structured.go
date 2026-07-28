@@ -36,6 +36,7 @@ func AnalyzeStructured[T any](
 		if err != nil {
 			classified := classifyModelErr("vision agent structured generate", prompt, err)
 			agent.config.Hooks.fireError(prep.ctx, classified)
+
 			return nil, classified
 		}
 
@@ -49,6 +50,7 @@ func AnalyzeStructured[T any](
 					err,
 				)
 				agent.config.Hooks.fireError(prep.ctx, parseErr)
+
 				return nil, parseErr
 			}
 		}
@@ -68,6 +70,7 @@ func AnalyzeStructured[T any](
 			Text:  result.RawText,
 			Usage: result.Usage,
 		})
+
 		return finalResult, nil
 	})
 }
@@ -100,6 +103,7 @@ func AnalyzeStructuredStream[T any](
 		if err != nil {
 			classified := classifyModelErr("vision agent structured stream", prompt, err)
 			agent.config.Hooks.fireError(prep.ctx, classified)
+
 			return nil, classified
 		}
 
@@ -126,10 +130,12 @@ func AnalyzeStructuredStream[T any](
 				if part.Error != nil {
 					classified := classifyModelErr("vision agent structured stream", prompt, part.Error)
 					agent.config.Hooks.fireError(prep.ctx, classified)
+
 					return nil, classified
 				}
 			case fantasy.ObjectStreamPartTypeFinish:
 				usage = part.Usage
+
 				finishReason = part.FinishReason
 				if part.Object != nil {
 					_ = visionutil.UnmarshalToType(part.Object, &finalObject)
@@ -148,6 +154,7 @@ func AnalyzeStructuredStream[T any](
 			Text:  rawText,
 			Usage: usage,
 		})
+
 		return finalResult, nil
 	})
 }
@@ -174,6 +181,7 @@ func buildObjectCall[T any](agent *Agent, prompt string, files []fantasy.FilePar
 	call.TopK = p.topK
 	call.PresencePenalty = p.presencePenalty
 	call.FrequencyPenalty = p.frequencyPenalty
+
 	return call
 }
 

@@ -11,8 +11,10 @@ import (
 )
 
 var _ = ginkgo.Describe("ScreenshotAnalyzer", func() {
-	var model *mockModel
-	var ctx context.Context
+	var (
+		model *mockModel
+		ctx   context.Context
+	)
 
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
@@ -53,6 +55,7 @@ var _ = ginkgo.Describe("ScreenshotAnalyzer", func() {
 
 		ginkgo.It("should allow setting hooks and fire them via delegation", func() {
 			var fired int
+
 			sa := NewScreenshotAnalyzer(model).WithHooks(Hooks{
 				OnStart: func(context.Context, string, int) { fired++ },
 			})
@@ -114,6 +117,7 @@ var _ = ginkgo.Describe("ScreenshotAnalyzer", func() {
 			tmpDir := ginkgo.GinkgoT().TempDir()
 			path1 := filepath.Join(tmpDir, "1.png")
 			path2 := filepath.Join(tmpDir, "2.png")
+
 			gomega.Expect(os.WriteFile(path1, []byte("fake"), 0o644)).To(gomega.Succeed())
 			gomega.Expect(os.WriteFile(path2, []byte("fake"), 0o644)).To(gomega.Succeed())
 
@@ -175,12 +179,14 @@ var _ = ginkgo.Describe("ScreenshotAnalyzer", func() {
 			conv.AddUserMessage("previous turn", ImageSrc())
 
 			var chunks []string
+
 			result, err := sa.AnalyzeConversationStream(
 				ctx,
 				conv,
 				"follow up",
 				func(text string) error {
 					chunks = append(chunks, text)
+
 					return nil
 				},
 				ImageSrc(),

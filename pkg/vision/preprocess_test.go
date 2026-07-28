@@ -19,6 +19,7 @@ import (
 // before they reached the model.
 func totalImageBytes(p fantasy.Prompt) int {
 	total := 0
+
 	for _, msg := range p {
 		for _, part := range msg.Content {
 			if file, ok := fantasy.AsContentType[fantasy.FilePart](part); ok {
@@ -26,12 +27,14 @@ func totalImageBytes(p fantasy.Prompt) int {
 			}
 		}
 	}
+
 	return total
 }
 
 // newPNG builds an RGBA PNG of the given dimensions for testing.
 func newPNG(t *testing.T, w, h int) *ImageSource {
 	t.Helper()
+
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	img.Set(0, 0, color.RGBA{R: 255, A: 255})
 	img.Set(w-1, h-1, color.RGBA{G: 255, A: 255})
@@ -41,6 +44,7 @@ func newPNG(t *testing.T, w, h int) *ImageSource {
 
 	src, err := NewImageSource(buf.Bytes(), MediaTypePNG, "test.png")
 	require.NoError(t, err)
+
 	return src
 }
 
@@ -48,6 +52,7 @@ func newPNG(t *testing.T, w, h int) *ImageSource {
 // that different quality levels produce measurably different byte sizes.
 func newJPEG(t *testing.T, w, h, quality int) *ImageSource {
 	t.Helper()
+
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	// High-frequency pattern: adjacent pixels differ a lot, so JPEG quality
 	// has a real effect on output size.
@@ -67,6 +72,7 @@ func newJPEG(t *testing.T, w, h, quality int) *ImageSource {
 
 	src, err := NewImageSource(buf.Bytes(), MediaTypeJPEG, "test.jpg")
 	require.NoError(t, err)
+
 	return src
 }
 
@@ -142,6 +148,7 @@ func TestScaleDimensionsPreservesAspectRatio(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := scaleDimensions(tc.w, tc.h, tc.max)
 			require.Equal(t, tc.wantW, got.width)
 			require.Equal(t, tc.wantH, got.height)
@@ -221,7 +228,7 @@ func TestCompressImageReducesJPEGSize(t *testing.T) {
 	compressed, err := CompressImage(src, 30)
 	require.NoError(t, err)
 	require.Equal(t, MediaTypeJPEG, compressed.MediaType, "JPEG source must stay JPEG")
-	require.True(t, len(compressed.Data) > 0, "compressed image must not be empty")
+	require.Positive(t, len(compressed.Data), "compressed image must not be empty")
 	require.Less(
 		t,
 		len(compressed.Data),
@@ -268,6 +275,7 @@ func newBMP(t *testing.T, w, h int) *ImageSource {
 		dibHeaderSize  = 40
 		bitsPerPixel   = 24
 	)
+
 	rowSize := (w*bitsPerPixel + 7) / 8
 	rowSize = (rowSize + 3) &^ 3 // rows are padded to a multiple of 4 bytes
 	pixelDataSize := rowSize * h
@@ -295,6 +303,7 @@ func newBMP(t *testing.T, w, h int) *ImageSource {
 
 	// Pixel rows, bottom-up, blue/green/red order, padded to rowSize.
 	row := make([]byte, rowSize)
+
 	for y := range h {
 		for x := range w {
 			off := x * 3
@@ -302,11 +311,13 @@ func newBMP(t *testing.T, w, h int) *ImageSource {
 			row[off+1] = byte((y * 30) & 0xff)       // G
 			row[off+2] = byte(((x + y) * 15) & 0xff) // R
 		}
+
 		_, _ = buf.Write(row)
 	}
 
 	src, err := NewImageSource(buf.Bytes(), MediaTypeBMP, "test.bmp")
 	require.NoError(t, err)
+
 	return src
 }
 
@@ -328,7 +339,7 @@ func TestResizeImageDecodesAndResizesBMP(t *testing.T) {
 
 	// BMP is re-encoded as JPEG (non-PNG/JPEG input → JPEG).
 	require.Equal(t, MediaTypeJPEG, resized.MediaType)
-	require.True(t, len(resized.Data) > 0, "resized BMP must produce non-empty output")
+	require.Positive(t, len(resized.Data), "resized BMP must produce non-empty output")
 
 	// The output must decode to a 100-wide (longest side capped) image.
 	config, _, err := image.DecodeConfig(bytes.NewReader(resized.Data))

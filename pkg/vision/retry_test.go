@@ -17,11 +17,14 @@ func TestWithRetrySucceedsFirstAttempt(t *testing.T) {
 	t.Parallel()
 
 	var calls atomic.Int32
+
 	cfg := RetryConfig{MaxAttempts: 3, InitialBackoff: time.Millisecond}
 
 	result, err := WithRetry(context.Background(), cfg, func(_ context.Context) (*string, error) {
 		calls.Add(1)
+
 		s := "ok"
+
 		return &s, nil
 	})
 
@@ -34,13 +37,16 @@ func TestWithRetryRetriesUntilSuccess(t *testing.T) {
 	t.Parallel()
 
 	var calls atomic.Int32
+
 	cfg := RetryConfig{MaxAttempts: 3, InitialBackoff: time.Millisecond, Jitter: false}
 
 	result, err := WithRetry(context.Background(), cfg, func(_ context.Context) (*int, error) {
 		if calls.Add(1) < 3 {
 			return nil, &ModelError{Kind: KindServerError, Cause: errors.New("boom")}
 		}
+
 		v := 42
+
 		return &v, nil
 	})
 
@@ -53,10 +59,12 @@ func TestWithRetryDoesNotRetryNonRetryable(t *testing.T) {
 	t.Parallel()
 
 	var calls atomic.Int32
+
 	cfg := RetryConfig{MaxAttempts: 5, InitialBackoff: time.Millisecond}
 
 	_, err := WithRetry(context.Background(), cfg, func(_ context.Context) (*int, error) {
 		calls.Add(1)
+
 		return nil, &ModelError{Kind: KindBadRequest, Cause: errors.New("bad input")}
 	})
 
@@ -68,10 +76,12 @@ func TestWithRetryExhaustsAttempts(t *testing.T) {
 	t.Parallel()
 
 	var calls atomic.Int32
+
 	cfg := RetryConfig{MaxAttempts: 3, InitialBackoff: time.Millisecond, Jitter: false}
 
 	_, err := WithRetry(context.Background(), cfg, func(_ context.Context) (*int, error) {
 		calls.Add(1)
+
 		return nil, &ModelError{Kind: KindNetwork, Cause: errors.New("dropped")}
 	})
 
@@ -83,17 +93,21 @@ func TestWithRetryRespectsContextCancellation(t *testing.T) {
 	t.Parallel()
 
 	cfg := RetryConfig{MaxAttempts: 10, InitialBackoff: 5 * time.Second, Jitter: false}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
 	var calls atomic.Int32
+
 	start := time.Now()
 	_, err := WithRetry(ctx, cfg, func(_ context.Context) (*int, error) {
 		calls.Add(1)
+
 		return nil, &ModelError{Kind: KindNetwork, Cause: errors.New("dropped")}
 	})
 
 	elapsed := time.Since(start)
+
 	require.Error(t, err)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 	require.Less(t, elapsed, time.Second, "must abort quickly on context cancellation")
@@ -245,7 +259,7 @@ func TestCostTrackerIntegratesWithHooks(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, 1, tracker.Calls())
-	require.Greater(t, tracker.Total().TotalTokens, int64(0))
+	require.Positive(t, tracker.Total().TotalTokens)
 }
 
 func TestNewAgentWithCostTrackerAutoWires(t *testing.T) {
@@ -258,13 +272,14 @@ func TestNewAgentWithCostTrackerAutoWires(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, 1, tracker.Calls(), "tracker must record the call automatically")
-	require.Greater(t, tracker.Total().TotalTokens, int64(0))
+	require.Positive(t, tracker.Total().TotalTokens)
 }
 
 func TestNewAgentWithCostTrackerPreservesUserHooks(t *testing.T) {
 	t.Parallel()
 
 	var userHookCalled atomic.Int32
+
 	agent, tracker, err := NewAgentWithCostTracker(Config{
 		Model: testModel(),
 		Hooks: Hooks{OnFinish: func(_ context.Context, _ *AnalyzeResult) { userHookCalled.Add(1) }},
@@ -290,6 +305,7 @@ func TestNewAgentWithCostTrackerStructuredNilRawResponse(t *testing.T) {
 	t.Parallel()
 
 	var seen *AnalyzeResult
+
 	agent, tracker, err := NewAgentWithCostTracker(Config{
 		Model: testModel(),
 		Hooks: Hooks{OnFinish: func(_ context.Context, r *AnalyzeResult) { seen = r }},
@@ -302,5 +318,5 @@ func TestNewAgentWithCostTrackerStructuredNilRawResponse(t *testing.T) {
 	require.NotNil(t, seen, "OnFinish must fire for structured analysis")
 	require.Nil(t, seen.RawResponse, "structured methods must synthesize a nil RawResponse")
 	require.Equal(t, 1, tracker.Calls(), "cost tracker must still record usage")
-	require.Greater(t, tracker.Total().TotalTokens, int64(0))
+	require.Positive(t, tracker.Total().TotalTokens)
 }
