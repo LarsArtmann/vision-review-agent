@@ -39,6 +39,8 @@ func effectiveJPEGQuality(q int) int {
 // quality, use [ResizeImageWithQuality].
 //
 // Images already within bounds are returned unchanged (no re-encode, no copy).
+// The returned pointer may be the same as the input when no resize was needed;
+// callers must not mutate the returned Data slice in place.
 // The output format follows the input media type when it is PNG or JPEG;
 // other formats (GIF, WebP, BMP) are re-encoded as JPEG to minimize size.
 //
@@ -97,7 +99,9 @@ func ResizeImageWithQuality(img *ImageSource, maxDimension, jpegQuality int) (*I
 // the output format is preserved.
 //
 // If re-encoding does not shrink the image (e.g. the source is already
-// well-compressed at a lower quality), the original is returned unchanged.
+// well-compressed at a lower quality), the original *ImageSource pointer is
+// returned unchanged. Callers must not mutate the returned Data slice in
+// place; if mutation is needed, copy first.
 //
 // Use this to cut token cost before [Agent.Analyze] when an image is already
 // the right dimensions but too large in bytes:
