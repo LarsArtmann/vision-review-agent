@@ -53,7 +53,7 @@
             proxyVendor = true;
             # Inject the nix-derived version into the Go binary so `vision
             # -version` reports the real release tag instead of the hardcoded
-            # "0.3.0-dev" default.
+            # dev default in cmd/vision/main.go.
             ldflags = [ "-X main.version=${version}" ];
             meta = with lib; {
               description = "AI-powered screenshot and image analysis SDK";

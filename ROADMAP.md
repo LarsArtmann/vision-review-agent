@@ -76,8 +76,8 @@ config-hygiene cleanup) lives in [TODO_LIST.md](TODO_LIST.md). The themes:
   backwards compat; plan a removal timeline.
 - **`Agent.Close`** — resource cleanup hook for agents that hold long-lived
   connections or state.
-- **`Conversation.LastMessage` helper** — shipped in v0.3.0-dev (common access pattern).
-- **`BatchResult.Duration`** — shipped in v0.3.0-dev (per-image analysis timing).
+- **`Conversation.LastMessage` helper** — shipped in v0.4.0 (common access pattern).
+- **`BatchResult.Duration`** — shipped in v0.4.0 (per-image analysis timing).
 
 ---
 
@@ -99,15 +99,17 @@ tasks. They are **not** TODO items until answered.
    in the next minor, or must `Hooks` stay stable?
 4. **Semver policy for 0.x** — is 0.x "anything goes" or semver-lite? Should
    breaking changes get a `### Breaking` callout in CHANGELOG?
-5. **Tag anomaly resolution (BLOCKED on user — destructive).** The tags
-   `v0.2.1` and `v0.3.0` both point to commit `d5dda4b` (2026-04-27), which is
-   an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23) and even predates
-   `v0.1.0`. They do not represent real releases — the actual post-v0.2.0 body
-   of work is currently **untagged** in `[Unreleased]`. **Recommended action**
-   (needs approval because moving/deleting tags is destructive and affects
-   anyone who fetched them): once `[Unreleased]` is ready to ship, **delete**
-   both bogus tags locally and on the remote, then **create a fresh `v0.3.0`**
-   on the real release commit. Alternative: supersede them by force-moving
-   `v0.3.0` and deleting `v0.2.1`. Do **not** leave them as-is; a descending
-   tag order (`v0.3.0` < `v0.2.0` by date) breaks tooling that assumes tags are
-   monotonic. Until decided, this stays documented, not acted on.
+5. **Tag anomaly resolution (partially done in `v0.4.0`; `v0.2.1` remains).**
+   The tags `v0.2.1` and `v0.3.0` both pointed to commit `d5dda4b`
+   (2026-04-27), an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23) and
+   even older than `v0.1.0`. They never represented real releases. **Resolved
+   for `v0.3.0`:** the bogus `v0.3.0` tag was deleted (local + remote) as part
+   of the `v0.4.0` release, and the real post-v0.2.0 body of work ships as
+   `v0.4.0`. A fresh `v0.3.0` was **not** recreated because the number is
+   permanently burned on `proxy.golang.org` as `d5dda4b` (reusing it would
+   cause checksum mismatches for anyone who resolved the ghost). **Still open:
+   `v0.2.1`** is a ghost on the same commit `d5dda4b`. It has no functional
+   impact (it sorts below `v0.2.0`/`v0.4.0` and blocks no number), but for a
+   clean history it should be deleted too. Needs approval because deleting a
+   remote tag is destructive and affects anyone who fetched it. Until then it
+   stays documented, not acted on.
