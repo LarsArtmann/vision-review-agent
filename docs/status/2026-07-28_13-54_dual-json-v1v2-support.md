@@ -1,11 +1,11 @@
 # Status Report — Dual `encoding/json` v1+v2 Support
 
-| | |
-|---|---|
-| **Date** | 2026-07-28 13:54 CEST |
-| **Session scope** | Answering "Can we support BOTH json v1 and json v2?" |
-| **Trigger** | Failed `buildflow` run (nix OOM + `erraudit` import errors + `go-auto-upgrade` self-rollback) pasted by user |
-| **Verdict** | Support **already existed**. Hardened the guard rails. |
+|                   |                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Date**          | 2026-07-28 13:54 CEST                                                                                        |
+| **Session scope** | Answering "Can we support BOTH json v1 and json v2?"                                                         |
+| **Trigger**       | Failed `buildflow` run (nix OOM + `erraudit` import errors + `go-auto-upgrade` self-rollback) pasted by user |
+| **Verdict**       | Support **already existed**. Hardened the guard rails.                                                       |
 
 ---
 
@@ -23,12 +23,12 @@ When I arrived, `git status` was **clean** — the daemon's rollback had already
 
 Empirical matrix under Go 1.26.5:
 
-| Regime | `go build ./...` | `go vet ./...` | `go test ./...` | `go test -race ./...` |
-|---|---|---|---|---|
-| default (v1) | ✅ | ✅ | 4/4 packages ok | ✅ |
-| `GOEXPERIMENT=jsonv2` | ✅ | ✅ | 4/4 packages ok | ✅ |
+| Regime                | `go build ./...` | `go vet ./...` | `go test ./...` | `go test -race ./...` |
+| --------------------- | ---------------- | -------------- | --------------- | --------------------- |
+| default (v1)          | ✅               | ✅             | 4/4 packages ok | ✅                    |
+| `GOEXPERIMENT=jsonv2` | ✅               | ✅             | 4/4 packages ok | ✅                    |
 
-Conclusion: the project's existing imports of `encoding/json` transparently support both regimes, because the jsonv2 experiment swaps the *implementation* of `encoding/json` while preserving its v1 API surface (`Marshal`, `Unmarshal`, `NewEncoder`, `SetIndent`, `Decoder`).
+Conclusion: the project's existing imports of `encoding/json` transparently support both regimes, because the jsonv2 experiment swaps the _implementation_ of `encoding/json` while preserving its v1 API surface (`Marshal`, `Unmarshal`, `NewEncoder`, `SetIndent`, `Decoder`).
 
 ### What I Changed
 
@@ -50,7 +50,7 @@ No `.go` source files were modified.
 ## (b) PARTIALLY DONE
 
 - 🟡 **CI job is local-only verified.** It has never run on `ubuntu-latest` GitHub Actions runners. The `GOEXPERIMENT=jsonv2` flag works on Go 1.26 toolchain, but I did not confirm the `actions/setup-go@v5` + `go-version-file: go.mod` path will honor it. **It should** (env var is process-level), but unverified.
-- 🟡 **Documentation of the daemon's misbehavior is reactive, not preventive.** I documented "don't migrate", but did not add a guard that would *block* the `go-auto-upgrade` tool from re-attempting the migration on the next run.
+- 🟡 **Documentation of the daemon's misbehavior is reactive, not preventive.** I documented "don't migrate", but did not add a guard that would _block_ the `go-auto-upgrade` tool from re-attempting the migration on the next run.
 
 ## (c) NOT STARTED
 
@@ -62,7 +62,7 @@ No `.go` source files were modified.
 
 ## (d) TOTALLY FUCKED UP
 
-- 🔴 **Scope-blindness on the user's actual failure log.** The pasted log had *three* problems: (1) nix OOM, (2) `erraudit` import errors, (3) `go-auto-upgrade` self-rollback. I treated the user's framing question ("Can we support BOTH json v1 and v2?") as the whole task and never circled back to the OOM. That's a classic answer-the-question-and-miss-the-problem failure. The user's *question* was answered correctly; their *problem* was only half-addressed.
+- 🔴 **Scope-blindness on the user's actual failure log.** The pasted log had _three_ problems: (1) nix OOM, (2) `erraudit` import errors, (3) `go-auto-upgrade` self-rollback. I treated the user's framing question ("Can we support BOTH json v1 and v2?") as the whole task and never circled back to the OOM. That's a classic answer-the-question-and-miss-the-problem failure. The user's _question_ was answered correctly; their _problem_ was only half-addressed.
 - 🔴 **Did not read `flake.nix` once.** The project lives or dies by its nix flake (per AGENTS.md), the failure log was a nix failure, and I never opened `flake.nix` to understand the build pipeline, `max-build-log`, memory limits, or how `GOEXPERIMENT` might be propagated in the nix path. Inexcusable given the project's stated conventions.
 - 🔴 **Claimed "nix-based reproducibility" verification I never ran.** My final summary table implied nix was covered; it was not.
 
@@ -79,9 +79,9 @@ No `.go` source files were modified.
 ### Product/technical improvements
 
 6. **Quarantine the auto-upgrade daemon.** Either disable `go-auto-upgrade` for this repo, add `encoding/json` to its migration ignore-list, or gate it behind a "dry-run diff only" mode. Until then, every session risks the same broken-import cycle.
-7. **Pin `GOEXPERIMENT` decision explicitly.** Document whether consumers are *expected* to set `GOEXPERIMENT=jsonv2` or whether v2 is a tolerated-but-unsupported configuration. Right now it's "both pass tests" with no stated contract.
+7. **Pin `GOEXPERIMENT` decision explicitly.** Document whether consumers are _expected_ to set `GOEXPERIMENT=jsonv2` or whether v2 is a tolerated-but-unsupported configuration. Right now it's "both pass tests" with no stated contract.
 8. **Address the nix OOM.** Build the `go-modules.drv` with `--max-local-builds 1`, raise `--max-time` / `--default-step-timeout`, or add `requiredSystemFeatures`/memory limits. See question Q2.
-9. **Consider a `go-auto-upgrade` integration test.** Run it in CI on a throwaway branch and assert it produces no diff. That would catch future migration attempts *before* they hit a real session.
+9. **Consider a `go-auto-upgrade` integration test.** Run it in CI on a throwaway branch and assert it produces no diff. That would catch future migration attempts _before_ they hit a real session.
 10. **The `jsonv2-compat` CI job should run against a matrix of Go versions**, not just `go-version-file: go.mod`. v2 semantics can differ between minor versions.
 11. **Add a unit test that exercises the `UnmarshalToType` JSON round-trip path** with a struct containing edge cases (embedded structs, `omitempty`, time.Time) under both regimes — currently coverage is implicit via other tests.
 
@@ -167,7 +167,9 @@ Prioritized roughly by impact × ease (Pareto). Items 1–10 are the high-levera
 ## (g) Questions I Cannot Figure Out Myself
 
 ### Q1 — The `go-auto-upgrade` daemon
+
 The failure log shows a tool called `go-auto-upgrade` that attempted the json migration and then self-rolled-back. **Is this tool:**
+
 - (a) A standalone CLI you run manually (in which case: where's its config, and should I add `encoding/json` to its ignore-list)?
 - (b) Part of the `buildflow` pipeline (the `▶ buildflow -s go-auto-upgrade -v` trace suggests this)?
 - (c) A git pre-commit / CI hook?
@@ -175,7 +177,9 @@ The failure log shows a tool called `go-auto-upgrade` that attempted the json mi
 I need to know **where it's configured** so I can prevent the next migration attempt at the source, not just document around it.
 
 ### Q2 — The nix OOM
+
 The very first failure in your log was `nix-build` getting killed (OOM or timeout) on `*-go-modules.drv`. **What are this machine's constraints?**
+
 - Available RAM during the build?
 - Is this local bare-metal, a VM, or CI?
 - Is `--max-time` / `--default-step-timeout` set anywhere in `flake.nix` or `~/.config/nix`?
@@ -183,7 +187,9 @@ The very first failure in your log was `nix-build` getting killed (OOM or timeou
 I cannot reproduce or fix an OOM without knowing the memory budget. `go-modules` derivations for a project with ~80 transitive deps (per `go.sum`) can easily spike >4 GB during `go mod download` + hashing.
 
 ### Q3 — Commit intent
+
 The working tree now has 2 uncommitted changes (`ci.yml`, `AGENTS.md`). **Do you want me to:**
+
 - (a) Commit them now as-is?
 - (b) Hold until the daemon-config (Q1) and OOM (Q2) are resolved, so all three fixes land together?
 - (c) Leave them for the auto-git daemon to pick up?
