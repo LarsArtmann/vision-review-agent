@@ -215,6 +215,11 @@ linters:
         - a
         - b
         - v
+        - wg
+        - mu
+        - h
+        - w
+        - va
       ignore-type-assert-ok: true
   exclusions:
     generated: lax
