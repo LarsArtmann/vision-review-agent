@@ -605,7 +605,7 @@ func TestHooksFireAcrossAllAnalysisMethods(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = AnalyzeStructuredStream[testReview](
+		_, err = AnalyzeStructuredStream(
 			context.Background(),
 			agent,
 			"prompt",
@@ -644,7 +644,7 @@ func TestAnalyzeStructuredStream(t *testing.T) {
 
 		var partials []testReview
 
-		result, err := AnalyzeStructuredStream[testReview](
+		result, err := AnalyzeStructuredStream(
 			context.Background(),
 			agent,
 			"analyze this",

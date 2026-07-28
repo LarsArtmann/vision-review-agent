@@ -8,6 +8,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"testing"
+	"time"
 
 	"charm.land/fantasy"
 	"github.com/stretchr/testify/require"
@@ -50,8 +51,8 @@ func newJPEG(t *testing.T, w, h, quality int) *ImageSource {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	// High-frequency pattern: adjacent pixels differ a lot, so JPEG quality
 	// has a real effect on output size.
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			img.Set(x, y, color.RGBA{
 				R: uint8((x * 7) & 0xff),
 				G: uint8((y * 13) & 0xff),
@@ -294,8 +295,8 @@ func newBMP(t *testing.T, w, h int) *ImageSource {
 
 	// Pixel rows, bottom-up, blue/green/red order, padded to rowSize.
 	row := make([]byte, rowSize)
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			off := x * 3
 			row[off+0] = byte((x * 30) & 0xff)       // B
 			row[off+1] = byte((y * 30) & 0xff)       // G
@@ -400,4 +401,108 @@ func TestConfigPreprocessAppliedInAnalyzeStructured(t *testing.T) {
 		len(big.Data),
 		"Config.Preprocess must resize the image before structured generate too",
 	)
+}
+
+func TestCompressImageReturnsOriginalWhenOutputNotSmaller(t *testing.T) {
+	t.Parallel()
+
+	// A JPEG already at quality 20, re-encoded at quality 90 → larger output.
+	// The guard must return the original unchanged rather than inflating it.
+	src := newJPEG(t, 100, 100, 20)
+
+	result, err := CompressImage(src, 90)
+	require.NoError(t, err)
+	require.Same(t, src, result, "must return original when re-encoding would not shrink")
+}
+
+func TestResizeImageWithQualityPreservesPNGFormat(t *testing.T) {
+	t.Parallel()
+
+	big := newPNG(t, 400, 300)
+
+	// quality is irrelevant for PNG (lossless), but the function must not
+	// convert PNG → JPEG and must preserve the format.
+	resized, err := ResizeImageWithQuality(big, 200, 50)
+	require.NoError(t, err)
+	require.Equal(t, MediaTypePNG, resized.MediaType, "PNG input must stay PNG regardless of quality")
+
+	decoded, err := png.Decode(bytes.NewReader(resized.Data))
+	require.NoError(t, err)
+	require.Equal(t, 200, decoded.Bounds().Dx(), "width must be capped")
+	require.Equal(t, 150, decoded.Bounds().Dy(), "height must preserve aspect ratio")
+}
+
+func TestResizeImageBMPVerifiesBothDimensions(t *testing.T) {
+	t.Parallel()
+
+	big := newBMP(t, 300, 200) // landscape, exceeds maxDimension
+
+	resized, err := ResizeImage(big, 100)
+	require.NoError(t, err)
+	require.Equal(t, MediaTypeJPEG, resized.MediaType, "BMP must be re-encoded as JPEG")
+
+	// Full decode (not just DecodeConfig) to verify BOTH width and height.
+	decoded, err := jpeg.Decode(bytes.NewReader(resized.Data))
+	require.NoError(t, err)
+	require.Equal(t, 100, decoded.Bounds().Dx(), "longest side must be capped at maxDimension")
+	require.Equal(t, 66, decoded.Bounds().Dy(), "height must preserve 3:2 aspect ratio (300:200 → 100:66)")
+}
+
+func TestPreprocessAndRetryBothActive(t *testing.T) {
+	t.Parallel()
+
+	big := newPNG(t, 800, 600)
+
+	transientErr := &fantasy.ProviderError{
+		Title:      fantasy.ErrorTitleForStatusCode(429),
+		Message:    "rate limited",
+		StatusCode: 429,
+	}
+
+	model := &mockModel{
+		capture:      true,
+		generateErrs: []error{transientErr}, // first attempt fails, second succeeds
+	}
+
+	agent := newTestAgent(t, model)
+	agent.config.Preprocess = &PreprocessConfig{MaxDimension: 100}
+	agent.config.Retry = &RetryConfig{
+		MaxAttempts:    2,
+		InitialBackoff: time.Millisecond,
+		MaxBackoff:     time.Millisecond,
+	}
+
+	_, err := agent.Analyze(context.Background(), "describe", big)
+	require.NoError(t, err, "must succeed after retry")
+
+	sent := totalImageBytes(model.capturedPrompt)
+	require.Less(
+		t,
+		sent,
+		len(big.Data),
+		"image must be preprocessed (resized) before reaching the model even with retry active",
+	)
+	require.Equal(t, int32(2), model.generateCalls.Load(), "must have retried once after the transient failure")
+}
+
+func FuzzEncodeImage(f *testing.F) {
+	f.Add(string(MediaTypePNG), 0)
+	f.Add(string(MediaTypeJPEG), 50)
+	f.Add(string(MediaTypeGIF), 100)
+	f.Add(string(MediaTypeWebP), -1)
+	f.Add(string("unknown/format"), 999)
+
+	src := image.NewRGBA(image.Rect(0, 0, 8, 8))
+
+	f.Fuzz(func(t *testing.T, mediaType string, quality int) {
+		t.Parallel()
+
+		data, outType, err := encodeImage(src, MediaType(mediaType), quality)
+		if err != nil {
+			return
+		}
+
+		require.NotEmpty(t, data, "successful encode must produce non-empty data")
+		require.NotEmpty(t, outType, "output media type must be set")
+	})
 }

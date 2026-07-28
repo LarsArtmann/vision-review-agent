@@ -11,10 +11,9 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"log"
+	"os"
 	"time"
 
 	"github.com/larsartmann/vision-review-agent/internal/cli"
@@ -22,10 +21,7 @@ import (
 )
 
 func main() {
-	cli.RequireArgc(2)
-
-	ctx := context.Background()
-	model := cli.NewOpenAIModel(ctx, "gpt-4o")
+	ctx, model := cli.NewCLIContext(2)
 
 	rc := vision.DefaultRetryConfig()
 	rc.InitialBackoff = time.Second
@@ -41,20 +37,23 @@ func main() {
 
 	result, err := agent.Analyze(ctx, "Find the top UI issues in this screenshot.", img)
 	if err != nil {
-		handleError(err)
-
-		return
+		printModelError(err)
+		os.Exit(1)
 	}
 
 	cli.PrintResult(result.Text, result.Usage.TotalTokens)
 }
 
-// handleError demonstrates the map-lookup-on-Kind pattern: each ErrorKind maps
-// to a specific consumer action (retry, fix credentials, reduce input, etc.).
-func handleError(err error) {
+// printModelError demonstrates the map-lookup-on-Kind pattern: it extracts the
+// classified ModelError, prints actionable advice keyed by Kind, then prints the
+// underlying cause for debugging. It does not call os.Exit — the caller decides
+// the exit code, keeping this function reusable and testable.
+func printModelError(err error) {
 	modelErr, ok := errors.AsType[*vision.ModelError](err)
 	if !ok {
-		log.Fatalf("unexpected non-model error: %v", err)
+		fmt.Fprintf(os.Stderr, "unexpected non-model error: %v\n", err)
+
+		return
 	}
 
 	adviceByKind := map[vision.ErrorKind]string{
@@ -74,14 +73,7 @@ func handleError(err error) {
 		vision.KindUnknown:            "Unclassified error.",
 	}
 
-	advice, found := adviceByKind[modelErr.Kind]
-	if !found {
-		fmt.Printf("Unhandled error kind %q: %v\n", modelErr.Kind, modelErr.Cause)
-
-		log.Fatalf("details: %v", err)
-	}
-
-	fmt.Println(advice)
-
-	log.Fatalf("details: %v", err)
+	advice := adviceByKind[modelErr.Kind]
+	fmt.Fprintf(os.Stderr, "[%s] %s\n", modelErr.Kind, advice)
+	fmt.Fprintf(os.Stderr, "  details: %v\n", modelErr.Cause)
 }

@@ -308,21 +308,21 @@ img, _ := vision.LoadImageFromReader(file, vision.MediaTypeJPEG, "photo.jpg")
 
 ## Configuration
 
-| Option             | Description                                                                |
-| ------------------ | -------------------------------------------------------------------------- |
-| `Model`            | The LLM to use (must support vision) — **required**                        |
-| `SystemPrompt`     | Defines agent behavior                                                     |
-| `Temperature`      | Randomness (0.0-2.0)                                                       |
-| `TopP`             | Nucleus sampling (0.0-1.0)                                                 |
-| `TopK`             | Top-k sampling limit                                                       |
-| `PresencePenalty`  | Penalize tokens already present (-2 to 2)                                  |
-| `FrequencyPenalty` | Penalize tokens by frequency (-2 to 2)                                     |
-| `MaxOutputTokens`  | Response length limit                                                      |
-| `MaxRetries`       | Fantasy HTTP-layer retry count for transient errors (0 disables)           |
-| `Retry`            | Vision-layer `*RetryConfig` (backoff + jitter) for non-streaming methods   |
-| `RequestTimeout`   | Per-request timeout                                                        |
-| `Preprocess`       | `*PreprocessConfig` (auto-resize + JPEG quality) before every Analyze*     |
-| `Hooks`            | Lifecycle callbacks (OnStart/OnFinish/OnError)                             |
+| Option             | Description                                                              |
+| ------------------ | ------------------------------------------------------------------------ |
+| `Model`            | The LLM to use (must support vision) — **required**                      |
+| `SystemPrompt`     | Defines agent behavior                                                   |
+| `Temperature`      | Randomness (0.0-2.0)                                                     |
+| `TopP`             | Nucleus sampling (0.0-1.0)                                               |
+| `TopK`             | Top-k sampling limit                                                     |
+| `PresencePenalty`  | Penalize tokens already present (-2 to 2)                                |
+| `FrequencyPenalty` | Penalize tokens by frequency (-2 to 2)                                   |
+| `MaxOutputTokens`  | Response length limit                                                    |
+| `MaxRetries`       | Fantasy HTTP-layer retry count for transient errors (0 disables)         |
+| `Retry`            | Vision-layer `*RetryConfig` (backoff + jitter) for non-streaming methods |
+| `RequestTimeout`   | Per-request timeout                                                      |
+| `Preprocess`       | `*PreprocessConfig` (auto-resize + JPEG quality) before every Analyze*   |
+| `Hooks`            | Lifecycle callbacks (OnStart/OnFinish/OnError)                           |
 
 ## Error Types
 
@@ -343,22 +343,22 @@ img, _ := vision.LoadImageFromReader(file, vision.MediaTypeJPEG, "photo.jpg")
 
 **Classified model errors** (`*vision.ModelError`, extract via `errors.AsType`):
 
-| Kind                    | Retryable | Description                                   |
-| ----------------------- | --------- | --------------------------------------------- |
-| `KindRateLimited`       | Yes       | Provider returned 429                         |
-| `KindTimeout`           | Yes       | Request exceeded deadline                     |
-| `KindServerError`       | Yes       | Provider returned 5xx (not 501/503)           |
-| `KindServiceUnavailable` | Yes      | Provider returned 503                         |
-| `KindNetwork`           | Yes       | Transport-level failure                       |
-| `KindAuthentication`    | No        | Invalid credentials (401/403)                 |
-| `KindNotFound`          | No        | Model or resource not found (404)             |
-| `KindBadRequest`        | No        | Provider rejected request (400)               |
-| `KindContentFilter`     | No        | Content policy rejection (detected from 400)  |
-| `KindNotImplemented`    | No        | Provider returned 501                         |
-| `KindContextTooLarge`   | No        | Input exceeded context window                |
-| `KindCancelled`         | No        | Context was cancelled                         |
-| `KindStructuredParse`   | No        | JSON parse failure in structured mode         |
-| `KindUnknown`           | No        | Unclassified                                  |
+| Kind                     | Retryable | Description                                  |
+| ------------------------ | --------- | -------------------------------------------- |
+| `KindRateLimited`        | Yes       | Provider returned 429                        |
+| `KindTimeout`            | Yes       | Request exceeded deadline                    |
+| `KindServerError`        | Yes       | Provider returned 5xx (not 501/503)          |
+| `KindServiceUnavailable` | Yes       | Provider returned 503                        |
+| `KindNetwork`            | Yes       | Transport-level failure                      |
+| `KindAuthentication`     | No        | Invalid credentials (401/403)                |
+| `KindNotFound`           | No        | Model or resource not found (404)            |
+| `KindBadRequest`         | No        | Provider rejected request (400)              |
+| `KindContentFilter`      | No        | Content policy rejection (detected from 400) |
+| `KindNotImplemented`     | No        | Provider returned 501                        |
+| `KindContextTooLarge`    | No        | Input exceeded context window                |
+| `KindCancelled`          | No        | Context was cancelled                        |
+| `KindStructuredParse`    | No        | JSON parse failure in structured mode        |
+| `KindUnknown`            | No        | Unclassified                                 |
 
 ## Examples
 

@@ -119,7 +119,12 @@ func TestConfigRetryRetriesTransientAnalyze(t *testing.T) {
 	result, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 	require.NoError(t, err)
 	require.Contains(t, result.Text, "mock response")
-	require.Equal(t, int32(3), model.generateCalls.Load(), "2 transient errors + 1 success = exactly 3 vision-layer calls")
+	require.Equal(
+		t,
+		int32(3),
+		model.generateCalls.Load(),
+		"2 transient errors + 1 success = exactly 3 vision-layer calls",
+	)
 }
 
 func TestConfigRetryExhaustsAndClassifies(t *testing.T) {
@@ -154,7 +159,12 @@ func TestConfigRetryWiredIntoStructured(t *testing.T) {
 
 	_, err = AnalyzeStructured[testReview](context.Background(), agent, "prompt", ImageSrc())
 	require.Error(t, err)
-	require.Equal(t, int32(2), model.generateObjectCalls.Load(), "MaxAttempts=2 with fantasy retry disabled = exactly 2 vision-layer object calls")
+	require.Equal(
+		t,
+		int32(2),
+		model.generateObjectCalls.Load(),
+		"MaxAttempts=2 with fantasy retry disabled = exactly 2 vision-layer object calls",
+	)
 }
 
 func TestConfigRetryOffByDefault(t *testing.T) {

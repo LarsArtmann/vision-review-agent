@@ -10,13 +10,13 @@
 
 ### Refactors shipped (production code)
 
-| Change | File | Effect |
-|--------|------|--------|
-| Extracted `invalidate()` helper | `pkg/vision/screenshot.go:124` | Removed 11x `sa.cachedAgent = nil; return sa` clone |
-| Extracted `prepare()` + `preparedRequest` struct | `pkg/vision/vision.go` | Collapsed 6x duplicated prologue (validate + preprocess + fireStart + timeout + toFileParts) across Analyze/AnalyzeStream/AnalyzeConversation/AnalyzeConversationStream/AnalyzeStructured/AnalyzeStructuredStream |
-| Extracted `finishResult()` helper | `pkg/vision/vision.go` | Collapsed 4x duplicated epilogue (build AnalyzeResult + fireFinish + return) |
-| Extracted `buildObjectCall[T]()` generic helper | `pkg/vision/structured.go` | Removed 2x identical 18-line ObjectCall construction |
-| Aligned all `ctx` → `prep.ctx` in structured.go | `pkg/vision/structured.go` | Ensured timeout-applied context used in all hook fires and model calls |
+| Change                                           | File                           | Effect                                                                                                                                                                                                            |
+| ------------------------------------------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extracted `invalidate()` helper                  | `pkg/vision/screenshot.go:124` | Removed 11x `sa.cachedAgent = nil; return sa` clone                                                                                                                                                               |
+| Extracted `prepare()` + `preparedRequest` struct | `pkg/vision/vision.go`         | Collapsed 6x duplicated prologue (validate + preprocess + fireStart + timeout + toFileParts) across Analyze/AnalyzeStream/AnalyzeConversation/AnalyzeConversationStream/AnalyzeStructured/AnalyzeStructuredStream |
+| Extracted `finishResult()` helper                | `pkg/vision/vision.go`         | Collapsed 4x duplicated epilogue (build AnalyzeResult + fireFinish + return)                                                                                                                                      |
+| Extracted `buildObjectCall[T]()` generic helper  | `pkg/vision/structured.go`     | Removed 2x identical 18-line ObjectCall construction                                                                                                                                                              |
+| Aligned all `ctx` → `prep.ctx` in structured.go  | `pkg/vision/structured.go`     | Ensured timeout-applied context used in all hook fires and model calls                                                                                                                                            |
 
 ### Documentation
 
@@ -83,6 +83,7 @@ Nothing within the deduplication scope. All 10 original clone groups were either
 Ranked by impact:
 
 ### High impact — code quality
+
 1. **Run `golangci-lint run ./...`** — Matches the flake `lint` app; may surface issues `go vet` misses
 2. **Review `optionalParams()` pointer aliasing** — Returns pointers into `Config` fields; if Config is mutated after Agent construction, the pointers could dangle. Verify lifecycle.
 3. **Add integration test for `prepare()` + `finishResult()` path** — Currently covered transitively via BDD; a focused unit test would catch regressions faster
@@ -90,18 +91,21 @@ Ranked by impact:
 5. **Unify error classification** — Extract `classifyAndFire(ctx, label, prompt, err)` to collapse the remaining 6 error blocks (out of dedup scope but would improve consistency)
 
 ### Medium impact — documentation
+
 6. **Update `AGENTS.md` Key Design Decisions** — Add entries for `prepare()`, `finishResult()`, `invalidate()`, `buildObjectCall[T]()`
 7. **Update `docs/DUPLICATION_POLICY.md`** — Reference the new helpers as examples of how duplications were resolved
 8. **Add architecture diagram** — The `prepare()` → `buildAgentCall` → `generate` → `finishResult()` flow is now the spine of every analysis method; a diagram would help onboarding
 9. **Document the `preparedRequest` contract** — The cancel-on-defer requirement is critical; a doc comment on the type would help
 
 ### Medium impact — testing
+
 10. **Add a test for cache invalidation** — Verify that calling any `With*` method actually clears `cachedAgent` (currently only tested implicitly via ScreenshotAnalyzer tests)
 11. **Add a test for `buildObjectCall[T]()` directly** — Verify schema generation and param forwarding without going through the full AnalyzeStructured path
 12. **Add a test for `finishResult()` hook firing** — Verify OnFinish receives the correct Text/Usage/RawResponse
 13. **Add benchmarks for the new helpers** — Ensure no allocation regressions vs. the inline code
 
 ### Lower impact — polish
+
 14. **Consider naming `prep` → `prepared`** — More descriptive; `prep` is terse but slightly opaque
 15. **Review all doc comments for the new helpers** — Ensure they explain WHY, not just WHAT
 16. **Consider extracting `streamDeltaHandler`** — The `OnTextDelta` closure construction is similar in AnalyzeStream and AnalyzeConversationStream
@@ -111,11 +115,13 @@ Ranked by impact:
 20. **Consider a `examples/shared` package** — If example duplication bothers future reviewers, a shared setup package could reduce it (but breaks the "self-contained" property)
 
 ### Exploration
+
 21. **Investigate whether `fantasy` has a built-in `Closer` or `Finalizer` pattern** — Could simplify the `prepare/cancel` dance
 22. **Check if `fantasy.AgentResult` could expose a `ToAnalyzeResult()` helper** — Would eliminate the need for `finishResult()` entirely
 23. **Review the `WithErrorContext` pattern** — Could the error label be auto-derived from the call stack?
 
 ### Housekeeping
+
 24. **Commit the changes** — All refactors are uncommitted; user hasn't requested commit
 25. **Review `dedup-acceptance.md` location** — Root vs. `docs/`; check if other docs reference it
 26. **Verify `docs/status/` directory is gitignored or tracked** — Confirm convention
@@ -125,6 +131,7 @@ Ranked by impact:
 30. **Review `classifyModelErr` signature** — Takes a string label; could be an enum for type safety
 
 ### Future-proofing
+
 31. **Consider a `PrepareOption` functional-options pattern** — If `prepare()` needs to grow (e.g., per-call hooks), options would keep it extensible
 32. **Document the `Analyzer` interface contract** — The `prepare()` extraction assumes all implementations follow the same prologue; mock implementations need to know this
 33. **Review thread safety of `preparedRequest`** — It's used within a single goroutine per analysis call, but document this explicitly
@@ -153,6 +160,7 @@ Ranked by impact:
 ### Q1: Should I commit the refactors?
 
 All changes are uncommitted. The AGENTS.md says "An auto-git commit daemon runs continuously and commits changes automatically" — but nothing has been committed this session. Should I:
+
 - **(a)** Commit now with a descriptive message?
 - **(b)** Leave it for the auto-git daemon?
 - **(c)** Wait for explicit user instruction?
@@ -164,6 +172,7 @@ The file has unstaged changes (MaxRetries: 1 → 0 across 4 tests) that align wi
 ### Q3: Should the accepted duplications in `dedup-acceptance.md` be excluded via `--exclude-pattern` instead?
 
 The remaining 5 clone groups will reappear on every future `art-dupl` run. I documented them as accepted, but the report will still show them. Should I:
+
 - **(a)** Leave as-is (documented acceptance, report shows them)?
 - **(b)** Add `--exclude-pattern` flags to suppress them in future runs?
 - **(c)** Something else?

@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -78,6 +79,40 @@ func NewAgent(
 	return agent, nil
 }
 
+// NewCLIContext validates the minimum argument count, creates a background
+// context, and constructs the default OpenAI vision model (gpt-4o). It is the
+// shared bootstrap prologue for CLI examples and tools that need a custom
+// Config; prefer NewAgentFromArgs for the common case.
+//
+// RequireArgc panics (exits) if fewer than minArgs are present, so the returned
+// context and model are always usable.
+func NewCLIContext(minArgs int) (context.Context, fantasy.LanguageModel) {
+	RequireArgc(minArgs)
+
+	ctx := context.Background()
+
+	return ctx, NewOpenAIModel(ctx, "gpt-4o")
+}
+
+// NewAgentFromArgs is the one-line bootstrap for examples and CLI tools that
+// use the default gpt-4o model with a system prompt. It validates the argument
+// count, builds the context and model, constructs the agent, and exits on
+// construction error — returning a ready-to-use (ctx, agent) pair.
+//
+// Examples that need a custom Config (Hooks, Retry, etc.) should call
+// NewCLIContext and vision.NewAgent directly.
+func NewAgentFromArgs(
+	minArgs int,
+	systemPrompt string,
+	temperature ...float64,
+) (context.Context, *vision.Agent) {
+	ctx, model := NewCLIContext(minArgs)
+	agent, err := NewAgent(model, systemPrompt, temperature...)
+	ExitOnError(err, "Error creating agent")
+
+	return ctx, agent
+}
+
 // LoadImageArg loads an image from the first positional CLI argument
 // (os.Args[1]). It exits the process on any error. RequireArgc(2) must be
 // called first so os.Args[1] exists.
@@ -86,4 +121,17 @@ func LoadImageArg() *vision.ImageSource {
 	ExitOnError(err, "Error loading image")
 
 	return img
+}
+
+// AnalyzeAndPrint is the one-call workflow for examples that load an image from
+// the first CLI argument, run a single analysis, and print the result. It
+// collapses LoadImageArg → Analyze → ExitOnError → PrintResult so the simplest
+// examples read as a single expressive line. Examples that need custom error
+// handling, hooks, or non-standard image sources should call the individual
+// helpers instead.
+func AnalyzeAndPrint(ctx context.Context, agent *vision.Agent, prompt string) {
+	img := LoadImageArg()
+	result, err := agent.Analyze(ctx, prompt, img)
+	ExitOnError(err, "")
+	PrintResult(result.Text, result.Usage.TotalTokens)
 }

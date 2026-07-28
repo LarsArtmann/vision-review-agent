@@ -9,27 +9,28 @@ remains blocked on a user decision (documented, not destructive).
 
 ## Verification gates (all green)
 
-| Gate | Result |
-| --- | --- |
-| `go build ./...` | OK |
-| `go vet ./...` | OK |
-| `go test -race -count=1 ./...` | PASS (~3.6s wall) |
-| `golangci-lint run ./...` | 0 issues |
-| `golangci-lint config verify` | OK |
-| `gofumpt -l .` | CLEAN |
-| `nix flake check` | **all checks passed!** |
-| `go mod verify` + `go mod tidy` | clean, no diff |
-| Coverage | **88.5%** (pkg/errors 96.6%, pkg/vision 87.7%; gate is 70%) |
+| Gate                            | Result                                                      |
+| ------------------------------- | ----------------------------------------------------------- |
+| `go build ./...`                | OK                                                          |
+| `go vet ./...`                  | OK                                                          |
+| `go test -race -count=1 ./...`  | PASS (~3.6s wall)                                           |
+| `golangci-lint run ./...`       | 0 issues                                                    |
+| `golangci-lint config verify`   | OK                                                          |
+| `gofumpt -l .`                  | CLEAN                                                       |
+| `nix flake check`               | **all checks passed!**                                      |
+| `go mod verify` + `go mod tidy` | clean, no diff                                              |
+| Coverage                        | **88.5%** (pkg/errors 96.6%, pkg/vision 87.7%; gate is 70%) |
 
 ---
 
 ## What changed per epic
 
 ### E1 — Test suite speedup (corrective finding)
+
 **The plan's premise was inverted.** It claimed the suite took 280s and proposed
 adding `MaxRetries: 1` everywhere. In reality the suite was already ~11s because
 `MaxRetries` defaults to 0 (which disables fantasy's HTTP retry). The actual
-slowness lived in the **3 vision-layer retry tests** that had *deliberately* set
+slowness lived in the **3 vision-layer retry tests** that had _deliberately_ set
 `MaxRetries: 1` — that single setting re-enabled fantasy's ~5s backoff per
 retryable mock call.
 
@@ -39,6 +40,7 @@ retry, not fantasy HTTP-layer retry) and tightened their assertions to exact
 suite, deterministic counts.
 
 ### E2 — Release mechanics
+
 `nix flake check` passes (fixed 3 `meta.description` app warnings). `go mod
 verify`/`tidy` clean. Annotated the `[0.2.0]` CHANGELOG license line as
 retroactively false (non-destructive). Tag-anomaly recommendation written to
@@ -46,6 +48,7 @@ ROADMAP open-questions (v0.2.1/v0.3.0 both point to a pre-v0.2.0 commit;
 destructive resolution needs user approval).
 
 ### E3 — PreprocessConfig honesty fix
+
 `PreprocessConfig.JPEGQuality` existed but did nothing. Wired it end-to-end:
 added `ResizeImageWithQuality`, `CompressImage` (re-encode without resize; PNG
 preserves format), and a shared `encodeImage` helper used by both resize and
@@ -53,6 +56,7 @@ compress. PNG output now uses `BestCompression`. Tests verify smaller bytes at
 lower quality and format preservation.
 
 ### E4 — Docs sync
+
 Rewrote `README.md` (removed `just`/`vision-cli` lies; added Retry, Preprocess,
 CompressImage, CostTracker, all 14 ErrorKinds, correct `errors.AsType` signature,
 real Hooks signatures). Updated `FEATURES.md` (moved resolved items to DONE).
@@ -60,6 +64,7 @@ Cross-linked `docs/DOMAIN_LANGUAGE.md`. Verified all code snippets against the
 real API.
 
 ### E5 — Test coverage for new code (8 subtasks)
+
 `mediaTypeFromExtension` table; BMP decode→resize roundtrip (hand-rolled a
 minimal valid BMP since Go has no BMP encoder); `PreprocessImage` nil/zero
 passthrough; `Config.Preprocess` end-to-end in `Analyze` + `AnalyzeStructured`
@@ -69,11 +74,13 @@ contract; `contentFilter` signal detection; 501/503/contentFilter via full
 version was misnamed — both images failed).
 
 ### E6 — CI hardening
+
 Added a `go mod tidy` diff check, a `golangci-lint config verify` step, and a
 dedicated `nix-flake-check` job (cachix/install-nix-action) to
 `.github/workflows/ci.yml`.
 
 ### E7 — CLI testability
+
 Refactored `parseFlags()` → `parseFlags(fs *flag.FlagSet, args []string)`
 returning errors instead of calling `os.Exit`; version/no-args decisions surface
 as `cfg.showVersion` / `cfg.args`. `loadImages` now takes the args slice. Added

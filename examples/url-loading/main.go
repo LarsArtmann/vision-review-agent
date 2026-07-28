@@ -10,7 +10,6 @@
 package main
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -22,13 +21,7 @@ import (
 )
 
 func main() {
-	cli.RequireArgc(2)
-
-	ctx := context.Background()
-	model := cli.NewOpenAIModel(ctx, "gpt-4o")
-
-	agent, err := cli.NewAgent(model, "You are a UI/UX expert. Describe screenshots.", 0.3)
-	cli.ExitOnError(err, "Error creating agent")
+	ctx, agent := cli.NewAgentFromArgs(2, "You are a UI/UX expert. Describe screenshots.", 0.3)
 
 	url := os.Args[1]
 

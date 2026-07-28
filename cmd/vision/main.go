@@ -29,9 +29,14 @@ import (
 )
 
 const (
-	version            = "0.2.0"
 	defaultTemperature = 0.3
 )
+
+// version is the CLI version string. It is a var (not a const) so release
+// tooling can override it at build time via -ldflags "-X main.version=...".
+// The default reflects an unreleased working tree; tagged builds inject the
+// real semver (see flake.nix buildGoModule ldflags).
+var version = "0.3.0-dev"
 
 var (
 	errEnvVarNotSet    = errors.New("environment variable not set")

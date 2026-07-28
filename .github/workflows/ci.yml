@@ -25,6 +25,9 @@ jobs:
       - name: Build
         run: go build ./...
 
+      - name: Verify examples compile
+        run: go build ./examples/...
+
       - name: Vet
         run: go vet ./...
 

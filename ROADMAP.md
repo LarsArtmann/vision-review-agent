@@ -101,7 +101,7 @@ tasks. They are **not** TODO items until answered.
    breaking changes get a `### Breaking` callout in CHANGELOG?
 5. **Tag anomaly resolution (BLOCKED on user — destructive).** The tags
    `v0.2.1` and `v0.3.0` both point to commit `d5dda4b` (2026-04-27), which is
-   an *ancestor* of the real `v0.2.0` (`003a256`, 2026-07-23) and even predates
+   an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23) and even predates
    `v0.1.0`. They do not represent real releases — the actual post-v0.2.0 body
    of work is currently **untagged** in `[Unreleased]`. **Recommended action**
    (needs approval because moving/deleting tags is destructive and affects

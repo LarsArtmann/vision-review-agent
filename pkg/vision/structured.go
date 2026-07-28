@@ -29,51 +29,47 @@ func AnalyzeStructured[T any](
 	prompt string,
 	images ...*ImageSource,
 ) (*fantasy.ObjectResult[T], error) {
-	prep, err := agent.prepare(ctx, prompt, images...)
-	if err != nil {
-		return nil, err
-	}
-	defer prep.cancel()
+	return withPrepared(agent, ctx, prompt, images, func(prep *preparedRequest) (*fantasy.ObjectResult[T], error) {
+		call := buildObjectCall[T](agent, prompt, prep.files)
 
-	call := buildObjectCall[T](agent, prompt, prep.files)
-
-	result, err := generateObject(prep.ctx, agent, call)
-	if err != nil {
-		classified := classifyModelErr("vision agent structured generate", prompt, err)
-		agent.config.Hooks.fireError(prep.ctx, classified)
-		return nil, classified
-	}
-
-	var typedResult T
-	if result.Object != nil {
-		if err := visionutil.UnmarshalToType(result.Object, &typedResult); err != nil {
-			parseErr := apperrors.Wrap(
-				apperrors.KindStructuredParse,
-				"vision agent unmarshal result",
-				prompt,
-				err,
-			)
-			agent.config.Hooks.fireError(prep.ctx, parseErr)
-			return nil, parseErr
+		result, err := generateObject(prep.ctx, agent, call)
+		if err != nil {
+			classified := classifyModelErr("vision agent structured generate", prompt, err)
+			agent.config.Hooks.fireError(prep.ctx, classified)
+			return nil, classified
 		}
-	}
 
-	finalResult := &fantasy.ObjectResult[T]{
-		Object:           typedResult,
-		RawText:          result.RawText,
-		Usage:            result.Usage,
-		FinishReason:     result.FinishReason,
-		Warnings:         result.Warnings,
-		ProviderMetadata: result.ProviderMetadata,
-	}
-	// Structured methods have no *fantasy.AgentResult, so the synthesized
-	// AnalyzeResult carries only Text/Usage; RawResponse is intentionally nil
-	// (see AnalyzeResult.RawResponse doc). Hooks must nil-check it.
-	agent.config.Hooks.fireFinish(prep.ctx, &AnalyzeResult{
-		Text:  result.RawText,
-		Usage: result.Usage,
+		var typedResult T
+		if result.Object != nil {
+			if err := visionutil.UnmarshalToType(result.Object, &typedResult); err != nil {
+				parseErr := apperrors.Wrap(
+					apperrors.KindStructuredParse,
+					"vision agent unmarshal result",
+					prompt,
+					err,
+				)
+				agent.config.Hooks.fireError(prep.ctx, parseErr)
+				return nil, parseErr
+			}
+		}
+
+		finalResult := &fantasy.ObjectResult[T]{
+			Object:           typedResult,
+			RawText:          result.RawText,
+			Usage:            result.Usage,
+			FinishReason:     result.FinishReason,
+			Warnings:         result.Warnings,
+			ProviderMetadata: result.ProviderMetadata,
+		}
+		// Structured methods have no *fantasy.AgentResult, so the synthesized
+		// AnalyzeResult carries only Text/Usage; RawResponse is intentionally nil
+		// (see AnalyzeResult.RawResponse doc). Hooks must nil-check it.
+		agent.config.Hooks.fireFinish(prep.ctx, &AnalyzeResult{
+			Text:  result.RawText,
+			Usage: result.Usage,
+		})
+		return finalResult, nil
 	})
-	return finalResult, nil
 }
 
 // AnalyzeStructuredStream sends images to the agent and streams typed structured
@@ -97,67 +93,63 @@ func AnalyzeStructuredStream[T any](
 	onObject func(partial T),
 	images ...*ImageSource,
 ) (*fantasy.ObjectResult[T], error) {
-	prep, err := agent.prepare(ctx, prompt, images...)
-	if err != nil {
-		return nil, err
-	}
-	defer prep.cancel()
+	return withPrepared(agent, ctx, prompt, images, func(prep *preparedRequest) (*fantasy.ObjectResult[T], error) {
+		call := buildObjectCall[T](agent, prompt, prep.files)
 
-	call := buildObjectCall[T](agent, prompt, prep.files)
+		stream, err := agent.config.Model.StreamObject(prep.ctx, call)
+		if err != nil {
+			classified := classifyModelErr("vision agent structured stream", prompt, err)
+			agent.config.Hooks.fireError(prep.ctx, classified)
+			return nil, classified
+		}
 
-	stream, err := agent.config.Model.StreamObject(prep.ctx, call)
-	if err != nil {
-		classified := classifyModelErr("vision agent structured stream", prompt, err)
-		agent.config.Hooks.fireError(prep.ctx, classified)
-		return nil, classified
-	}
+		var (
+			finalObject  T
+			rawText      string
+			usage        fantasy.Usage
+			finishReason fantasy.FinishReason
+		)
 
-	var (
-		finalObject  T
-		rawText      string
-		usage        fantasy.Usage
-		finishReason fantasy.FinishReason
-	)
-
-	for part := range stream {
-		switch part.Type {
-		case fantasy.ObjectStreamPartTypeObject:
-			if onObject != nil && part.Object != nil {
-				var partial T
-				if unmarshalErr := visionutil.UnmarshalToType(part.Object, &partial); unmarshalErr == nil {
-					onObject(partial)
-					finalObject = partial
+		for part := range stream {
+			switch part.Type {
+			case fantasy.ObjectStreamPartTypeObject:
+				if onObject != nil && part.Object != nil {
+					var partial T
+					if unmarshalErr := visionutil.UnmarshalToType(part.Object, &partial); unmarshalErr == nil {
+						onObject(partial)
+						finalObject = partial
+					}
+				}
+			case fantasy.ObjectStreamPartTypeTextDelta:
+				rawText += part.Delta
+			case fantasy.ObjectStreamPartTypeError:
+				if part.Error != nil {
+					classified := classifyModelErr("vision agent structured stream", prompt, part.Error)
+					agent.config.Hooks.fireError(prep.ctx, classified)
+					return nil, classified
+				}
+			case fantasy.ObjectStreamPartTypeFinish:
+				usage = part.Usage
+				finishReason = part.FinishReason
+				if part.Object != nil {
+					_ = visionutil.UnmarshalToType(part.Object, &finalObject)
 				}
 			}
-		case fantasy.ObjectStreamPartTypeTextDelta:
-			rawText += part.Delta
-		case fantasy.ObjectStreamPartTypeError:
-			if part.Error != nil {
-				classified := classifyModelErr("vision agent structured stream", prompt, part.Error)
-				agent.config.Hooks.fireError(prep.ctx, classified)
-				return nil, classified
-			}
-		case fantasy.ObjectStreamPartTypeFinish:
-			usage = part.Usage
-			finishReason = part.FinishReason
-			if part.Object != nil {
-				_ = visionutil.UnmarshalToType(part.Object, &finalObject)
-			}
 		}
-	}
 
-	finalResult := &fantasy.ObjectResult[T]{
-		Object:       finalObject,
-		RawText:      rawText,
-		Usage:        usage,
-		FinishReason: finishReason,
-	}
-	// Synthesized AnalyzeResult: RawResponse is nil (see AnalyzeResult.RawResponse doc).
-	agent.config.Hooks.fireFinish(prep.ctx, &AnalyzeResult{
-		Text:  rawText,
-		Usage: usage,
+		finalResult := &fantasy.ObjectResult[T]{
+			Object:       finalObject,
+			RawText:      rawText,
+			Usage:        usage,
+			FinishReason: finishReason,
+		}
+		// Synthesized AnalyzeResult: RawResponse is nil (see AnalyzeResult.RawResponse doc).
+		agent.config.Hooks.fireFinish(prep.ctx, &AnalyzeResult{
+			Text:  rawText,
+			Usage: usage,
+		})
+		return finalResult, nil
 	})
-	return finalResult, nil
 }
 
 // buildObjectCall constructs a fantasy.ObjectCall for a typed structured

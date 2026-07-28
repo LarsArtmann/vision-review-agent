@@ -10,47 +10,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/larsartmann/vision-review-agent/examples/internal/uireview"
 	"github.com/larsartmann/vision-review-agent/internal/cli"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
-// UIReview is the structured output type.
-type UIReview struct {
-	Layout      string   `description:"Brief description of the overall layout" json:"layout"`
-	Components  []string `description:"List of UI components identified"        json:"components"`
-	Issues      []Issue  `description:"List of issues found"                    json:"issues"`
-	Score       int      `description:"Overall UX score from 1-10"              json:"score"`
-	Suggestions []string `description:"Actionable improvement suggestions"      json:"suggestions"`
-}
-
-// Issue represents a single UI issue.
-type Issue struct {
-	Severity    string `description:"Severity: critical, major, minor, or info" json:"severity"`
-	Component   string `description:"Which component has the issue"             json:"component"`
-	Description string `description:"Detailed description of the issue"         json:"description"`
-}
-
 func main() {
-	cli.RequireArgc(2)
-
-	ctx := context.Background()
-	model := cli.NewOpenAIModel(ctx, "gpt-4o")
-
-	agent, err := cli.NewAgent(
-		model,
-		"You are a meticulous UI/UX reviewer. Analyze designs thoroughly.",
-		0.2,
-	)
-	cli.ExitOnError(err, "Error creating agent")
+	ctx, agent := cli.NewAgentFromArgs(2, "You are a meticulous UI/UX reviewer. Analyze designs thoroughly.", 0.2)
 
 	img := cli.LoadImageArg()
 
 	fmt.Println("Analyzing screenshot with structured output...")
 
-	result, err := vision.AnalyzeStructured[UIReview](
+	result, err := vision.AnalyzeStructured[uireview.UIReview](
 		ctx,
 		agent,
 		"Review this UI design comprehensively.",

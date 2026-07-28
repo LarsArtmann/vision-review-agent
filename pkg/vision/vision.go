@@ -274,22 +274,18 @@ func (va *Agent) Analyze(
 	prompt string,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	prep, err := va.prepare(ctx, prompt, images...)
-	if err != nil {
-		return nil, err
-	}
-	defer prep.cancel()
+	return withPrepared(va, ctx, prompt, images, func(prep *preparedRequest) (*AnalyzeResult, error) {
+		call := va.buildAgentCall(prompt, prep.files, nil)
 
-	call := va.buildAgentCall(prompt, prep.files, nil)
+		result, err := va.generate(prep.ctx, call)
+		if err != nil {
+			classified := classifyModelErr("vision agent generate", prompt, err)
+			va.config.Hooks.fireError(prep.ctx, classified)
+			return nil, classified
+		}
 
-	result, err := va.generate(prep.ctx, call)
-	if err != nil {
-		classified := classifyModelErr("vision agent generate", prompt, err)
-		va.config.Hooks.fireError(prep.ctx, classified)
-		return nil, classified
-	}
-
-	return va.finishResult(prep.ctx, result.Response.Content.Text(), result), nil
+		return va.finishResult(prep.ctx, result.Response.Content.Text(), result), nil
+	})
 }
 
 // AnalyzeStream sends images to the agent and streams the response.
@@ -300,31 +296,27 @@ func (va *Agent) AnalyzeStream(
 	onText func(text string) error,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	prep, err := va.prepare(ctx, prompt, images...)
-	if err != nil {
-		return nil, err
-	}
-	defer prep.cancel()
+	return withPrepared(va, ctx, prompt, images, func(prep *preparedRequest) (*AnalyzeResult, error) {
+		var builder strings.Builder
 
-	var builder strings.Builder
-
-	streamCall := va.buildAgentStreamCall(prompt, prep.files, nil)
-	streamCall.OnTextDelta = func(_, text string) error {
-		builder.WriteString(text)
-		if onText != nil {
-			return onText(text)
+		streamCall := va.buildAgentStreamCall(prompt, prep.files, nil)
+		streamCall.OnTextDelta = func(_, text string) error {
+			builder.WriteString(text)
+			if onText != nil {
+				return onText(text)
+			}
+			return nil
 		}
-		return nil
-	}
 
-	result, err := va.agent.Stream(prep.ctx, streamCall)
-	if err != nil {
-		classified := classifyModelErr("vision agent stream", prompt, err)
-		va.config.Hooks.fireError(prep.ctx, classified)
-		return nil, classified
-	}
+		result, err := va.agent.Stream(prep.ctx, streamCall)
+		if err != nil {
+			classified := classifyModelErr("vision agent stream", prompt, err)
+			va.config.Hooks.fireError(prep.ctx, classified)
+			return nil, classified
+		}
 
-	return va.finishResult(prep.ctx, builder.String(), result), nil
+		return va.finishResult(prep.ctx, builder.String(), result), nil
+	})
 }
 
 // AnalyzeConversation analyzes images with the given prompt, incorporating
@@ -342,22 +334,18 @@ func (va *Agent) AnalyzeConversation(
 	prompt string,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	prep, err := va.prepare(ctx, prompt, images...)
-	if err != nil {
-		return nil, err
-	}
-	defer prep.cancel()
+	return withPrepared(va, ctx, prompt, images, func(prep *preparedRequest) (*AnalyzeResult, error) {
+		call := va.buildAgentCall(prompt, prep.files, conv.Messages())
 
-	call := va.buildAgentCall(prompt, prep.files, conv.Messages())
+		result, err := va.generate(prep.ctx, call)
+		if err != nil {
+			classified := classifyModelErr("vision agent conversation generate", prompt, err)
+			va.config.Hooks.fireError(prep.ctx, classified)
+			return nil, classified
+		}
 
-	result, err := va.generate(prep.ctx, call)
-	if err != nil {
-		classified := classifyModelErr("vision agent conversation generate", prompt, err)
-		va.config.Hooks.fireError(prep.ctx, classified)
-		return nil, classified
-	}
-
-	return va.finishResult(prep.ctx, result.Response.Content.Text(), result), nil
+		return va.finishResult(prep.ctx, result.Response.Content.Text(), result), nil
+	})
 }
 
 // AnalyzeConversationStream streams analysis with conversation history for multi-turn interactions.
@@ -369,31 +357,27 @@ func (va *Agent) AnalyzeConversationStream(
 	onText func(text string) error,
 	images ...*ImageSource,
 ) (*AnalyzeResult, error) {
-	prep, err := va.prepare(ctx, prompt, images...)
-	if err != nil {
-		return nil, err
-	}
-	defer prep.cancel()
+	return withPrepared(va, ctx, prompt, images, func(prep *preparedRequest) (*AnalyzeResult, error) {
+		var builder strings.Builder
 
-	var builder strings.Builder
-
-	streamCall := va.buildAgentStreamCall(prompt, prep.files, conv.Messages())
-	streamCall.OnTextDelta = func(_, text string) error {
-		builder.WriteString(text)
-		if onText != nil {
-			return onText(text)
+		streamCall := va.buildAgentStreamCall(prompt, prep.files, conv.Messages())
+		streamCall.OnTextDelta = func(_, text string) error {
+			builder.WriteString(text)
+			if onText != nil {
+				return onText(text)
+			}
+			return nil
 		}
-		return nil
-	}
 
-	result, err := va.agent.Stream(prep.ctx, streamCall)
-	if err != nil {
-		classified := classifyModelErr("vision agent conversation stream", prompt, err)
-		va.config.Hooks.fireError(prep.ctx, classified)
-		return nil, classified
-	}
+		result, err := va.agent.Stream(prep.ctx, streamCall)
+		if err != nil {
+			classified := classifyModelErr("vision agent conversation stream", prompt, err)
+			va.config.Hooks.fireError(prep.ctx, classified)
+			return nil, classified
+		}
 
-	return va.finishResult(prep.ctx, builder.String(), result), nil
+		return va.finishResult(prep.ctx, builder.String(), result), nil
+	})
 }
 
 // preparedRequest bundles the validated inputs and derived context produced
@@ -448,6 +432,31 @@ func (va *Agent) finishResult(
 	}
 	va.config.Hooks.fireFinish(ctx, ar)
 	return ar
+}
+
+// withPrepared runs the shared prologue (validate → preprocess → fireStart →
+// timeout → toFileParts) via prepare, then invokes fn with the prepared
+// request, guaranteeing cancel() is deferred. It is the single owner of the
+// "if prepare failed, return early" idiom that every analysis method needs, so
+// the idiom appears once instead of six times.
+//
+// It is a free generic function (not a method) because Go does not permit
+// type parameters on methods; AnalyzeStructured[T] / AnalyzeStructuredStream[T]
+// instantiate it with *fantasy.ObjectResult[T].
+func withPrepared[T any](
+	va *Agent,
+	ctx context.Context,
+	prompt string,
+	images []*ImageSource,
+	fn func(*preparedRequest) (T, error),
+) (T, error) {
+	prep, err := va.prepare(ctx, prompt, images...)
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	defer prep.cancel()
+	return fn(prep)
 }
 
 // buildAgentCall constructs a fantasy.AgentCall with model parameters and optional history.

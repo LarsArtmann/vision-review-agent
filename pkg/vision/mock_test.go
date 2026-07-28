@@ -83,8 +83,13 @@ type mockModel struct {
 	generateObjectCalls atomic.Int32
 
 	// capture, when true, records the Prompt of the most recent Generate /
-	// GenerateObject call into capturedPrompt. Intended for single-call
-	// (non-concurrent) tests only — not safe for concurrent use.
+	// GenerateObject call into capturedPrompt.
+	//
+	// WARNING: This is NOT thread-safe. It uses plain field writes with no
+	// synchronization. Only enable capture in tests that make a single
+	// (non-concurrent) model call. For concurrent or multi-call scenarios,
+	// use generateCalls/generateObjectCalls (atomic counters) instead, or
+	// add a mutex-protected recorder.
 	capture        bool
 	capturedPrompt fantasy.Prompt
 }

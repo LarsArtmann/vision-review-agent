@@ -66,7 +66,7 @@ func TestBuildConfig(t *testing.T) {
 
 		cfg := &config{temperature: 0.3, maxTokens: 0}
 		built := buildConfig(nil, cfg)
-		require.InDelta(t, 0.3, built.Temperature, 0.001)
+		require.InEpsilon(t, 0.3, built.Temperature, 1e-9)
 		require.Equal(t, int64(0), built.MaxOutputTokens)
 		require.Empty(t, built.SystemPrompt)
 		require.Equal(t, time.Duration(0), built.RequestTimeout)
@@ -142,7 +142,7 @@ func TestParseFlagsDefaults(t *testing.T) {
 	require.False(t, cfg.stream)
 	require.False(t, cfg.jsonOutput)
 	require.False(t, cfg.structured)
-	require.InDelta(t, defaultTemperature, cfg.temperature, 0.0001)
+	require.InEpsilon(t, defaultTemperature, cfg.temperature, 1e-9)
 	require.Equal(t, int64(0), cfg.maxTokens)
 	require.Equal(t, int64(0), cfg.timeout)
 	require.Equal(t, []string{"screenshot.png"}, cfg.args)
@@ -176,7 +176,7 @@ func TestParseFlagsAllFlags(t *testing.T) {
 	require.True(t, cfg.stream)
 	require.True(t, cfg.jsonOutput)
 	require.True(t, cfg.structured)
-	require.InDelta(t, 0.7, cfg.temperature, 0.0001)
+	require.InEpsilon(t, 0.7, cfg.temperature, 1e-9)
 	require.Equal(t, int64(2048), cfg.maxTokens)
 	require.Equal(t, int64(45), cfg.timeout)
 	require.Equal(t, []string{"a.png", "b.png"}, cfg.args)

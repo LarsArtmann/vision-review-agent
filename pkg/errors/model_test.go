@@ -56,11 +56,13 @@ func TestIsContentFilterRejection(t *testing.T) {
 		{"content filter phrase", "Request blocked by content filter", true},
 		{"content policy phrase", "Violates content policy", true},
 		{"content_filter snake", "content_filter triggered", true},
-		{"safety phrase", "Removed for safety", true},
+		{"safety filter phrase", "Blocked by safety filter", true},
+		{"safety policy phrase", "Violates safety policy", true},
+		{"removed for safety", "Removed for safety", true},
 		{"case insensitive", "REQUEST BLOCKED BY CONTENT FILTER", true},
 		{"plain bad request", "Invalid prompt format", false},
 		{"empty message", "", false},
-		{"unrelated safety word in context", "This is a safety-related best practice", true},
+		{"benign safety mention", "This model has safety-related best practices", false},
 	}
 
 	for _, tc := range cases {

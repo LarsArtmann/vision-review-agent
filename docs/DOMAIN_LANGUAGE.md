@@ -62,25 +62,28 @@ Things that happen in the domain:
 
 Actions the system performs:
 
-| Term                     | Definition                                                                 | Context                       |
-| ------------------------ | -------------------------------------------------------------------------- | ----------------------------- |
-| **Analyze**              | Send images + prompt → get text analysis.                                  | `Agent.Analyze`               |
-| **AnalyzeStream**        | Same as Analyze but streams text chunks via a callback.                    | `Agent.AnalyzeStream`         |
-| **AnalyzeStructured[T]** | Send images + prompt → get typed JSON result. Generic, package-level.      | `vision.AnalyzeStructured[T]` |
-| **AnalyzeConversation**  | Analyze with multi-turn conversation history.                              | `Agent.AnalyzeConversation`   |
-| **AnalyzeBatch**         | Analyze many images concurrently with bounded concurrency.                 | `Agent.AnalyzeBatch`          |
-| **ResizeImage**          | Downscale an image to a max dimension (Catmull-Rom, aspect-preserving).    | `vision.ResizeImage`          |
-| **WithRetry[T]**         | Wrap any analysis call with exponential-backoff retry on transient errors. | `vision.WithRetry[T]`         |
+| Term                       | Definition                                                                              | Context                         |
+| -------------------------- | --------------------------------------------------------------------------------------- | ------------------------------- |
+| **Analyze**                | Send images + prompt → get text analysis.                                               | `Agent.Analyze`                 |
+| **AnalyzeStream**          | Same as Analyze but streams text chunks via a callback.                                 | `Agent.AnalyzeStream`           |
+| **AnalyzeStructured[T]**   | Send images + prompt → get typed JSON result. Generic, package-level.                   | `vision.AnalyzeStructured[T]`   |
+| **AnalyzeConversation**    | Analyze with multi-turn conversation history.                                           | `Agent.AnalyzeConversation`     |
+| **AnalyzeBatch**           | Analyze many images concurrently with bounded concurrency.                              | `Agent.AnalyzeBatch`            |
+| **ResizeImage**            | Downscale an image to a max dimension (Catmull-Rom, aspect-preserving).                 | `vision.ResizeImage`            |
+| **ResizeImageWithQuality** | Like ResizeImage but lets the caller control JPEG encoding quality (1-100).             | `vision.ResizeImageWithQuality` |
+| **CompressImage**          | Re-encode an image to reduce byte size without resizing. Returns original if no shrink. | `vision.CompressImage`          |
+| **WithRetry[T]**           | Wrap any analysis call with exponential-backoff retry on transient errors.              | `vision.WithRetry[T]`           |
 
 ## Bounded Contexts
 
-| Context                  | Description                                                                             |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| **Analysis**             | Core image-analysis lifecycle: validation → preprocessing → model call → hooks → result |
-| **Error Classification** | Translating provider-specific errors into domain-level `ErrorKind` categories           |
-| **Preprocessing**        | Image transformation (resize, compress) before model invocation                         |
-| **Retry**                | Transient-failure retry with exponential backoff + jitter                               |
-| **Cost Tracking**        | Token usage accumulation across analysis calls                                          |
+| Context                  | Description                                                                                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Analysis**             | Core image-analysis lifecycle: validation → preprocessing → model call → hooks → result                                                                           |
+| **Error Classification** | Translating provider-specific errors into domain-level `ErrorKind` categories                                                                                     |
+| **Preprocessing**        | Image transformation (resize, compress) before model invocation                                                                                                   |
+| **Retry**                | Two-layer: `Config.MaxRetries` (fantasy HTTP-layer, default 0=disabled) + `Config.Retry` (vision-layer backoff+jitter via `WithRetry[T]`)                         |
+| **Cost Tracking**        | Token usage accumulation across analysis calls                                                                                                                    |
+| **CLI**                  | `parseFlags` parses flags into a `config` struct without calling `os.Exit`, enabling isolated testing. `createProvider` maps provider names to fantasy providers. |
 
 ---
 

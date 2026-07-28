@@ -301,12 +301,21 @@ func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind 
 
 // isContentFilterRejection checks whether a 400 ProviderError is actually a
 // content-policy rejection by scanning its message for known signal phrases.
+//
+// The signals are intentionally specific: a bare word like "safety" matches
+// benign provider messages (e.g. "this model has safety best practices"), which
+// would misclassify a retryable request as a non-retryable content rejection.
+// Each signal therefore names the rejection mechanism ("filter", "policy",
+// "blocked", "removed") alongside the topic.
 func isContentFilterRejection(providerErr *fantasy.ProviderError) bool {
 	signals := []string{
 		"content filter",
 		"content policy",
 		"content_filter",
-		"safety",
+		"safety filter",
+		"safety policy",
+		"blocked for safety",
+		"removed for safety",
 	}
 
 	msg := strings.ToLower(providerErr.Message)

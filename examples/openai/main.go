@@ -1,5 +1,8 @@
 // Example: OpenAI vision analysis
 //
+// The simplest end-to-end example: bootstrap an agent, analyze one screenshot,
+// and print the result.
+//
 // Usage:
 //
 //	export OPENAI_API_KEY=your-key
@@ -7,30 +10,14 @@
 package main
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/larsartmann/vision-review-agent/internal/cli"
 )
 
 func main() {
-	cli.RequireArgc(2)
-
-	ctx := context.Background()
-	model := cli.NewOpenAIModel(ctx, "gpt-4o")
-
-	agent, err := cli.NewAgent(
-		model,
+	ctx, agent := cli.NewAgentFromArgs(
+		2,
 		"You are a UI/UX expert. Analyze screenshots and provide actionable feedback.",
 	)
-	cli.ExitOnError(err, "Error creating agent")
 
-	img := cli.LoadImageArg()
-
-	fmt.Println("Analyzing screenshot...")
-
-	result, err := agent.Analyze(ctx, "Describe the UI and identify any usability issues.", img)
-	cli.ExitOnError(err, "")
-
-	cli.PrintResult(result.Text, result.Usage.TotalTokens)
+	cli.AnalyzeAndPrint(ctx, agent, "Describe the UI and identify any usability issues.")
 }

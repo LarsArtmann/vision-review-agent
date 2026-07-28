@@ -92,6 +92,9 @@ func ResizeImageWithQuality(img *ImageSource, maxDimension, jpegQuality int) (*I
 // using best compression — the quality is ignored because PNG is lossless, so
 // the output format is preserved.
 //
+// If re-encoding does not shrink the image (e.g. the source is already
+// well-compressed at a lower quality), the original is returned unchanged.
+//
 // Use this to cut token cost before [Agent.Analyze] when an image is already
 // the right dimensions but too large in bytes:
 //
@@ -111,6 +114,14 @@ func CompressImage(img *ImageSource, jpegQuality int) (*ImageSource, error) {
 	data, mediaType, err := encodeImage(decoded, img.MediaType, jpegQuality)
 	if err != nil {
 		return nil, fmt.Errorf("compress: %w", err)
+	}
+
+	// Guard: if re-encoding did not shrink the image (e.g. the source was already
+	// well-compressed at a similar or lower quality), return the original
+	// unchanged. CompressImage's contract is to reduce size; an output that is
+	// equal or larger signals no benefit and would only add re-encoding artifacts.
+	if len(data) >= len(img.Data) {
+		return img, nil
 	}
 
 	return NewImageSource(data, mediaType, img.Filename)

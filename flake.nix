@@ -51,6 +51,10 @@
             src = lib.cleanSource ./.;
             vendorHash = "sha256-vtWvYhyC1AYshWGcfBBh8osNUA6ekFJcY+OdIgqJiV4=";
             proxyVendor = true;
+            # Inject the nix-derived version into the Go binary so `vision
+            # -version` reports the real release tag instead of the hardcoded
+            # "0.3.0-dev" default.
+            ldflags = [ "-X main.version=${version}" ];
             meta = with lib; {
               description = "AI-powered screenshot and image analysis SDK";
               # PROPRIETARY license — see LICENSE. The repo is source-available,

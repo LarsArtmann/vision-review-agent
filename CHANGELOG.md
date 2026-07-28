@@ -131,10 +131,44 @@ true`; all `//nolint:` directives now carry explanations. `funlen` config
 
 ### Fixed
 
+- **Broken `examples/error-handling/main.go`** — `handleError` called `log.Fatalf`
+  on every path (even successful advice printing) and had a dead `!found` branch.
+  Rewritten as `printModelError` that prints advice to stderr and lets the caller
+  decide the exit code. No more always-exit-1 consumer example.
+- **`isContentFilterRejection` false positive** — the bare `"safety"` signal
+  matched benign provider messages (e.g. "safety-related best practice"). Replaced
+  with specific phrases (`"safety filter"`, `"safety policy"`, `"blocked for
+safety"`, `"removed for safety"`) that only match real content-policy rejections.
+- **Stale `version` constant** — `cmd/vision/main.go` hardcoded `"0.2.0"` despite
+  `[Unreleased]` features. Changed to `var version = "0.3.0-dev"` (honest for
+  unreleased) and wired `-ldflags "-X main.version=..."` in `flake.nix` so tagged
+  builds inject the real semver.
+- **Lint gate fully clean** — fixed `testifylint: float-compare` (3×
+  `require.InDelta` → `require.InEpsilon`), `internal/cli/helpers.go`
+  `nlreturn`+`wsl_v5`, `examples/openai` `golines`, and all stale
+  `examples/error-handling` formatting warnings.
+- **`CompressImage` edge case** — now returns the original image unchanged when
+  re-encoding would not shrink it (e.g. compressing an already-low-quality JPEG
+  at a higher quality), instead of silently inflating it.
 - `LoadImageFromURL` now runs `ValidateImage` after download, rejecting non-image
   response bodies.
 - ScreenshotAnalyzer cache invalidation: all `With*` builder methods now set
   `cachedAgent = nil`.
+
+### Changed
+
+- **cmd/vision coverage 37.9% → 73.3%** — added tests for `loadImages`,
+  `printJSON`, `printText`, `runAnalysis` (text/json/stream/structured branches),
+  `runStructured`, `createProvider` (openaicompat happy + missing-baseURL),
+  and `printAnalysisError` (classified + unclassified).
+- **`infertypeargs` cleanup** — removed unnecessary explicit `[testReview]` type
+  arguments from `AnalyzeStructuredStream` calls where Go can infer T from the
+  callback; kept them where `nil` callbacks prevent inference.
+- **DOMAIN_LANGUAGE.md updated** — added `CompressImage`, `ResizeImageWithQuality`,
+  `encodeImage`, `parseFlags`, two-layer retry architecture note, and CLI context.
+- **README snippets compile-verified** — all 13 Go code blocks extracted and
+  built against the real module; every API call, type, and method signature is
+  correct.
 
 ## [0.3.0] - 2026-07-27
 
