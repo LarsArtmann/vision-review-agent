@@ -69,6 +69,7 @@ func TestIsValidImage(t *testing.T) {
 }
 
 func TestValidateImage(t *testing.T) {
+	t.Parallel()
 	t.Run("valid png", func(t *testing.T) {
 		t.Parallel()
 

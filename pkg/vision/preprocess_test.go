@@ -228,7 +228,7 @@ func TestCompressImageReducesJPEGSize(t *testing.T) {
 	compressed, err := CompressImage(src, 30)
 	require.NoError(t, err)
 	require.Equal(t, MediaTypeJPEG, compressed.MediaType, "JPEG source must stay JPEG")
-	require.Positive(t, len(compressed.Data), "compressed image must not be empty")
+	require.NotEmpty(t, compressed.Data, "compressed image must not be empty")
 	require.Less(
 		t,
 		len(compressed.Data),
@@ -322,11 +322,11 @@ func newBMP(t *testing.T, w, h int) *ImageSource {
 }
 
 func write16(buf *bytes.Buffer, v int) {
-	buf.Write([]byte{byte(v), byte(v >> 8)})
+	buf.Write([]byte{byte(v), byte(v >> 8)}) //nolint:gosec // G115: controlled test values for BMP header construction
 }
 
 func write32(buf *bytes.Buffer, v int) {
-	buf.Write([]byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24)})
+	buf.Write([]byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24)}) //nolint:gosec // G115: controlled test values for BMP header construction
 }
 
 func TestResizeImageDecodesAndResizesBMP(t *testing.T) {
@@ -339,7 +339,7 @@ func TestResizeImageDecodesAndResizesBMP(t *testing.T) {
 
 	// BMP is re-encoded as JPEG (non-PNG/JPEG input → JPEG).
 	require.Equal(t, MediaTypeJPEG, resized.MediaType)
-	require.Positive(t, len(resized.Data), "resized BMP must produce non-empty output")
+	require.NotEmpty(t, resized.Data, "resized BMP must produce non-empty output")
 
 	// The output must decode to a 100-wide (longest side capped) image.
 	config, _, err := image.DecodeConfig(bytes.NewReader(resized.Data))

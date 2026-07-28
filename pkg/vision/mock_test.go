@@ -201,14 +201,13 @@ func setupAgent() (context.Context, *Agent) {
 	return ctx, agent
 }
 
-// setupAgentWithModel creates a fresh context and agent using the provided mock.
+// setupAgentWithModel creates a fresh agent using the provided mock.
 // Use this when you need to inject errors into the mock.
-func setupAgentWithModel(model *mockModel) (context.Context, *Agent) {
-	ctx := context.Background()
+func setupAgentWithModel(model *mockModel) *Agent {
 	agent, err := NewAgent(Config{Model: model})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	return ctx, agent
+	return agent
 }
 
 func (m *mockModel) Provider() string { return "mock" }

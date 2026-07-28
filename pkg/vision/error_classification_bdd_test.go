@@ -16,7 +16,7 @@ var _ = ginkgo.Describe("Error Classification", func() {
 			"should classify provider errors into actionable kinds",
 			func(statusCode int, expectedKind ErrorKind, shouldRetry bool) {
 				model := &mockModel{generateErr: newTestProviderErr(statusCode)}
-				_, agent := setupAgentWithModel(model)
+				agent := setupAgentWithModel(model)
 
 				_, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 				gomega.Expect(err).To(gomega.HaveOccurred())
@@ -45,7 +45,7 @@ var _ = ginkgo.Describe("Error Classification", func() {
 
 		ginkgo.It("should classify context cancellation as non-retryable", func() {
 			model := &mockModel{generateErr: context.Canceled}
-			_, agent := setupAgentWithModel(model)
+			agent := setupAgentWithModel(model)
 
 			_, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 			gomega.Expect(err).To(gomega.HaveOccurred())
@@ -58,7 +58,7 @@ var _ = ginkgo.Describe("Error Classification", func() {
 
 		ginkgo.It("should classify deadline exceeded as retryable timeout", func() {
 			model := &mockModel{generateErr: context.DeadlineExceeded}
-			_, agent := setupAgentWithModel(model)
+			agent := setupAgentWithModel(model)
 
 			_, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 			gomega.Expect(err).To(gomega.HaveOccurred())
@@ -72,7 +72,7 @@ var _ = ginkgo.Describe("Error Classification", func() {
 		ginkgo.It("should preserve the original cause through the wrapper", func() {
 			providerErr := newTestProviderErr(http.StatusTooManyRequests)
 			model := &mockModel{generateErr: providerErr}
-			_, agent := setupAgentWithModel(model)
+			agent := setupAgentWithModel(model)
 
 			_, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 			gomega.Expect(err).To(gomega.HaveOccurred())
@@ -86,7 +86,7 @@ var _ = ginkgo.Describe("Error Classification", func() {
 	ginkgo.Describe("IsRetryable convenience function", func() {
 		ginkgo.It("should return true for retryable classified errors", func() {
 			model := &mockModel{generateErr: newTestProviderErr(http.StatusTooManyRequests)}
-			_, agent := setupAgentWithModel(model)
+			agent := setupAgentWithModel(model)
 
 			_, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 			gomega.Expect(IsRetryable(err)).To(gomega.BeTrue())
@@ -94,7 +94,7 @@ var _ = ginkgo.Describe("Error Classification", func() {
 
 		ginkgo.It("should return false for non-retryable classified errors", func() {
 			model := &mockModel{generateErr: newTestProviderErr(http.StatusUnauthorized)}
-			_, agent := setupAgentWithModel(model)
+			agent := setupAgentWithModel(model)
 
 			_, err := agent.Analyze(context.Background(), "prompt", ImageSrc())
 			gomega.Expect(IsRetryable(err)).To(gomega.BeFalse())

@@ -237,19 +237,19 @@ func TestAnalyzeBatchMixedSuccessAndError(t *testing.T) {
 
 	var successes, failures int
 
-	for _, r := range results {
-		if r.Err != nil {
+	for _, result := range results {
+		if result.Err != nil {
 			failures++
-			me, ok := errors.AsType[*apperrors.ModelError](r.Err)
+			me, ok := errors.AsType[*apperrors.ModelError](result.Err)
 			require.True(t, ok, "failed image must produce a classified ModelError")
 			require.Equal(t, apperrors.KindAuthentication, me.Kind)
 			require.False(t, me.IsRetryable())
-			require.Nil(t, r.Result)
+			require.Nil(t, result.Result)
 		} else {
 			successes++
 
-			require.NotNil(t, r.Result, "successful image must have a Result")
-			require.Contains(t, r.Result.Text, "mock response")
+			require.NotNil(t, result.Result, "successful image must have a Result")
+			require.Contains(t, result.Result.Text, "mock response")
 		}
 	}
 
