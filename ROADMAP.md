@@ -76,8 +76,8 @@ config-hygiene cleanup) lives in [TODO_LIST.md](TODO_LIST.md). The themes:
   backwards compat; plan a removal timeline.
 - **`Agent.Close`** — resource cleanup hook for agents that hold long-lived
   connections or state.
-- **`Conversation.LastMessage` helper** — common access pattern.
-- **`BatchResult.Duration`** — per-image analysis timing.
+- **`Conversation.LastMessage` helper** — shipped in v0.3.0-dev (common access pattern).
+- **`BatchResult.Duration`** — shipped in v0.3.0-dev (per-image analysis timing).
 
 ---
 

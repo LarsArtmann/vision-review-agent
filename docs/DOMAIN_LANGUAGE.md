@@ -70,6 +70,7 @@ The SDK uses a **two-layer retry** design:
 ### Composition
 
 When both layers are active:
+
 1. Fantasy retries first (HTTP-level)
 2. If fantasy exhausts retries, the error is classified into a `*ModelError`
 3. Vision-layer retry kicks in with backoff + jitter

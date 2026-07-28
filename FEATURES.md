@@ -91,11 +91,11 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 ### Infrastructure
 
 - **Nix flake** — Reproducible build environment with `nix run .#test`, `nix run .#lint`, `nix flake check`
-- **CI workflow** — `.github/workflows/ci.yml` (build, vet, race test, coverage gate, lint, format check)
+- **CI workflow** — `.github/workflows/ci.yml` (build, vet, race test, coverage gate, lint, format check, nix flake check, actionlint)
 - **Table-driven tests** — Pure function tests
 - **BDD tests** — User-facing behavior tests (Ginkgo + Gomega)
 - **Testify tests** — Error classification and feature tests
-- **Fuzz tests** — `FuzzDetectImageFormat`, `FuzzDecodeBase64Flex`
+- **Fuzz tests** — `FuzzDetectImageFormat`, `FuzzDecodeBase64Flex`, `FuzzEncodeImage`, `FuzzResizeImage`, `FuzzCompressImage`, `FuzzParseFlags`
 - **Mock model** — Comprehensive mock with error injection + call counting
 
 ### CLI
@@ -132,8 +132,9 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
   `AnalyzeConversation` are fully DONE. A proper `HooksEvent` redesign is a
   breaking change deferred to ROADMAP.
 - **CLI providers (Anthropic, Google, openaicompat)** — Compile and appear in
-  `-h`, but are **build-verified only** — no runtime credentials tested. Google
-  uses ADC (environment-specific); openaicompat expects a local server.
+  `-h`, and have **constructor tests** verifying env-var validation and provider
+  creation. Runtime credentials not tested (Google uses ADC; openaicompat
+  expects a local server).
 - **Streaming auto-retry** — Deliberately excluded. `AnalyzeStream`,
   `AnalyzeConversationStream`, and `AnalyzeStructuredStream` do NOT auto-retry
   on `Config.Retry` (partial-stream + retry has ambiguous delta semantics).
