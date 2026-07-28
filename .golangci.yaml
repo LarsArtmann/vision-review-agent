@@ -147,9 +147,23 @@ linters:
             - github.com/onsi/gomega
             - github.com/stretchr/testify
             - golang.org/x/sync
+            - golang.org/x/image
     exhaustruct:
       exclude:
         - os/exec.Cmd
+        # External types we construct partially (can't control their fields)
+        - fantasy\..*
+        - net/http\..*
+        - image/png\..*
+        # Own types with many optional fields where zero-value = default/unset.
+        # These use intentional partial initialization patterns.
+        - github\.com/larsartmann/vision-review-agent/pkg/vision\.Config$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision\.PreprocessConfig$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision\.AnalyzeResult$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision\.BatchResult$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision\.Conversation$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision\.CostTracker$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision\.ScreenshotAnalyzer$
     funlen:
       lines: 70
       statements: 40
