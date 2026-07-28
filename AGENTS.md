@@ -52,15 +52,10 @@ examples/                Working examples for each provider
 - **NewAgentWithCostTracker** — Convenience constructor that composes cost tracking with user hooks
 - **Capability fields are passthrough** — `Config.Tools/ToolChoice/StopConditions/PrepareStep/Headers/UserAgent` map 1:1 to fantasy options; nil/empty means provider default
 - **optionalParams() eliminates duplication** — Single `Config.optionalParams()` helper feeds model params to all 4 call sites (AgentCall, AgentStreamCall, ObjectCall x2)
-- **withPrepared[T] owns the analysis prologue/epilogue** — Generic higher-order wrapper (`pkg/vision/vision.go`) that runs `prepare()` (validate → preprocess → fireStart → timeout → toFileParts), defers `cancel()`, then invokes a closure with the prepared request. All 6 analysis methods (4 `Analyze*` + 2 `AnalyzeStructured*`) use it, so the `if err != nil { return } + defer cancel()` idiom appears once. Free function (not a method) because Go disallows generic methods.
-- **ScreenshotAnalyzer.invalidate() centralizes cache busting** — All `With*` builder methods call `sa.invalidate()` (sets `cachedAgent = nil`) instead of inlining the assignment
 - **BMP fully supported** — Decoder registered via `golang.org/x/image/bmp` blank import; `mediaTypeFromExtension` has explicit table for PNG/JPEG/GIF/WebP/BMP
 - **ResizeImage returns the same instance when no resize is needed** — Avoids unnecessary re-encoding
 - **Quality wired end-to-end** — `PreprocessConfig.JPEGQuality` flows through `ResizeImageWithQuality` → shared `encodeImage` helper. `ResizeImage` is a thin wrapper using the default quality (85). `CompressImage` re-encodes JPEGs without resizing (PNG preserves format via `png.BestCompression`). `encodeImage` is the single encode path shared by resize + compress
 - **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
-- **`isContentFilterRejection` uses specific signal phrases** — not bare words like "safety" (which matched benign messages); requires the rejection mechanism ("filter", "policy", "blocked", "removed") alongside the topic
-- **`CompressImage` no-ops when output wouldn't shrink** — returns the original image if re-encoding produces equal-or-larger bytes; contract is size reduction, not format normalization
-- **`version` is a `var` (not `const`)** — default `"0.3.0-dev"` for honest unreleased state; `flake.nix` injects the real semver via `-ldflags "-X main.version=..."`
 - **CLI parseFlags is testable** — `parseFlags(fs *flag.FlagSet, args []string) (*config, error)` takes a FlagSet and returns errors instead of calling `os.Exit`. `main()` passes `flag.CommandLine`; tests pass a fresh `flag.ContinueOnError` set with `io.Discard` output. Version/no-args decisions surface as `cfg.showVersion` / `cfg.args` so the caller acts on them.
 - **Retry tests must NOT set MaxRetries** — Vision-layer retry tests leave `MaxRetries` at 0 (default) and rely solely on `Config.Retry`. Setting `MaxRetries: 1` re-enables fantasy's HTTP-layer retry (~5s backoff per retryable mock call) and makes call counts non-deterministic. The full race suite is ~3.6s.
 
@@ -168,6 +163,6 @@ go build -o vision ./cmd/vision
 ## Code Duplication
 
 See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
-list of extraction helpers and duplication decisions. Current state:
-**0 clone groups** at `art-dupl --type-aware -t 1` (verified). Test files and
-interface-required signatures are below scan scope by design.
+list of accepted duplications and their rationale. Goal: **zero harmful
+duplication**, not zero report lines. Idiomatic Go patterns (interface
+signatures, table-driven tests, BDD assertion idioms) are kept by design.

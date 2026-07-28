@@ -10,6 +10,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
@@ -18,7 +19,13 @@ import (
 )
 
 func main() {
-	ctx, agent := cli.NewAgentFromArgs(2, "You are a UI/UX expert. Analyze each screen briefly.", 0.3)
+	cli.RequireArgc(2)
+
+	ctx := context.Background()
+	model := cli.NewOpenAIModel(ctx, "gpt-4o")
+
+	agent, err := cli.NewAgent(model, "You are a UI/UX expert. Analyze each screen briefly.", 0.3)
+	cli.ExitOnError(err, "Error creating agent")
 
 	images := loadAllImages()
 
