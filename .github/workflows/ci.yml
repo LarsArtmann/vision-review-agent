@@ -81,6 +81,23 @@ jobs:
           go install mvdan.cc/gofumpt@latest
           test -z "$(gofumpt -l .)"
 
+  jsonv2-compat:
+    name: encoding/json v2 compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build & test under GOEXPERIMENT=jsonv2
+        run: |
+          GOEXPERIMENT=jsonv2 go build ./...
+          GOEXPERIMENT=jsonv2 go vet ./...
+          GOEXPERIMENT=jsonv2 go test -race ./...
+
   nix-flake-check:
     runs-on: ubuntu-latest
     steps:
