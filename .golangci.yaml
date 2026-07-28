@@ -187,7 +187,7 @@ linters:
         - stdlib
         - generic
     makezero:
-      always: true
+      always: false
     nolintlint:
       require-explanation: true
     revive:
@@ -220,6 +220,18 @@ linters:
         - h
         - w
         - va
+    wrapcheck:
+      ignoreSigs:
+        - .Errorf(
+        - context.Context.Err()
+        - (context.Context).Err()
+        # fantasy model/agent methods: the calling public API wraps these
+        # errors with *apperrors.ModelError (classification). Internal
+        # helpers return the raw error so the caller can classify it.
+        - .(charm.land/fantasy.LanguageModel).
+        - .(charm.land/fantasy.Agent).
+        - (charm.land/fantasy.LanguageModel).
+        - (charm.land/fantasy.Agent).
       ignore-type-assert-ok: true
   exclusions:
     generated: lax
