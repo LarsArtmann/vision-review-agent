@@ -529,6 +529,17 @@ func newGIF(t *testing.T, w, h int) *ImageSource {
 	var buf bytes.Buffer
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := range h {
+		for x := range w {
+			img.SetRGBA(x, y, color.RGBA{
+				R: uint8((x * 255) / max(w, 1)),
+				G: uint8((y * 255) / max(h, 1)),
+				B: uint8((x ^ y) & 0xFF),
+				A: 255,
+			})
+		}
+	}
+
 	err := gif.Encode(&buf, img, &gif.Options{NumColors: 256})
 	require.NoError(t, err)
 
