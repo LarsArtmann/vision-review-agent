@@ -49,7 +49,7 @@
             pname = "vision-review-agent";
             inherit version;
             src = lib.cleanSource ./.;
-            vendorHash = "sha256-vtWvYhyC1AYshWGcfBBh8osNUA6ekFJcY+OdIgqJiV4=";
+            vendorHash = "sha256-Cz5lH1D1V+6MMQ4Upf17+jmz1pJQeLHg8/dZZJtbrjs=";
             proxyVendor = true;
             # Inject the nix-derived version into the Go binary so `vision
             # -version` reports the real release tag instead of the hardcoded
