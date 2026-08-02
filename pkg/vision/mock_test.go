@@ -79,6 +79,9 @@ func AssertGotEq(t *testing.T, name string, got, want any) {
 // By default it returns canned success responses. Set the *Err fields to
 // inject errors for testing classified error paths. Set generateErrs to a
 // sequence of errors consumed before generateErr (used to exercise retry).
+//
+// Field priority for GenerateObject: generateObjectErr > generateObjectResponse > default.
+// Field priority for StreamObject: streamObjectErr > streamObjectFunc > default.
 type mockModel struct {
 	generateErr         error
 	generateErrs        []error // consumed in order (1-based) before generateErr
@@ -90,6 +93,11 @@ type mockModel struct {
 	// generateObjectResponse, when non-nil, replaces the default GenerateObject
 	// response. Used for testing unmarshal failures (malformed Object).
 	generateObjectResponse *fantasy.ObjectResponse
+
+	// streamObjectErr, when non-nil, is returned as the error from StreamObject
+	// before any streaming begins. Use this to test the initial-call failure
+	// path (distinct from stream-part errors injected via streamObjectFunc).
+	streamObjectErr error
 
 	// streamObjectFunc, when non-nil, replaces the default StreamObject
 	// behavior. Used for testing streaming error paths.
@@ -189,6 +197,10 @@ func (m *mockModel) StreamObject(
 	_ context.Context,
 	_ fantasy.ObjectCall,
 ) (fantasy.ObjectStreamResponse, error) {
+	if m.streamObjectErr != nil {
+		return nil, m.streamObjectErr
+	}
+
 	if m.streamObjectFunc != nil {
 		return m.streamObjectFunc, nil
 	}
