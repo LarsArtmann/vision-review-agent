@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Structured parse error tests** — `TestAnalyzeStructuredStreamUnmarshalFailure`
+  and `TestAnalyzeStructuredUnmarshalFailure` cover the streaming and
+  non-streaming unmarshal failure paths. The mock model now supports
+  `streamObjectFunc` and `generateObjectResponse` fields for injecting malformed
+  objects into both paths.
+- **Validation error tests** — `TestValidationErrorsIncludeOffendingValues`
+  (7 table cases) verifies that every ranged sentinel in `Config.Validate`
+  includes the offending value in the message while preserving `errors.Is`
+  matching. `TestNoModelReturnsBareSentinel` confirms the model-missing path
+  returns an unwrapped sentinel.
+- **Enriched error-handling example** — `examples/error-handling/main.go` now
+  demonstrates both error categories: config validation sentinels (via
+  `errors.Is`) and classified model errors (via `errors.AsType`).
+
+### Changed
+
+- **Config.Validate enriched** — all 6 ranged validation sentinels now wrap
+  with the offending value: `fmt.Errorf("%w: got %v, want ...", sentinel, val)`.
+  `errors.Is` still matches the sentinel; the message is self-diagnosing (e.g.
+  `"vision agent: temperature must be between 0.0 and 2.0: got 3.50"`).
+- **LoadImageFromURL context** — bare `return nil, err` paths now wrap with the
+  URL: `fmt.Errorf("download image from %q: %w", url, err)`.
+- **Agent construction context** — `NewAgentWithCostTracker` and
+  `ScreenshotAnalyzer.agent()` failures now include operation context instead of
+  bare propagation.
+
+### Fixed
+
+- **Silent unmarshal swallow in AnalyzeStructuredStream** — the final-object
+  unmarshal error in `ObjectStreamPartTypeFinish` was discarded with
+  `_ = visionutil.UnmarshalToType(...)`. It now returns a `KindStructuredParse`
+  `*ModelError` so callers can detect and handle parse failures.
+- **BDD test assertions** — `gomega.Equal(sentinel)` updated to
+  `gomega.MatchError(sentinel)` + `ContainSubstring` to correctly match wrapped
+  sentinels via `errors.Is`.
+
 > **Known issues carried forward (not yet fixed):**
 >
 > - **Tag anomaly (partial).** `v0.2.1` (below) still points to commit
