@@ -105,6 +105,7 @@ func TestAnalyzeStructuredStreamUnmarshalFailure(t *testing.T) {
 	agent := newTestAgent(t, model)
 
 	const prompt = "test prompt"
+
 	_, err := AnalyzeStructuredStream[testReview](
 		context.Background(),
 		agent,
@@ -140,6 +141,7 @@ func TestAnalyzeStructuredUnmarshalFailure(t *testing.T) {
 	agent := newTestAgent(t, model)
 
 	const prompt = "test prompt"
+
 	_, err := AnalyzeStructured[testReview](context.Background(), agent, prompt, ImageSrc())
 	require.Error(t, err)
 

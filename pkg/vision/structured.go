@@ -107,66 +107,90 @@ func AnalyzeStructuredStream[T any](
 			return nil, classified
 		}
 
-		var (
-			finalObject  T
-			rawText      string
-			usage        fantasy.Usage
-			finishReason fantasy.FinishReason
+		result, err := consumeObjectStream[T](
+			prep.ctx, agent.config.Hooks, stream, prompt, onObject,
 		)
-
-		for part := range stream {
-			switch part.Type {
-			case fantasy.ObjectStreamPartTypeObject:
-				if onObject != nil && part.Object != nil {
-					var partial T
-					if unmarshalErr := visionutil.UnmarshalToType(part.Object, &partial); unmarshalErr == nil {
-						onObject(partial)
-						finalObject = partial
-					}
-				}
-			case fantasy.ObjectStreamPartTypeTextDelta:
-				rawText += part.Delta
-			case fantasy.ObjectStreamPartTypeError:
-				if part.Error != nil {
-					classified := classifyModelErr("vision agent structured stream", prompt, part.Error)
-					agent.config.Hooks.fireError(prep.ctx, classified)
-
-					return nil, classified
-				}
-			case fantasy.ObjectStreamPartTypeFinish:
-				usage = part.Usage
-
-				finishReason = part.FinishReason
-				if part.Object != nil {
-					if unmarshalErr := visionutil.UnmarshalToType(part.Object, &finalObject); unmarshalErr != nil {
-						parseErr := apperrors.Wrap(
-							apperrors.KindStructuredParse,
-							"vision agent structured stream (final object)",
-							prompt,
-							unmarshalErr,
-						)
-						agent.config.Hooks.fireError(prep.ctx, parseErr)
-
-						return nil, parseErr
-					}
-				}
-			}
+		if err != nil {
+			return nil, err
 		}
 
 		finalResult := &fantasy.ObjectResult[T]{
-			Object:       finalObject,
-			RawText:      rawText,
-			Usage:        usage,
-			FinishReason: finishReason,
+			Object:       result.finalObject,
+			RawText:      result.rawText,
+			Usage:        result.usage,
+			FinishReason: result.finishReason,
 		}
 		// Synthesized AnalyzeResult: RawResponse is nil (see AnalyzeResult.RawResponse doc).
 		agent.config.Hooks.fireFinish(prep.ctx, &AnalyzeResult{
-			Text:  rawText,
-			Usage: usage,
+			Text:  result.rawText,
+			Usage: result.usage,
 		})
 
 		return finalResult, nil
 	})
+}
+
+// streamObjectResult holds the accumulated output from iterating an object stream.
+type streamObjectResult[T any] struct {
+	finalObject  T
+	rawText      string
+	usage        fantasy.Usage
+	finishReason fantasy.FinishReason
+}
+
+// consumeObjectStream iterates a structured object stream, accumulating the
+// final object, raw text, usage, and finish reason. It invokes onObject for
+// each partial. Returns a classified error if the stream emits an error part or
+// if the final object fails to unmarshal into T.
+func consumeObjectStream[T any](
+	ctx context.Context,
+	hooks Hooks,
+	stream fantasy.ObjectStreamResponse,
+	prompt string,
+	onObject func(partial T),
+) (streamObjectResult[T], error) {
+	var result streamObjectResult[T]
+
+	for part := range stream {
+		switch part.Type {
+		case fantasy.ObjectStreamPartTypeObject:
+			if onObject != nil && part.Object != nil {
+				var partial T
+				if unmarshalErr := visionutil.UnmarshalToType(part.Object, &partial); unmarshalErr == nil {
+					onObject(partial)
+					result.finalObject = partial
+				}
+			}
+		case fantasy.ObjectStreamPartTypeTextDelta:
+			result.rawText += part.Delta
+		case fantasy.ObjectStreamPartTypeError:
+			if part.Error != nil {
+				classified := classifyModelErr("vision agent structured stream", prompt, part.Error)
+				hooks.fireError(ctx, classified)
+
+				return result, classified
+			}
+		case fantasy.ObjectStreamPartTypeFinish:
+			result.usage = part.Usage
+			result.finishReason = part.FinishReason
+
+			if part.Object != nil {
+				if unmarshalErr := visionutil.UnmarshalToType(part.Object, &result.finalObject); unmarshalErr != nil {
+					parseErr := apperrors.Wrap(
+						apperrors.KindStructuredParse,
+						"vision agent structured stream (final object)",
+						prompt,
+						unmarshalErr,
+					)
+					hooks.fireError(ctx, parseErr)
+
+					return result, parseErr
+				}
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // buildObjectCall constructs a fantasy.ObjectCall for a typed structured
