@@ -1,5 +1,6 @@
 # Binaries
 vision-cli
+error-handling
 *.exe
 *.dll
 *.so
