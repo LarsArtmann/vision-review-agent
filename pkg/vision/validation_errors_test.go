@@ -1,7 +1,6 @@
 package vision
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -71,7 +70,7 @@ func TestValidationErrorsIncludeOffendingValues(t *testing.T) {
 			err := tt.config.Validate()
 
 			require.Error(t, err)
-			require.True(t, errors.Is(err, tt.sentinel),
+			require.ErrorIs(t, err, tt.sentinel,
 				"errors.Is must still match sentinel %v, got %v", tt.sentinel, err)
 			require.Contains(t, err.Error(), tt.wantSubstr,
 				"error message must include the offending value for diagnosis")
