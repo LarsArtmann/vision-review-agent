@@ -143,6 +143,56 @@ func TestLoadImageFromURL(t *testing.T) {
 	})
 }
 
+// TestLoadImageFromURL_ErrorPathsIncludeURL verifies that the requested URL
+// appears in every error message so callers can diagnose which download
+// failed without extra context.
+func TestLoadImageFromURL_ErrorPathsIncludeURL(t *testing.T) {
+	t.Parallel()
+
+	const path = "/screenshot.png"
+
+	t.Run("HTTP error status includes URL", func(t *testing.T) {
+		t.Parallel()
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer server.Close()
+
+		url := server.URL + path
+		_, err := LoadImageFromURL(context.Background(), url)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), path,
+			"error must include the URL for diagnosis")
+	})
+
+	t.Run("invalid image body includes URL", func(t *testing.T) {
+		t.Parallel()
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write([]byte("<html>not an image</html>"))
+		}))
+		defer server.Close()
+
+		url := server.URL + path
+		_, err := LoadImageFromURL(context.Background(), url)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), path,
+			"error must include the URL for diagnosis")
+	})
+
+	t.Run("request creation failure includes URL", func(t *testing.T) {
+		t.Parallel()
+
+		// A URL with an invalid scheme triggers http.NewRequestWithContext error.
+		_, err := LoadImageFromURL(context.Background(), "ht!tp://broken/bad.png")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "bad.png",
+			"error must include the URL for diagnosis")
+	})
+}
+
 func TestConfigValidationExtended(t *testing.T) {
 	t.Parallel()
 

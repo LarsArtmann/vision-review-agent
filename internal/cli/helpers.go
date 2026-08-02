@@ -72,7 +72,7 @@ func NewAgent(
 		Temperature:  temp,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("create vision agent (systemPrompt=%q): %w", systemPrompt, err)
+		return nil, fmt.Errorf("create vision agent (systemPrompt=%q, temperature=%.2f): %w", systemPrompt, temp, err)
 	}
 
 	return agent, nil

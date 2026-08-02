@@ -2,6 +2,7 @@ package apperrors
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -103,6 +104,47 @@ func TestErrorsIs(t *testing.T) {
 				tt.want,
 				errors.Is(tt.err, tt.target),
 			) // value match testing
+		})
+	}
+}
+
+// TestSentinelsSurviveErrorfWrapping verifies that every sentinel remains
+// matchable through fmt.Errorf("%w") wrapping. Config.Validate() uses this
+// pattern to enrich each validation sentinel with the offending value
+// (e.g. "got 3.00, want [0.0, 2.0]"). If a sentinel lost errors.Is
+// compatibility after wrapping, consumer code that switches on
+// errors.Is(err, ErrInvalidTemperature) would silently break.
+func TestSentinelsSurviveErrorfWrapping(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		sentinel error
+	}{
+		{"ErrNoModel", ErrNoModel},
+		{"ErrEmptyPrompt", ErrEmptyPrompt},
+		{"ErrNoImages", ErrNoImages},
+		{"ErrInvalidTemperature", ErrInvalidTemperature},
+		{"ErrInvalidMaxTokens", ErrInvalidMaxTokens},
+		{"ErrInvalidTopP", ErrInvalidTopP},
+		{"ErrInvalidTopK", ErrInvalidTopK},
+		{"ErrInvalidPresencePenalty", ErrInvalidPresencePenalty},
+		{"ErrInvalidFrequencyPenalty", ErrInvalidFrequencyPenalty},
+		{"ErrInvalidImage", ErrInvalidImage},
+		{"ErrEmptyImageData", ErrEmptyImageData},
+		{"ErrImageTooLarge", ErrImageTooLarge},
+	}
+
+	for _, tc := range cases {
+		// capture range variable
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			wrapped := fmt.Errorf("%w: got bad-value", tc.sentinel)
+			require.ErrorIs(t, wrapped, tc.sentinel,
+				"sentinel must survive %%w wrapping for enriched validation errors")
 		})
 	}
 }
