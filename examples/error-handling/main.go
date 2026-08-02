@@ -1,8 +1,14 @@
-// Example: Error handling with classified model errors
+// Example: Error handling with classified model errors and enriched validation errors
 //
-// Demonstrates the errors.AsType[*vision.ModelError] pattern for inspecting
-// model invocation failures by ErrorKind, enabling retry vs. fix-input
-// decisions without reaching into the underlying provider SDK.
+// Demonstrates two error categories produced by the vision SDK:
+//
+//  1. Config validation errors — sentinel errors (ErrInvalidTemperature, etc.)
+//     wrapped with the offending value for self-diagnosis. Use errors.Is to
+//     match the sentinel; the message includes what value was wrong.
+//
+//  2. Model invocation errors — classified as *vision.ModelError with an
+//     ErrorKind (rate-limited, timeout, bad-request, etc.). Use
+//     errors.AsType to extract the kind and decide retry vs. fix-input.
 //
 // Usage:
 //
@@ -31,7 +37,10 @@ func main() {
 		Retry:       &rc,
 		Temperature: 0.3,
 	})
-	cli.ExitOnError(err, "Error creating agent")
+	if err != nil {
+		printConfigError(err)
+		os.Exit(1)
+	}
 
 	img := cli.LoadImageArg()
 
@@ -42,6 +51,31 @@ func main() {
 	}
 
 	cli.PrintResult(result.Text, result.Usage.TotalTokens)
+}
+
+// printConfigError handles config validation errors. These are sentinel errors
+// wrapped with the offending value (e.g. "got 5.00, want [0.0, 2.0]").
+// errors.Is still matches the underlying sentinel, and the message tells the
+// user exactly what value to fix. This function does not call os.Exit.
+func printConfigError(err error) {
+	switch {
+	case errors.Is(err, vision.ErrNoModel):
+		fmt.Fprintln(os.Stderr, "No model configured. Set the Model field in Config.")
+	case errors.Is(err, vision.ErrInvalidTemperature):
+		fmt.Fprintf(os.Stderr, "Invalid temperature: %v\n", err)
+	case errors.Is(err, vision.ErrInvalidMaxTokens):
+		fmt.Fprintf(os.Stderr, "Invalid max output tokens: %v\n", err)
+	case errors.Is(err, vision.ErrInvalidTopP):
+		fmt.Fprintf(os.Stderr, "Invalid top-p: %v\n", err)
+	case errors.Is(err, vision.ErrInvalidTopK):
+		fmt.Fprintf(os.Stderr, "Invalid top-k: %v\n", err)
+	case errors.Is(err, vision.ErrInvalidPresencePenalty):
+		fmt.Fprintf(os.Stderr, "Invalid presence penalty: %v\n", err)
+	case errors.Is(err, vision.ErrInvalidFrequencyPenalty):
+		fmt.Fprintf(os.Stderr, "Invalid frequency penalty: %v\n", err)
+	default:
+		fmt.Fprintf(os.Stderr, "Agent creation failed: %v\n", err)
+	}
 }
 
 // printModelError demonstrates the map-lookup-on-Kind pattern: it extracts the
