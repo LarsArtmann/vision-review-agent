@@ -64,6 +64,12 @@ examples/                Working examples for each provider
 - **CLI parseFlags is testable** — `parseFlags(fs *flag.FlagSet, args []string) (*config, error)` takes a FlagSet and returns errors instead of calling `os.Exit`. `main()` passes `flag.CommandLine`; tests pass a fresh `flag.ContinueOnError` set with `io.Discard` output. Version/no-args decisions surface as `cfg.showVersion` / `cfg.args` so the caller acts on them.
 - **Retry tests must NOT set MaxRetries** — Vision-layer retry tests leave `MaxRetries` at 0 (default) and rely solely on `Config.Retry`. Setting `MaxRetries: 1` re-enables fantasy's HTTP-layer retry (~5s backoff per retryable mock call) and makes call counts non-deterministic. The full race suite is ~3.6s.
 - **Dual json v1+v2 support — do NOT migrate imports** — All code imports only `encoding/json` (the v1 path). This transparently supports BOTH regimes: default Go (v1 behavior) AND `GOEXPERIMENT=jsonv2` (v2 behavior), because the jsonv2 experiment swaps the _implementation_ of `encoding/json` while preserving the v1 API surface (`Marshal`, `Unmarshal`, `NewEncoder`, `SetIndent`, `Decoder`). The auto-upgrade daemon repeatedly tried to switch imports to `encoding/json/v2` and `encoding/json/jsontext` — those paths are NOT supported here: they require a `go.mod` replace directive AND have a different low-level API (`jsontext.Encoder` has no `SetIndent`), which broke compilation. CI runs a dedicated `jsonv2-compat` job (`GOEXPERIMENT=jsonv2 go build/vet/test`) to guard this. Verified passing under both Go 1.26.5 default and jsonv2.
+- **Validation errors include offending values** — `Config.Validate()` wraps each sentinel with `fmt.Errorf("%w: got %v, want ...", sentinel, value)`. This preserves `errors.Is` matching while making the error self-diagnosing: `"vision agent: temperature must be between 0.0 and 2.0: got 3.50, want [0.0, 2.0]"`. Tests use `require.ErrorIs` (which traverses wraps) and `require.Contains` (which checks the message).
+- **No context dumping in error messages** — Variables that are RESULTS of a failed operation (`decoded`, `data`, `img`, `jsonBytes`) are never included in error messages. They are nil/garbage on the error path. Only INPUTS relevant to diagnosis (path, url, mediaType, filename, offending value) are included. The `erraudit` tool's `context_loss` findings on result variables are false positives — adding them would produce misleading error strings.
+- **Bare `return err` is intentional at boundary sentinels** — When a function returns a sentinel error (`ErrEmptyPrompt`, `ErrNoImages`, `ErrInvalidImage`), propagating it without wrapping is correct: the sentinel IS the error. Wrapping `"analyze: %w"` would just add noise. Context wrapping is reserved for sites where the calling context genuinely adds diagnostic value (URL, operation name, image index).
+- **Structured streaming final object unmarshal is a hard error** — `AnalyzeStructuredStream`'s `ObjectStreamPartTypeFinish` case now returns a `KindStructuredParse` error if the final object fails to unmarshal, instead of silently swallowing it and returning a zero-value T. Partial object unmarshal failures during streaming are still tolerated (best-effort).
+- **`errors.AsType[E]` for typed extraction, `errors.Is` for sentinels** — The codebase uses the Go 1.26 generic `errors.AsType[*T](err)` for extracting `*ModelError`, `*fantasy.ProviderError`, `*fantasy.NoObjectGeneratedError`. It uses `errors.Is` for stdlib sentinels (`context.Canceled`, `context.DeadlineExceeded`). No legacy `errors.As` remains.
+- **Functions return `error` interface, not concrete types** — Every function returns `error`, not a specific error type. This is idiomatic Go. The `erraudit` `generic_return` warnings suggesting per-function error types are false positives that would break composability and add massive boilerplate.
 
 ## Build & Test Commands
 
@@ -128,15 +134,18 @@ All in `pkg/errors/`, re-exported from `pkg/vision/`:
 - `ErrNoModel` — No language model configured
 - `ErrEmptyPrompt` — Empty prompt provided
 - `ErrNoImages` — No images provided
-- `ErrInvalidTemperature` — Temperature out of 0.0-2.0 range
-- `ErrInvalidMaxTokens` — Negative max tokens
-- `ErrInvalidTopP` — Top-p out of 0.0-1.0 range
-- `ErrInvalidTopK` — Negative top-k
-- `ErrInvalidPresencePenalty` — Presence penalty out of -2.0 to 2.0
-- `ErrInvalidFrequencyPenalty` — Frequency penalty out of -2.0 to 2.0
+- `ErrInvalidTemperature` — Temperature out of 0.0-2.0 range (wrapped: includes offending value)
+- `ErrInvalidMaxTokens` — Negative max tokens (wrapped: includes offending value)
+- `ErrInvalidTopP` — Top-p out of 0.0-1.0 range (wrapped: includes offending value)
+- `ErrInvalidTopK` — Negative top-k (wrapped: includes offending value)
+- `ErrInvalidPresencePenalty` — Presence penalty out of -2.0 to 2.0 (wrapped: includes offending value)
+- `ErrInvalidFrequencyPenalty` — Frequency penalty out of -2.0 to 2.0 (wrapped: includes offending value)
 - `ErrInvalidImage` — Data doesn't match known image format
 - `ErrEmptyImageData` — Image data is empty
 - `ErrImageTooLarge` — Image exceeds 50 MB limit
+
+Wrapped sentinels use `fmt.Errorf("%w: got %v, want ...", sentinel, value)`, so `errors.Is`
+still matches. Example: `"vision agent: temperature must be between 0.0 and 2.0: got 3.50, want [0.0, 2.0]"`.
 
 ## Classified Model Errors
 

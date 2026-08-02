@@ -146,7 +146,7 @@ func (sa *ScreenshotAnalyzer) agent() (*Agent, error) {
 
 	agent, err := NewAgent(sa.config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("screenshot analyzer: build agent: %w", err)
 	}
 
 	sa.cachedAgent = agent

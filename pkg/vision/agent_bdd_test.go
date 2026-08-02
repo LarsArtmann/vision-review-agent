@@ -26,7 +26,8 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 				Model:       testModel(),
 				Temperature: -0.1,
 			})
-			gomega.Expect(err).To(gomega.Equal(ErrInvalidTemperature))
+			gomega.Expect(err).To(gomega.MatchError(ErrInvalidTemperature))
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("got -0.10"))
 		})
 
 		ginkgo.It("should reject temperature above 2.0", func() {
@@ -34,7 +35,8 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 				Model:       testModel(),
 				Temperature: 2.1,
 			})
-			gomega.Expect(err).To(gomega.Equal(ErrInvalidTemperature))
+			gomega.Expect(err).To(gomega.MatchError(ErrInvalidTemperature))
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("got 2.10"))
 		})
 
 		ginkgo.DescribeTable(
@@ -56,7 +58,8 @@ var _ = ginkgo.Describe("Vision Agent", func() {
 				Model:           testModel(),
 				MaxOutputTokens: -1,
 			})
-			gomega.Expect(err).To(gomega.Equal(ErrInvalidMaxTokens))
+			gomega.Expect(err).To(gomega.MatchError(ErrInvalidMaxTokens))
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("got -1"))
 		})
 	})
 

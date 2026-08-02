@@ -138,7 +138,17 @@ func AnalyzeStructuredStream[T any](
 
 				finishReason = part.FinishReason
 				if part.Object != nil {
-					_ = visionutil.UnmarshalToType(part.Object, &finalObject)
+					if unmarshalErr := visionutil.UnmarshalToType(part.Object, &finalObject); unmarshalErr != nil {
+						parseErr := apperrors.Wrap(
+							apperrors.KindStructuredParse,
+							"vision agent structured stream (final object)",
+							prompt,
+							unmarshalErr,
+						)
+						agent.config.Hooks.fireError(prep.ctx, parseErr)
+
+						return nil, parseErr
+					}
 				}
 			}
 		}

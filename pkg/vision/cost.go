@@ -2,6 +2,7 @@ package vision
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"charm.land/fantasy"
@@ -99,7 +100,7 @@ func NewAgentWithCostTracker(config Config) (*Agent, *CostTracker, error) {
 
 	agent, err := NewAgent(config)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("new agent with cost tracker: %w", err)
 	}
 
 	return agent, tracker, nil

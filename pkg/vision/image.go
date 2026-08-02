@@ -118,9 +118,7 @@ func LoadImageFromURLWithClient(
 	if err != nil {
 		return nil, fmt.Errorf("download image from %q: %w", url, err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("%w: %q (HTTP %d)", errImageDownloadFailed, url, resp.StatusCode)
@@ -131,7 +129,7 @@ func LoadImageFromURLWithClient(
 
 	img, err := LoadImageFromReader(resp.Body, mediaType, filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("download image from %q: %w", url, err)
 	}
 
 	if err := ValidateImage(img.Data); err != nil {

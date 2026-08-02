@@ -118,34 +118,38 @@ type Config struct {
 	Preprocess *PreprocessConfig
 }
 
-// Validate checks the configuration for errors.
+// Validate checks the configuration for errors. When a constraint is violated,
+// the returned error wraps the corresponding sentinel (so errors.Is still
+// matches) and includes the offending value for quick diagnosis:
+//
+//	vision agent: temperature must be between 0.0 and 2.0: got 3.50
 func (c *Config) Validate() error {
 	if c.Model == nil {
 		return ErrNoModel
 	}
 
 	if c.Temperature < 0 || c.Temperature > 2.0 {
-		return ErrInvalidTemperature
+		return fmt.Errorf("%w: got %.2f, want [0.0, 2.0]", ErrInvalidTemperature, c.Temperature)
 	}
 
 	if c.MaxOutputTokens < 0 {
-		return ErrInvalidMaxTokens
+		return fmt.Errorf("%w: got %d, want >= 0", ErrInvalidMaxTokens, c.MaxOutputTokens)
 	}
 
 	if c.TopP < 0 || c.TopP > 1.0 {
-		return ErrInvalidTopP
+		return fmt.Errorf("%w: got %.2f, want [0.0, 1.0]", ErrInvalidTopP, c.TopP)
 	}
 
 	if c.TopK < 0 {
-		return ErrInvalidTopK
+		return fmt.Errorf("%w: got %d, want >= 0", ErrInvalidTopK, c.TopK)
 	}
 
 	if c.PresencePenalty < -2.0 || c.PresencePenalty > 2.0 {
-		return ErrInvalidPresencePenalty
+		return fmt.Errorf("%w: got %.2f, want [-2.0, 2.0]", ErrInvalidPresencePenalty, c.PresencePenalty)
 	}
 
 	if c.FrequencyPenalty < -2.0 || c.FrequencyPenalty > 2.0 {
-		return ErrInvalidFrequencyPenalty
+		return fmt.Errorf("%w: got %.2f, want [-2.0, 2.0]", ErrInvalidFrequencyPenalty, c.FrequencyPenalty)
 	}
 
 	return nil
