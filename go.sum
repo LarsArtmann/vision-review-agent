@@ -100,8 +100,8 @@ github.com/joshdk/go-junit v1.0.0 h1:S86cUKIdwBHWwA6xCmFlf3RTLfVXYQfvanM5Uh+K6GE
 github.com/joshdk/go-junit v1.0.0/go.mod h1:TiiV0PqkaNfFXjEiyjWM3XXrhVyCa1K4Zfga6W52ung=
 github.com/kaptinlin/jsonpointer v0.4.28 h1:PyxOfdml9PGpxQz+JnNLGsyzQ+Rnm+OVNTGcgbVLqgg=
 github.com/kaptinlin/jsonpointer v0.4.28/go.mod h1:JzeIDw1+60bryzOFea9P3zjKg8pfJHd+UIA/zfZ70x8=
-github.com/kaptinlin/jsonschema v0.9.6 h1:RNqurZUqduQm+mINsCFbRzBQR0uKbAcRPBj3BqRA/I8=
-github.com/kaptinlin/jsonschema v0.9.6/go.mod h1:TP7RFmFBNExjBE0b3fsM6RpA/9PeOzfg2g4weXqOrDg=
+github.com/kaptinlin/jsonschema v0.9.7 h1:2jOBrfpCAcfaJJfgtDmJTGwuf0/skctp3Fnj3DxJtw8=
+github.com/kaptinlin/jsonschema v0.9.7/go.mod h1:/T5IxJXz1mrNz2ATCdNeHTsd1AZ16ctWHqf9hQwZ3DM=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=

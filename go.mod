@@ -52,7 +52,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.23.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/kaptinlin/jsonpointer v0.4.28 // indirect
-	github.com/kaptinlin/jsonschema v0.9.6 // indirect
+	github.com/kaptinlin/jsonschema v0.9.7 // indirect
 	github.com/openai/openai-go/v3 v3.49.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect

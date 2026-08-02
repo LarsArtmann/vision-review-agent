@@ -21,28 +21,28 @@ This session closed every P0 item from both prior status reports and most P1 ite
 
 ## a) FULLY DONE
 
-| Item | Evidence |
-| --- | --- |
-| **`nix flake check`** — never run across two prior sessions; now verified: all checks passed (packages, apps, devShells, checks, overlays, formatter) | `nix flake check --no-build` output: "all checks passed!" |
-| **`nix build .`** — never run across two prior sessions; now verified: derivation builds successfully | `nix build .` exit 0 |
-| **`streamObjectErr` field on mock model** — new field enables testing `StreamObject` returning an error before any streaming begins; documented field priority in struct comment | `pkg/vision/mock_test.go:96-99` (field), `:78-82` (struct doc), `:194-196` (check in StreamObject) |
-| **`TestAnalyzeStructuredStreamInitialError`** — mock injects 503 via `streamObjectErr`; asserts `KindServiceUnavailable`, `IsRetryable()==true`, correct `Op`/`Prompt` | `pkg/vision/structured_test.go:157-183` |
-| **`consumeObjectStream[T]` unit tests (7 tests)** — all 4 stream part types tested in isolation: Object (partial callback + nil-callback safety), TextDelta (accumulation), Error (classification), Finish (valid metadata storage + malformed parse error) | `pkg/vision/structured_test.go:198-378` |
-| **`mockObjectStream` helper** — reusable test helper that builds a `fantasy.ObjectStreamResponse` from a fixed list of parts | `pkg/vision/structured_test.go:185-194` |
-| **Sentinel wrapping tests at `pkg/errors` level** — 12 table cases verifying every sentinel survives `fmt.Errorf("%w")` wrapping, proving enriched validation errors still match `errors.Is` | `pkg/errors/errors_test.go:112-155` |
-| **URL-in-error-path tests** — 3 subtests verifying the URL appears in HTTP-error, invalid-body, and request-creation error messages | `pkg/vision/features_test.go:146-197` |
-| **`cli/helpers.go` temperature in error** — `NewAgent` failure now includes `temperature=%.2f` alongside `systemPrompt` for diagnosis | `internal/cli/helpers.go:75` |
-| **Mock model field priority documented** — struct comment now states: `GenerateObject: generateObjectErr > generateObjectResponse > default`; `StreamObject: streamObjectErr > streamObjectFunc > default` | `pkg/vision/mock_test.go:78-82` |
-| **`docs/ERROR_DESIGN.md`** — comprehensive error taxonomy document with classification flow diagram, sentinel table, ErrorKind matrix, consumer decision matrix | `docs/ERROR_DESIGN.md` (205 lines) |
-| **`copyloopvar` lint fix** — removed obsolete `tc := tc` loop variable capture (Go 1.22+ fixed this); caught by `nix run .#lint` | `pkg/errors/errors_test.go:122-123` |
-| `go build ./...` | ✓ exit 0 |
-| `go vet ./...` | ✓ exit 0 |
-| `gofmt -l .` | ✓ clean |
-| `go test -race ./...` | ✓ all packages pass |
-| `GOEXPERIMENT=jsonv2 go build/vet/test ./...` | ✓ all pass |
-| `nix flake check` | ✓ all checks passed |
-| `nix build .` | ✓ succeeded |
-| `nix run .#lint` | ✓ 0 issues |
+| Item                                                                                                                                                                                                                                                        | Evidence                                                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **`nix flake check`** — never run across two prior sessions; now verified: all checks passed (packages, apps, devShells, checks, overlays, formatter)                                                                                                       | `nix flake check --no-build` output: "all checks passed!"                                          |
+| **`nix build .`** — never run across two prior sessions; now verified: derivation builds successfully                                                                                                                                                       | `nix build .` exit 0                                                                               |
+| **`streamObjectErr` field on mock model** — new field enables testing `StreamObject` returning an error before any streaming begins; documented field priority in struct comment                                                                            | `pkg/vision/mock_test.go:96-99` (field), `:78-82` (struct doc), `:194-196` (check in StreamObject) |
+| **`TestAnalyzeStructuredStreamInitialError`** — mock injects 503 via `streamObjectErr`; asserts `KindServiceUnavailable`, `IsRetryable()==true`, correct `Op`/`Prompt`                                                                                      | `pkg/vision/structured_test.go:157-183`                                                            |
+| **`consumeObjectStream[T]` unit tests (7 tests)** — all 4 stream part types tested in isolation: Object (partial callback + nil-callback safety), TextDelta (accumulation), Error (classification), Finish (valid metadata storage + malformed parse error) | `pkg/vision/structured_test.go:198-378`                                                            |
+| **`mockObjectStream` helper** — reusable test helper that builds a `fantasy.ObjectStreamResponse` from a fixed list of parts                                                                                                                                | `pkg/vision/structured_test.go:185-194`                                                            |
+| **Sentinel wrapping tests at `pkg/errors` level** — 12 table cases verifying every sentinel survives `fmt.Errorf("%w")` wrapping, proving enriched validation errors still match `errors.Is`                                                                | `pkg/errors/errors_test.go:112-155`                                                                |
+| **URL-in-error-path tests** — 3 subtests verifying the URL appears in HTTP-error, invalid-body, and request-creation error messages                                                                                                                         | `pkg/vision/features_test.go:146-197`                                                              |
+| **`cli/helpers.go` temperature in error** — `NewAgent` failure now includes `temperature=%.2f` alongside `systemPrompt` for diagnosis                                                                                                                       | `internal/cli/helpers.go:75`                                                                       |
+| **Mock model field priority documented** — struct comment now states: `GenerateObject: generateObjectErr > generateObjectResponse > default`; `StreamObject: streamObjectErr > streamObjectFunc > default`                                                  | `pkg/vision/mock_test.go:78-82`                                                                    |
+| **`docs/ERROR_DESIGN.md`** — comprehensive error taxonomy document with classification flow diagram, sentinel table, ErrorKind matrix, consumer decision matrix                                                                                             | `docs/ERROR_DESIGN.md` (205 lines)                                                                 |
+| **`copyloopvar` lint fix** — removed obsolete `tc := tc` loop variable capture (Go 1.22+ fixed this); caught by `nix run .#lint`                                                                                                                            | `pkg/errors/errors_test.go:122-123`                                                                |
+| `go build ./...`                                                                                                                                                                                                                                            | ✓ exit 0                                                                                           |
+| `go vet ./...`                                                                                                                                                                                                                                              | ✓ exit 0                                                                                           |
+| `gofmt -l .`                                                                                                                                                                                                                                                | ✓ clean                                                                                            |
+| `go test -race ./...`                                                                                                                                                                                                                                       | ✓ all packages pass                                                                                |
+| `GOEXPERIMENT=jsonv2 go build/vet/test ./...`                                                                                                                                                                                                               | ✓ all pass                                                                                         |
+| `nix flake check`                                                                                                                                                                                                                                           | ✓ all checks passed                                                                                |
+| `nix build .`                                                                                                                                                                                                                                               | ✓ succeeded                                                                                        |
+| `nix run .#lint`                                                                                                                                                                                                                                            | ✓ 0 issues                                                                                         |
 
 ---
 
@@ -110,7 +110,7 @@ This session closed every P0 item from both prior status reports and most P1 ite
 
 7. **I should have caught the `copyloopvar` before running lint.** The pattern is obsolete in Go 1.22+. I should train myself to not write `tc := tc` anymore. The linter caught it, but I wasted a round-trip.
 
-8. **I wrote a wrong assertion because I didn't re-read the code path.** The nil-callback test failure was entirely avoidable if I had re-read the `consumeObjectStream` implementation before writing assertions. I was coding from memory of what I *thought* the code did, not what it *actually* does.
+8. **I wrote a wrong assertion because I didn't re-read the code path.** The nil-callback test failure was entirely avoidable if I had re-read the `consumeObjectStream` implementation before writing assertions. I was coding from memory of what I _thought_ the code did, not what it _actually_ does.
 
 9. **The status report filename uses the session-end timestamp, not the session-start timestamp.** Minor inconsistency with prior reports which used start timestamps. Not wrong, just different.
 
@@ -192,7 +192,7 @@ This session closed every P0 item from both prior status reports and most P1 ite
 
 ## g) Questions I CANNOT Answer Myself
 
-1. **Is `erraudit` a CI gate or an advisory tool?** This is the third session asking. The 125 violations (108 false-positive `context_loss` + 17 anti-idiomatic `generic_return`) have persisted across all three sessions. If it's a gate, I need to suppress or fix all 125. If advisory, the real fixes (4 in session 1, 0 this session) are sufficient and I should document the false positives and move on. I cannot find `erraudit` in `flake.nix`, CI config, or any pre-commit hook — but I also can't confirm it's *not* used externally.
+1. **Is `erraudit` a CI gate or an advisory tool?** This is the third session asking. The 125 violations (108 false-positive `context_loss` + 17 anti-idiomatic `generic_return`) have persisted across all three sessions. If it's a gate, I need to suppress or fix all 125. If advisory, the real fixes (4 in session 1, 0 this session) are sufficient and I should document the false positives and move on. I cannot find `erraudit` in `flake.nix`, CI config, or any pre-commit hook — but I also can't confirm it's _not_ used externally.
 
 2. **Should partial-object unmarshal failures during streaming (`ObjectStreamPartTypeObject`, not just `Finish`) be hard errors?** They are currently best-effort (silently skipped via `if unmarshalErr == nil`). The final-object unmarshal was changed to a hard error in session 1. The partial path is arguably less critical — a transient parse failure on a partial shouldn't kill the stream — but the domain may require all-or-nothing semantics. I don't know the consumer expectations for `AnalyzeStructuredStream`.
 
@@ -202,19 +202,19 @@ This session closed every P0 item from both prior status reports and most P1 ite
 
 ## Verification Snapshot
 
-| Check | Command | Result |
-| --- | --- | --- |
-| Build | `go build ./...` | ✓ |
-| Vet | `go vet ./...` | ✓ |
-| Format | `gofmt -l .` | ✓ clean |
-| Test (race) | `go test -race ./...` | ✓ all pass |
-| Coverage | `go test -race -cover` | ✓ vision 90.1% (+1.4pp), errors 94.4%, cmd 80.1% |
-| jsonv2 build | `GOEXPERIMENT=jsonv2 go build ./...` | ✓ |
-| jsonv2 vet | `GOEXPERIMENT=jsonv2 go vet ./...` | ✓ |
-| jsonv2 test | `GOEXPERIMENT=jsonv2 go test ./...` | ✓ all pass |
-| Nix flake check | `nix flake check` | ✓ all checks passed |
-| Nix build | `nix build .` | ✓ succeeded |
-| Nix lint | `nix run .#lint` | ✓ 0 issues |
+| Check           | Command                              | Result                                           |
+| --------------- | ------------------------------------ | ------------------------------------------------ |
+| Build           | `go build ./...`                     | ✓                                                |
+| Vet             | `go vet ./...`                       | ✓                                                |
+| Format          | `gofmt -l .`                         | ✓ clean                                          |
+| Test (race)     | `go test -race ./...`                | ✓ all pass                                       |
+| Coverage        | `go test -race -cover`               | ✓ vision 90.1% (+1.4pp), errors 94.4%, cmd 80.1% |
+| jsonv2 build    | `GOEXPERIMENT=jsonv2 go build ./...` | ✓                                                |
+| jsonv2 vet      | `GOEXPERIMENT=jsonv2 go vet ./...`   | ✓                                                |
+| jsonv2 test     | `GOEXPERIMENT=jsonv2 go test ./...`  | ✓ all pass                                       |
+| Nix flake check | `nix flake check`                    | ✓ all checks passed                              |
+| Nix build       | `nix build .`                        | ✓ succeeded                                      |
+| Nix lint        | `nix run .#lint`                     | ✓ 0 issues                                       |
 
 ---
 

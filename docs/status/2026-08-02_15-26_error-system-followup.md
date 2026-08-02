@@ -20,24 +20,24 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 ## a) FULLY DONE
 
-| Item | Evidence |
-| --- | --- |
-| **Streaming unmarshal failure test** — mock emits `ObjectStreamPartTypeFinish` with malformed object (`"score": "not-a-number"` into `int` field); asserts `KindStructuredParse`, `IsRetryable()==false`, correct `Op`/`Prompt` | `pkg/vision/structured_test.go` — `TestAnalyzeStructuredStreamUnmarshalFailure` |
-| **Non-streaming unmarshal failure test** — mock returns `generateObjectResponse` with same malformed object; asserts `KindStructuredParse` | `pkg/vision/structured_test.go` — `TestAnalyzeStructuredUnmarshalFailure` |
-| **Mock model extended** — `streamObjectFunc` (injectable streaming behavior) and `generateObjectResponse` (injectable non-streaming response) fields added; both default to original behavior when nil | `pkg/vision/mock_test.go` |
-| **`consumeObjectStream[T]` extraction** — the 76-line `AnalyzeStructuredStream` funlen violation was fixed by extracting the stream-consuming loop into a generic helper with `streamObjectResult[T]` struct. The extraction is testable in isolation and reads as a single responsibility | `pkg/vision/structured.go` |
-| **errcheck fix** — `defer resp.Body.Close()` → `defer func() { _ = resp.Body.Close() }()` (the prior session's "simplification" was actually a lint regression) | `pkg/vision/image.go:121` |
-| **wsl_v5 fixes** — added blank lines between `const` and assignment in both new test functions | `pkg/vision/structured_test.go` |
-| **Error-handling example enriched** — `printConfigError` function added, demonstrating `errors.Is` matching for all 7 validation sentinels. Example now shows both error categories: config validation AND model invocation | `examples/error-handling/main.go` |
-| **CHANGELOG entry** — comprehensive `[Unreleased]` section with Added (tests + example), Changed (enriched validation, context wrapping), Fixed (silent swallow, BDD assertions). Preserves the "Known issues" block | `CHANGELOG.md` |
-| **Tracked binary removed** — `error-handling` (21 MB compiled binary) was committed to git by accident in a prior session. Untracked via `git rm --cached`, added to `.gitignore` | `.gitignore`, `error-handling` |
-| `go build ./...` | ✓ exit 0 |
-| `go vet ./...` | ✓ exit 0 |
-| `gofmt -l .` | ✓ clean |
-| `go test -race ./...` | ✓ all packages pass |
-| `GOEXPERIMENT=jsonv2 go build/vet/test ./...` | ✓ all pass |
-| `nix run .#test` | ✓ 88.7% coverage, all fuzz seeds pass |
-| `nix run .#lint` | ✓ 0 issues |
+| Item                                                                                                                                                                                                                                                                                       | Evidence                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| **Streaming unmarshal failure test** — mock emits `ObjectStreamPartTypeFinish` with malformed object (`"score": "not-a-number"` into `int` field); asserts `KindStructuredParse`, `IsRetryable()==false`, correct `Op`/`Prompt`                                                            | `pkg/vision/structured_test.go` — `TestAnalyzeStructuredStreamUnmarshalFailure` |
+| **Non-streaming unmarshal failure test** — mock returns `generateObjectResponse` with same malformed object; asserts `KindStructuredParse`                                                                                                                                                 | `pkg/vision/structured_test.go` — `TestAnalyzeStructuredUnmarshalFailure`       |
+| **Mock model extended** — `streamObjectFunc` (injectable streaming behavior) and `generateObjectResponse` (injectable non-streaming response) fields added; both default to original behavior when nil                                                                                     | `pkg/vision/mock_test.go`                                                       |
+| **`consumeObjectStream[T]` extraction** — the 76-line `AnalyzeStructuredStream` funlen violation was fixed by extracting the stream-consuming loop into a generic helper with `streamObjectResult[T]` struct. The extraction is testable in isolation and reads as a single responsibility | `pkg/vision/structured.go`                                                      |
+| **errcheck fix** — `defer resp.Body.Close()` → `defer func() { _ = resp.Body.Close() }()` (the prior session's "simplification" was actually a lint regression)                                                                                                                            | `pkg/vision/image.go:121`                                                       |
+| **wsl_v5 fixes** — added blank lines between `const` and assignment in both new test functions                                                                                                                                                                                             | `pkg/vision/structured_test.go`                                                 |
+| **Error-handling example enriched** — `printConfigError` function added, demonstrating `errors.Is` matching for all 7 validation sentinels. Example now shows both error categories: config validation AND model invocation                                                                | `examples/error-handling/main.go`                                               |
+| **CHANGELOG entry** — comprehensive `[Unreleased]` section with Added (tests + example), Changed (enriched validation, context wrapping), Fixed (silent swallow, BDD assertions). Preserves the "Known issues" block                                                                       | `CHANGELOG.md`                                                                  |
+| **Tracked binary removed** — `error-handling` (21 MB compiled binary) was committed to git by accident in a prior session. Untracked via `git rm --cached`, added to `.gitignore`                                                                                                          | `.gitignore`, `error-handling`                                                  |
+| `go build ./...`                                                                                                                                                                                                                                                                           | ✓ exit 0                                                                        |
+| `go vet ./...`                                                                                                                                                                                                                                                                             | ✓ exit 0                                                                        |
+| `gofmt -l .`                                                                                                                                                                                                                                                                               | ✓ clean                                                                         |
+| `go test -race ./...`                                                                                                                                                                                                                                                                      | ✓ all packages pass                                                             |
+| `GOEXPERIMENT=jsonv2 go build/vet/test ./...`                                                                                                                                                                                                                                              | ✓ all pass                                                                      |
+| `nix run .#test`                                                                                                                                                                                                                                                                           | ✓ 88.7% coverage, all fuzz seeds pass                                           |
+| `nix run .#lint`                                                                                                                                                                                                                                                                           | ✓ 0 issues                                                                      |
 
 ---
 
@@ -82,7 +82,7 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 1. **The `consumeObjectStream[T]` extraction should have its own unit tests.** Currently it's only tested transitively through `TestAnalyzeStructuredStreamUnmarshalFailure`. Direct tests would cover the `ObjectStreamPartTypeObject` partial-callback path, the `TextDelta` accumulation path, and the `Error` part classification path — all currently untested in isolation.
 
-2. **The mock model's `streamObjectFunc` is a `fantasy.ObjectStreamResponse` (a function type), not an error-returning constructor.** This means the mock cannot simulate `StreamObject` returning an *error* on the initial call (only on stream parts). If a provider returns an error from `StreamObject()` itself, that path is untested. Consider adding a `streamObjectErr` field.
+2. **The mock model's `streamObjectFunc` is a `fantasy.ObjectStreamResponse` (a function type), not an error-returning constructor.** This means the mock cannot simulate `StreamObject` returning an _error_ on the initial call (only on stream parts). If a provider returns an error from `StreamObject()` itself, that path is untested. Consider adding a `streamObjectErr` field.
 
 3. **The `generateObjectResponse` field shadows the default response logic.** If both `generateObjectErr` and `generateObjectResponse` are set, `generateObjectErr` wins (checked first). This is correct but undocumented in the mock's field comment. The ordering should be explicit.
 
@@ -186,20 +186,20 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 ## Verification Snapshot
 
-| Check | Command | Result |
-| --- | --- | --- |
-| Build | `go build ./...` | ✓ |
-| Vet | `go vet ./...` | ✓ |
-| Format | `gofmt -l .` | ✓ clean |
-| Test (race) | `go test -race ./...` | ✓ all pass |
-| Coverage | `go test -race -coverprofile` | ✓ vision 88.7%, errors 94.4%, cmd 80.1% |
-| jsonv2 build | `GOEXPERIMENT=jsonv2 go build ./...` | ✓ |
-| jsonv2 vet | `GOEXPERIMENT=jsonv2 go vet ./...` | ✓ |
-| jsonv2 test | `GOEXPERIMENT=jsonv2 go test ./...` | ✓ all pass |
-| Nix test | `nix run .#test` | ✓ 88.7% coverage, fuzz seeds pass |
-| Nix lint | `nix run .#lint` | ✓ 0 issues |
-| Nix build | `nix build .` | **not run** |
-| Flake check | `nix flake check` | **not run** |
+| Check        | Command                              | Result                                  |
+| ------------ | ------------------------------------ | --------------------------------------- |
+| Build        | `go build ./...`                     | ✓                                       |
+| Vet          | `go vet ./...`                       | ✓                                       |
+| Format       | `gofmt -l .`                         | ✓ clean                                 |
+| Test (race)  | `go test -race ./...`                | ✓ all pass                              |
+| Coverage     | `go test -race -coverprofile`        | ✓ vision 88.7%, errors 94.4%, cmd 80.1% |
+| jsonv2 build | `GOEXPERIMENT=jsonv2 go build ./...` | ✓                                       |
+| jsonv2 vet   | `GOEXPERIMENT=jsonv2 go vet ./...`   | ✓                                       |
+| jsonv2 test  | `GOEXPERIMENT=jsonv2 go test ./...`  | ✓ all pass                              |
+| Nix test     | `nix run .#test`                     | ✓ 88.7% coverage, fuzz seeds pass       |
+| Nix lint     | `nix run .#lint`                     | ✓ 0 issues                              |
+| Nix build    | `nix build .`                        | **not run**                             |
+| Flake check  | `nix flake check`                    | **not run**                             |
 
 ---
 
