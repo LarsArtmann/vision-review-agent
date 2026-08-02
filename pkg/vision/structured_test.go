@@ -2,7 +2,12 @@ package vision
 
 import (
 	"context"
+	"errors"
 	"testing"
+
+	"charm.land/fantasy"
+	apperrors "github.com/larsartmann/vision-review-agent/pkg/errors"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAnalyzeStructured(t *testing.T) {
@@ -76,4 +81,72 @@ func TestAnalyzeStructured(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestAnalyzeStructuredStreamUnmarshalFailure verifies that a malformed final
+// object in the stream produces a KindStructuredParse error instead of being
+// silently swallowed. This is the most behaviorally significant error-system
+// change: previously the unmarshal error was discarded with `_ = ...`.
+func TestAnalyzeStructuredStreamUnmarshalFailure(t *testing.T) {
+	t.Parallel()
+
+	model := &mockModel{
+		streamObjectFunc: func(yield func(fantasy.ObjectStreamPart) bool) {
+			_ = yield(fantasy.ObjectStreamPart{
+				Type: fantasy.ObjectStreamPartTypeFinish,
+				Object: map[string]any{
+					"score": "not-a-number", // string into int — must fail
+				},
+				Usage:        fantasy.Usage{TotalTokens: 10},
+				FinishReason: fantasy.FinishReasonStop,
+			})
+		},
+	}
+	agent := newTestAgent(t, model)
+
+	const prompt = "test prompt"
+	_, err := AnalyzeStructuredStream[testReview](
+		context.Background(),
+		agent,
+		prompt,
+		func(testReview) {}, // no-op callback
+		ImageSrc(),
+	)
+	require.Error(t, err)
+
+	me, ok := errors.AsType[*apperrors.ModelError](err)
+	require.True(t, ok, "error must be extractable as *ModelError")
+	require.Equal(t, apperrors.KindStructuredParse, me.Kind)
+	require.False(t, me.IsRetryable(), "structured parse errors are not retryable")
+	require.Equal(t, prompt, me.Prompt)
+	require.Contains(t, me.Op, "stream")
+}
+
+// TestAnalyzeStructuredUnmarshalFailure verifies the non-streaming structured
+// path also surfaces unmarshal failures as KindStructuredParse errors.
+func TestAnalyzeStructuredUnmarshalFailure(t *testing.T) {
+	t.Parallel()
+
+	model := &mockModel{
+		generateObjectResponse: &fantasy.ObjectResponse{
+			Object: map[string]any{
+				"score": "not-a-number", // string into int — must fail
+			},
+			RawText:      `{"score":"not-a-number"}`,
+			Usage:        fantasy.Usage{TotalTokens: 10},
+			FinishReason: fantasy.FinishReasonStop,
+		},
+	}
+	agent := newTestAgent(t, model)
+
+	const prompt = "test prompt"
+	_, err := AnalyzeStructured[testReview](context.Background(), agent, prompt, ImageSrc())
+	require.Error(t, err)
+
+	me, ok := errors.AsType[*apperrors.ModelError](err)
+	require.True(t, ok, "error must be extractable as *ModelError")
+	require.Equal(t, apperrors.KindStructuredParse, me.Kind)
+	require.False(t, me.IsRetryable())
+	require.Equal(t, prompt, me.Prompt)
+	require.Contains(t, me.Op, "unmarshal")
 }

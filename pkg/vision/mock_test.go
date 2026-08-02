@@ -87,6 +87,14 @@ type mockModel struct {
 	generateObjectErr   error
 	generateObjectCalls atomic.Int32
 
+	// generateObjectResponse, when non-nil, replaces the default GenerateObject
+	// response. Used for testing unmarshal failures (malformed Object).
+	generateObjectResponse *fantasy.ObjectResponse
+
+	// streamObjectFunc, when non-nil, replaces the default StreamObject
+	// behavior. Used for testing streaming error paths.
+	streamObjectFunc fantasy.ObjectStreamResponse
+
 	// capture, when true, records the Prompt of the most recent Generate /
 	// GenerateObject call into capturedPrompt.
 	//
@@ -163,6 +171,10 @@ func (m *mockModel) GenerateObject(
 		return nil, m.generateObjectErr
 	}
 
+	if m.generateObjectResponse != nil {
+		return m.generateObjectResponse, nil
+	}
+
 	return &fantasy.ObjectResponse{
 		Object: map[string]any{
 			"layout": testLayout,
@@ -177,6 +189,10 @@ func (m *mockModel) StreamObject(
 	_ context.Context,
 	_ fantasy.ObjectCall,
 ) (fantasy.ObjectStreamResponse, error) {
+	if m.streamObjectFunc != nil {
+		return m.streamObjectFunc, nil
+	}
+
 	return func(yield func(fantasy.ObjectStreamPart) bool) {
 		_ = yield(fantasy.ObjectStreamPart{
 			Type: fantasy.ObjectStreamPartTypeObject,
