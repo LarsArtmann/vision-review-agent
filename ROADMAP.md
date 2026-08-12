@@ -12,19 +12,19 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Near-term direction
 
-The actionable near-term work (preprocessing auto-wiring, retry reconciliation,
-structured-hooks redesign, CLI tests, CostTracker integration, license fix,
-config-hygiene cleanup) lives in [TODO_LIST.md](TODO_LIST.md). The themes:
+The only actionable near-term items remaining are in
+[TODO_LIST.md](TODO_LIST.md): the **tag anomaly** (destructive, needs user
+approval) and two **open product questions** (structured hooks payload,
+semver policy for 0.x). Everything else from the original near-term list has
+shipped:
 
-- **Make preprocessing composable** — `ResizeImage` shipped standalone; it
-  needs `Config.Preprocess` wiring so every `Analyze*` can auto-resize. Blocked
-  on a design decision (see Open questions for the breaking-change question).
-- **One retry system, not two** — `Config.MaxRetries` and `WithRetry[T]` must
-  be reconciled. Blocked on a design decision (see Open questions).
-- **catwalk integration for CLI** — replace hand-rolled CLI providers
-  (Anthropic, Google, openaicompat) with `charmbracelet/catwalk` to avoid rot
-  as fantasy adds providers. Blocked on a direction decision (see Open
-  questions).
+- ~~**Make preprocessing composable**~~ — Done. `Config.Preprocess` is wired
+  into every `Analyze*` method; `PreprocessConfig.MaxDimension` auto-resizes.
+- ~~**One retry system, not two**~~ — Done. `Config.MaxRetries` (HTTP layer)
+  and `Config.Retry` (vision layer) coexist as a documented two-layer system;
+  `WithRetry[T]` remains as explicit per-call middleware.
+- ~~**catwalk integration for CLI**~~ — Done. `internal/catalog` provides 40+
+  providers via `charm.land/catwalk`; hand-rolled CLI providers removed.
 
 ## Mid-term ideas
 
@@ -36,9 +36,9 @@ config-hygiene cleanup) lives in [TODO_LIST.md](TODO_LIST.md). The themes:
 - **Batch-level hooks** — `Hooks.OnBatchStart` / `OnBatchFinish` for
   batch-scoped observability (per-image hooks already fire via internal
   `Analyze`).
-- **Built-in cost tracking** — `Agent.Cost()` method or automatic
-  `CostTracker` wiring via `Hooks.OnFinish` (the standalone `CostTracker` type
-  already exists).
+- ~~**Built-in cost tracking**~~ — Done. `CostTracker` with `SetPricing` /
+  `CostUSD` and `NewAgentWithCostTracker` auto-wiring shipped in the catwalk
+  integration session.
 - **Typed config-validation errors** — move beyond sentinel errors to typed
   validation failures that carry the field name, the invalid value, and the
   allowed range.
@@ -86,9 +86,11 @@ config-hygiene cleanup) lives in [TODO_LIST.md](TODO_LIST.md). The themes:
 These need a product/architecture decision before they can become actionable
 tasks. They are **not** TODO items until answered.
 
-1. **Retry strategy: bake in or keep external?** Should `RetryConfig` become a
-   `Config` field (every `Analyze*` retries automatically, `Config.MaxRetries`
-   goes away), or must `WithRetry[T]` stay an explicit per-call wrapper?
+1. ~~**Retry strategy: bake in or keep external?**~~ **Resolved.** Both:
+   `Config.Retry` bakes vision-layer retry into every non-streaming `Analyze*`
+   call; `Config.MaxRetries` handles the HTTP layer; `WithRetry[T]` stays as
+   explicit per-call middleware (useful for streaming methods that don't
+   auto-retry).
 2. **Structured hooks payload: is a breaking API change acceptable?** Fixing
    the nil-`RawResponse` / JSON-as-`Text` hack properly means changing what
    `OnFinish` receives for structured calls. Is a breaking `Hooks` change OK
