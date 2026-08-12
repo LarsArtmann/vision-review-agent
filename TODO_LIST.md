@@ -12,9 +12,10 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Release mechanics
 
-- [ ] **Resolve tag anomaly** — `v0.2.1` and `v0.3.0` both point to commit
-      `d5dda4b` (a pre-v0.2.0 test-formatting commit). Decide: delete and re-tag,
-      or supersede with a real `v0.3.0` once `[Unreleased]` work is tagged.
+- [ ] **Resolve tag anomaly** — `v0.2.1` points to commit `d5dda4b` (a
+      pre-v0.2.0 test-formatting commit). The `v0.3.0` ghost on the same commit
+      was already deleted during the `v0.4.0` release. `v0.2.1` remains and
+      should be deleted for a clean history.
       **Destructive — requires explicit user approval (force-push / tag deletion).**
 
 ## Open questions (from ROADMAP — need product decisions before becoming tasks)

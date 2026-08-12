@@ -66,8 +66,6 @@ has shipped and moved to [CHANGELOG.md](CHANGELOG.md).
   backwards compat; plan a removal timeline.
 - **`Agent.Close`** — resource cleanup hook for agents that hold long-lived
   connections or state.
-- **`Conversation.LastMessage` helper** — shipped in v0.4.0 (common access pattern).
-- **`BatchResult.Duration`** — shipped in v0.4.0 (per-image analysis timing).
 
 ---
 
@@ -76,18 +74,13 @@ has shipped and moved to [CHANGELOG.md](CHANGELOG.md).
 These need a product/architecture decision before they can become actionable
 tasks. They are **not** TODO items until answered.
 
-1. ~~**Retry strategy: bake in or keep external?**~~ **Resolved.** Both:
-   `Config.Retry` bakes vision-layer retry into every non-streaming `Analyze*`
-   call; `Config.MaxRetries` handles the HTTP layer; `WithRetry[T]` stays as
-   explicit per-call middleware (useful for streaming methods that don't
-   auto-retry).
-2. **Structured hooks payload: is a breaking API change acceptable?** Fixing
+1. **Structured hooks payload: is a breaking API change acceptable?** Fixing
    the nil-`RawResponse` / JSON-as-`Text` hack properly means changing what
    `OnFinish` receives for structured calls. Is a breaking `Hooks` change OK
    in the next minor, or must `Hooks` stay stable?
-3. **Semver policy for 0.x** — is 0.x "anything goes" or semver-lite? Should
+2. **Semver policy for 0.x** — is 0.x "anything goes" or semver-lite? Should
    breaking changes get a `### Breaking` callout in CHANGELOG?
-4. **Tag anomaly resolution (partially done in `v0.4.0`; `v0.2.1` remains).**
+3. **Tag anomaly resolution (partially done in `v0.4.0`; `v0.2.1` remains).**
    The tags `v0.2.1` and `v0.3.0` both pointed to commit `d5dda4b`
    (2026-04-27), an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23) and
    even older than `v0.1.0`. They never represented real releases. **Resolved

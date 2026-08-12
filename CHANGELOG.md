@@ -6,18 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Nothing yet.
+
+### Changed
+
+- Nothing yet.
+
 ### Fixed
 
-- **Provider alias in ModelInfo lookup** — `FindModelInProvider` now normalizes
-  the provider name (`google` → `gemini`) before catalog lookup, so ModelInfo
-  is correctly populated for the Google Gemini provider.
-- **Remote sync timeout** — `CATWALK_URL` sync now uses a 5-second context
-  timeout instead of the catwalk client default (30s), preventing long startup
-  delays when the remote server is unreachable.
-- **Duplicate mock model** — `integrationMockModel` removed; integration tests
-  now reuse the existing `cliMockModel`.
-- **Usage hints** — CLI help text now lists specific provider env var names
-  (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.) instead of a generic message.
+- Nothing yet.
+
+## [0.5.0] - 2026-08-12
 
 ### Added
 
@@ -64,6 +65,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Provider alias in ModelInfo lookup** — `FindModelInProvider` now normalizes
+  the provider name (`google` → `gemini`) before catalog lookup, so ModelInfo
+  is correctly populated for the Google Gemini provider.
+- **Remote sync timeout** — `CATWALK_URL` sync now uses a 5-second context
+  timeout instead of the catwalk client default (30s), preventing long startup
+  delays when the remote server is unreachable.
+- **Duplicate mock model** — `integrationMockModel` removed; integration tests
+  now reuse the existing `cliMockModel`.
+- **Usage hints** — CLI help text now lists specific provider env var names
+  (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.) instead of a generic message.
 - **Silent unmarshal swallow in AnalyzeStructuredStream** — the final-object
   unmarshal error in `ObjectStreamPartTypeFinish` was discarded with
   `_ = visionutil.UnmarshalToType(...)`. It now returns a `KindStructuredParse`
