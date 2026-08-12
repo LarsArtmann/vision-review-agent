@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Catwalk Integration Plan — Vision Review Agent</title>
+<style>
+:root {
+  --color-graphite: #0e0e10;
+  --color-graphite-2: #18181d;
+  --color-graphite-3: #16161a;
+  --color-bone: #f4f4f0;
+  --color-red: #ff6b6b;
+  --color-blue: #6eb5ff;
+  --color-yellow: #f4d35e;
+  --color-amber: #ffb347;
+  --color-hairline: rgba(244,244,240,0.12);
+  --color-hairline-strong: rgba(244,244,240,0.25);
+  --surface: var(--color-graphite);
+  --surface-raised: var(--color-graphite-2);
+  --surface-sunken: var(--color-graphite-3);
+  --text: var(--color-bone);
+  --text-muted: rgba(244,244,240,0.72);
+  --text-faint: rgba(244,244,240,0.45);
+  --border: var(--color-hairline);
+  --border-strong: var(--color-hairline-strong);
+  --accent: var(--color-amber);
+  --problem: var(--color-red);
+  --solution: var(--color-blue);
+  --warning: var(--color-yellow);
+  --radius: 0px;
+  --font-heading: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-body: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono: ui-monospace,"Cascadia Code","Source Code Pro","JetBrains Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+section[id],[id]{scroll-margin-top:60px}
+body{background:var(--surface);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.layout{display:flex;max-width:1400px;margin:0 auto;padding:0 24px;gap:32px}
+.sidebar{position:sticky;top:0;height:100vh;width:220px;flex-shrink:0;overflow-y:auto;padding:32px 0;display:none}
+@media(min-width:1100px){.sidebar{display:block}}
+.sidebar .label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:8px;font-weight:700}
+.sidebar nav a{display:block;padding:6px 0;color:var(--text-muted);text-decoration:none;font-size:13px;border-left:2px solid transparent;padding-left:12px;transition:color 0.15s,border-color 0.15s}
+.sidebar nav a:hover{color:var(--text);border-left-color:var(--accent)}
+.main{flex:1;min-width:0;padding:32px 0 64px}
+.hero{margin-bottom:48px}
+.hero-badge{display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:6px 12px;margin-bottom:16px}
+.hero h1{font-family:var(--font-heading);font-size:clamp(28px,5vw,42px);font-weight:900;letter-spacing:-0.02em;line-height:1.1;margin-bottom:12px}
+.hero-subtitle{font-size:17px;color:var(--text-muted);max-width:680px}
+.hero-meta{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.tag{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:4px 10px;background:var(--surface-raised);border:1px solid var(--border);color:var(--text-muted)}
+.tag.amber{border-color:var(--accent);color:var(--accent)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:32px 0}
+.stat-card{background:var(--surface-raised);border:1px solid var(--border);padding:20px;text-align:center}
+.stat-card .stat-value{font-size:32px;font-weight:900;font-family:var(--font-heading);line-height:1}
+.stat-card .stat-label{font-size:12px;color:var(--text-muted);margin-top:6px;text-transform:uppercase;letter-spacing:0.05em}
+.stat-good .stat-value{color:var(--solution)}
+.stat-warn .stat-value{color:var(--warning)}
+.stat-bad .stat-value{color:var(--problem)}
+h2{font-family:var(--font-heading);font-size:24px;font-weight:800;margin:48px 0 16px;letter-spacing:-0.01em;display:flex;align-items:center;gap:12px}
+h2 .num{font-size:14px;font-weight:900;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:4px 8px;flex-shrink:0}
+h3{font-size:18px;font-weight:700;margin:28px 0 12px}
+h4{font-size:15px;font-weight:700;margin:20px 0 8px}
+p{margin-bottom:12px}
+.card{background:var(--surface-raised);border:1px solid var(--border);padding:24px;margin-bottom:16px}
+.card-problem{border-left:3px solid var(--problem)}
+.card-solution{border-left:3px solid var(--solution)}
+.card-warning{border-left:3px solid var(--warning)}
+.callout{padding:16px 20px;margin:16px 0;font-size:14px}
+.callout-solution{background:color-mix(in srgb,var(--solution) 8%,transparent);border-left:3px solid var(--solution)}
+.callout-warning{background:color-mix(in srgb,var(--warning) 8%,transparent);border-left:3px solid var(--warning)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0}
+th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-faint);font-weight:700;border-bottom:2px solid var(--border-strong);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;text-transform:uppercase;letter-spacing:0.03em;white-space:nowrap}
+.badge-critical{background:color-mix(in srgb,var(--problem) 15%,transparent);color:var(--problem)}
+.badge-high{background:color-mix(in srgb,var(--warning) 15%,transparent);color:var(--warning)}
+.badge-medium{background:color-mix(in srgb,var(--solution) 15%,transparent);color:var(--solution)}
+.badge-low{background:color-mix(in srgb,var(--text-muted) 15%,transparent);color:var(--text-muted)}
+.badge-fixed{background:color-mix(in srgb,var(--solution) 15%,transparent);color:var(--solution)}
+.task-id{font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent)}
+.tier-1{color:var(--solution)}
+.tier-2{color:var(--warning)}
+.tier-3{color:var(--problem)}
+.svg-container{margin:32px 0;overflow-x:auto;border:1px solid var(--border);background:var(--surface-raised);padding:16px}
+.svg-container img{max-width:100%;height:auto;display:block}
+.svg-container object{max-width:100%}
+pre{background:var(--surface-sunken);border:1px solid var(--border);padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:var(--font-mono);margin:16px 0}
+code{font-family:var(--font-mono);font-size:0.9em;background:var(--surface-sunken);padding:2px 6px}
+pre code{background:none;padding:0}
+.strengths{margin:20px 0}
+.strength{display:flex;gap:16px;margin-bottom:12px;align-items:flex-start}
+.strength .check{font-size:20px;font-weight:900;color:var(--solution);flex-shrink:0;line-height:1.4}
+.strength .text strong{display:block;margin-bottom:2px}
+.strength .text span{color:var(--text-muted);font-size:13px}
+.compare-header{display:grid;grid-template-columns:1fr 1fr;gap:0;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-faint);font-weight:700;margin-bottom:0;border-bottom:2px solid var(--border-strong)}
+.compare-header>div{padding:10px 12px}
+.compare-header>div:last-child{border-left:1px solid var(--border)}
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--border);font-size:13px}
+.compare-row>div{padding:10px 12px}
+.compare-row>div:last-child{border-left:1px solid var(--border)}
+.footer{margin-top:64px;padding:24px 0;border-top:1px solid var(--border);font-size:12px;color:var(--text-faint);text-align:center}
+.migration-step{display:flex;gap:16px;margin-bottom:20px}
+.migration-num{font-size:20px;font-weight:900;color:var(--accent);flex-shrink:0;width:32px;text-align:center;line-height:1.4}
+.migration-content h4{margin:0 0 4px}
+.migration-content p{margin:0;font-size:13px;color:var(--text-muted)}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+<nav>
+<div class="label">Contents</div>
+<a href="#discovery">Critical Discovery</a>
+<a href="#stats">At a Glance</a>
+<a href="#graph">Execution Graph</a>
+<a href="#medium">Task Plan</a>
+<a href="#fine">Fine-Grain Breakdown</a>
+<a href="#architecture">Architecture</a>
+</nav>
+</aside>
+<main class="main">
+
+<div class="hero">
+<div class="hero-badge">Pareto Plan &middot; 2026-08-12</div>
+<h1>Catwalk Integration Plan</h1>
+<p class="hero-subtitle">Replace the hand-rolled CLI provider switch with charm.land/catwalk's model catalog, bringing 40+ providers, vision-capable model discovery, pricing-aware cost tracking, and auto-updating metadata to the Vision Review Agent.</p>
+<div class="hero-meta">
+<span class="tag amber">Scope: CLI + SDK</span>
+<span class="tag">18 tasks</span>
+<span class="tag">~14h estimated</span>
+<span class="tag">catwalk v0.51.20</span>
+<span class="tag">fantasy v0.40.0</span>
+</div>
+</div>
+
+<section id="discovery">
+<h2><span class="num">00</span>Critical Discovery: The ROADMAP Premise Was Wrong</h2>
+
+<div class="card card-problem">
+<h3>The original question</h3>
+<p style="color:var(--text-muted);font-style:italic">"catwalk or hand-rolled CLI providers? The three providers added to cmd/vision/main.go (Anthropic, Google, openaicompat) work but will rot as fantasy evolves. Replace them with github.com/charmbracelet/catwalk."</p>
+<p><strong>This implies catwalk IS a provider factory. It is NOT.</strong></p>
+</div>
+
+<div class="card card-solution">
+<h3>What catwalk actually is (verified from source)</h3>
+<p><strong>charm.land/catwalk</strong> is a <strong>model metadata catalog</strong> &mdash; a database of AI providers and their models. It ships:</p>
+<ul style="margin:8px 0 8px 20px;color:var(--text-muted)">
+<li><code style="color:var(--solution)">pkg/catwalk</code> &mdash; Types (<code>Provider</code>, <code>Model</code>, <code>Type</code>, <code>InferenceProvider</code>) + an HTTP <code>Client</code> with ETag caching</li>
+<li><code style="color:var(--solution)">pkg/embedded</code> &mdash; Offline catalog compiled into the binary (<code>embedded.GetAll() []catwalk.Provider</code>)</li>
+<li>40+ inference providers with model metadata: capabilities, pricing, context windows, reasoning support</li>
+</ul>
+<p><strong>Provider construction still uses fantasy</strong> (<code>openai.New()</code>, <code>anthropic.New()</code>, etc.). Crush's <code>coordinator.go:buildProvider()</code> switches on <code>providerCfg.Type</code> (from catwalk) to call the right fantasy constructor &mdash; exactly the bridge pattern this project should adopt.</p>
+</div>
+
+<div class="callout callout-solution">
+<strong>The real value proposition:</strong> Not "replace provider code" but <strong>add model discovery, capability awareness, pricing data, and auto-update</strong>. The CLI goes from 5 hardcoded providers to 40+ catalog-driven providers with vision filtering, cost tracking, and model validation &mdash; all from a single dependency.
+</div>
+</section>
+
+<section id="stats">
+<h2><span class="num">01</span>At a Glance</h2>
+<div class="stat-grid">
+<div class="stat-card stat-good">
+<div class="stat-value">4</div>
+<div class="stat-label">Tier 1 (1% &rarr; 51%)</div>
+</div>
+<div class="stat-card stat-warn">
+<div class="stat-value">8</div>
+<div class="stat-label">Tier 2 (4% &rarr; 64%)</div>
+</div>
+<div class="stat-card stat-bad">
+<div class="stat-value">6</div>
+<div class="stat-label">Tier 3 (20% &rarr; 80%)</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">18</div>
+<div class="stat-label">Total Tasks</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">~14h</div>
+<div class="stat-label">Estimated Effort</div>
+</div>
+<div class="stat-card stat-good">
+<div class="stat-value">42</div>
+<div class="stat-label">Subtasks</div>
+</div>
+</div>
+
+<div class="strengths">
+<div class="strength">
+<div class="check">+</div>
+<div class="text">
+<strong>Verified against catwalk v0.51.20 source code</strong>
+<span>Read pkg/catwalk/provider.go, client.go, pkg.go, pkg/embedded/embedded.go, CRUSH.md, and Crush's coordinator.go bridge implementation. Every API claim is source-verified.</span>
+</div>
+</div>
+<div class="strength">
+<div class="check">+</div>
+<div class="text">
+<strong>Follows Crush's proven integration pattern</strong>
+<span>The bridge (catwalk.Type &rarr; fantasy constructor), embedded-first catalog, and ETag-based remote sync are all ported from Crush's production code.</span>
+</div>
+</div>
+<div class="strength">
+<div class="check">+</div>
+<div class="text">
+<strong>Backward compatible by design</strong>
+<span>SDK changes are opt-in via optional Config.ModelInfo. Existing CostTracker API preserved; pricing is additive. CLI provider flag remains the primary interface.</span>
+</div>
+</div>
+</div>
+</section>
+
+<section id="graph">
+<h2><span class="num">02</span>Execution Graph</h2>
+<div class="svg-container">
+<object data="catwalk-execution-graph.svg" type="image/svg+xml" style="width:100%;min-height:400px">
+<img src="catwalk-execution-graph.svg" alt="Catwalk integration execution graph showing task dependencies across three Pareto tiers" />
+</object>
+</div>
+<p style="color:var(--text-muted);font-size:13px">Blue = Tier 1 (foundation), Yellow = Tier 2 (UX + SDK), Red = Tier 3 (remote + polish). Arrows show dependencies. The critical path runs T01 &rarr; T02 &rarr; T03 &rarr; T04 (foundation), then branches into CLI UX and SDK enhancement tracks that converge at integration testing (T16).</p>
+</section>
+
+<section id="medium">
+<h2><span class="num">03</span>Comprehensive Task Plan</h2>
+<p style="color:var(--text-muted)">18 tasks, 30-100 min each. Sorted by Pareto tier, then by dependency order within each tier.</p>
+
+<h3 class="tier-1">Tier 1: Foundation (1% effort &rarr; 51% value)</h3>
+<table>
+<thead>
+<tr><th>ID</th><th>Task</th><th>Effort</th><th>Impact</th><th>Delivers</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="task-id">T01</span></td>
+<td><strong>Add catwalk dependency</strong> &mdash; <code>go get charm.land/catwalk@latest</code>, verify <code>embedded.GetAll()</code> compiles and returns provider data, <code>go mod tidy</code>, smoke test</td>
+<td>30min</td>
+<td><span class="badge badge-critical">Critical</span></td>
+<td>Foundation for all subsequent tasks</td>
+</tr>
+<tr>
+<td><span class="task-id">T02</span></td>
+<td><strong>Create <code>internal/catalog</code> package</strong> &mdash; <code>Service</code> type with <code>Providers()</code>, <code>FindProvider(id)</code>, <code>FindModel(id)</code>, <code>VisionModels()</code> methods. Embedded-first via <code>embedded.GetAll()</code></td>
+<td>60min</td>
+<td><span class="badge badge-critical">Critical</span></td>
+<td>Catalog access layer for CLI + SDK</td>
+</tr>
+<tr>
+<td><span class="task-id">T03</span></td>
+<td><strong>Create provider bridge</strong> &mdash; <code>BuildProvider(catwalk.Provider) &rarr; fantasy.Provider</code>. Switch on <code>catwalk.Type</code>: TypeOpenAI &rarr; <code>openai.New</code>, TypeAnthropic &rarr; <code>anthropic.New</code>, TypeGoogle &rarr; <code>google.New</code>, TypeOpenRouter &rarr; <code>openrouter.New</code>, TypeOpenAICompat &rarr; <code>openaicompat.New</code></td>
+<td>90min</td>
+<td><span class="badge badge-critical">Critical</span></td>
+<td>Auto-supports all 40+ providers from catalog</td>
+</tr>
+<tr>
+<td><span class="task-id">T04</span></td>
+<td><strong>Replace CLI <code>createProvider()</code></strong> &mdash; Remove the hardcoded 5-case switch in <code>cmd/vision/main.go</code>. Use catalog lookup + <code>BuildProvider</code>. Migrate existing tests.</td>
+<td>60min</td>
+<td><span class="badge badge-high">High</span></td>
+<td>CLI now accepts any catwalk provider ID</td>
+</tr>
+</tbody>
+</table>
+
+<h3 class="tier-2">Tier 2: User Experience + SDK (4% effort &rarr; 64% value)</h3>
+<table>
+<thead>
+<tr><th>ID</th><th>Task</th><th>Effort</th><th>Impact</th><th>Delivers</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="task-id">T05</span></td>
+<td><strong><code>-list-providers</code> CLI flag</strong> &mdash; Lists all providers: name, ID, type, model count. Formatted table output.</td>
+<td>30min</td>
+<td><span class="badge badge-high">High</span></td>
+<td>Discoverability: users see all supported providers</td>
+</tr>
+<tr>
+<td><span class="task-id">T06</span></td>
+<td><strong><code>-list-models</code> CLI flag</strong> &mdash; Lists vision-capable models (filter <code>SupportsImages == true</code>). Shows model ID, provider, context window, cost/1M tokens. Filter by <code>-provider</code> if set.</td>
+<td>45min</td>
+<td><span class="badge badge-high">High</span></td>
+<td>Users find the right model for vision tasks</td>
+</tr>
+<tr>
+<td><span class="task-id">T07</span></td>
+<td><strong>Model ID validation with suggestions</strong> &mdash; When <code>-model X</code> doesn't match, suggest closest match (Levenshtein). Warning only, not hard-fail (model may exist outside catalog).</td>
+<td>45min</td>
+<td><span class="badge badge-medium">Medium</span></td>
+<td>Fewer "model not found" errors</td>
+</tr>
+<tr>
+<td><span class="task-id">T08</span></td>
+<td><strong><code>-provider-info</code> CLI flag</strong> &mdash; Shows provider details: models, API key env var, base URL, type. Helps users understand requirements.</td>
+<td>30min</td>
+<td><span class="badge badge-medium">Medium</span></td>
+<td>Onboarding: what's needed to use each provider</td>
+</tr>
+<tr>
+<td><span class="task-id">T09</span></td>
+<td><strong>Create <code>pkg/vision.ModelInfo</code> type</strong> &mdash; Public type: <code>SupportsImages</code>, <code>ContextWindow</code>, <code>DefaultMaxTokens</code>, <code>CostPer1MIn/Out</code>, <code>CanReason</code>, <code>Name</code>, <code>ID</code>. Constructor from <code>catwalk.Model</code>.</td>
+<td>45min</td>
+<td><span class="badge badge-high">High</span></td>
+<td>SDK consumers get model metadata</td>
+</tr>
+<tr>
+<td><span class="task-id">T10</span></td>
+<td><strong>Wire <code>ModelInfo</code> into <code>Config</code></strong> &mdash; Optional <code>Config.ModelInfo *ModelInfo</code>. When set: <code>DefaultMaxTokens</code> used if <code>MaxOutputTokens</code> is 0. Temperature from catalog if unset.</td>
+<td>30min</td>
+<td><span class="badge badge-medium">Medium</span></td>
+<td>Auto-configure agent from catalog metadata</td>
+</tr>
+<tr>
+<td><span class="task-id">T11</span></td>
+<td><strong>Enhance <code>CostTracker</code> with pricing</strong> &mdash; Add <code>SetPricing(inPer1M, outPer1M float64)</code>, <code>CostUSD() float64</code>. Auto-wire from <code>NewAgentWithCostTracker</code> when <code>ModelInfo</code> present. Backward compatible: without pricing, <code>CostUSD()</code> returns 0.</td>
+<td>60min</td>
+<td><span class="badge badge-high">High</span></td>
+<td>Real dollar cost tracking, not just token counts</td>
+</tr>
+<tr>
+<td><span class="task-id">T12</span></td>
+<td><strong>Auto-configure vision model defaults</strong> &mdash; When building agent from catalog: set <code>Config.MaxOutputTokens</code> from <code>Model.DefaultMaxTokens</code> if unset. Set temperature from <code>ModelOptions.Temperature</code> if unset. Log applied defaults (debug).</td>
+<td>45min</td>
+<td><span class="badge badge-medium">Medium</span></td>
+<td>Sensible defaults without manual config</td>
+</tr>
+</tbody>
+</table>
+
+<h3 class="tier-3">Tier 3: Remote Catalog + Polish (20% effort &rarr; 80% value)</h3>
+<table>
+<thead>
+<tr><th>ID</th><th>Task</th><th>Effort</th><th>Impact</th><th>Delivers</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="task-id">T13</span></td>
+<td><strong>Remote catalog sync with ETag caching</strong> &mdash; <code>CATWALK_URL</code> env var enables remote fetch. Falls back to embedded on error/timeout. 30s timeout. ETag-based conditional requests. Ported from Crush's <code>catwalkSync</code>.</td>
+<td>90min</td>
+<td><span class="badge badge-medium">Medium</span></td>
+<td>Always-current catalog without binary updates</td>
+</tr>
+<tr>
+<td><span class="task-id">T14</span></td>
+<td><strong>Cache file management</strong> &mdash; Cache path: <code>~/.config/vision/catwalk-cache.json</code> (XDG). Atomic write on successful sync. ETag stored alongside cached data. Corrupted cache &rarr; embedded fallback.</td>
+<td>45min</td>
+<td><span class="badge badge-low">Low</span></td>
+<td>Persistent catalog across runs</td>
+</tr>
+<tr>
+<td><span class="task-id">T15</span></td>
+<td><strong>Update CLI env vars and usage docs</strong> &mdash; Document <code>CATWALK_URL</code>. Update <code>usageFunc</code> to list providers dynamically. Update examples in help text.</td>
+<td>30min</td>
+<td><span class="badge badge-low">Low</span></td>
+<td>Discoverable new features</td>
+</tr>
+<tr>
+<td><span class="task-id">T16</span></td>
+<td><strong>Full integration test</strong> &mdash; BDD test: list models &rarr; select vision model &rarr; construct provider &rarr; verify agent. Test with mock provider. Verify model metadata flows to CostTracker.</td>
+<td>60min</td>
+<td><span class="badge badge-high">High</span></td>
+<td>End-to-end confidence</td>
+</tr>
+<tr>
+<td><span class="task-id">T17</span></td>
+<td><strong>Update AGENTS.md</strong> &mdash; Document <code>internal/catalog</code>, <code>pkg/vision.ModelInfo</code>, provider bridge pattern, embedded-vs-remote catalog design. Update Key Design Decisions.</td>
+<td>30min</td>
+<td><span class="badge badge-medium">Medium</span></td>
+<td>Future sessions understand the integration</td>
+</tr>
+<tr>
+<td><span class="task-id">T18</span></td>
+<td><strong>Resolve ROADMAP + TODO</strong> &mdash; Remove catwalk from Open Questions in ROADMAP.md and TODO_LIST.md. Add to CHANGELOG.md <code>[Unreleased]</code>.</td>
+<td>15min</td>
+<td><span class="badge badge-fixed">Cleanup</span></td>
+<td>Closed-loop documentation</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section id="fine">
+<h2><span class="num">04</span>Fine-Grain Breakdown</h2>
+<p style="color:var(--text-muted)">42 subtasks, max 15 min each. Every medium-grain task decomposed into atomic steps.</p>
+
+<h3 class="tier-1">T01: Add catwalk dependency (4 subtasks, 20min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T01.1</td><td>Run <code>go get charm.land/catwalk@latest</code></td><td>5min</td></tr>
+<tr><td>T01.2</td><td>Write smoke test: <code>embedded.GetAll()</code> returns &gt;0 providers, print first provider name</td><td>5min</td></tr>
+<tr><td>T01.3</td><td>Verify <code>go build ./...</code> passes with new dependency</td><td>5min</td></tr>
+<tr><td>T01.4</td><td>Run <code>go mod tidy</code> and verify <code>go.sum</code> is clean</td><td>5min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-1">T02: Create internal/catalog package (6 subtasks, 65min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T02.1</td><td>Create <code>internal/catalog/catalog.go</code> with <code>Service</code> struct and <code>New()</code> constructor</td><td>15min</td></tr>
+<tr><td>T02.2</td><td>Implement <code>Providers() []catwalk.Provider</code> &mdash; returns <code>embedded.GetAll()</code></td><td>5min</td></tr>
+<tr><td>T02.3</td><td>Implement <code>FindProvider(id catwalk.InferenceProvider) (*catwalk.Provider, bool)</code></td><td>10min</td></tr>
+<tr><td>T02.4</td><td>Implement <code>FindModel(modelID string) (*catwalk.Provider, *catwalk.Model, bool)</code> &mdash; search across all providers</td><td>10min</td></tr>
+<tr><td>T02.5</td><td>Implement <code>VisionModels() []ModelEntry</code> &mdash; filter <code>SupportsImages == true</code></td><td>10min</td></tr>
+<tr><td>T02.6</td><td>Write <code>catalog_test.go</code> &mdash; verify provider count, known lookups (openai, anthropic), vision filter</td><td>15min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-1">T03: Create provider bridge (8 subtasks, 55min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T03.1</td><td>Create <code>internal/catalog/provider.go</code> &mdash; <code>BuildProvider(p catwalk.Provider, apiKey, baseURL string) (fantasy.Provider, error)</code> signature</td><td>10min</td></tr>
+<tr><td>T03.2</td><td>Implement <code>TypeOpenAI</code> case &rarr; <code>openai.New(openai.WithAPIKey(apiKey))</code></td><td>5min</td></tr>
+<tr><td>T03.3</td><td>Implement <code>TypeAnthropic</code> case &rarr; <code>anthropic.New(anthropic.WithAPIKey(apiKey))</code></td><td>5min</td></tr>
+<tr><td>T03.4</td><td>Implement <code>TypeGoogle</code> case &rarr; <code>google.New(google.WithGeminiAPIKey(apiKey))</code></td><td>5min</td></tr>
+<tr><td>T03.5</td><td>Implement <code>TypeOpenRouter</code> case &rarr; <code>openrouter.New(openrouter.WithAPIKey(apiKey))</code></td><td>5min</td></tr>
+<tr><td>T03.6</td><td>Implement <code>TypeOpenAICompat</code> case &rarr; <code>openaicompat.New(openaicompat.WithBaseURL(baseURL), openaicompat.WithAPIKey(apiKey))</code></td><td>10min</td></tr>
+<tr><td>T03.7</td><td>Implement default case &rarr; <code>fmt.Errorf("unsupported provider type: %q", p.Type)</code></td><td>5min</td></tr>
+<tr><td>T03.8</td><td>Write <code>provider_test.go</code> &mdash; verify each type maps correctly, unknown type returns error</td><td>10min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-1">T04: Replace CLI createProvider() (5 subtasks, 65min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T04.1</td><td>Refactor <code>createProvider</code> to accept <code>*catalog.Service</code> and provider name</td><td>15min</td></tr>
+<tr><td>T04.2</td><td>Replace hardcoded switch with catalog <code>FindProvider</code> + <code>BuildProvider</code></td><td>10min</td></tr>
+<tr><td>T04.3</td><td>Update env var resolution: use <code>provider.APIKey</code> field to determine which env var to read</td><td>15min</td></tr>
+<tr><td>T04.4</td><td>Update <code>main()</code> to construct <code>catalog.New()</code> and pass to <code>createProvider</code></td><td>10min</td></tr>
+<tr><td>T04.5</td><td>Run existing <code>provider_test.go</code> and <code>run_test.go</code>, fix failures</td><td>15min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-2">T05-T06: CLI listing flags (5 subtasks, 40min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T05.1</td><td>Add <code>-list-providers</code> bool flag to <code>parseFlags</code></td><td>5min</td></tr>
+<tr><td>T05.2</td><td>Implement <code>printProviders(w, catalog)</code> &mdash; formatted table output</td><td>10min</td></tr>
+<tr><td>T06.1</td><td>Add <code>-list-models</code> bool flag to <code>parseFlags</code></td><td>5min</td></tr>
+<tr><td>T06.2</td><td>Implement <code>printVisionModels(w, catalog, providerFilter)</code> &mdash; table with model ID, provider, ctx window, cost</td><td>15min</td></tr>
+<tr><td>T06.3</td><td>Write test: verify vision filter excludes non-image models, output format</td><td>5min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-2">T07-T08: Validation + provider info (4 subtasks, 40min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T07.1</td><td>Implement <code>suggestModel(catalog, input) string</code> using Levenshtein distance (max 3 edits)</td><td>15min</td></tr>
+<tr><td>T07.2</td><td>Wire suggestion into model lookup path &mdash; print warning to stderr</td><td>10min</td></tr>
+<tr><td>T08.1</td><td>Add <code>-provider-info</code> flag + <code>printProviderInfo(w, provider)</code></td><td>10min</td></tr>
+<tr><td>T08.2</td><td>Write test: verify output for known provider (openai)</td><td>5min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-2">T09-T10: ModelInfo type (4 subtasks, 40min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T09.1</td><td>Create <code>pkg/vision/modelinfo.go</code> with <code>ModelInfo</code> struct + <code>NewModelInfo(catwalk.Model)</code> adapter</td><td>15min</td></tr>
+<tr><td>T09.2</td><td>Write test: verify all fields map correctly from catwalk.Model</td><td>10min</td></tr>
+<tr><td>T10.1</td><td>Add <code>ModelInfo *ModelInfo</code> field to <code>Config</code> with doc comment</td><td>5min</td></tr>
+<tr><td>T10.2</td><td>In <code>withPrepared</code>: if <code>Config.ModelInfo</code> set and <code>MaxOutputTokens == 0</code>, use <code>ModelInfo.DefaultMaxTokens</code></td><td>10min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-2">T11-T12: CostTracker + defaults (5 subtasks, 55min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T11.1</td><td>Add <code>inPricePer1M, outPricePer1M float64</code> fields to <code>CostTracker</code></td><td>5min</td></tr>
+<tr><td>T11.2</td><td>Implement <code>SetPricing(in, out float64)</code> and <code>CostUSD() float64</code></td><td>10min</td></tr>
+<tr><td>T11.3</td><td>Update <code>NewAgentWithCostTracker</code>: auto-wire pricing from <code>Config.ModelInfo</code></td><td>10min</td></tr>
+<tr><td>T11.4</td><td>Write test: cost calculation, nil safety, backward compat (<code>CostUSD() == 0</code> without pricing)</td><td>10min</td></tr>
+<tr><td>T12.1</td><td>In CLI <code>buildConfig</code>: if catalog has model metadata, populate <code>Config.ModelInfo</code></td><td>10min</td></tr>
+<tr><td>T12.2</td><td>Write test: defaults applied from catalog, user overrides respected</td><td>10min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-3">T13-T14: Remote sync + cache (7 subtasks, 70min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T13.1</td><td>Create <code>internal/catalog/sync.go</code> with <code>Sync(client *catwalk.Client, cachePath string) ([]catwalk.Provider, error)</code></td><td>15min</td></tr>
+<tr><td>T13.2</td><td>Implement ETag-based conditional GET (store/load ETag from cache file)</td><td>10min</td></tr>
+<tr><td>T13.3</td><td>Implement fallback: on error/timeout, return embedded providers</td><td>10min</td></tr>
+<tr><td>T13.4</td><td>Add <code>CATWALK_URL</code> env var support to <code>Service</code> constructor</td><td>5min</td></tr>
+<tr><td>T14.1</td><td>Implement cache file read/write: <code>~/.config/vision/catwalk-cache.json</code> with atomic write</td><td>10min</td></tr>
+<tr><td>T14.2</td><td>Handle corrupted cache: delete + fall back to embedded</td><td>10min</td></tr>
+<tr><td>T14.3</td><td>Write test: write/read round-trip, ETag stored, corrupted cache fallback</td><td>10min</td></tr>
+</tbody>
+</table>
+
+<h3 class="tier-3">T15-T18: Docs + integration (4 subtasks, 40min)</h3>
+<table>
+<thead><tr><th>ID</th><th>Subtask</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>T15.1</td><td>Update <code>usageFunc</code>: list providers dynamically from catalog, document <code>CATWALK_URL</code></td><td>10min</td></tr>
+<tr><td>T16.1</td><td>Write BDD integration test: list models &rarr; select vision model &rarr; build provider &rarr; verify agent + CostTracker</td><td>15min</td></tr>
+<tr><td>T17.1</td><td>Update <code>AGENTS.md</code>: document <code>internal/catalog</code>, <code>ModelInfo</code>, bridge pattern, embedded-vs-remote design</td><td>10min</td></tr>
+<tr><td>T18.1</td><td>Remove catwalk from ROADMAP open questions + TODO_LIST, add CHANGELOG entry</td><td>5min</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="architecture">
+<h2><span class="num">05</span>Architecture</h2>
+
+<h3>Package layout</h3>
+<pre><code>internal/
+  catalog/              <span style="color:var(--text-faint)"># NEW &mdash; model catalog access layer</span>
+    catalog.go          <span style="color:var(--text-faint)"># Service type, embedded-first providers</span>
+    catalog_test.go
+    provider.go         <span style="color:var(--text-faint)"># BuildProvider: catwalk.Type &rarr; fantasy constructor</span>
+    provider_test.go
+    sync.go             <span style="color:var(--text-faint)"># Remote sync with ETag + cache (Phase 3)</span>
+    sync_test.go
+
+pkg/vision/
+    modelinfo.go        <span style="color:var(--text-faint)"># NEW &mdash; ModelInfo type (public SDK)</span>
+    modelinfo_test.go
+    cost.go             <span style="color:var(--text-faint)"># ENHANCED &mdash; SetPricing + CostUSD</span>
+    vision.go           <span style="color:var(--text-faint)"># ENHANCED &mdash; Config.ModelInfo field</span>
+
+cmd/vision/
+    main.go             <span style="color:var(--text-faint)"># ENHANCED &mdash; catalog-driven provider + new flags</span>
+    main_test.go        <span style="color:var(--text-faint)"># UPDATED &mdash; migrated tests</span></code></pre>
+
+<h3>Data flow: CLI analysis with catalog</h3>
+<pre><code><span style="color:var(--text-faint)">User runs:</span>
+  vision -provider openai -model gpt-4o screenshot.png
+
+<span style="color:var(--text-faint)">1. catalog.New()</span>
+     <span style="color:var(--solution)">&rarr;</span> embedded.GetAll() or remote sync (if CATWALK_URL set)
+
+<span style="color:var(--text-faint)">2. catalog.FindProvider("openai")</span>
+     <span style="color:var(--solution)">&rarr;</span> catwalk.Provider{Type: TypeOpenAI, APIKey: "OPENAI_API_KEY", ...}
+
+<span style="color:var(--text-faint)">3. catalog.FindModel("gpt-4o")</span>
+     <span style="color:var(--solution)">&rarr;</span> catwalk.Model{SupportsImages: true, CostPer1MIn: 2.5, ...}
+
+<span style="color:var(--text-faint)">4. BuildProvider(provider, apiKey, baseURL)</span>
+     <span style="color:var(--solution)">&rarr;</span> switch provider.Type
+     <span style="color:var(--solution)">&rarr;</span>   case TypeOpenAI: return openai.New(openai.WithAPIKey(apiKey))
+
+<span style="color:var(--text-faint)">5. vision.NewAgent(Config{</span>
+       Model:     languageModel,
+       ModelInfo: <span style="color:var(--warning)">&amp;vision.ModelInfo{...}</span>,  <span style="color:var(--text-faint)"># NEW</span>
+   })
+
+<span style="color:var(--text-faint)">6. agent.Analyze(ctx, prompt, images...)</span>
+     <span style="color:var(--solution)">&rarr;</span> MaxOutputTokens from ModelInfo if unset
+     <span style="color:var(--solution)">&rarr;</span> Hooks.OnFinish &rarr; CostTracker.AddResult + CostUSD()</code></pre>
+
+<div class="callout callout-warning">
+<strong>Design constraint:</strong> The adapter from <code>catwalk.Model</code> to <code>vision.ModelInfo</code> lives in <code>pkg/vision/modelinfo.go</code>, NOT in <code>internal/catalog</code>. This means <code>pkg/vision</code> must import <code>charm.land/catwalk/pkg/catwalk</code>. This is acceptable &mdash; catwalk is a metadata library with no runtime dependencies beyond stdlib + <code>charmbracelet/x/etag</code>. The alternative (duplicating all fields) violates DRY.
+</div>
+</section>
+
+<div class="footer">
+Generated 2026-08-12 &middot; Verified against catwalk v0.51.20, fantasy v0.40.0 &middot; Vision Review Agent v0.4.0
+</div>
+
+</main>
+</div>
+</body>
+</html>

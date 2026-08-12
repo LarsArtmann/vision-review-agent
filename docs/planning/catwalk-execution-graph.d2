@@ -1,0 +1,64 @@
+direction: down
+
+# Pareto tiers
+tier_1: Catwalk Integration Plan {
+  style.fill: "#0e0e10"
+  style.stroke: "#ffb347"
+
+  tier1: 1% Tier — Foundation (51% value) {
+    style.fill: "#1a1a2e"
+    style.stroke: "#6eb5ff"
+
+    T01: "T01: Add catwalk\ndependency" {style.fill: "#2a2a4a"; style.stroke: "#6eb5ff"}
+    T02: "T02: Create\ninternal/catalog\npackage" {style.fill: "#2a2a4a"; style.stroke: "#6eb5ff"}
+    T03: "T03: Create provider\nbridge (Type→fantasy)" {style.fill: "#2a2a4a"; style.stroke: "#6eb5ff"}
+    T04: "T04: Replace CLI\ncreateProvider()" {style.fill: "#2a2a4a"; style.stroke: "#6eb5ff"}
+
+    T01 -> T02 -> T03 -> T04
+  }
+
+  tier2: 4% Tier — UX + SDK (64% value) {
+    style.fill: "#1a2e1a"
+    style.stroke: "#f4d35e"
+
+    T05: "T05: -list-providers\nflag" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+    T06: "T06: -list-models\nflag (vision filter)" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+    T07: "T07: Model ID\nvalidation +\nsuggestions" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+    T08: "T08: -provider-info\nflag" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+    T09: "T09: pkg/vision.\nModelInfo type" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+    T10: "T10: Wire ModelInfo\ninto Config" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+    T11: "T11: CostTracker\n+ pricing" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+    T12: "T12: Auto-configure\ndefaults from\ncatalog" {style.fill: "#2a4a2a"; style.stroke: "#f4d35e"}
+  }
+
+  tier3: 20% Tier — Remote + Polish (80% value) {
+    style.fill: "#2e1a1a"
+    style.stroke: "#ff6b6b"
+
+    T13: "T13: Remote catalog\nsync + ETag" {style.fill: "#4a2a2a"; style.stroke: "#ff6b6b"}
+    T14: "T14: Cache file\nmanagement" {style.fill: "#4a2a2a"; style.stroke: "#ff6b6b"}
+    T15: "T15: Update CLI\nenv docs" {style.fill: "#4a2a2a"; style.stroke: "#ff6b6b"}
+    T16: "T16: Integration\ntests" {style.fill: "#4a2a2a"; style.stroke: "#ff6b6b"}
+    T17: "T17: Update\nAGENTS.md" {style.fill: "#4a2a2a"; style.stroke: "#ff6b6b"}
+    T18: "T18: Resolve\nROADMAP +\nTODO" {style.fill: "#4a2a2a"; style.stroke: "#ff6b6b"}
+  }
+
+  # Cross-tier dependencies
+  T04 -> T05
+  T04 -> T06
+  T04 -> T07
+  T04 -> T08
+  T04 -> T09
+  T09 -> T10
+  T10 -> T11
+  T10 -> T12
+  T06 -> T07
+
+  T11 -> T13
+  T12 -> T16
+  T13 -> T14
+  T14 -> T15
+  T15 -> T16
+  T16 -> T17
+  T17 -> T18
+}
