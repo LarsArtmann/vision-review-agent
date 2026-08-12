@@ -14,17 +14,10 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 The only actionable near-term items remaining are in
 [TODO_LIST.md](TODO_LIST.md): the **tag anomaly** (destructive, needs user
-approval) and two **open product questions** (structured hooks payload,
-semver policy for 0.x). Everything else from the original near-term list has
-shipped:
-
-- ~~**Make preprocessing composable**~~ — Done. `Config.Preprocess` is wired
-  into every `Analyze*` method; `PreprocessConfig.MaxDimension` auto-resizes.
-- ~~**One retry system, not two**~~ — Done. `Config.MaxRetries` (HTTP layer)
-  and `Config.Retry` (vision layer) coexist as a documented two-layer system;
-  `WithRetry[T]` remains as explicit per-call middleware.
-- ~~**catwalk integration for CLI**~~ — Done. `internal/catalog` provides 40+
-  providers via `charm.land/catwalk`; hand-rolled CLI providers removed.
+approval) and two **open product questions** below (structured hooks payload,
+semver policy for 0.x). All previous near-term work — preprocessing
+auto-wiring, retry reconciliation, catwalk CLI integration, cost tracking —
+has shipped and moved to [CHANGELOG.md](CHANGELOG.md).
 
 ## Mid-term ideas
 
@@ -36,9 +29,6 @@ shipped:
 - **Batch-level hooks** — `Hooks.OnBatchStart` / `OnBatchFinish` for
   batch-scoped observability (per-image hooks already fire via internal
   `Analyze`).
-- ~~**Built-in cost tracking**~~ — Done. `CostTracker` with `SetPricing` /
-  `CostUSD` and `NewAgentWithCostTracker` auto-wiring shipped in the catwalk
-  integration session.
 - **Typed config-validation errors** — move beyond sentinel errors to typed
   validation failures that carry the field name, the invalid value, and the
   allowed range.
