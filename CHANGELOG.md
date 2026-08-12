@@ -18,6 +18,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Nothing yet.
 
+## [0.5.1] - 2026-08-12
+
+### Fixed
+
+- **Critical: `.gitignore` blocked `pkg/vision/` files from being committed.**
+  The pattern `vision` (without leading `/`) matched the `pkg/vision/` directory,
+  silently preventing `modelinfo.go`, `modelinfo_test.go`, `cost_pricing_test.go`,
+  and three `cmd/vision/` catalog-integration files from being included in the
+  v0.5.0 tag. The published v0.5.0 module was uncompilable as a result
+  (`undefined: ModelInfo`). Fixed by anchoring binary patterns to the repo root
+  (`/vision`, `/vision-cli`, `/error-handling`). All previously-blocked files are
+  now tracked.
+
 ## [0.5.0] - 2026-08-12
 
 ### Added
