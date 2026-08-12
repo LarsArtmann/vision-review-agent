@@ -19,10 +19,6 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Open questions (from ROADMAP — need product decisions before becoming tasks)
 
-- **catwalk or hand-rolled CLI providers?** The three providers added to
-  `cmd/vision/main.go` (Anthropic, Google, openaicompat) work but will rot as
-  fantasy evolves. Replace them with `github.com/charmbracelet/catwalk`, or
-  keep hand-rolled and layer catwalk on top?
 - **Structured hooks payload: is a breaking API change acceptable?** The
   nil-`RawResponse` hazard in structured `fireFinish` is now documented (see
   `AnalyzeResult.RawResponse`), but a proper fix (discriminated `HooksEvent`

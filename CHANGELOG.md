@@ -6,8 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Provider alias in ModelInfo lookup** — `FindModelInProvider` now normalizes
+  the provider name (`google` → `gemini`) before catalog lookup, so ModelInfo
+  is correctly populated for the Google Gemini provider.
+- **Remote sync timeout** — `CATWALK_URL` sync now uses a 5-second context
+  timeout instead of the catwalk client default (30s), preventing long startup
+  delays when the remote server is unreachable.
+- **Duplicate mock model** — `integrationMockModel` removed; integration tests
+  now reuse the existing `cliMockModel`.
+- **Usage hints** — CLI help text now lists specific provider env var names
+  (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.) instead of a generic message.
+
 ### Added
 
+- **Catwalk model catalog integration** — `internal/catalog` package provides
+  model discovery over [charm.land/catwalk](https://github.com/charmbracelet/catwalk),
+  bringing 40+ providers and 800+ vision-capable models. The CLI now supports
+  `-list-providers`, `-list-models`, `-provider-info` flags and catalog-driven
+  provider construction via `BuildProvider`.
+- **`pkg/vision.ModelInfo`** — public SDK type for model metadata (pricing,
+  context window, capabilities). Set `Config.ModelInfo` to auto-configure
+  `MaxOutputTokens` from catalog defaults and enable cost tracking.
+- **`CostTracker.SetPricing` / `CostTracker.CostUSD`** — track real dollar
+  costs based on catalog pricing data. `NewAgentWithCostTracker` auto-wires
+  pricing from `Config.ModelInfo`.
+- **Model ID suggestions** — when a model ID isn't in the catalog, the CLI
+  suggests the closest match by edit distance.
+- **Remote catalog sync** — set `CATWALK_URL` to enable ETag-based remote
+  catalog updates with local file caching and embedded fallback.
 - **Structured parse error tests** — `TestAnalyzeStructuredStreamUnmarshalFailure`
   and `TestAnalyzeStructuredUnmarshalFailure` cover the streaming and
   non-streaming unmarshal failure paths. The mock model now supports

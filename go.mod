@@ -3,6 +3,7 @@ module github.com/larsartmann/vision-review-agent
 go 1.26.5
 
 require (
+	charm.land/catwalk v0.51.21
 	charm.land/fantasy v0.40.0
 	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.41.0
@@ -34,6 +35,7 @@ require (
 	github.com/aws/smithy-go v1.27.6 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/anthropic-sdk-go v0.0.0-20260223140439-63879b0b8dab // indirect
+	github.com/charmbracelet/x/etag v0.2.0 // indirect
 	github.com/charmbracelet/x/exp/slice v0.0.0-20260803091719-3755ebad01b1 // indirect
 	github.com/charmbracelet/x/exp/strings v0.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

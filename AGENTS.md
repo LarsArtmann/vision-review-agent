@@ -8,14 +8,18 @@ A Go SDK for building AI agents with vision capabilities. Built on top of [charm
 
 ```
 cmd/vision/              CLI tool
+  main.go                Catalog-driven provider construction, listing flags, analysis
+  listing.go             printProviders, printVisionModels, printProviderInfo, suggestModel
 pkg/                     Public library code
   vision/                Core SDK package
     vision.go            Agent, Config, Analyze, AnalyzeStream, AnalyzeConversation
+    modelinfo.go         ModelInfo type, NewModelInfo(catwalk.Model), applyModelInfoDefaults
     image.go             ImageSource, LoadImageFromFile/URL/Base64/Reader
     screenshot.go        ScreenshotAnalyzer builder (cache-safe)
     structured.go        AnalyzeStructured[T], AnalyzeStructuredStream[T]
     conversation.go      Conversation type for multi-turn analysis
     batch.go             AnalyzeBatch for concurrent analysis
+    cost.go              CostTracker (with SetPricing + CostUSD), NewAgentWithCostTracker
     hooks.go             Hooks (OnStart, OnFinish, OnError)
     errors.go            Re-exports domain errors + ModelError classification
     validate.go          Image format validation (magic bytes)
@@ -23,6 +27,10 @@ pkg/                     Public library code
     errors.go            Sentinel validation errors
     model.go             ModelError, ErrorKind, Classify, IsRetryable
 internal/                Private implementation code
+  catalog/               Model catalog access layer (over charm.land/catwalk)
+    catalog.go           Service type, FindProvider, FindModel, VisionModels
+    provider.go          BuildProvider: catwalk.Type → fantasy constructor bridge
+    sync.go              Remote sync with ETag caching + file cache management
   visionutil/            Internal helpers (prompt building, unmarshaling)
 examples/                Working examples for each provider
 ```
@@ -70,6 +78,13 @@ examples/                Working examples for each provider
 - **Structured streaming final object unmarshal is a hard error** — `AnalyzeStructuredStream`'s `ObjectStreamPartTypeFinish` case now returns a `KindStructuredParse` error if the final object fails to unmarshal, instead of silently swallowing it and returning a zero-value T. Partial object unmarshal failures during streaming are still tolerated (best-effort).
 - **`errors.AsType[E]` for typed extraction, `errors.Is` for sentinels** — The codebase uses the Go 1.26 generic `errors.AsType[*T](err)` for extracting `*ModelError`, `*fantasy.ProviderError`, `*fantasy.NoObjectGeneratedError`. It uses `errors.Is` for stdlib sentinels (`context.Canceled`, `context.DeadlineExceeded`). No legacy `errors.As` remains.
 - **Functions return `error` interface, not concrete types** — Every function returns `error`, not a specific error type. This is idiomatic Go. The `erraudit` `generic_return` warnings suggesting per-function error types are false positives that would break composability and add massive boilerplate.
+- **Catwalk is a metadata catalog, not a provider factory** — `internal/catalog` wraps `charm.land/catwalk` for model discovery (40+ providers, 800+ vision models). Provider construction still uses fantasy constructors via `BuildProvider`, which switches on `catwalk.Type` to call the right fantasy `New()`.
+- **Embedded-first catalog** — By default, `catalog.New()` returns `embedded.GetAll()` (compiled into binary, no network). Set `CATWALK_URL` to enable remote sync with ETag caching; falls back to cached then embedded on any error.
+- **`errEnvVarNotSet` aliases `catalog.ErrAPIKeyNotSet`** — The CLI's error var is set to `catalog.ErrAPIKeyNotSet` so existing `errors.Is` tests match without changes.
+- **`normalizeProviderName("google") → "gemini"`** — Catwalk uses "gemini" as the InferenceProvider ID for Google; the CLI aliases "google" for backward compatibility.
+- **`openaicompat` is a CLI-only fallback** — Not in the catwalk catalog. When `-provider openaicompat` is passed, the CLI reads `OPENAICOMPAT_BASE_URL`/`OPENAICOMPAT_API_KEY` directly.
+- **`ModelInfo` is optional and backward compatible** — `Config.ModelInfo *ModelInfo` is nil-safe. When set, `applyModelInfoDefaults` fills in `MaxOutputTokens` from catalog defaults if unset. `NewAgentWithCostTracker` auto-wires pricing from `ModelInfo` via `CostTracker.SetPricing`.
+- **`CostTracker.CostUSD()` returns 0 without pricing** — No breaking change: existing `CostTracker` users see no cost unless `SetPricing` is called or `ModelInfo` is set.
 
 ## Build & Test Commands
 
@@ -112,6 +127,7 @@ errors pointing at a sibling module.
 - `charm.land/fantasy` — Core AI agent framework
 - `charm.land/fantasy/providers/openai` — OpenAI provider
 - `charm.land/fantasy/providers/openrouter` — OpenRouter provider (multi-model)
+- `charm.land/catwalk` — Model catalog (40+ providers, 800+ vision models, pricing, capabilities)
 
 ## Type Model
 

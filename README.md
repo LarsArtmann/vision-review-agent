@@ -5,7 +5,9 @@ A simple, production-ready Go SDK for building AI agents with vision capabilitie
 ## Features
 
 - **Simple API** — Analyze images/screenshots with a single function call
-- **Multi-provider** — Works with OpenAI, OpenRouter, Anthropic, Google, Azure, Bedrock, and any fantasy-compatible provider
+- **40+ Providers** — Built-in model catalog via [charm.land/catwalk](https://github.com/charmbracelet/catwalk) with vision model discovery, pricing, and context window metadata
+- **Model Discovery** — List providers, browse vision-capable models, get typo suggestions ("did you mean gpt-4o?")
+- **Pricing-Aware Cost Tracking** — Automatic USD cost calculation from catalog pricing data
 - **Streaming** — Stream responses in real-time (text and structured)
 - **Structured Output** — Get typed, structured results instead of free-form text
 - **Structured Streaming** — Stream partial structured objects as they arrive
@@ -17,7 +19,8 @@ A simple, production-ready Go SDK for building AI agents with vision capabilitie
 - **Cost Tracking** — Thread-safe token accumulator wired into hooks
 - **Flexible Image Loading** — Load from files, URLs, base64 strings, or any `io.Reader`
 - **Classified Errors** — Every model error is classified into 14 kinds with `IsRetryable()` for smart retry logic
-- **Built-in CLI** — Analyze images from the command line
+- **Built-in CLI** — Analyze images from the command line with catalog-driven provider/model selection
+- **Remote Catalog Sync** — Optional ETag-based catalog updates via `CATWALK_URL` (falls back to embedded data offline)
 - **Full Model Parameters** — Temperature, TopP, TopK, PresencePenalty, FrequencyPenalty
 - **Validation** — Strong input validation with clear error types
 - **Configurable** — Token limits, retries, timeouts, sampling parameters
@@ -84,12 +87,30 @@ nix flake check           # Canonical quality gate
 # Build the CLI
 go build -o vision ./cmd/vision
 
+# List all 40+ supported providers
+./vision -list-providers
+
+# List vision-capable models (optionally filter by provider)
+./vision -list-models
+./vision -list-models -provider openai
+
+# Show provider details (env vars, supported models)
+./vision -provider-info -provider gemini
+
 # Analyze a screenshot
 export OPENAI_API_KEY=your-key
 ./vision -prompt "Find UI bugs" screenshot.png
 
 # Stream the response
 ./vision -stream -prompt "Describe this UI" screenshot.png
+
+# Use any of 40+ providers (e.g., Anthropic, Gemini, xAI)
+export ANTHROPIC_API_KEY=your-key
+./vision -provider anthropic -model claude-sonnet-4-20250514 screenshot.png
+
+# Use Google Gemini (alias 'google' also works)
+export GEMINI_API_KEY=your-key
+./vision -provider google -model gemini-2.5-flash screenshot.png
 
 # Use OpenRouter
 export OPENROUTER_API_KEY=your-key
@@ -103,7 +124,8 @@ export OPENROUTER_API_KEY=your-key
 ```
 
 CLI flags: `-provider`, `-model`, `-prompt`, `-system`, `-stream`,
-`-temperature`, `-max-tokens`, `-json`, `-structured`, `-timeout`, `-version`.
+`-temperature`, `-max-tokens`, `-json`, `-structured`, `-timeout`, `-version`,
+`-list-providers`, `-list-models`, `-provider-info`.
 
 ## SDK Usage
 
@@ -191,7 +213,8 @@ retry if both are set.
 ### Cost Tracking
 
 `NewAgentWithCostTracker` auto-wires a thread-safe `CostTracker` into
-`Hooks.OnFinish`, composing with any user-supplied hooks:
+`Hooks.OnFinish`, composing with any user-supplied hooks. When `Config.ModelInfo`
+is set (from the catalog), pricing is auto-applied:
 
 ```go
 agent, tracker, err := vision.NewAgentWithCostTracker(vision.Config{Model: model})
@@ -203,6 +226,9 @@ result, _ := agent.Analyze(ctx, "describe", img)
 
 total := tracker.Total() // fantasy.Usage{InputTokens, OutputTokens, TotalTokens}
 fmt.Printf("%d calls, %d total tokens\n", tracker.Calls(), total.TotalTokens)
+
+// When Config.ModelInfo is set (from catalog), pricing is auto-applied:
+fmt.Printf("Cost: $%.4f\n", tracker.CostUSD())
 ```
 
 ### ScreenshotAnalyzer Builder
@@ -323,6 +349,7 @@ img, _ := vision.LoadImageFromReader(file, vision.MediaTypeJPEG, "photo.jpg")
 | `RequestTimeout`   | Per-request timeout                                                      |
 | `Preprocess`       | `*PreprocessConfig` (auto-resize + JPEG quality) before every Analyze*   |
 | `Hooks`            | Lifecycle callbacks (OnStart/OnFinish/OnError)                           |
+| `ModelInfo`        | Optional catalog metadata (pricing, context window, capabilities)        |
 
 ## Error Types
 
@@ -378,9 +405,10 @@ See the [`examples/`](examples/) directory for complete working examples:
 
 ```
 pkg/
-  vision/         Public SDK (Agent, Config, image loading, analysis, preprocessing)
+  vision/         Public SDK (Agent, Config, image loading, analysis, preprocessing, ModelInfo)
   errors/         Centralized domain errors (re-exported from pkg/vision)
 internal/
+  catalog/        Catwalk model catalog service, provider bridge, remote sync
   visionutil/     Internal helpers (prompt building, unmarshaling)
 cmd/vision/       CLI tool
 examples/         Working examples for each provider/feature

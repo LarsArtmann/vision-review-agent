@@ -20,17 +20,16 @@ import (
 	"time"
 
 	"charm.land/fantasy"
-	"charm.land/fantasy/providers/anthropic"
-	"charm.land/fantasy/providers/google"
-	"charm.land/fantasy/providers/openai"
 	"charm.land/fantasy/providers/openaicompat"
-	"charm.land/fantasy/providers/openrouter"
+	"github.com/larsartmann/vision-review-agent/internal/catalog"
 	"github.com/larsartmann/vision-review-agent/internal/cli"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
 const (
-	defaultTemperature = 0.3
+	defaultTemperature  = 0.3
+	providerGeminiAlias = "gemini"
+	syncTimeout         = 5 * time.Second
 )
 
 // version is the CLI version string. It is a var (not a const) so release
@@ -40,9 +39,26 @@ const (
 var version = "0.4.0"
 
 var (
-	errEnvVarNotSet    = errors.New("environment variable not set")
+	// errEnvVarNotSet aliases catalog.ErrAPIKeyNotSet so existing tests and
+	// error-handling code continue to match via errors.Is.
+	errEnvVarNotSet    = catalog.ErrAPIKeyNotSet
 	errUnknownProvider = errors.New("unknown provider")
 )
+
+// buildCatalog creates the catalog service. When CATWALK_URL is set, it attempts
+// a remote sync with a short timeout, falling back to cache then embedded data.
+func buildCatalog(ctx context.Context) *catalog.Service {
+	if os.Getenv("CATWALK_URL") == "" {
+		return catalog.New()
+	}
+
+	syncCtx, cancel := context.WithTimeout(ctx, syncTimeout)
+	defer cancel()
+
+	syncer := catalog.NewSync(catalog.DefaultCachePath())
+
+	return catalog.NewWithProviders(syncer.Fetch(syncCtx))
+}
 
 func main() {
 	cfg, err := parseFlags(flag.CommandLine, os.Args[1:])
@@ -53,19 +69,53 @@ func main() {
 		os.Exit(0)
 	}
 
+	ctx := context.Background()
+	svc := buildCatalog(ctx)
+
+	if cfg.listProviders {
+		printProviders(os.Stdout, svc)
+
+		return
+	}
+
+	if cfg.listModels {
+		printVisionModels(os.Stdout, svc, cfg.providerName)
+
+		return
+	}
+
+	if cfg.providerInfo {
+		printProviderInfo(os.Stdout, svc, cfg.providerName)
+
+		return
+	}
+
 	if len(cfg.args) == 0 {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-	provider, err := createProvider(cfg.providerName)
+	provider, err := createProvider(svc, cfg.providerName)
 	cli.ExitOnError(err, "")
+
+	if _, _, ok := svc.FindModel(cfg.modelID); !ok {
+		if suggestion := suggestModel(svc, cfg.modelID); suggestion != "" {
+			fmt.Fprintf(os.Stderr, "Warning: model %q not in catalog. Did you mean %q?\n", cfg.modelID, suggestion)
+		}
+	}
 
 	model, err := provider.LanguageModel(ctx, cfg.modelID)
 	cli.ExitOnError(err, "Error getting model")
 
-	agent, err := vision.NewAgent(buildConfig(model, cfg))
+	var modelInfo *vision.ModelInfo
+
+	normalizedProvider := normalizeProviderName(cfg.providerName)
+	if m, ok := svc.FindModelInProvider(normalizedProvider, cfg.modelID); ok {
+		info := vision.NewModelInfo(*m)
+		modelInfo = &info
+	}
+
+	agent, err := vision.NewAgent(buildConfig(model, cfg, modelInfo))
 	cli.ExitOnError(err, "Error creating agent")
 
 	images, err := loadImages(cfg.args)
@@ -75,18 +125,21 @@ func main() {
 }
 
 type config struct {
-	providerName string
-	modelID      string
-	prompt       string
-	systemPrompt string
-	stream       bool
-	structured   bool
-	temperature  float64
-	maxTokens    int64
-	jsonOutput   bool
-	timeout      int64
-	showVersion  bool
-	args         []string // positional image paths
+	providerName  string
+	modelID       string
+	prompt        string
+	systemPrompt  string
+	stream        bool
+	structured    bool
+	temperature   float64
+	maxTokens     int64
+	jsonOutput    bool
+	timeout       int64
+	showVersion   bool
+	listProviders bool
+	listModels    bool
+	providerInfo  bool
+	args          []string // positional image paths
 }
 
 // parseFlags parses the CLI flags from args using fs. It does NOT call os.Exit:
@@ -113,6 +166,9 @@ func parseFlags(flagSet *flag.FlagSet, args []string) (*config, error) {
 	structured := flagSet.Bool("structured", false, "Emit a structured UI review as JSON (built-in schema)")
 	timeout := flagSet.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
 	showVersion := flagSet.Bool("version", false, "Show version and exit")
+	listProviders := flagSet.Bool("list-providers", false, "List all supported providers and exit")
+	listModels := flagSet.Bool("list-models", false, "List vision-capable models and exit")
+	providerInfo := flagSet.Bool("provider-info", false, "Show details for -provider and exit")
 
 	flagSet.Usage = usageFunc(flagSet)
 
@@ -121,18 +177,21 @@ func parseFlags(flagSet *flag.FlagSet, args []string) (*config, error) {
 	}
 
 	return &config{
-		providerName: *providerName,
-		modelID:      *modelID,
-		prompt:       *prompt,
-		systemPrompt: *systemPrompt,
-		stream:       *stream,
-		temperature:  *temperature,
-		maxTokens:    *maxTokens,
-		jsonOutput:   *jsonOutput,
-		structured:   *structured,
-		timeout:      *timeout,
-		showVersion:  *showVersion,
-		args:         flagSet.Args(),
+		providerName:  *providerName,
+		modelID:       *modelID,
+		prompt:        *prompt,
+		systemPrompt:  *systemPrompt,
+		stream:        *stream,
+		temperature:   *temperature,
+		maxTokens:     *maxTokens,
+		jsonOutput:    *jsonOutput,
+		structured:    *structured,
+		timeout:       *timeout,
+		showVersion:   *showVersion,
+		listProviders: *listProviders,
+		listModels:    *listModels,
+		providerInfo:  *providerInfo,
+		args:          flagSet.Args(),
 	}, nil
 }
 
@@ -143,19 +202,27 @@ func usageFunc(flagSet *flag.FlagSet) func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] <image1.png> [image2.png ...]\n\n", name)
 		fmt.Fprint(os.Stderr, "Analyze images/screenshots with AI vision models.\n\n")
 		fmt.Fprintln(os.Stderr, "Environment variables:")
-		fmt.Fprintln(os.Stderr, "  OPENAI_API_KEY          - OpenAI provider")
-		fmt.Fprintln(os.Stderr, "  OPENROUTER_API_KEY      - OpenRouter provider")
-		fmt.Fprintln(os.Stderr, "  ANTHROPIC_API_KEY       - Anthropic provider")
-		fmt.Fprintln(os.Stderr, "  GOOGLE_APPLICATION_*    - Google provider (ADC)")
-		fmt.Fprintln(os.Stderr, "  OPENAICOMPAT_BASE_URL   - openaicompat provider (required)")
-		fmt.Fprint(os.Stderr, "  OPENAICOMPAT_API_KEY    - openaicompat provider (optional)\n\n")
+		fmt.Fprintln(os.Stderr, "  OPENAI_API_KEY         - OpenAI provider")
+		fmt.Fprintln(os.Stderr, "  ANTHROPIC_API_KEY      - Anthropic provider")
+		fmt.Fprintln(os.Stderr, "  GEMINI_API_KEY         - Google Gemini provider")
+		fmt.Fprintln(os.Stderr, "  OPENROUTER_API_KEY     - OpenRouter provider")
+		fmt.Fprintln(os.Stderr, "  XAI_API_KEY            - xAI provider")
+		fmt.Fprintln(
+			os.Stderr,
+			"  CATWALK_URL           - Remote catalog server (optional, for auto-updating model list)",
+		)
+		fmt.Fprintln(os.Stderr, "  OPENAICOMPAT_BASE_URL - openaicompat provider (required for local servers)")
+		fmt.Fprint(os.Stderr, "  OPENAICOMPAT_API_KEY  - openaicompat provider (optional)\n\n")
+		fmt.Fprintln(os.Stderr, "Use -list-providers to see all 40+ supported providers.")
+		fmt.Fprintln(os.Stderr, "Use -list-models to see vision-capable models with pricing.")
 		fmt.Fprintln(os.Stderr, "Options:")
 		flagSet.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "\nExamples:")
 		fmt.Fprintf(os.Stderr, "  %s -prompt \"Find UI bugs\" screenshot.png\n", name)
+		fmt.Fprintf(os.Stderr, "  %s -list-models -provider openai\n", name)
 		fmt.Fprintf(
 			os.Stderr,
-			"  %s -provider openrouter -model anthropic/claude-3.5-sonnet screenshot.png\n",
+			"  %s -provider openrouter -model openai/gpt-4o screenshot.png\n",
 			name,
 		)
 		fmt.Fprintf(os.Stderr, "  %s -stream -prompt \"Describe this\" *.png\n", name)
@@ -167,11 +234,12 @@ func usageFunc(flagSet *flag.FlagSet) func() {
 	}
 }
 
-func buildConfig(model fantasy.LanguageModel, cfg *config) vision.Config {
+func buildConfig(model fantasy.LanguageModel, cfg *config, modelInfo *vision.ModelInfo) vision.Config {
 	config := vision.Config{
 		Model:           model,
 		Temperature:     cfg.temperature,
 		MaxOutputTokens: cfg.maxTokens,
+		ModelInfo:       modelInfo,
 	}
 
 	if cfg.systemPrompt != "" {
@@ -388,53 +456,6 @@ func printJSON(w io.Writer, result *vision.AnalyzeResult) {
 	}
 }
 
-// newProviderFromEnv reads an API key from the environment and uses the given
-// factory to build the provider. It returns a descriptive error if the key is
-// missing or the factory fails.
-func newProviderFromEnv(
-	envVar string,
-	factory func(apiKey string) (fantasy.Provider, error),
-) (fantasy.Provider, error) {
-	apiKey := os.Getenv(envVar)
-	if apiKey == "" {
-		return nil, fmt.Errorf("%s: %w", envVar, errEnvVarNotSet)
-	}
-
-	provider, err := factory(apiKey)
-	if err != nil {
-		return nil, fmt.Errorf("create provider (env=%s): %w", envVar, err)
-	}
-
-	return provider, nil
-}
-
-func createOpenAIProvider(apiKey string) (fantasy.Provider, error) {
-	provider, err := openai.New(openai.WithAPIKey(apiKey))
-
-	return wrapProvider("openai", provider, err)
-}
-
-func createOpenRouterProvider(apiKey string) (fantasy.Provider, error) {
-	provider, err := openrouter.New(openrouter.WithAPIKey(apiKey))
-
-	return wrapProvider("openrouter", provider, err)
-}
-
-func createAnthropicProvider(apiKey string) (fantasy.Provider, error) {
-	provider, err := anthropic.New(anthropic.WithAPIKey(apiKey))
-
-	return wrapProvider("anthropic", provider, err)
-}
-
-// createGoogleProvider builds the Google (Gemini) provider using Application
-// Default Credentials. Set GOOGLE_APPLICATION_CREDENTIALS or run `gcloud auth
-// application-default login` before use.
-func createGoogleProvider() (fantasy.Provider, error) {
-	provider, err := google.New()
-
-	return wrapProvider("google", provider, err)
-}
-
 // createOpenAICompatProvider builds an OpenAI-compatible provider for local
 // model servers (Ollama, LM Studio). OPENAICOMPAT_BASE_URL is required;
 // OPENAICOMPAT_API_KEY is optional (most local servers ignore it).
@@ -451,41 +472,56 @@ func createOpenAICompatProvider() (fantasy.Provider, error) {
 	}
 
 	provider, err := openaicompat.New(opts...)
-
-	return wrapProvider("openaicompat", provider, err)
-}
-
-// wrapProvider pairs a provider constructor's (Provider, error) result with a
-// consistent error message naming the provider that failed.
-func wrapProvider(
-	name string,
-	provider fantasy.Provider,
-	err error,
-) (fantasy.Provider, error) {
 	if err != nil {
-		return nil, fmt.Errorf("create %s provider: %w", name, err)
+		return nil, fmt.Errorf("create openai-compat provider: %w", err)
 	}
 
 	return provider, nil
 }
 
-func createProvider(name string) (fantasy.Provider, error) {
+// normalizeProviderName maps legacy CLI provider names to their catwalk
+// InferenceProvider IDs. This preserves backward compatibility for users
+// who pass -provider google (which maps to the catwalk "gemini" provider).
+func normalizeProviderName(name string) string {
 	switch strings.ToLower(name) {
-	case "openai":
-		return newProviderFromEnv("OPENAI_API_KEY", createOpenAIProvider)
-	case "openrouter":
-		return newProviderFromEnv("OPENROUTER_API_KEY", createOpenRouterProvider)
-	case "anthropic":
-		return newProviderFromEnv("ANTHROPIC_API_KEY", createAnthropicProvider)
 	case "google":
-		return createGoogleProvider()
-	case "openaicompat":
-		return createOpenAICompatProvider()
+		return providerGeminiAlias
 	default:
+		return name
+	}
+}
+
+func createProvider(svc *catalog.Service, name string) (fantasy.Provider, error) {
+	name = normalizeProviderName(name)
+
+	provider, ok := svc.FindProvider(name)
+	if !ok {
+		if strings.EqualFold(name, "openaicompat") {
+			return createOpenAICompatProvider()
+		}
+
 		return nil, fmt.Errorf(
-			"%s (supported: openai, openrouter, anthropic, google, openaicompat): %w",
+			"%s (use -list-providers to see supported providers): %w",
 			name,
 			errUnknownProvider,
 		)
 	}
+
+	apiKey, err := catalog.ResolveAPIKey(provider)
+	if err != nil {
+		if catalog.RequiresAPIKey(provider) {
+			return nil, fmt.Errorf("provider %s: %w", provider.ID, err)
+		}
+
+		apiKey = ""
+	}
+
+	baseURL := catalog.ResolveBaseURL(provider)
+
+	fantasyProvider, err := catalog.BuildProvider(provider, apiKey, baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("build provider %s: %w", provider.ID, err)
+	}
+
+	return fantasyProvider, nil
 }

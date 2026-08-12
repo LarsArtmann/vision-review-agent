@@ -98,14 +98,34 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 - **Fuzz tests** — `FuzzDetectImageFormat`, `FuzzDecodeBase64Flex`, `FuzzEncodeImage`, `FuzzResizeImage`, `FuzzCompressImage`, `FuzzParseFlags`
 - **Mock model** — Comprehensive mock with error injection + call counting
 
+### Model Catalog (catwalk integration)
+
+- **40+ providers** — Built-in catalog via `charm.land/catwalk` embedded data (OpenAI, Anthropic, Google Gemini, OpenRouter, xAI, and 35+ more)
+- **Model discovery** — `Service.FindModel`, `FindModelInProvider`, `VisionModels` for querying the catalog
+- **Model suggestions** — Levenshtein-distance typo correction ("did you mean gpt-4o?")
+- **Provider info** — `-list-providers`, `-list-models`, `-provider-info` listing flags
+- **Remote sync** — Optional ETag-based catalog updates via `CATWALK_URL` env var (5s timeout, falls back to cache then embedded)
+- **Provider bridge** — `BuildProvider(catwalk.Provider) → fantasy.Provider` maps catalog metadata to fantasy constructors
+
+### Cost Tracking (pricing-aware)
+
+- **ModelInfo** — Catalog-derived model metadata (context window, pricing, capabilities, reasoning flag)
+- **CostTracker.SetPricing** — Per-1M-token pricing wired from `Config.ModelInfo`
+- **CostTracker.CostUSD** — USD cost calculation from accumulated token usage
+- **NewAgentWithCostTracker** — Auto-wires pricing from `Config.ModelInfo` when available
+- **Backward compatible** — Without `ModelInfo`, `CostUSD()` returns 0 (no behavior change)
+
 ### CLI
 
-- **Multi-provider** — OpenAI, OpenRouter (DONE); Anthropic, Google (ADC), openaicompat (PARTIALLY DONE — build-verified only)
+- **Multi-provider** — All 40+ catwalk providers plus `openaicompat` for local servers (Ollama, LM Studio)
+- **Provider alias** — `-provider google` normalizes to catwalk's `gemini` ID
 - **Streaming** — Real-time text output
 - **JSON output** — Machine-readable result format
 - **-structured** — Built-in UIReview schema with structured JSON output
 - **Classified errors** — User-friendly error messages with per-kind retry advice
-- **CLI tests** — `adviceForKind`, `buildConfig`, `parseTimeout`, `createProvider` error paths
+- **Model suggestions** — Typo detection with "did you mean?" hints for unknown models
+- **Catalog listing** — `-list-providers`, `-list-models [-provider X]`, `-provider-info` flags
+- **CLI tests** — `adviceForKind`, `buildConfig`, `parseTimeout`, `createProvider` error paths, alias normalization, provider bridge integration
 
 ### Examples
 
@@ -131,10 +151,6 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
   holding raw JSON, not prose. Hooks in `Analyze`/`AnalyzeStream`/
   `AnalyzeConversation` are fully DONE. A proper `HooksEvent` redesign is a
   breaking change deferred to ROADMAP.
-- **CLI providers (Anthropic, Google, openaicompat)** — Compile and appear in
-  `-h`, and have **constructor tests** verifying env-var validation and provider
-  creation. Runtime credentials not tested (Google uses ADC; openaicompat
-  expects a local server).
 - **Streaming auto-retry** — Deliberately excluded. `AnalyzeStream`,
   `AnalyzeConversationStream`, and `AnalyzeStructuredStream` do NOT auto-retry
   on `Config.Retry` (partial-stream + retry has ambiguous delta semantics).

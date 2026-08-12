@@ -1,3 +1,5 @@
+charm.land/catwalk v0.51.21 h1:SlCvkfV9ijn9IZGi9PidD4dMa8lzaPlAdKag5rAfTqg=
+charm.land/catwalk v0.51.21/go.mod h1:4X4CakMTeTQj/dXRidYAcidDvmhbeBM8TnguUBrmiSU=
 charm.land/fantasy v0.40.0 h1:Lknli10idbNTDn33Nqi00sf6LA6Hc4D7ihlxfo3L6XU=
 charm.land/fantasy v0.40.0/go.mod h1:beukaduBTSjCOQ4WugTRYIwAGMv6GupQ78IPHz82QXI=
 cloud.google.com/go v0.123.0 h1:2NAUJwPR47q+E35uaJeYoNhuNEM9kM8SjgRgdeOJUSE=
@@ -44,6 +46,8 @@ github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UF
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/charmbracelet/anthropic-sdk-go v0.0.0-20260223140439-63879b0b8dab h1:J7XQLgl9sefgTnTGrmX3xqvp5o6MCiBzEjGv5igAlc4=
 github.com/charmbracelet/anthropic-sdk-go v0.0.0-20260223140439-63879b0b8dab/go.mod h1:hqlYqR7uPKOKfnNeicUbZp0Ps0GeYFlKYtwh5HGDCx8=
+github.com/charmbracelet/x/etag v0.2.0 h1:Euj1VkheoHfTYA9y+TCwkeXF/hN8Fb9l4LqZl79pt04=
+github.com/charmbracelet/x/etag v0.2.0/go.mod h1:C1B7/bsgvzzxpfu0Rabbd+rTHJa5TmC/qgTseCf6DF0=
 github.com/charmbracelet/x/exp/slice v0.0.0-20260803091719-3755ebad01b1 h1:mg80wPD5ZV0wDYdZAhHilmwGaTv8uEedVRnNiM0TehA=
 github.com/charmbracelet/x/exp/slice v0.0.0-20260803091719-3755ebad01b1/go.mod h1:vqEfX6xzqW1pKKZUUiFOKg0OQ7bCh54Q2vR/tserrRA=
 github.com/charmbracelet/x/exp/strings v0.1.0 h1:i69S2XI7uG1u4NLGeJPSYU++Nmjvpo9nwd6aoEm7gkA=

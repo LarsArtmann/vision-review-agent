@@ -86,20 +86,16 @@ config-hygiene cleanup) lives in [TODO_LIST.md](TODO_LIST.md). The themes:
 These need a product/architecture decision before they can become actionable
 tasks. They are **not** TODO items until answered.
 
-1. **catwalk or hand-rolled CLI providers?** The three providers added to
-   `cmd/vision/main.go` (Anthropic, Google, openaicompat) work but will rot as
-   fantasy evolves. Replace them with a `github.com/charmbracelet/catwalk`
-   integration, or keep hand-rolled and layer catwalk on top?
-2. **Retry strategy: bake in or keep external?** Should `RetryConfig` become a
+1. **Retry strategy: bake in or keep external?** Should `RetryConfig` become a
    `Config` field (every `Analyze*` retries automatically, `Config.MaxRetries`
    goes away), or must `WithRetry[T]` stay an explicit per-call wrapper?
-3. **Structured hooks payload: is a breaking API change acceptable?** Fixing
+2. **Structured hooks payload: is a breaking API change acceptable?** Fixing
    the nil-`RawResponse` / JSON-as-`Text` hack properly means changing what
    `OnFinish` receives for structured calls. Is a breaking `Hooks` change OK
    in the next minor, or must `Hooks` stay stable?
-4. **Semver policy for 0.x** — is 0.x "anything goes" or semver-lite? Should
+3. **Semver policy for 0.x** — is 0.x "anything goes" or semver-lite? Should
    breaking changes get a `### Breaking` callout in CHANGELOG?
-5. **Tag anomaly resolution (partially done in `v0.4.0`; `v0.2.1` remains).**
+4. **Tag anomaly resolution (partially done in `v0.4.0`; `v0.2.1` remains).**
    The tags `v0.2.1` and `v0.3.0` both pointed to commit `d5dda4b`
    (2026-04-27), an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23) and
    even older than `v0.1.0`. They never represented real releases. **Resolved

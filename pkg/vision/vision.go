@@ -116,6 +116,12 @@ type Config struct {
 	//	    Preprocess: &vision.PreprocessConfig{MaxDimension: 1568},
 	//	})
 	Preprocess *PreprocessConfig
+
+	// ModelInfo holds optional catalog metadata about the model. When set,
+	// its DefaultMaxTokens is used if MaxOutputTokens is 0, and its pricing
+	// fields enable cost tracking via CostTracker. Explicit Config fields
+	// always take priority over ModelInfo defaults.
+	ModelInfo *ModelInfo
 }
 
 // Validate checks the configuration for errors. When a constraint is violated,
@@ -191,6 +197,8 @@ func NewAgent(config Config) (*Agent, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
+
+	config.applyModelInfoDefaults()
 
 	opts := []fantasy.AgentOption{
 		fantasy.WithSystemPrompt(config.SystemPrompt),

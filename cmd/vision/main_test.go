@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/larsartmann/vision-review-agent/internal/catalog"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 	"github.com/stretchr/testify/require"
 )
@@ -65,7 +66,7 @@ func TestBuildConfig(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{temperature: 0.3, maxTokens: 0}
-		built := buildConfig(nil, cfg)
+		built := buildConfig(nil, cfg, nil)
 		require.InEpsilon(t, 0.3, built.Temperature, 1e-9)
 		require.Equal(t, int64(0), built.MaxOutputTokens)
 		require.Empty(t, built.SystemPrompt)
@@ -76,7 +77,7 @@ func TestBuildConfig(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{systemPrompt: "You are a UI expert."}
-		built := buildConfig(nil, cfg)
+		built := buildConfig(nil, cfg, nil)
 		require.Equal(t, "You are a UI expert.", built.SystemPrompt)
 	})
 
@@ -84,7 +85,7 @@ func TestBuildConfig(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{timeout: 30}
-		built := buildConfig(nil, cfg)
+		built := buildConfig(nil, cfg, nil)
 		require.Equal(t, 30*time.Second, built.RequestTimeout)
 	})
 
@@ -92,7 +93,7 @@ func TestBuildConfig(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{timeout: 0}
-		built := buildConfig(nil, cfg)
+		built := buildConfig(nil, cfg, nil)
 		require.Equal(t, time.Duration(0), built.RequestTimeout)
 	})
 
@@ -100,7 +101,7 @@ func TestBuildConfig(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{maxTokens: 4096}
-		built := buildConfig(nil, cfg)
+		built := buildConfig(nil, cfg, nil)
 		require.Equal(t, int64(4096), built.MaxOutputTokens)
 	})
 }
@@ -116,7 +117,7 @@ func TestParseTimeout(t *testing.T) {
 func TestCreateProviderUnknown(t *testing.T) {
 	t.Parallel()
 
-	_, err := createProvider("unknown-provider")
+	_, err := createProvider(catalog.New(), "unknown-provider")
 	require.Error(t, err)
 	require.ErrorIs(t, err, errUnknownProvider)
 }
@@ -124,7 +125,7 @@ func TestCreateProviderUnknown(t *testing.T) {
 func TestCreateProviderOpenAIMissingKey(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "")
 
-	_, err := createProvider("openai")
+	_, err := createProvider(catalog.New(), "openai")
 	require.Error(t, err)
 	require.ErrorIs(t, err, errEnvVarNotSet)
 }
@@ -206,4 +207,25 @@ func TestParseFlagsRejectsUnknownFlag(t *testing.T) {
 
 	_, err := parseFlags(newTestFlagSet(), []string{"-bogus", "img.png"})
 	require.Error(t, err, "unknown flags must surface as a parse error")
+}
+
+func TestNormalizeProviderNameGoogleAlias(t *testing.T) {
+	t.Parallel()
+
+	require.Equal(t, "gemini", normalizeProviderName("google"))
+	require.Equal(t, "gemini", normalizeProviderName("Google"))
+	require.Equal(t, "gemini", normalizeProviderName("GOOGLE"))
+	require.Equal(t, "openai", normalizeProviderName("openai"))
+}
+
+func TestFindModelInProviderWithGoogleAlias(t *testing.T) {
+	t.Parallel()
+
+	svc := catalog.New()
+
+	// "google" must normalize to "gemini" for catalog lookup.
+	// Without normalization, FindModelInProvider("google", ...) returns false.
+	normalized := normalizeProviderName("google")
+	_, ok := svc.FindModelInProvider(normalized, "gemini-2.5-flash")
+	require.True(t, ok, "FindModelInProvider must find models under normalized 'gemini' provider")
 }

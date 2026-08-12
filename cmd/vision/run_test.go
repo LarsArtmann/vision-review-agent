@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"charm.land/fantasy"
+	"github.com/larsartmann/vision-review-agent/internal/catalog"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 	"github.com/stretchr/testify/require"
 )
@@ -271,7 +272,7 @@ func TestCreateProviderOpenAICompatWithBaseURL(t *testing.T) {
 	t.Setenv("OPENAICOMPAT_BASE_URL", "http://localhost:8080/v1")
 	t.Setenv("OPENAICOMPAT_API_KEY", "")
 
-	provider, err := createProvider("openaicompat")
+	provider, err := createProvider(catalog.New(), "openaicompat")
 	require.NoError(t, err)
 	require.NotNil(t, provider)
 }
@@ -279,7 +280,7 @@ func TestCreateProviderOpenAICompatWithBaseURL(t *testing.T) {
 func TestCreateProviderOpenAICompatMissingBaseURL(t *testing.T) {
 	t.Setenv("OPENAICOMPAT_BASE_URL", "")
 
-	_, err := createProvider("openaicompat")
+	_, err := createProvider(catalog.New(), "openaicompat")
 	require.Error(t, err)
 	require.ErrorIs(t, err, errEnvVarNotSet)
 }

@@ -21,9 +21,11 @@ import (
 //	// ... run analyses ...
 //	fmt.Printf("total tokens: %d across %d calls\n", tracker.Total().TotalTokens, tracker.Calls())
 type CostTracker struct {
-	mu    sync.Mutex
-	total fantasy.Usage
-	calls int
+	mu            sync.Mutex
+	total         fantasy.Usage
+	calls         int
+	inPricePer1M  float64
+	outPricePer1M float64
 }
 
 // NewCostTracker returns a ready-to-use, zero-value CostTracker.
@@ -76,6 +78,31 @@ func (c *CostTracker) Reset() {
 	c.calls = 0
 }
 
+// SetPricing configures the per-1M-token costs used by CostUSD. Pass the
+// provider's published rates (e.g., 2.50 for $2.50 per 1M input tokens).
+// When pricing is not set (both zero), CostUSD returns 0.
+func (c *CostTracker) SetPricing(inPer1M, outPer1M float64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.inPricePer1M = inPer1M
+	c.outPricePer1M = outPer1M
+}
+
+const tokensPerMillion = 1_000_000
+
+// CostUSD returns the estimated dollar cost based on accumulated token usage
+// and the pricing set via SetPricing. Returns 0 when no pricing is configured.
+func (c *CostTracker) CostUSD() float64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	inputCost := float64(c.total.InputTokens) / tokensPerMillion * c.inPricePer1M
+	outputCost := float64(c.total.OutputTokens) / tokensPerMillion * c.outPricePer1M
+
+	return inputCost + outputCost
+}
+
 // NewAgentWithCostTracker creates an Agent whose Hooks.OnFinish automatically
 // feeds every analysis result's token usage into the returned CostTracker.
 // It composes any caller-supplied Hooks: the cost-tracker callback runs first,
@@ -88,6 +115,11 @@ func (c *CostTracker) Reset() {
 //	fmt.Printf("tokens: %d\n", tracker.Total().TotalTokens)
 func NewAgentWithCostTracker(config Config) (*Agent, *CostTracker, error) {
 	tracker := NewCostTracker()
+
+	if config.ModelInfo != nil {
+		tracker.SetPricing(config.ModelInfo.CostPer1MIn, config.ModelInfo.CostPer1MOut)
+	}
+
 	userOnFinish := config.Hooks.OnFinish
 
 	config.Hooks.OnFinish = func(ctx context.Context, result *AnalyzeResult) {
