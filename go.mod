@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	charm.land/catwalk v0.51.22
-	charm.land/fantasy v0.41.0
+	charm.land/fantasy v0.41.1
 	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.41.0
 	github.com/stretchr/testify v1.11.1
