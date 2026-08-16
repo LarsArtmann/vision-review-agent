@@ -127,6 +127,40 @@ CLI flags: `-provider`, `-model`, `-prompt`, `-system`, `-stream`,
 `-temperature`, `-max-tokens`, `-json`, `-structured`, `-timeout`, `-version`,
 `-list-providers`, `-list-models`, `-provider-info`.
 
+## visionreviewd — the UI review daemon
+
+On top of the SDK sits **visionreviewd** (`cmd/visionreviewd`): an
+event-sourced daemon that watches your projects' UI screenshots, reviews every
+change with a local vision model (e.g., llama-server), writes markdown reviews
+an agent (or human) can act on, and auto-compares BEFORE→AFTER so regressions
+are visible. Everything is recorded as events on bbolt — the reviews directory
+can be wiped and rebuilt byte-identically with `replay`.
+
+```bash
+# Suggest a config from an existing screenshots tree
+./visionreviewd discover ~/projects | tee ~/.config/visionreviewd/config.json
+
+# Check config, dirs, globs, and the model endpoint
+./visionreviewd doctor
+
+# Run one pass now
+./visionreviewd once
+
+# Run the daemon until Ctrl-C
+./visionreviewd run
+
+# Browse the journal and rebuild reviews from it
+./visionreviewd events -type view.reviewed
+./visionreviewd replay
+```
+
+Reviews land under `reviewsDir` as `<project>/views/<Page--theme--viewport>.md`,
+`<project>/comparisons/`, and a per-project `INDEX.md` score table with trend
+arrows. Screenshots follow the `{Page}--{theme}--{viewport}.png` naming
+convention. A NixOS module (`nixosModules.visionreviewd`) ships an optional
+llama-server unit; see [`docs/visionreviewd-systemnix.md`](docs/visionreviewd-systemnix.md)
+and [`docs/visionreviewd-config.example.json`](docs/visionreviewd-config.example.json).
+
 ## SDK Usage
 
 ### Basic Analysis

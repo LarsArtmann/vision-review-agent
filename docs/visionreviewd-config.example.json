@@ -1,0 +1,11 @@
+{
+  "model": "GitMylo/nsfwcaption-qwen3-vl-8b-v3-gguf:Q8_0",
+  "baseUrl": "http://127.0.0.1:8390/v1",
+  "dataDir": "~/.local/share/vision-review-agent",
+  "reviewsDir": "~/.local/share/vision-review-agent/reviews",
+  "interval": "10m",
+  "timeout": "5m",
+  "projects": {
+    "myapp": ["/home/me/projects/myapp/screenshots/*.png"]
+  }
+}

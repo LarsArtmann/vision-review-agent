@@ -8,7 +8,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
+- **visionreviewd daemon** — event-sourced UI review daemon (`internal/reviewd`,
+  `cmd/visionreviewd`) on top of the SDK: scans configured screenshot globs,
+  dedupes by SHA-256, archives captures in a content-addressed blob store,
+  auto-compares BEFORE→AFTER on changes, reviews with an OpenAI-compatible
+  local model, and writes markdown reviews plus a per-project INDEX with score
+  trends. All activity is recorded as `view.captured` / `view.reviewed` /
+  `view.compared` events on bbolt via go-cqrs-lite.
+- **Daemon loop** — immediate pass plus interval ticker, per-pass failures
+  logged-and-continued, clean SIGINT/SIGTERM shutdown.
+- **CLI** — `visionreviewd run|once|discover|compare|events|replay|doctor|version`
+  with testable parsing and distinct usage/failed exit codes.
+- **events + replay** — journal browsing with `-project/-view/-type/-last`
+  filters, and deterministic rebuild of the whole reviews directory from the
+  event log (byte-identical output; INDEX timestamps derive from data, not
+  wall clock).
+- **doctor** — health checks for config, data/reviews writability, glob match
+  counts, and the model endpoint's `/models` listing; exit code reflects
+  failures.
+- **E2E fake model server** — Review and Compare verified through the real
+  openaicompat provider against an httptest OpenAI-compatible endpoint.
+- **Nix packaging** — `packages.visionreviewd` (buildGoModule, version via
+  ldflags) and `nixosModules.visionreviewd` with a hardened DynamicUser
+  service plus an optional, default-disabled llama-server unit (port 8390).
+  Both Go packages set `GOEXPERIMENT=jsonv2` in the build env because
+  go-cqrs-lite imports `encoding/json/v2`.
+- **Docs** — SystemNix activation guide (`docs/visionreviewd-systemnix.md`)
+  and an example daemon config (`docs/visionreviewd-config.example.json`).
 
 ### Changed
 

@@ -10,6 +10,25 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ---
 
+## visionreviewd bring-up (post-build activation)
+
+- [ ] **Push master and bump the SystemNix input** — the daemon's NixOS module
+      only exists on GitHub after `git push origin master`; then
+      `nix flake lock --update-input vision-review-agent` in SystemNix so the
+      lazy wrapper (`modules/nixos/services/visionreviewd.nix`, commit
+      `8fc2b80c`) starts importing it. Steps: `docs/visionreviewd-systemnix.md`.
+- [ ] **Enable on a host** — import `nixosModules.visionreviewd`, set
+      `configFile = "/etc/visionreviewd/config.json"` (template:
+      `docs/visionreviewd-config.example.json`), optionally
+      `llamaServer.enable = true` (~9-10 GB model pull on first start).
+- [ ] **Real-model smoke test** — all E2E coverage uses the fake
+      OpenAI-compatible server (`internal/reviewd/fakeserver_test.go`); run
+      `visionreviewd once` against a real llama-server once and sanity-check
+      one review markdown + INDEX.
+- [ ] **Point the daemon at real projects** — start with DiscordSync goldens
+      (`/var/lib/discordsync/goldens/*.png` per the activation doc), then add
+      more projects via `visionreviewd discover`.
+
 ## Release mechanics
 
 - [ ] **Resolve tag anomaly** — `v0.2.1` points to commit `d5dda4b` (a

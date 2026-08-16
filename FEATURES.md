@@ -127,6 +127,44 @@ see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 - **Catalog listing** — `-list-providers`, `-list-models [-provider X]`, `-provider-info` flags
 - **CLI tests** — `adviceForKind`, `buildConfig`, `parseTimeout`, `createProvider` error paths, alias normalization, provider bridge integration
 
+### visionreviewd (UI review daemon)
+
+Event-sourced daemon in `internal/reviewd` + `cmd/visionreviewd` that watches
+configured screenshot globs, reviews changes with an OpenAI-compatible local
+model (llama-server), writes Crush-consumable markdown, and records everything
+as go-cqrs-lite events on bbolt.
+
+- **Scan & pipeline** — `ScanProject` globs → dedupe by SHA-256 → blob-archive →
+  auto BEFORE→AFTER compare → review → markdown + INDEX (`internal/reviewd/pipeline.go`)
+- **Event sourcing** — `view.captured` / `view.reviewed` / `view.compared` on
+  per-view streams; folded `ViewState` with score trend (bbolt store)
+- **Content-addressed blob store** — `<dataDir>/images/<sha256>.<ext>`, so
+  overwritten goldens stay comparable after the fact
+- **Markdown output** — per-view reviews, timestamped comparisons, project
+  INDEX with score table and trend arrows; all writes atomic
+- **Daemon loop** — immediate pass + ticker, logged-and-continue per-pass
+  failures, clean SIGINT/SIGTERM shutdown (`internal/reviewd/daemon.go`)
+- **7 subcommands** — run, once, discover, compare, events, replay, doctor,
+  version (`cmd/visionreviewd`)
+- **Replay** — rebuild the whole reviews directory byte-identically from the
+  event journal (`internal/reviewd/replay.go`); INDEX stamps derive from row
+  timestamps, not wall clock, so pass and replay agree
+- **events command** — journal listing with `-project/-view/-type/-last`
+  filters carrying hashes and scores
+- **doctor** — config, dir writability, glob match counts, and
+  `{baseUrl}/models` model-listing check; exit code reflects failures
+- **E2E confidence** — Review and Compare verified through the real
+  openaicompat provider against a fake OpenAI-compatible httptest server,
+  including image-part counts and score parsing (`internal/reviewd/fakeserver_test.go`)
+- **Nix packaging** — `packages.visionreviewd` buildGoModule with version
+  ldflags and `GOEXPERIMENT=jsonv2` (go-cqrs-lite imports `encoding/json/v2`)
+- **NixOS module** — `nixosModules.visionreviewd`: hardened DynamicUser
+  service plus optional, default-disabled llama-server unit (port 8390);
+  SystemNix ships a lazy wrapper (see `docs/visionreviewd-systemnix.md`)
+
+Real-model bring-up and host activation are tracked in
+[TODO_LIST.md](TODO_LIST.md).
+
 ### Examples
 
 - **openai** — Basic OpenAI vision analysis

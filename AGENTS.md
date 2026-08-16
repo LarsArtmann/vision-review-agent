@@ -10,6 +10,9 @@ A Go SDK for building AI agents with vision capabilities. Built on top of [charm
 cmd/vision/              CLI tool
   main.go                Catalog-driven provider construction, listing flags, analysis
   listing.go             printProviders, printVisionModels, printProviderInfo, suggestModel
+cmd/visionreviewd/       UI review daemon CLI (7 subcommands + version)
+  main.go                Dispatch, usage, exit codes (0 ok / 1 failed / 2 usage)
+  commands.go            run/once/discover/compare/events/replay/doctor bodies
 pkg/                     Public library code
   vision/                Core SDK package
     vision.go            Agent, Config, Analyze, AnalyzeStream, AnalyzeConversation
@@ -31,11 +34,46 @@ internal/                Private implementation code
     catalog.go           Service type, FindProvider, FindModel, VisionModels
     provider.go          BuildProvider: catwalk.Type → fantasy constructor bridge
     sync.go              Remote sync with ETag caching + file cache management
+  reviewd/               The visionreviewd daemon (package "reviewed")
+    config.go            Config JSON (defaults + ~ expansion + validation), discover
+    discover.go          Known-pattern walker → suggested config JSON
+    viewkey.go           ParseViewKey {Page}--{theme}--{viewport}, ViewStreamID
+    hash.go              SHA256File
+    blobstore.go         Content-addressed blob store (<dataDir>/images/<sha>.<ext>)
+    events.go            view.captured/reviewed/compared payload types
+    store.go             bbolt event store + ViewState fold (go-cqrs-lite)
+    scan.go              ScanProject: globs → Capture{viewKey, path, sha}
+    pipeline.go          Pass orchestration (skip-seen → blob → compare → review → write)
+    compare.go           CompareManually (one-off BEFORE→AFTER)
+    replay.go            Replay: rebuild reviews dir from journal; SummarizeEvents
+    daemon.go            NewDaemon + Run loop (ticker, clean shutdown)
+    reviewer.go          Reviewer over vision.Agent (Review/Compare + score)
+    provider.go          LanguageModel: openaicompat from config
+    prompts.go           Review + compare prompt templates
+    score.go             "Score: N/10" extraction
+    markdown.go          RenderViewReview/RenderComparison/RenderIndex
+    writer.go            Atomic markdown writer (views/, comparisons/, INDEX.md)
   visionutil/            Internal helpers (prompt building, unmarshaling)
+nixos/
+  visionreviewd.nix      NixOS module: daemon service + optional llama-server unit
 examples/                Working examples for each provider
 ```
 
 ## Key Design Decisions
+
+### visionreviewd (daemon)
+
+- **Event sourcing is the source of truth** — every capture/review/comparison is a go-cqrs-lite event on bbolt (stream `<project>:<viewKey>`); markdown is a projection you can wipe and rebuild byte-identically with `Replay`
+- **Deterministic replay** — INDEX timestamps derive from the newest row update time (`indexStamp`), never `time.Now()`, so a pass and a replay of the same journal produce identical files
+- **`PassRunner` interface, not concrete `*Pipeline`** — `daemon.go` depends on the interface so tests wrap with a counting runner and future consumers can substitute
+- **Per-view error isolation** — `Pipeline.Pass` collects per-view errors with `errors.Join` and continues; one broken view (or a failing model call) never blocks the others, and the INDEX still refreshes (showing `?`)
+- **Blob store exists because goldens are overwritten in place** — every new capture is copied to `<dataDir>/images/<sha256>.<ext>` so BEFORE images survive for A/B compares and replay
+- **Auto-compare fires only when the predecessor blob exists and the hash changed** — comparison failure logs a warning and review still proceeds
+- **OpenAI wire-format tags need `//nolint:tagliatelle`** — snake_case JSON tags mirror the external API and cannot be camelCased
+- **`GOEXPERIMENT=jsonv2` required in nix builds** — go-cqrs-lite imports `encoding/json/v2`, which the sandboxed Go toolchain excludes without the experiment; without it buildGoModule "succeeds" with an EMPTY output. Local dev sets it via `go env` (see `~/.config/go/env`)
+- **SystemNix wrapper is lazy** — `modules/nixos/services/visionreviewd.nix` guards the upstream import with `or null` + `mkIf`, so SystemNix evaluates at any input revision; activation steps live in `docs/visionreviewd-systemnix.md`
+
+### SDK
 
 - **Standalone `AnalyzeStructured[T]` / `AnalyzeStructuredStream[T]`** — Go doesn't allow type params on methods, so these are package-level functions that take a `*Agent`
 - **Nil image filtering** — All analysis functions filter nil images from variadic args to prevent panics
@@ -117,17 +155,21 @@ errors pointing at a sibling module.
 ### Test Organization
 
 - `*_test.go` — Table-driven tests for pure functions (config validation, image format detection, retry, cost tracking, CLI advice)
-- `*_bdd_test.go` — Ginkgo BDD specs for user-facing behavior (agent analysis, streaming, screenshot analyzer, error classification)
-- `agent_suite_test.go` — Ginkgo test runner (`TestGinkgo`)
+- `*_bdd_test.go` — Ginkgo BDD specs for user-facing behavior (agent analysis, streaming, screenshot analyzer, error classification, reviewd pipeline/daemon)
+- `agent_suite_test.go` — Ginkgo test runner (`TestGinkgo`) for pkg/vision; `internal/reviewd/reviewd_suite_test.go` for the daemon (black-box `package reviewed_test`)
 - `mock_test.go` — Shared test helpers and mock model (supports retry sequences via `generateErrs`)
 - `cmd/vision/main_test.go` — CLI tests (advice mapping, config building, provider error paths)
+- `internal/reviewd/fakeserver_test.go` — E2E specs running the real openaicompat provider against a fake OpenAI-compatible httptest server
+- `cmd/visionreviewd/main_test.go` — Daemon CLI tests (dispatch, usage errors, events/replay/doctor with seeded stores)
 
 ## Dependencies
 
 - `charm.land/fantasy` — Core AI agent framework
 - `charm.land/fantasy/providers/openai` — OpenAI provider
 - `charm.land/fantasy/providers/openrouter` — OpenRouter provider (multi-model)
+- `charm.land/fantasy/providers/openaicompat` — OpenAI-compatible endpoint provider (llama-server) used by the daemon
 - `charm.land/catwalk` — Model catalog (40+ providers, 800+ vision models, pricing, capabilities)
+- `github.com/larsartmann/go-cqrs-lite` — Event store, decider repository, bbolt backend (daemon event sourcing)
 
 ## Type Model
 
