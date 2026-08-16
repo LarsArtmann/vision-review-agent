@@ -228,7 +228,7 @@ func generateObject(
 	call fantasy.ObjectCall,
 ) (*fantasy.ObjectResponse, error) {
 	if agent.config.Retry == nil {
-		return agent.config.Model.GenerateObject(ctx, call) //nolint:wrapcheck // classified by caller
+		return agent.config.Model.GenerateObject(ctx, call)
 	}
 
 	return WithRetry(ctx, *agent.config.Retry, func(ctx context.Context) (*fantasy.ObjectResponse, error) {

@@ -120,7 +120,7 @@ func WithRetry[T any](
 
 	for attempt := range cfg.attempts() {
 		if err := ctx.Err(); err != nil {
-			return nil, err //nolint:wrapcheck // context sentinel errors are idiomatic to return raw
+			return nil, err
 		}
 
 		result, err := fn(ctx)
@@ -140,7 +140,7 @@ func WithRetry[T any](
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err() //nolint:wrapcheck // context sentinel errors are idiomatic to return raw
+			return nil, ctx.Err()
 		case <-time.After(cfg.delayFor(attempt)):
 		}
 	}

@@ -236,8 +236,10 @@ linters:
         - y
         - p
     wrapcheck:
-      ignoreSigs:
-        - .Errorf(
+      # extra-ignore-sigs ADDS to the default list (ignore-sigs would REPLACE
+      # it, losing .Errorf( etc.). Old camelCase keys (ignoreSigs,
+      # ignore-type-assert-ok) were removed in the golangci-lint v2 schema.
+      extra-ignore-sigs:
         - context.Context.Err()
         - (context.Context).Err()
         # fantasy model/agent methods: the calling public API wraps these
@@ -247,7 +249,6 @@ linters:
         - .(charm.land/fantasy.Agent).
         - (charm.land/fantasy.LanguageModel).
         - (charm.land/fantasy.Agent).
-      ignore-type-assert-ok: true
   exclusions:
     generated: lax
     rules:

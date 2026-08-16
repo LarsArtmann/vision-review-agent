@@ -589,7 +589,7 @@ func (c *Config) optionalParams() optionalModelParams {
 // logical request, not per attempt.
 func (va *Agent) generate(ctx context.Context, call fantasy.AgentCall) (*fantasy.AgentResult, error) {
 	if va.config.Retry == nil {
-		return va.agent.Generate(ctx, call) //nolint:wrapcheck // classified by caller
+		return va.agent.Generate(ctx, call)
 	}
 
 	return WithRetry(ctx, *va.config.Retry, func(ctx context.Context) (*fantasy.AgentResult, error) {
