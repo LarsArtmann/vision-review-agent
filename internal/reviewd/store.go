@@ -2,6 +2,7 @@ package reviewed
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -84,18 +85,21 @@ func ApplyViewState(state ViewState, evt event.Event) (ViewState, error) {
 	return state, nil
 }
 
-// initialViewState is the explicit zero state every view stream starts from.
-var initialViewState = ViewState{
-	SHA256:      "",
-	BlobPath:    "",
-	CapturedAt:  time.Time{},
-	Captures:    0,
-	ReviewedSHA: "",
-	LastReview:  nil,
-	LastScore:   ScoreUnknown,
-	PrevScore:   ScoreUnknown,
-	Reviews:     0,
-	Comparisons: 0,
+// initialViewState returns the explicit zero state every view stream starts
+// from: no capture yet and both score slots unknown (not zero).
+func initialViewState() ViewState {
+	return ViewState{
+		SHA256:      "",
+		BlobPath:    "",
+		CapturedAt:  time.Time{},
+		Captures:    0,
+		ReviewedSHA: "",
+		LastReview:  nil,
+		LastScore:   ScoreUnknown,
+		PrevScore:   ScoreUnknown,
+		Reviews:     0,
+		Comparisons: 0,
+	}
 }
 
 // Store is the event-sourced view history on bbolt.
@@ -116,13 +120,15 @@ func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 	}
 
 	repo, err := decider.NewRepository(backend.EventStore(), nil, decider.Decider[ViewState]{
-		Initial: initialViewState,
+		Initial: initialViewState(),
 		Apply:   ApplyViewState,
 	})
 	if err != nil {
-		closeErr := backend.Close()
+		if closeErr := backend.Close(); closeErr != nil {
+			return nil, errors.Join(fmt.Errorf("build view repository: %w", err), closeErr)
+		}
 
-		return nil, fmt.Errorf("build view repository: %w (close error: %s)", err, closeErr)
+		return nil, fmt.Errorf("build view repository: %w", err)
 	}
 
 	return &Store{backend: backend, repo: repo}, nil

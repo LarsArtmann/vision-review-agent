@@ -152,7 +152,8 @@ func TestStoreScoreTrend(t *testing.T) {
 		t.Fatalf("record capture: %v", err)
 	}
 
-	if err := store.RecordReview(ctx, "proj", viewKey, Reviewed{SHA256: "one", Score: 6, ReviewedAt: testStamp}); err != nil {
+	review := Reviewed{SHA256: "one", Score: 6, ReviewedAt: testStamp}
+	if err := store.RecordReview(ctx, "proj", viewKey, review); err != nil {
 		t.Fatalf("record review 1: %v", err)
 	}
 
@@ -161,11 +162,12 @@ func TestStoreScoreTrend(t *testing.T) {
 		t.Fatalf("load: %v", err)
 	}
 
-	if state.PrevScore != 0 || state.LastScore != 6 {
-		t.Fatalf("after first review: last=%d prev=%d, want 6/0", state.LastScore, state.PrevScore)
+	if state.PrevScore != ScoreUnknown || state.LastScore != 6 {
+		t.Fatalf("after first review: last=%d prev=%d, want 6/%d", state.LastScore, state.PrevScore, ScoreUnknown)
 	}
 
-	if err := store.RecordReview(ctx, "proj", viewKey, Reviewed{SHA256: "one", Score: 8, ReviewedAt: testStamp}); err != nil {
+	review.Score = 8
+	if err := store.RecordReview(ctx, "proj", viewKey, review); err != nil {
 		t.Fatalf("record review 2: %v", err)
 	}
 
@@ -292,7 +294,8 @@ func TestStorePersistsAcrossReopen(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 
-	if err := first.RecordCapture(t.Context(), "proj", viewKey, Captured{SHA256: "one", CapturedAt: testStamp}); err != nil {
+	captured := Captured{SHA256: "one", CapturedAt: testStamp}
+	if err := first.RecordCapture(t.Context(), "proj", viewKey, captured); err != nil {
 		t.Fatalf("record: %v", err)
 	}
 
