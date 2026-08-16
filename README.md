@@ -345,7 +345,10 @@ if err != nil {
 ```
 
 See [`examples/error-handling/`](examples/error-handling/) for a complete
-kind-to-action lookup example.
+kind-to-action lookup example, and
+[`docs/ERROR_DESIGN.md`](docs/ERROR_DESIGN.md) for the full error taxonomy
+(sentinels vs `*ModelError` vs wrapped errors) with the consumer decision
+matrix.
 
 ### Flexible Image Loading
 

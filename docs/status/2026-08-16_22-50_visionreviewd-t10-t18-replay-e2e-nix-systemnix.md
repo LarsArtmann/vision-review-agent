@@ -8,7 +8,7 @@
 **Date:** 2026-08-16 22:50
 **Scope of this report:** the continuation session that picked up at T10's
 outstanding lint findings and drove the plan
-(`docs/planning/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md`)
+(`docs/planning/archived/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md`)
 through T18. Based on this session's run and what I noticed during it — not a
 fresh codebase audit.
 

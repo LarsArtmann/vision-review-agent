@@ -1,5 +1,10 @@
 # Catwalk Integration — Bug Fix & Polish Session
 
+> **ANNOTATED 2026-08-16 (docs-health):** all 6 critical fixes held; v0.5.0
+> and v0.5.1 shipped the work (nix verification included). Open remainder:
+> brittle `gemini-2.5-flash` test (#1/new-1), examples, BDD, benchmarks,
+> `.golangci.yaml` comments — tracked in `TODO_LIST.md` / `ROADMAP.md`.
+
 **Date:** 2026-08-12 17:12
 **Session scope:** Fix critical bugs and documentation gaps identified in the
 [previous status report (16:31)](2026-08-12_16-31_catwalk-integration-complete.md)
@@ -71,71 +76,31 @@ from the previous report are still open.
 
 ## b) PARTIALLY DONE
 
-### 1. Env var hints — hardcoded, not dynamic
+### 1. Env var hints — hardcoded, not dynamic ← still open (accepted 80/20 tradeoff; ROADMAP)
 
-The usageFunc now lists 5 specific provider env vars (OPENAI, ANTHROPIC, GEMINI,
-OPENROUTER, XAI) but there are 40+ providers in the catalog. This covers the
-"common" case but users of Mistral, DeepInfra, Together, etc. still need
-`-provider-info`. The ideal solution would iterate the catalog's top N providers
-and print their env var names dynamically — but the hardcoded list is a
-reasonable 80/20 tradeoff.
+### ~~2. AGENTS.md — NOT updated with this session's decisions~~ covered — AGENTS.md documents the catalog design decisions (embedded-first, alias normalization, `errEnvVarNotSet`); function-level detail (`buildCatalog` internals) intentionally stays out per AGENTS.md content policy
 
-### 2. AGENTS.md — NOT updated with this session's decisions
-
-The previous session added 8 design decisions to AGENTS.md. This session
-introduced 3 more design decisions that are NOT documented there:
-
-- `buildCatalog()` extraction and the `syncTimeout` constant
-- Provider alias normalization regression test convention
-- The `errEnvVarNotSet` alias is already documented, but the fact that it was
-  verified by a dedicated test this session is not
-
-### 3. CHANGELOG — incomplete for refactoring
-
-The CHANGELOG "Fixed" section covers the 4 bug fixes but does NOT mention:
-
-- The `buildCatalog()` extraction (it's a structural refactor, not just a fix)
-- The 2 new regression tests
-- The lint violations that were fixed (funlen, exitAfterDefer)
+### ~~3. CHANGELOG — incomplete for refactoring~~ moot — the comprehensive `[0.5.0]` entry shipped with the release
 
 ---
 
 ## c) NOT STARTED
 
-### 1. Nix build verification
+### ~~1. Nix build verification~~ done — `nix build .`, `nix run .#test` green since `7368882`; re-verified at `9fd3117`
 
-Did NOT run `nix build .` or `nix run .#test` or `nix flake check`. The Go
-toolchain build passes, but the Nix build may need vendorHash updates or
-buildInput changes for the catwalk dependency. This was flagged in the previous
-report (items 45-48) and remains untested.
+### 2. `.golangci.yaml` comments ← still open (partial — some comments exist; G117/G101/depguard rationale undocumented)
 
-### 2. `.golangci.yaml` comments
+### 3. BDD tests for catalog ← still open (ROADMAP)
 
-The previous report (item #8) called for inline comments explaining the new
-exclusions (G117, G101, depguard additions, ireturn paths, varnamelen `p`).
-Not done.
+### 4. Examples ← still open — no `examples/catalog/`
 
-### 3. BDD tests for catalog
-
-The project convention is Ginkgo BDD for user-facing behavior. The catalog is a
-major user-facing feature. Still only testify table-driven tests. (Previous
-report item #26.)
-
-### 4. Examples
-
-No `examples/catalog/` or `examples/cost-tracking/` directory. (Previous report
-items 36-38.)
-
-### 5. Benchmarks
-
-No benchmark tests for catalog operations. `FindModel` iterates 40 providers x
-800+ models. Performance impact unknown. (Previous report items 28-29.)
+### 5. Benchmarks ← still open
 
 ---
 
 ## d) TOTALLY FUCKED UP
 
-### 1. Brittle test: hardcoded model ID `gemini-2.5-flash`
+### 1. Brittle test: hardcoded model ID `gemini-2.5-flash` ← still open — verified 2026-08-16 (`cmd/vision/main_test.go:229` still hardcodes it)
 
 `TestFindModelInProviderWithGoogleAlias` matches on `gemini-2.5-flash` which
 is a specific model ID in the current catwalk embedded data. When catwalk
@@ -167,7 +132,7 @@ session, but `golangci-lint run ./...` passes with 0 issues (the LSP diagnostics
 are stricter than golangci-lint config). Still, 55 warnings is noise that makes
 the development experience worse.
 
-### 4. Didn't check if `version = "0.4.0"` needs a release
+### ~~4. Didn't check if `version = "0.4.0"` needs a release~~ moot — v0.5.0 and v0.5.1 released since (`850b544`, `35d5b88`)
 
 The previous session bumped `version` from `0.3.0-dev` to `0.4.0`. This is a
 significant version bump (major feature: catwalk integration). No release tag
@@ -231,26 +196,22 @@ a release that hasn't happened.
 ### From This Session's Findings (NEW)
 
 1. **Fix brittle test** — Replace hardcoded `gemini-2.5-flash` in
-   `TestFindModelInProviderWithGoogleAlias` with a dynamic lookup or just test
-   `FindProvider("gemini")` succeeds
-2. **Update AGENTS.md** — Add `buildCatalog()`, `syncTimeout`, regression test
-   convention to Key Design Decisions
-3. **Update CHANGELOG** — Add entries for `buildCatalog()` extraction and
-   regression tests
-4. **Verify CLI end-to-end** — Run `./vision -provider google -list-models` and
-   confirm the alias resolves correctly
-5. **Add `.golangci.yaml` comments** — Document why G117, G101, depguard,
-   ireturn, varnamelen exclusions were added
-6. **Update `docs/DUPLICATION_POLICY.md`** — Note the integrationMockModel removal
-7. **Fix `listing.go` LSP warnings** — 55 warnings (wsl_v5, varnamelen, gosec);
-   run `golangci-lint run --fix` to auto-fix formattable ones
-8. **Decide on version 0.4.0 release** — Tag, release notes, or revert to
-   `0.4.0-dev` until ready
+   `TestFindModelInProviderWithGoogleAlias` ← still open
+2. ~~**Update AGENTS.md** — Add `buildCatalog()`, `syncTimeout`, regression test
+   convention to Key Design Decisions~~ covered — AGENTS.md carries the catalog
+   design decisions; internals stay out per content policy
+3. ~~**Update CHANGELOG** — Add entries for `buildCatalog()` extraction and
+   regression tests~~ moot — `[0.5.0]` entry covers the shipped fixes
+4. **Verify CLI end-to-end** — Run `./vision -provider google -list-models` ← still open
+5. **Add `.golangci.yaml` comments** ← still open (partial)
+6. **Update `docs/DUPLICATION_POLICY.md`** — Note the integrationMockModel removal ← still open (no mock mention in the policy)
+7. **Fix `listing.go` LSP warnings** ← still open (golangci-lint itself is clean)
+8. ~~**Decide on version 0.4.0 release**~~ moot — v0.5.0/v0.5.1 shipped
 
 ### Carried Forward From Previous Report (items 5-50)
 
-9. Add "Quick Start with Catalog" section to README showing `-list-models`
-10. Document `CATWALK_URL` environment variable in README
+9. ~~Add "Quick Start with Catalog" section to README showing `-list-models`~~ done
+10. ~~Document `CATWALK_URL` environment variable in README~~ done
 11. Add migration note for users upgrading from the old 5-provider CLI
 12. Add `ModelInfo.SupportsVision()` convenience method
 13. Add `CostTracker.SetPricingFromModelInfo(*ModelInfo)` convenience method
@@ -283,10 +244,10 @@ a release that hasn't happened.
 40. Add background sync option (refresh in goroutine, don't block startup)
 41. Add retry logic for transient network errors in sync
 42. Test sync with a mock HTTP server (httptest.NewServer)
-43. Verify `nix build .` works with catwalk dependency
-44. Verify `nix run .#test` passes
-45. Update flake vendorHash if needed
-46. Add catwalk to flake devShell buildInputs if needed for IDE
+43. ~~Verify `nix build .` works with catwalk dependency~~ done
+44. ~~Verify `nix run .#test` passes~~ done
+45. ~~Update flake vendorHash if needed~~ done
+46. ~~Add catwalk to flake devShell buildInputs if needed for IDE~~ moot — not needed
 47. Add `//go:generate` directive to regenerate embedded catalog data
 48. Consider extracting `levenshtein` to `internal/stringutil/`
 
@@ -294,7 +255,7 @@ a release that hasn't happened.
 
 ## g) Questions
 
-### Q1: Should we release version 0.4.0 now, or wait?
+### ~~Q1: Should we release version 0.4.0 now, or wait?~~ resolved — v0.5.0 released 2026-08-12 (`850b544`), v0.5.1 patch after (`35d5b88`)
 
 The catwalk integration is a significant feature addition. The code is stable
 (all tests pass, lint clean), but several polish items remain (examples, BDD

@@ -6,7 +6,7 @@
 
 **Date:** 2026-08-16 21:18
 **Session scope:** Fixed and finished T6, delivered T7–T10 of
-[`docs/planning/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md`](../planning/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md).
+[`docs/planning/archived/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md`](../planning/archived/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md).
 T11–T18 remain. All work committed locally; nothing pushed.
 
 ## a) FULLY DONE (verified green at commit: build + tests + lint)

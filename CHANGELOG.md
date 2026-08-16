@@ -35,6 +35,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   go-cqrs-lite imports `encoding/json/v2`.
 - **Docs** — SystemNix activation guide (`docs/visionreviewd-systemnix.md`)
   and an example daemon config (`docs/visionreviewd-config.example.json`).
+- **Docs (docs-health audit)** — every August 2026 status report and plan
+  annotated inline with per-item resolutions (commit-hash markers);
+  fully-executed artifacts archived under `docs/status/archived/` and
+  `docs/planning/archived/` (visionreviewd plan v2, T2–T6 snapshot, catwalk
+  plan, daemon plan v1); living docs rebuilt from verified open items —
+  TODO_LIST re-harvested, ROADMAP re-routed (daemon operations + catalog
+  polish sections; shipped "diff analysis" removed), AGENTS.md gained a
+  verification matrix, `nix build .#visionreviewd`, the mock-field-priority
+  note, an `docs/ERROR_DESIGN.md` link, and the corrected 16-kind `ErrorKind`
+  list; README now links the error-design document.
 
 ### Changed
 
@@ -42,7 +52,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- Nothing yet.
+- **Documentation corrections** — AGENTS.md understated `ErrorKind` (listed
+  14 of 16 kinds); ROADMAP/TODO_LIST claimed the ghost tag `v0.3.0` had been
+  deleted, but both `v0.2.1` and `v0.3.0` still exist on `origin` pointing
+  at `d5dda4b` (verified 2026-08-16). The docs now match the remote state;
+  tag cleanup is tracked in TODO_LIST "Release mechanics".
 
 ## [0.5.1] - 2026-08-12
 

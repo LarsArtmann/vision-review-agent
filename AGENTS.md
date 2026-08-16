@@ -141,7 +141,21 @@ golangci-lint run ./...     # Lint (matches flake `lint` app)
 nix run .#test              # go test -race -v -coverprofile=coverage.out ./...
 nix run .#lint              # golangci-lint run ./...
 nix build .                 # Build the package
+nix build .#visionreviewd   # Build the daemon binary
 ```
+
+### Verification matrix
+
+Canonical full check set (run before releases and after cross-cutting
+changes; CI mirrors these):
+
+1. `go build ./...` / `go vet ./...` / `gofmt -l .`
+2. `go test -race ./...`
+3. `GOEXPERIMENT=jsonv2 go build ./... && ... go vet ./... && ... go test ./...`
+4. `go mod verify`; `go mod tidy -diff` must be empty
+5. `nix run .#test` / `nix run .#lint`
+6. `nix build .` and `nix build .#visionreviewd`
+7. `nix flake check`
 
 ### GOWORK
 
@@ -157,7 +171,7 @@ errors pointing at a sibling module.
 - `*_test.go` — Table-driven tests for pure functions (config validation, image format detection, retry, cost tracking, CLI advice)
 - `*_bdd_test.go` — Ginkgo BDD specs for user-facing behavior (agent analysis, streaming, screenshot analyzer, error classification, reviewd pipeline/daemon)
 - `agent_suite_test.go` — Ginkgo test runner (`TestGinkgo`) for pkg/vision; `internal/reviewd/reviewd_suite_test.go` for the daemon (black-box `package reviewed_test`)
-- `mock_test.go` — Shared test helpers and mock model (supports retry sequences via `generateErrs`)
+- `mock_test.go` — Shared test helpers and mock model (supports retry sequences via `generateErrs`; object-injection field priority: `generateObjectErr` > `generateObjectResponse` > default, `streamObjectErr` > `streamObjectFunc` > default)
 - `cmd/vision/main_test.go` — CLI tests (advice mapping, config building, provider error paths)
 - `internal/reviewd/fakeserver_test.go` — E2E specs running the real openaicompat provider against a fake OpenAI-compatible httptest server
 - `cmd/visionreviewd/main_test.go` — Daemon CLI tests (dispatch, usage errors, events/replay/doctor with seeded stores)
@@ -209,7 +223,7 @@ still matches. Example: `"vision agent: temperature must be between 0.0 and 2.0:
 
 Model invocation errors are wrapped in `*apperrors.ModelError` (re-exported as `vision.ModelError`):
 
-- `ErrorKind` — 14 categories: `KindRateLimited`, `KindTimeout`, `KindServerError`, `KindNotImplemented`, `KindServiceUnavailable`, `KindNetwork`, `KindAuthentication`, `KindNotFound`, `KindBadRequest`, `KindContentFilter`, `KindContextTooLarge`, `KindCancelled`, `KindStructuredParse`, `KindUnknown`
+- `ErrorKind` — 16 categories: `KindRateLimited`, `KindTimeout`, `KindServerError`, `KindNotImplemented`, `KindServiceUnavailable`, `KindNetwork`, `KindAuthentication`, `KindNotFound`, `KindBadRequest`, `KindContentFilter`, `KindContextTooLarge`, `KindCancelled`, `KindStructuredParse`, `KindOverloaded`, `KindPaymentRequired`, `KindUnknown`. Full taxonomy and consumer decision matrix: [`docs/ERROR_DESIGN.md`](docs/ERROR_DESIGN.md)
 - `IsRetryable()` — Quick check for retry logic
 - `Unwrap()` — Preserves original cause for `errors.Is` / `errors.AsType`
 - Extract via `errors.AsType[*vision.ModelError](err)`

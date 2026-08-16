@@ -25,6 +25,7 @@ Every commit passed `go build ./...`, `go test ./internal/reviewd/`,
 pre-commit hook.
 
 ## Current state: ~~T6 IN PROGRESS, RED, uncommitted~~ resolved — T6 shipped
+
 green as `d48c947` + fixup `b0d3bd5`
 
 `internal/reviewd/store.go` + `store_test.go` (new, untracked) implement the

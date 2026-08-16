@@ -12,14 +12,27 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Near-term direction
 
-The only actionable near-term items remaining are in
-[TODO_LIST.md](TODO_LIST.md): the **tag anomaly** (destructive, needs user
-approval) and two **open product questions** below (structured hooks payload,
-semver policy for 0.x). All previous near-term work — preprocessing
-auto-wiring, retry reconciliation, catwalk CLI integration, cost tracking —
-has shipped and moved to [CHANGELOG.md](CHANGELOG.md).
+The actionable near-term work is in [TODO_LIST.md](TODO_LIST.md): the **CI
+lint-config fix** (red since v0.5.0), **visionreviewd activation** (SystemNix
+input bump, first host, real-model bring-up), and the **tag anomaly**
+(destructive, needs user approval). All previous near-term work — preprocessing
+auto-wiring, retry reconciliation, catwalk CLI integration, cost tracking, the
+visionreviewd daemon itself — has shipped and moved to
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Mid-term ideas
+
+### visionreviewd operations
+
+- **Retention/GC** — blob store and event journal grow unboundedly; add a
+  policy and a `visionreviewd gc` (or documented manual pruning).
+- **Daemon ergonomics** — SIGHUP config reload, `events -json` + pagination,
+  `replay --dry-run` with progress, `visionreviewd tail` (live journal
+  follow), per-project overrides (model, timeout, interval).
+- **Review quality** — link archived blob images from comparison markdown,
+  per-view comparison counts in INDEX, notify on score drops ≥ N.
+
+### SDK (vision)
 
 - **Provider-defined tools** — expose `WithProviderDefinedTools` for
   provider-native tools like web search and computer use (typed tools are
@@ -38,6 +51,17 @@ has shipped and moved to [CHANGELOG.md](CHANGELOG.md).
 - **Provider failover** — automatically try a secondary provider if the primary
   fails with a retryable error.
 - **EXIF stripping** — strip EXIF metadata during preprocessing for privacy.
+- **Remote-sync observability** — `Sync.Fetch` falls back silently; log
+  fallback events, expose `LastFetchTime` / `IsStale`.
+
+### Model catalog (catwalk)
+
+- **Conveniences** — `ModelInfo.SupportsVision()`,
+  `CostTracker.SetPricingFromModelInfo`, `catalog.Service.Stats()`,
+  `FindVisionModel`, cached `VisionModels()`, `ModelInfo.Validate()`.
+- **Quality surface** — BDD specs for catalog discovery and priced cost
+  tracking; benchmarks for `FindModel`/`VisionModels()` across 800+ models;
+  `examples/catalog` + `examples/cost-tracking` walkthroughs.
 
 ## Long-term ideas
 
@@ -52,8 +76,6 @@ has shipped and moved to [CHANGELOG.md](CHANGELOG.md).
   lifecycle (start, model call, finish).
 - **Prompt templates** — pre-built, parameterized prompt templates for common
   use cases (accessibility audit, UX review, layout analysis, bug detection).
-- **Diff analysis** — compare two screenshots and describe the differences
-  structurally.
 - **Video frame analysis** — extract frames from video and analyze them as a
   batch or sequence.
 
@@ -80,17 +102,19 @@ tasks. They are **not** TODO items until answered.
    in the next minor, or must `Hooks` stay stable?
 2. **Semver policy for 0.x** — is 0.x "anything goes" or semver-lite? Should
    breaking changes get a `### Breaking` callout in CHANGELOG?
-3. **Tag anomaly resolution (partially done in `v0.4.0`; `v0.2.1` remains).**
-   The tags `v0.2.1` and `v0.3.0` both pointed to commit `d5dda4b`
-   (2026-04-27), an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23) and
-   even older than `v0.1.0`. They never represented real releases. **Resolved
-   for `v0.3.0`:** the bogus `v0.3.0` tag was deleted (local + remote) as part
-   of the `v0.4.0` release, and the real post-v0.2.0 body of work ships as
-   `v0.4.0`. A fresh `v0.3.0` was **not** recreated because the number is
-   permanently burned on `proxy.golang.org` as `d5dda4b` (reusing it would
-   cause checksum mismatches for anyone who resolved the ghost). **Still open:
-   `v0.2.1`** is a ghost on the same commit `d5dda4b`. It has no functional
-   impact (it sorts below `v0.2.0`/`v0.4.0` and blocks no number), but for a
-   clean history it should be deleted too. Needs approval because deleting a
-   remote tag is destructive and affects anyone who fetched it. Until then it
-   stays documented, not acted on.
+3. **Is `erraudit` a CI gate or an advisory tool?** Three error-system
+   sessions left its 125 findings (mostly false-positive `context_loss` on
+   result variables and anti-idiomatic `generic_return`) untouched because
+   the answer is unknown. If it is a gate, suppression config is needed; if
+   advisory, the documented false-positive rationale stands.
+4. **Tag anomaly resolution (partially done in `v0.4.0`; both ghosts
+   remain).** `v0.2.1` and `v0.3.0` both point at commit `d5dda4b`
+   (2026-04-27), an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23).
+   They never represented real releases. **Correction 2026-08-16:** the
+   v0.4.0 release note claims `v0.3.0` was deleted (local + remote), but
+   both tags currently exist on `origin` — the deletion either never took or
+   was undone. A fresh `v0.3.0` must NOT be created regardless: the number
+   is burned on `proxy.golang.org` as `d5dda4b` (reusing it would cause
+   checksum mismatches). Deleting both ghosts needs approval because remote
+   tag deletion is destructive. Until then they stay documented, not acted
+   on (see TODO_LIST "Release mechanics").
