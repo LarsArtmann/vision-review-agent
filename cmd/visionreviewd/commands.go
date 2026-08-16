@@ -261,26 +261,141 @@ func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
 	return exitOK
 }
 
-// runEventsCommand prints the recorded event journal.
-//
-//nolint:unparam // stdout writes output once the command body lands
+// runEventsCommand prints the recorded event journal with filters.
 func runEventsCommand(args []string, stdout, stderr io.Writer) int {
-	_ = args
+	flagSet := newFlagSet("events", stderr)
 
-	fmt.Fprintf(stderr, "visionreviewd events: %v\n", errNotImplemented)
+	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
+	project := flagSet.String("project", "", "only events of this project")
+	view := flagSet.String("view", "", "only events of this view key (e.g. Home--dark--desktop)")
+	eventType := flagSet.String("type", "", "only events of this type (view.captured, view.reviewed, view.compared)")
+	last := flagSet.Int("last", 0, "print only the last N events (0 prints all)")
 
-	return exitFailed
+	if err := flagSet.Parse(args); err != nil {
+		return exitUsage
+	}
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd events: %v\n", err)
+
+		return exitFailed
+	}
+
+	store, err := reviewed.OpenStore(filepath.Join(config.DataDir, "events.db"), slog.Default())
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd events: %v\n", err)
+
+		return exitFailed
+	}
+
+	defer func() {
+		if closeErr := store.Close(); closeErr != nil {
+			fmt.Fprintf(stderr, "visionreviewd events: close store: %v\n", closeErr)
+		}
+	}()
+
+	events, err := store.AllEvents(context.Background())
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd events: %v\n", err)
+
+		return exitFailed
+	}
+
+	summaries := filterEventSummaries(reviewed.SummarizeEvents(events), *project, *view, *eventType)
+	if *last > 0 && len(summaries) > *last {
+		summaries = summaries[len(summaries)-*last:]
+	}
+
+	for _, summary := range summaries {
+		fmt.Fprintf(stdout, "%s  %-15s  %s:%s  v%d  %s\n",
+			summary.OccurredAt.UTC().Format(eventsTimeFormat),
+			summary.Type,
+			summary.Project,
+			summary.ViewKey,
+			summary.Version,
+			summary.Detail)
+	}
+
+	fmt.Fprintf(stdout, "%d events\n", len(summaries))
+
+	return exitOK
+}
+
+// eventsTimeFormat stamps event lines in the events command output.
+const eventsTimeFormat = "2006-01-02 15:04:05"
+
+// filterEventSummaries keeps only the summaries matching every non-empty
+// filter.
+func filterEventSummaries(
+	summaries []reviewed.EventSummary,
+	project string,
+	view string,
+	eventType string,
+) []reviewed.EventSummary {
+	filtered := make([]reviewed.EventSummary, 0, len(summaries))
+
+	for _, summary := range summaries {
+		if project != "" && summary.Project != project {
+			continue
+		}
+
+		if view != "" && summary.ViewKey.String() != view {
+			continue
+		}
+
+		if eventType != "" && summary.Type != eventType {
+			continue
+		}
+
+		filtered = append(filtered, summary)
+	}
+
+	return filtered
 }
 
 // runReplayCommand rebuilds the reviews directory from the event journal.
-//
-//nolint:unparam // stdout writes output once the command body lands
 func runReplayCommand(args []string, stdout, stderr io.Writer) int {
-	_ = args
+	flagSet := newFlagSet("replay", stderr)
 
-	fmt.Fprintf(stderr, "visionreviewd replay: %v\n", errNotImplemented)
+	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
 
-	return exitFailed
+	if err := flagSet.Parse(args); err != nil {
+		return exitUsage
+	}
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd replay: %v\n", err)
+
+		return exitFailed
+	}
+
+	store, err := reviewed.OpenStore(filepath.Join(config.DataDir, "events.db"), slog.Default())
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd replay: %v\n", err)
+
+		return exitFailed
+	}
+
+	defer func() {
+		if closeErr := store.Close(); closeErr != nil {
+			fmt.Fprintf(stderr, "visionreviewd replay: close store: %v\n", closeErr)
+		}
+	}()
+
+	result, err := reviewed.Replay(context.Background(), store, reviewed.NewWriter(config.ReviewsDir))
+
+	fmt.Fprintf(stdout, "replay complete: %d projects, %d views, %d reviews, %d comparisons\n",
+		result.Projects, result.Views, result.Reviews, result.Comparisons)
+
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd replay: %v\n", err)
+
+		return exitFailed
+	}
+
+	return exitOK
 }
 
 // runDoctorCommand checks config, directories, globs, and the model endpoint.

@@ -292,7 +292,7 @@ func (p *Pipeline) refreshIndex(ctx context.Context, project string, captures []
 		})
 	}
 
-	if err := p.writer.WriteIndex(project, RenderIndex(project, time.Now().UTC(), rows)); err != nil {
+	if err := p.writer.WriteIndex(project, RenderIndex(project, indexStamp(rows), rows)); err != nil {
 		return fmt.Errorf("write index: %w", err)
 	}
 
