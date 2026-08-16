@@ -6,14 +6,16 @@ decisions in this repo.
 
 ## Current State
 
-**Verified with `art-dupl --type-aware --sort total-tokens -t 1 --html`:
-0 clone groups.** The codebase has zero reported duplication at the most
-sensitive threshold.
+**Verified with `art-dupl --type-aware -t 1` (v0.6.1, 2026-08-17): 0 actionable
+clone groups.** The scan now covers `internal/reviewd` and
+`cmd/visionreviewd` (added with the daemon). Raw findings: 254 groups total,
+of which 223 are non-actionable and 30 suppressed by filters; the single
+actionable pair after the extractions below is the 6-line `once`/`run`
+prologue (see "Patterns Below Scan Scope").
 
-This was achieved through the extractions listed below. Test files
-(`*_test.go`, `*_bdd_test.go`) are auto-excluded by art-dupl; interface-required
-signatures and table-driven test rows are inherently irreducible and never
-appear in the scan.
+Test files (`*_test.go`, `*_bdd_test.go`) are auto-excluded by art-dupl;
+interface-required signatures and table-driven test rows are inherently
+irreducible and never appear in the scan.
 
 ## Helpers in Place
 
@@ -33,6 +35,9 @@ appear in the scan.
 | `jsonOutput` / `jsonUsage` (named types)            | `cmd/vision/main.go`       | Named structs replace inline anonymous struct                                                                                                                                                                               |
 | `newProviderFromEnv` / `wrapProvider`               | `cmd/vision/main.go`       | API-key-from-env + provider factory + error wrapping                                                                                                                                                                        |
 | `createOpenAIProvider` / `createOpenRouterProvider` | `cmd/vision/main.go`       | Named factories for provider constructors                                                                                                                                                                                   |
+| `parseConfigFlag`                                    | `cmd/visionreviewd/commands.go` | Shared `-config` flag parse + config load for all four config-taking daemon commands (once/run/replay/doctor)                                                                                                               |
+| `openConfiguredPipeline` / `closeStore`             | `cmd/visionreviewd/commands.go` | Configured pipeline + store opening and the deferred close-error report shared by `once` and `run`                                                                                                                          |
+| `ReviewsDirPermission` / `ReviewsFilePermission`    | `internal/reviewd/writer.go`   | Exported once, used by both the Writer and the doctor probes, so the probe modes can never drift from the write modes                                                                                                       |
 
 ### CLI helpers (`internal/cli/`)
 
@@ -65,3 +70,4 @@ Go's type system:
 | Table-driven test rows `{"png", []byte{...}, true}`                                   | Data rows, not code duplication                                                  |
 | Mock model method signatures (`Generate`, `Stream`, `GenerateObject`, `StreamObject`) | Required by `fantasy.LanguageModel` interface                                    |
 | `type testReview struct{...}` in `internal/visionutil/helpers_test.go`                | Cross-package test fixture; cannot be shared without a third test-helper package |
+| `once`/`run` command prologue (6 lines: `openConfiguredPipeline` + `if !ok` + `defer closeStore`) | Two commands genuinely perform the same opening; a closure-passing abstraction would hide control flow for zero duplication gain (accepted 2026-08-17) |

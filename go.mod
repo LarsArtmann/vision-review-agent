@@ -114,3 +114,5 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+retract v0.3.0 // duplicate tag: points at the same commit as v0.2.1 (d5dda4b); prefer v0.5.1+

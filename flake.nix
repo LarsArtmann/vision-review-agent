@@ -49,13 +49,14 @@
           vendorHash = "sha256-gwJZWwfWl/ldNGQJWyNIpkgpu7j9w6ZtoDlp6o2rC4k=";
 
           # NixOS-module evaluation fixtures for the checks below (enabled +
-          # disabled). Evaluating forces the systemd units; ExecStart depends
-          # on the visionreviewd store path, so the enabled case also proves
-          # the package builds. The llama unit's ExecStart is deliberately NOT
-          # forced: it would build llama-cpp (~heavy) just for an eval check;
-          # the plain `description` literal proves the unit exists when
-          # enabled.
-          nixosModuleEnabled = lib.nixosSystem {
+          # disabled). nixosSystem comes from the flake's lib — pkgs.lib
+          # dropped it in newer nixpkgs. Evaluating forces the systemd units;
+          # ExecStart depends on the visionreviewd store path, so the enabled
+          # case also proves the package builds. The llama unit's ExecStart is
+          # deliberately NOT forced: it would build llama-cpp (~heavy) just for
+          # an eval check; the plain `description` literal proves the unit
+          # exists when enabled.
+          nixosModuleEnabled = inputs.nixpkgs.lib.nixosSystem {
             system = pkgs.stdenv.hostPlatform.system;
             modules = [
               self.nixosModules.visionreviewd
@@ -69,7 +70,7 @@
             ];
           };
 
-          nixosModuleDisabled = lib.nixosSystem {
+          nixosModuleDisabled = inputs.nixpkgs.lib.nixosSystem {
             system = pkgs.stdenv.hostPlatform.system;
             modules = [ self.nixosModules.visionreviewd ];
           };
@@ -235,15 +236,16 @@
                   daemonUnits = builtins.attrNames nixosModuleDisabled.config.systemd.services;
                 }
                 ''
-                  [ "$moduleEnable" = "false" ] || {
-                    echo "services.vision-review-agent.enable must default to false"
-                    exit 1
-                  }
-                  (printf '%s\n' "$daemonUnits" | grep -qx visionreviewd) && {
-                    echo "visionreviewd unit must be absent when disabled"
-                    exit 1
-                  }
-                  echo "module evaluates disabled (defaults)" > $out
+                # Nix serializes booleans in derivation environments as "1"/"".
+                if [ "$moduleEnable" = "1" ]; then
+                echo "services.vision-review-agent.enable must default to false"
+                exit 1
+                fi
+                (printf '%s\n' "$daemonUnits" | grep -qx visionreviewd) && {
+                echo "visionreviewd unit must be absent when disabled"
+                exit 1
+                }
+                echo "module evaluates disabled (defaults)" > $out
                 '';
           };
 

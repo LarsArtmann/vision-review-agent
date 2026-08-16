@@ -166,6 +166,12 @@ linters:
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.Conversation$
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.CostTracker$
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.ScreenshotAnalyzer$
+        # Daemon config and counters: zero values mean "unset"/"nothing" (the
+        # CLI returns reviewed.Config{} on load failures; PassResult and
+        # ReplayResult start all-zero).
+        - github\.com/larsartmann/vision-review-agent/internal/reviewd\.Config$
+        - github\.com/larsartmann/vision-review-agent/internal/reviewd\.PassResult$
+        - github\.com/larsartmann/vision-review-agent/internal/reviewd\.ReplayResult$
         - charm\.land/catwalk/pkg/catwalk\.Provider$
         - charm\.land/catwalk/pkg/catwalk\.Model$
     funlen:

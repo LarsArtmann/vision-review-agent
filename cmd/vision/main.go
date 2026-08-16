@@ -36,7 +36,7 @@ const (
 // tooling can override it at build time via -ldflags "-X main.version=...".
 // The default reflects an unreleased working tree; tagged builds inject the
 // real semver (see flake.nix buildGoModule ldflags).
-var version = "0.5.0"
+var version = "0.6.0"
 
 var (
 	// errEnvVarNotSet aliases catalog.ErrAPIKeyNotSet so existing tests and

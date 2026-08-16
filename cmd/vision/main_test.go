@@ -223,9 +223,16 @@ func TestFindModelInProviderWithGoogleAlias(t *testing.T) {
 
 	svc := catalog.New()
 
-	// "google" must normalize to "gemini" for catalog lookup.
-	// Without normalization, FindModelInProvider("google", ...) returns false.
+	// "google" must normalize to "gemini" for catalog lookup. Pick whatever
+	// model the catalog currently lists instead of hardcoding an ID that
+	// breaks whenever catwalk updates its data.
 	normalized := normalizeProviderName("google")
-	_, ok := svc.FindModelInProvider(normalized, "gemini-2.5-flash")
-	require.True(t, ok, "FindModelInProvider must find models under normalized 'gemini' provider")
+	require.Equal(t, "gemini", normalized)
+
+	provider, ok := svc.FindProvider(normalized)
+	require.True(t, ok, "catalog must list the normalized %q provider", normalized)
+	require.NotEmpty(t, provider.Models, "catalog %q provider must list models", normalized)
+
+	_, found := svc.FindModelInProvider(normalized, provider.Models[0].ID)
+	require.True(t, found, "FindModelInProvider must find models under normalized %q provider", normalized)
 }

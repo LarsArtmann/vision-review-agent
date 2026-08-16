@@ -232,7 +232,7 @@ func replayIndexes(writer *Writer, streams map[string]*replayStream) ([]string, 
 			ViewKey:   stream.address.viewKey,
 			Score:     stream.state.LastScore,
 			Previous:  stream.state.PrevScore,
-			UpdatedAt: stream.state.CapturedAt,
+			UpdatedAt: stream.state.UpdatedAt(),
 		})
 	}
 
@@ -297,7 +297,7 @@ type EventSummary struct {
 }
 
 // SummarizeEvents turns the raw journal into display summaries. Non-View
-// streams are skipped; unparseable stream IDs and undecodable payloads
+// streams are skipped; malformed stream IDs and undecodable payloads
 // degrade to a Detail note instead of failing the whole listing.
 func SummarizeEvents(events []event.Event) []EventSummary {
 	summaries := make([]EventSummary, 0, len(events))
@@ -315,7 +315,7 @@ func SummarizeEvents(events []event.Event) []EventSummary {
 				Project:    "",
 				ViewKey:    ViewKey{Page: "", Theme: "", Viewport: ""},
 				Type:       string(evt.Type()),
-				Detail:     fmt.Sprintf("unparseable stream: %v", err),
+				Detail:     fmt.Sprintf("malformed stream: %v", err),
 			})
 
 			continue

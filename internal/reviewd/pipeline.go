@@ -98,6 +98,12 @@ func (p *Pipeline) Pass(ctx context.Context, projects map[string][]string) (Pass
 	var errs []error
 
 	for _, project := range sortedProjectNames(projects) {
+		if err := ctx.Err(); err != nil {
+			errs = append(errs, fmt.Errorf("project %s: skipped, pass context done: %w", project, err))
+
+			break
+		}
+
 		result.Projects++
 
 		captures, err := ScanProject(projects[project])
@@ -136,6 +142,12 @@ func (p *Pipeline) passProject(ctx context.Context, project string, captures []C
 	var errs []error
 
 	for _, capture := range captures {
+		if err := ctx.Err(); err != nil {
+			errs = append(errs, fmt.Errorf("view %s: skipped, pass context done: %w", capture.ViewKey, err))
+
+			break
+		}
+
 		state, _, err := p.store.LoadView(ctx, project, capture.ViewKey)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("view %s: load: %w", capture.ViewKey, err))
@@ -178,8 +190,12 @@ func (p *Pipeline) passProject(ctx context.Context, project string, captures []C
 		result.Reviewed++
 	}
 
-	if err := p.refreshIndex(ctx, project, captures); err != nil {
-		errs = append(errs, err)
+	// A cancelled pass skips the INDEX refresh on purpose: folding the store
+	// under a dead context would only append noise to the error list.
+	if ctx.Err() == nil {
+		if err := p.refreshIndex(ctx, project, captures); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	return result, errors.Join(errs...)
@@ -288,7 +304,7 @@ func (p *Pipeline) refreshIndex(ctx context.Context, project string, captures []
 			ViewKey:   capture.ViewKey,
 			Score:     state.LastScore,
 			Previous:  state.PrevScore,
-			UpdatedAt: state.CapturedAt,
+			UpdatedAt: state.UpdatedAt(),
 		})
 	}
 

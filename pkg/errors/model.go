@@ -328,7 +328,7 @@ func kindFromStatusOrRetryability(providerErr *fantasy.ProviderError) ErrorKind 
 
 // parseRetryAfter extracts the Retry-After header value (RFC 7231 §7.1.3)
 // from provider response headers. Supports both delta-seconds and HTTP-date
-// formats. Returns zero when the header is absent or unparseable.
+// formats. Returns zero when the header is absent or malformed.
 func parseRetryAfter(headers map[string]string) time.Duration {
 	for k, v := range headers {
 		if !strings.EqualFold(k, "retry-after") {

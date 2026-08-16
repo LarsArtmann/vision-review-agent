@@ -74,33 +74,12 @@ func openPipeline(ctx context.Context, config reviewed.Config) (*reviewed.Pipeli
 
 // runOnceCommand runs a single pass over all configured projects.
 func runOnceCommand(args []string, stdout, stderr io.Writer) int {
-	flagSet := newFlagSet("once", stderr)
-
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
-
-	if err := flagSet.Parse(args); err != nil {
-		return exitUsage
+	config, pipeline, store, code, ok := openConfiguredPipeline("once", args, stderr)
+	if !ok {
+		return code
 	}
 
-	config, err := loadDaemonConfig(*configPath)
-	if err != nil {
-		fmt.Fprintf(stderr, "visionreviewd once: %v\n", err)
-
-		return exitFailed
-	}
-
-	pipeline, store, err := openPipeline(context.Background(), config)
-	if err != nil {
-		fmt.Fprintf(stderr, "visionreviewd once: %v\n", err)
-
-		return exitFailed
-	}
-
-	defer func() {
-		if closeErr := store.Close(); closeErr != nil {
-			fmt.Fprintf(stderr, "visionreviewd once: close store: %v\n", closeErr)
-		}
-	}()
+	defer closeStore(store, "once", stderr)
 
 	result, err := pipeline.Pass(context.Background(), config.Projects)
 
@@ -211,33 +190,12 @@ const compareArgCount = 2
 
 // runDaemonCommand runs the interval loop until SIGINT/SIGTERM.
 func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
-	flagSet := newFlagSet("run", stderr)
-
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
-
-	if err := flagSet.Parse(args); err != nil {
-		return exitUsage
+	config, pipeline, store, code, ok := openConfiguredPipeline("run", args, stderr)
+	if !ok {
+		return code
 	}
 
-	config, err := loadDaemonConfig(*configPath)
-	if err != nil {
-		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
-
-		return exitFailed
-	}
-
-	pipeline, store, err := openPipeline(context.Background(), config)
-	if err != nil {
-		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
-
-		return exitFailed
-	}
-
-	defer func() {
-		if closeErr := store.Close(); closeErr != nil {
-			fmt.Fprintf(stderr, "visionreviewd run: close store: %v\n", closeErr)
-		}
-	}()
+	defer closeStore(store, "run", stderr)
 
 	daemon, err := reviewed.NewDaemon(pipeline, config.Projects, config.Interval, slog.Default())
 	if err != nil {
@@ -357,19 +315,9 @@ func filterEventSummaries(
 
 // runReplayCommand rebuilds the reviews directory from the event journal.
 func runReplayCommand(args []string, stdout, stderr io.Writer) int {
-	flagSet := newFlagSet("replay", stderr)
-
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
-
-	if err := flagSet.Parse(args); err != nil {
-		return exitUsage
-	}
-
-	config, err := loadDaemonConfig(*configPath)
-	if err != nil {
-		fmt.Fprintf(stderr, "visionreviewd replay: %v\n", err)
-
-		return exitFailed
+	config, code, ok := parseConfigFlag("replay", args, stderr)
+	if !ok {
+		return code
 	}
 
 	store, err := reviewed.OpenStore(filepath.Join(config.DataDir, "events.db"), slog.Default())
@@ -379,11 +327,7 @@ func runReplayCommand(args []string, stdout, stderr io.Writer) int {
 		return exitFailed
 	}
 
-	defer func() {
-		if closeErr := store.Close(); closeErr != nil {
-			fmt.Fprintf(stderr, "visionreviewd replay: close store: %v\n", closeErr)
-		}
-	}()
+	defer closeStore(store, "replay", stderr)
 
 	result, err := reviewed.Replay(context.Background(), store, reviewed.NewWriter(config.ReviewsDir))
 
@@ -401,19 +345,9 @@ func runReplayCommand(args []string, stdout, stderr io.Writer) int {
 
 // runDoctorCommand checks config, directories, globs, and the model endpoint.
 func runDoctorCommand(args []string, stdout, stderr io.Writer) int {
-	flagSet := newFlagSet("doctor", stderr)
-
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
-
-	if err := flagSet.Parse(args); err != nil {
-		return exitUsage
-	}
-
-	config, err := loadDaemonConfig(*configPath)
-	if err != nil {
-		fmt.Fprintf(stderr, "visionreviewd doctor: %v\n", err)
-
-		return exitFailed
+	config, code, ok := parseConfigFlag("doctor", args, stderr)
+	if !ok {
+		return code
 	}
 
 	checks := doctorChecks(context.Background(), config)
@@ -438,6 +372,60 @@ func runDoctorCommand(args []string, stdout, stderr io.Writer) int {
 	}
 
 	return exitOK
+}
+
+// openConfiguredPipeline parses the config flag, loads the config, and opens
+// the pipeline plus its store. ok is false when the failure was already
+// reported to stderr; exitCode is the code to return then. The caller owns
+// closing the store via closeStore.
+func openConfiguredPipeline(
+	name string,
+	args []string,
+	stderr io.Writer,
+) (reviewed.Config, *reviewed.Pipeline, *reviewed.Store, int, bool) {
+	config, code, ok := parseConfigFlag(name, args, stderr)
+	if !ok {
+		return config, nil, nil, code, false
+	}
+
+	pipeline, store, err := openPipeline(context.Background(), config)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd %s: %v\n", name, err)
+
+		return config, nil, nil, exitFailed, false
+	}
+
+	return config, pipeline, store, exitOK, true
+}
+
+// parseConfigFlag parses the -config flag shared by every daemon command
+// and loads the config it points at. ok is false when the failure was
+// already reported to stderr; exitCode is the code to return then.
+func parseConfigFlag(name string, args []string, stderr io.Writer) (reviewed.Config, int, bool) {
+	flagSet := newFlagSet(name, stderr)
+
+	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
+
+	if err := flagSet.Parse(args); err != nil {
+		return reviewed.Config{}, exitUsage, false
+	}
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd %s: %v\n", name, err)
+
+		return reviewed.Config{}, exitFailed, false
+	}
+
+	return config, exitOK, true
+}
+
+// closeStore reports a store close failure under the command's name; defer
+// it while the store is in use.
+func closeStore(store *reviewed.Store, name string, stderr io.Writer) {
+	if closeErr := store.Close(); closeErr != nil {
+		fmt.Fprintf(stderr, "visionreviewd %s: close store: %v\n", name, closeErr)
+	}
 }
 
 // doctorEndpointTimeout bounds the model endpoint probe.
@@ -468,13 +456,13 @@ func doctorChecks(ctx context.Context, config reviewed.Config) []doctorCheck {
 // checkWritableDir probes that dir exists (or can be created) and a file can
 // be written and removed inside it.
 func checkWritableDir(name string, dir string) doctorCheck {
-	if err := os.MkdirAll(dir, reviewsDirPermission); err != nil {
+	if err := os.MkdirAll(dir, reviewed.ReviewsDirPermission); err != nil {
 		return doctorCheck{name: name, ok: false, detail: fmt.Sprintf("create %s: %v", dir, err)}
 	}
 
 	probe := filepath.Join(dir, ".visionreviewd-doctor-probe")
 
-	if err := os.WriteFile(probe, []byte("probe"), reviewsFilePermission); err != nil {
+	if err := os.WriteFile(probe, []byte("probe"), reviewed.ReviewsFilePermission); err != nil {
 		return doctorCheck{name: name, ok: false, detail: fmt.Sprintf("write %s: %v", probe, err)}
 	}
 
@@ -484,13 +472,6 @@ func checkWritableDir(name string, dir string) doctorCheck {
 
 	return doctorCheck{name: name, ok: true, detail: dir}
 }
-
-// reviewsDirPermission and reviewsFilePermission mirror the Writer's modes so
-// doctor probes with the same access the daemon will use.
-const (
-	reviewsDirPermission  = 0o750
-	reviewsFilePermission = 0o640
-)
 
 // checkProjectGlobs counts how many screenshots every project's globs match.
 // A project with zero matches is reported as failing: it would never be

@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Nothing yet.
+
+### Fixed
+
+- Nothing yet.
+
+## [0.6.0] - 2026-08-17
+
+### Added
+
 - **visionreviewd daemon** — event-sourced UI review daemon (`internal/reviewd`,
   `cmd/visionreviewd`) on top of the SDK: scans configured screenshot globs,
   dedupes by SHA-256, archives captures in a content-addressed blob store,
@@ -45,18 +55,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   verification matrix, `nix build .#visionreviewd`, the mock-field-priority
   note, an `docs/ERROR_DESIGN.md` link, and the corrected 16-kind `ErrorKind`
   list; README now links the error-design document.
+- **CI: daemon surface in `nix flake check`** — three new Linux checks:
+  `visionreviewd` (package build), `visionreviewd-version-smoke` (runs the
+  binary's `version` command, catching the silent-empty-build class), and
+  `nixos-module-enabled`/`nixos-module-disabled` (NixOS module evaluation
+  both ways; the enabled case forces the systemd unit's ExecStart).
+- **Testable godoc examples** — `ExampleWrap`/`ExampleIsRetryable` in
+  `pkg/errors` (errors.AsType extraction + retry decision) and
+  `ExampleConfig_validate` in `pkg/vision` (enriched sentinel messages that
+  still satisfy `errors.Is`).
+- **`internal/cli` tests** — `NewAgent` error paths (asserts the
+  `temperature=%.2f` context and sentinel matching) and `RequireArgc`
+  (subprocess-reexec exit-code check).
+- **flake meta** — both packages gained `meta.homepage` and
+  `meta.platforms`.
 
 ### Changed
 
-- Nothing yet.
+- **INDEX "Updated" column now reflects reviews** — `ViewState.UpdatedAt()`
+  reports the review time when the current capture was reviewed (falling back
+  to the capture time otherwise), in both the pass-time INDEX refresh and
+  Replay, so replay output stays byte-identical.
+- **`Pipeline.Pass` fails fast on a cancelled context** — projects and views
+  are skipped with explicit "skipped, pass context done" errors instead of
+  churning through model calls; the INDEX refresh is skipped on a dead
+  context.
+- **Daemon CLI deduplication** — `parseConfigFlag`,
+  `openConfiguredPipeline`, and `closeStore` extract the shared command
+  prologues (once/run/replay/doctor); `ReviewsDirPermission` and
+  `ReviewsFilePermission` are exported from `internal/reviewd` so doctor
+  probes can never drift from the Writer's modes.
+- **Wrapcheck config migrated to the golangci-lint v2 schema** —
+  `ignoreSigs`/`ignore-type-assert-ok` (rejected by `golangci-lint config
+  verify`, red CI since v0.5.0) became `extra-ignore-sigs`, which adds to the
+  default list; four now-redundant `//nolint:wrapcheck` directives removed.
+- **doctor reports endpoint read/close failures through the check output** —
+  `checkModelEndpoint` reads and closes the response body eagerly and routes
+  every failure into the check detail instead of writing to `os.Stderr`
+  directly, bypassing the command's injected writers.
+- **Codespell-clean wording** — "unparseable" reworded to "malformed" in
+  daemon messages, comments, and tests.
+- **`docs/DUPLICATION_POLICY.md` refreshed** — re-ran art-dupl over the
+  daemon code, extracted the three actionable clones, and recorded the one
+  accepted intentional 6-line pair.
 
 ### Fixed
 
+- **Brittle `gemini-2.5-flash` catalog test** — the test now picks whatever
+  model the catalog lists under the normalized provider instead of
+  hardcoding an ID that breaks on catwalk data updates.
+- **`/visionreviewd` build artifact** — `.gitignore` now anchors the daemon
+  binary so it cannot be committed accidentally.
 - **Documentation corrections** — AGENTS.md understated `ErrorKind` (listed
   14 of 16 kinds); ROADMAP/TODO_LIST claimed the ghost tag `v0.3.0` had been
   deleted, but both `v0.2.1` and `v0.3.0` still exist on `origin` pointing
   at `d5dda4b` (verified 2026-08-16). The docs now match the remote state;
   tag cleanup is tracked in TODO_LIST "Release mechanics".
+
+### Removed
+
+- **`doctorCheckExtra`** — the magic constant duplicating knowledge of the
+  doctor check count; the capacity hint now derives from the project count.
 
 ## [0.5.1] - 2026-08-12
 
@@ -346,7 +405,7 @@ safety"`, `"removed for safety"`) that only match real content-policy rejections
 - **Multi-turn conversation:** `Conversation` type (`NewConversation`, `AddUserMessage`, `AddAssistantMessage`, `Messages`, `Len`) plus `AnalyzeConversation`/`AnalyzeConversationStream` methods for follow-up questions with history
 - **Batch analysis:** `AnalyzeBatch` analyzes many images concurrently with bounded concurrency (semaphore), per-image error capture, and ordered results
 - **Lifecycle hooks:** `Hooks` struct with `OnStart`, `OnFinish`, and `OnError` callbacks for logging/metrics; nil-safe and synchronous
-- **Classified model errors:** centralized `pkg/errors` package with `ModelError`, 11 `ErrorKind` categories, `IsRetryable()`, `Unwrap()`, `Wrap`, and `Classify` — re-exported from `pkg/vision` as `vision.ModelError`, `vision.Classify`, and `vision.IsRetryable`
+- **Classified model errors:** centralized `pkg/errors` package with `ModelError`, 11 `ErrorKind` categories, `IsRetryable()`, `Unwrap()`, `Wrap`, and `Classify` — re-exported from `pkg/vision` as `vision.ModelError`, `vision.Classify`, and `vision.IsRetryable` (the taxonomy has since grown to 16 kinds; see [`docs/ERROR_DESIGN.md`](docs/ERROR_DESIGN.md))
 - **Screenshot analyzer:** fluent `ScreenshotAnalyzer` builder with `With*` methods and `AnalyzeScreenshot`/`AnalyzeScreenshots`/`AnalyzeScreenshotImages`/`AnalyzeConversation` convenience methods; all builders invalidate the cached agent
 - **CLI tool:** `cmd/vision` with flags for provider, model, prompt, system prompt, streaming, temperature, max tokens, timeout, JSON output, and version; prints actionable advice for classified model errors
 - **Image loading:** `LoadImageFromURL`, `LoadImageFromBase64`, `LoadImageFromReader`, and `NewImageSource` constructors alongside `LoadImageFromFile`

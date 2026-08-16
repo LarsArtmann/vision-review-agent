@@ -123,7 +123,7 @@ func TestCompareManuallyEmptyAfterName(t *testing.T) {
 
 	err = pipeline.CompareManually(t.Context(), "myapp", beforePath, afterPath)
 	if err == nil {
-		t.Fatal("want error for unparseable after file name")
+		t.Fatal("want error for malformed after file name")
 	}
 }
 

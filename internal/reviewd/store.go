@@ -44,6 +44,18 @@ func (v ViewState) NeedsReview() bool {
 	return v.Captures > 0 && v.ReviewedSHA != v.SHA256
 }
 
+// UpdatedAt reports when the view's INDEX row last changed: the review time
+// when the current capture was reviewed, else its capture time. Both the
+// pipeline's INDEX refresh and Replay derive from it, so replay stays
+// byte-identical.
+func (v ViewState) UpdatedAt() time.Time {
+	if v.LastReview != nil && v.ReviewedSHA == v.SHA256 && v.LastReview.ReviewedAt.After(v.CapturedAt) {
+		return v.LastReview.ReviewedAt
+	}
+
+	return v.CapturedAt
+}
+
 // ApplyViewState folds one event into a view state. Unknown event types are
 // ignored so old logs stay replayable after new event kinds appear.
 func ApplyViewState(state ViewState, evt event.Event) (ViewState, error) {

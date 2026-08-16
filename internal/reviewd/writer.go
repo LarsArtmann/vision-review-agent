@@ -8,10 +8,11 @@ import (
 )
 
 // Review file permissions: readable by the owner and group; the reviews are
-// the product, meant to be consumed by humans and agents.
+// the product, meant to be consumed by humans and agents. Exported so the
+// doctor command probes directories with the exact modes the Writer uses.
 const (
-	reviewsDirPermission  = 0o750
-	reviewsFilePermission = 0o640
+	ReviewsDirPermission  = 0o750
+	ReviewsFilePermission = 0o640
 )
 
 // comparisonTimeFormat stamps comparison filenames.
@@ -62,11 +63,11 @@ func (w *Writer) WriteIndex(project string, content string) error {
 }
 
 func (w *Writer) write(path, content string) error {
-	if err := os.MkdirAll(filepath.Dir(path), reviewsDirPermission); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), ReviewsDirPermission); err != nil {
 		return fmt.Errorf("create review dir %s: %w", filepath.Dir(path), err)
 	}
 
-	if err := writeFileAtomic(path, []byte(content), reviewsFilePermission); err != nil {
+	if err := writeFileAtomic(path, []byte(content), ReviewsFilePermission); err != nil {
 		return err
 	}
 
