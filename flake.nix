@@ -178,5 +178,7 @@
         vision-review-agent = self.packages.${final.stdenv.system}.default;
         visionreviewd = self.packages.${final.stdenv.system}.visionreviewd;
       };
+
+      flake.nixosModules.visionreviewd = import ./nixos/visionreviewd.nix self;
     };
 }
