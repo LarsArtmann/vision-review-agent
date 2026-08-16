@@ -1,0 +1,86 @@
+direction: right
+
+PARETO_TIERS: {
+  p0: {
+    label: "P0 — 1% → 51%\nCore review loop"
+    style.fill: "#1a2a3a"
+    t1: "T1 Deps spike\ngo-cqrs-lite v4 + bbolt"
+    t2: "T2 Domain events\nviewKey + sha256"
+    t3: "T3 Config JSON\n+ discover"
+    t4: "T4 Reviewer\nllama-server prompts"
+    t5: "T5 Markdown writer\nviews + INDEX"
+  }
+  p1: {
+    label: "P1 — 4% → 64%\nEvent sourcing core"
+    style.fill: "#1f3323"
+    t6: "T6 bbolt store\nView decider"
+    t7: "T7 Pipeline\nscan→review→write"
+    t8: "T8 A/B compare\nbefore vs after"
+  }
+  p2: {
+    label: "P2 — 20% → 80%\nDaemon + CLI"
+    style.fill: "#3a2a1a"
+    t9: "T9 CLI skeleton\n7 subcommands"
+    t10: "T10 Daemon loop\nSIGTERM graceful"
+    t11: "T11 events + replay\nregen from log"
+    t12: "T12 E2E fake\nOpenAI server"
+    t13: "T13 doctor\nreachability"
+  }
+  p3: {
+    label: "P3 — Long tail\nPackaging + wiring"
+    style.fill: "#2a1a2a"
+    t14: "T14 flake package\nnix build"
+    t15: "T15 NixOS module\nhere"
+    t16: "T16 SystemNix\nlazy wrapper"
+    t17: "T17 Docs update"
+    t18: "T18 Final verify\nrace+vet+lint"
+  }
+}
+
+t1 -> t2 -> t6
+t2 -> t4
+t3 -> t7
+t4 -> t5
+t5 -> t7
+t6 -> t7
+t7 -> t8
+t7 -> t10
+t8 -> t11
+t9 -> t10
+t10 -> t11
+t4 -> t12
+t12 -> t13
+t5 -> t14
+t14 -> t15 -> t16
+t11 -> t17
+t16 -> t17
+t17 -> t18
+
+img: {
+  label: "📸 PNGs\nDiscordSync\n+ all projects"
+  shape: rectangle
+  style: {
+    font-color: "#8888ff"
+    stroke: "#8888ff"
+  }
+}
+llm: {
+  label: "🦙 llama-server\nQwen3-VL 8B GGUF\n:8080/v1"
+  shape: rectangle
+  style: {
+    font-color: "#f4d35e"
+    stroke: "#f4d35e"
+  }
+}
+md: {
+  label: "📄 reviews/*.md\nCrush reads + fixes"
+  shape: rectangle
+  style: {
+    font-color: "#6bcb77"
+    stroke: "#6bcb77"
+  }
+}
+
+img -> t2: {style.animated: true}
+t4 -> llm: {style.animated: true}
+t5 -> md: {style.animated: true}
