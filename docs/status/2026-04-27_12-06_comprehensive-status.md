@@ -1,14 +1,14 @@
 # Comprehensive Status Report
 
-**Project:** vision-review-agent  
-**Date:** 2026-04-27 12:06 CEST  
-**Branch:** master  
-**Commits:** 3  
-**Go Version:** 1.26.2 (go.mod) / 1.26.0 (system)  
-**Lines of Code:** ~1,846  
-**Test Coverage:** 92.9% (vision package)  
-**Tests:** 24 test functions, all passing  
-**Race Detector:** Clean  
+**Project:** vision-review-agent\
+**Date:** 2026-04-27 12:06 CEST\
+**Branch:** master\
+**Commits:** 3\
+**Go Version:** 1.26.2 (go.mod) / 1.26.0 (system)\
+**Lines of Code:** ~1,846\
+**Test Coverage:** 92.9% (vision package)\
+**Tests:** 24 test functions, all passing\
+**Race Detector:** Clean\
 **go vet:** Clean
 
 ---
@@ -168,33 +168,33 @@
 
 ## f) Top #25 Things To Get Done Next
 
-| #   | Priority    | Task                                                                | Impact | Effort |
-| --- | ----------- | ------------------------------------------------------------------- | ------ | ------ |
-| 1   | 🔴 CRITICAL | Fix Go 1.26.0 vs 1.26.2 toolchain mismatch                          | HIGH   | LOW    |
-| 2   | 🔴 CRITICAL | Commit uncommitted DRY refactoring (filterValidImages, toFileParts) | MEDIUM | LOW    |
-| 3   | 🔴 CRITICAL | Add GitHub Actions CI (.github/workflows/test.yml)                  | HIGH   | LOW    |
-| 4   | 🟡 HIGH     | Add integration test with real provider (build-tagged)              | HIGH   | MEDIUM |
-| 5   | 🟡 HIGH     | Create git remote and push to GitHub                                | HIGH   | LOW    |
-| 6   | 🟡 HIGH     | Tag v0.1.0 release                                                  | MEDIUM | LOW    |
-| 7   | 🟡 HIGH     | Add image resize/compression before API upload                      | HIGH   | MEDIUM |
-| 8   | 🟢 MEDIUM   | Add CLI config file support (.visionrc)                             | MEDIUM | LOW    |
-| 9   | 🟢 MEDIUM   | Add progress bars for batch analysis                                | MEDIUM | LOW    |
-| 10  | 🟢 MEDIUM   | Improve error messages with actionable fixes                        | HIGH   | LOW    |
-| 11  | 🟢 MEDIUM   | Add benchmarks for image loading and analysis                       | LOW    | LOW    |
-| 12  | 🟢 MEDIUM   | Add test coverage reporting to CI                                   | MEDIUM | LOW    |
-| 13  | 🟢 MEDIUM   | Add Docker image for CLI                                            | MEDIUM | MEDIUM |
-| 14  | 🟢 MEDIUM   | Add response caching (in-memory or Redis)                           | MEDIUM | MEDIUM |
-| 15  | 🟢 MEDIUM   | Add OpenTelemetry tracing                                           | LOW    | MEDIUM |
-| 16  | 🔵 LOW      | Add Homebrew formula                                                | LOW    | HIGH   |
-| 17  | 🔵 LOW      | Add screenshot capture capability                                   | MEDIUM | HIGH   |
-| 18  | 🔵 LOW      | Add plugin architecture for custom analyzers                        | MEDIUM | HIGH   |
-| 19  | 🔵 LOW      | Add webhook support for async analysis                              | LOW    | MEDIUM |
-| 20  | 🔵 LOW      | Add database persistence for results                                | LOW    | HIGH   |
-| 21  | 🔵 LOW      | Create web UI                                                       | LOW    | HIGH   |
-| 22  | 🔵 LOW      | Add output templates (markdown, HTML)                               | LOW    | MEDIUM |
-| 23  | 🔵 LOW      | Add batch concurrent processing                                     | MEDIUM | MEDIUM |
-| 24  | 🔵 LOW      | Add rate limiting                                                   | LOW    | LOW    |
-| 25  | 🔵 LOW      | Create documentation website                                        | LOW    | HIGH   |
+| #  | Priority    | Task                                                                | Impact | Effort |
+| -- | ----------- | ------------------------------------------------------------------- | ------ | ------ |
+| 1  | 🔴 CRITICAL | Fix Go 1.26.0 vs 1.26.2 toolchain mismatch                          | HIGH   | LOW    |
+| 2  | 🔴 CRITICAL | Commit uncommitted DRY refactoring (filterValidImages, toFileParts) | MEDIUM | LOW    |
+| 3  | 🔴 CRITICAL | Add GitHub Actions CI (.github/workflows/test.yml)                  | HIGH   | LOW    |
+| 4  | 🟡 HIGH     | Add integration test with real provider (build-tagged)              | HIGH   | MEDIUM |
+| 5  | 🟡 HIGH     | Create git remote and push to GitHub                                | HIGH   | LOW    |
+| 6  | 🟡 HIGH     | Tag v0.1.0 release                                                  | MEDIUM | LOW    |
+| 7  | 🟡 HIGH     | Add image resize/compression before API upload                      | HIGH   | MEDIUM |
+| 8  | 🟢 MEDIUM   | Add CLI config file support (.visionrc)                             | MEDIUM | LOW    |
+| 9  | 🟢 MEDIUM   | Add progress bars for batch analysis                                | MEDIUM | LOW    |
+| 10 | 🟢 MEDIUM   | Improve error messages with actionable fixes                        | HIGH   | LOW    |
+| 11 | 🟢 MEDIUM   | Add benchmarks for image loading and analysis                       | LOW    | LOW    |
+| 12 | 🟢 MEDIUM   | Add test coverage reporting to CI                                   | MEDIUM | LOW    |
+| 13 | 🟢 MEDIUM   | Add Docker image for CLI                                            | MEDIUM | MEDIUM |
+| 14 | 🟢 MEDIUM   | Add response caching (in-memory or Redis)                           | MEDIUM | MEDIUM |
+| 15 | 🟢 MEDIUM   | Add OpenTelemetry tracing                                           | LOW    | MEDIUM |
+| 16 | 🔵 LOW      | Add Homebrew formula                                                | LOW    | HIGH   |
+| 17 | 🔵 LOW      | Add screenshot capture capability                                   | MEDIUM | HIGH   |
+| 18 | 🔵 LOW      | Add plugin architecture for custom analyzers                        | MEDIUM | HIGH   |
+| 19 | 🔵 LOW      | Add webhook support for async analysis                              | LOW    | MEDIUM |
+| 20 | 🔵 LOW      | Add database persistence for results                                | LOW    | HIGH   |
+| 21 | 🔵 LOW      | Create web UI                                                       | LOW    | HIGH   |
+| 22 | 🔵 LOW      | Add output templates (markdown, HTML)                               | LOW    | MEDIUM |
+| 23 | 🔵 LOW      | Add batch concurrent processing                                     | MEDIUM | MEDIUM |
+| 24 | 🔵 LOW      | Add rate limiting                                                   | LOW    | LOW    |
+| 25 | 🔵 LOW      | Create documentation website                                        | LOW    | HIGH   |
 
 ---
 

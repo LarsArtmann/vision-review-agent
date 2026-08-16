@@ -157,33 +157,33 @@ This project is a Go SDK for building AI agents with vision capabilities, built 
 
 ## f) Top #25 Things We Should Get Done Next
 
-| #   | Priority | Task                                         | Effort | Impact                        |
-| --- | -------- | -------------------------------------------- | ------ | ----------------------------- |
-| 1   | 🔴 High  | Fix go.mod Go version (1.26.2 → 1.26.0)      | 1 min  | Fixes examples/ build         |
-| 2   | 🔴 High  | Refactor cmd/vision/main.go complexity       | 1 hr   | Eliminates 10 linter warnings |
-| 3   | 🔴 High  | Add GitHub Actions CI workflow               | 30 min | Automated quality gates       |
-| 4   | 🟡 Med   | Migrate pkg/vision tests to testify          | 1 hr   | Cleaner, more maintainable    |
-| 5   | 🟡 Med   | Add Config functional options                | 1 hr   | Better API design             |
-| 6   | 🟡 Med   | ValidateImage on LoadImageFromFile           | 30 min | Fail fast on bad images       |
-| 7   | 🟡 Med   | Add structured logging (log/slog)            | 1 hr   | Better debugging              |
-| 8   | 🟡 Med   | Add benchmark tests                          | 30 min | Performance baseline          |
-| 9   | 🟡 Med   | Add fuzz tests for validation                | 30 min | Robustness                    |
-| 10  | 🟡 Med   | Package doc comments                         | 15 min | Documentation                 |
-| 11  | 🟢 Low   | Anthropic example                            | 30 min | Provider coverage             |
-| 12  | 🟢 Low   | Google Gemini example                        | 30 min | Provider coverage             |
-| 13  | 🟢 Low   | GoReleaser config                            | 30 min | Distribution                  |
-| 14  | 🟢 Low   | Result caching                               | 1 hr   | Performance                   |
-| 15  | 🟢 Low   | Image preprocessing helpers                  | 2 hr   | UX                            |
-| 16  | 🟢 Low   | Middleware/plugin hooks                      | 2 hr   | Extensibility                 |
-| 17  | 🟢 Low   | Provider model discovery                     | 2 hr   | Usability                     |
-| 18  | 🟢 Low   | Batch analysis API                           | 2 hr   | Feature                       |
-| 19  | 🟢 Low   | OpenTelemetry tracing                        | 2 hr   | Observability                 |
-| 20  | 🟢 Low   | JSON schema validation for structured output | 2 hr   | Safety                        |
-| 21  | 🟢 Low   | Context cancellation tests                   | 30 min | Reliability                   |
-| 22  | 🟢 Low   | Integration tests with real providers        | 4 hr   | Confidence                    |
-| 23  | 🟢 Low   | README badges (coverage, build, lint)        | 15 min | Trust                         |
-| 24  | 🟢 Low   | CONTRIBUTING.md                              | 30 min | Community                     |
-| 25  | 🟢 Low   | Changelog automation                         | 15 min | Maintenance                   |
+| #  | Priority | Task                                         | Effort | Impact                        |
+| -- | -------- | -------------------------------------------- | ------ | ----------------------------- |
+| 1  | 🔴 High  | Fix go.mod Go version (1.26.2 → 1.26.0)      | 1 min  | Fixes examples/ build         |
+| 2  | 🔴 High  | Refactor cmd/vision/main.go complexity       | 1 hr   | Eliminates 10 linter warnings |
+| 3  | 🔴 High  | Add GitHub Actions CI workflow               | 30 min | Automated quality gates       |
+| 4  | 🟡 Med   | Migrate pkg/vision tests to testify          | 1 hr   | Cleaner, more maintainable    |
+| 5  | 🟡 Med   | Add Config functional options                | 1 hr   | Better API design             |
+| 6  | 🟡 Med   | ValidateImage on LoadImageFromFile           | 30 min | Fail fast on bad images       |
+| 7  | 🟡 Med   | Add structured logging (log/slog)            | 1 hr   | Better debugging              |
+| 8  | 🟡 Med   | Add benchmark tests                          | 30 min | Performance baseline          |
+| 9  | 🟡 Med   | Add fuzz tests for validation                | 30 min | Robustness                    |
+| 10 | 🟡 Med   | Package doc comments                         | 15 min | Documentation                 |
+| 11 | 🟢 Low   | Anthropic example                            | 30 min | Provider coverage             |
+| 12 | 🟢 Low   | Google Gemini example                        | 30 min | Provider coverage             |
+| 13 | 🟢 Low   | GoReleaser config                            | 30 min | Distribution                  |
+| 14 | 🟢 Low   | Result caching                               | 1 hr   | Performance                   |
+| 15 | 🟢 Low   | Image preprocessing helpers                  | 2 hr   | UX                            |
+| 16 | 🟢 Low   | Middleware/plugin hooks                      | 2 hr   | Extensibility                 |
+| 17 | 🟢 Low   | Provider model discovery                     | 2 hr   | Usability                     |
+| 18 | 🟢 Low   | Batch analysis API                           | 2 hr   | Feature                       |
+| 19 | 🟢 Low   | OpenTelemetry tracing                        | 2 hr   | Observability                 |
+| 20 | 🟢 Low   | JSON schema validation for structured output | 2 hr   | Safety                        |
+| 21 | 🟢 Low   | Context cancellation tests                   | 30 min | Reliability                   |
+| 22 | 🟢 Low   | Integration tests with real providers        | 4 hr   | Confidence                    |
+| 23 | 🟢 Low   | README badges (coverage, build, lint)        | 15 min | Trust                         |
+| 24 | 🟢 Low   | CONTRIBUTING.md                              | 30 min | Community                     |
+| 25 | 🟢 Low   | Changelog automation                         | 15 min | Maintenance                   |
 
 ---
 

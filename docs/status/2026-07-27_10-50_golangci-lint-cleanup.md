@@ -28,19 +28,19 @@ Then: a brutal self-review + full status report.
 
 ## a) FULLY DONE
 
-| #   | Item                                                                                          | Evidence                                                                     |
-| --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| 1   | Discovered all `go.mod` files in the repo (exactly **1**: the root module)                    | `find ... -name go.mod` → 1 result                                           |
-| 2   | Ran `golangci-lint run ./...` and captured full baseline (**20 depguard errors + 1 warning**) | Saved in session log                                                         |
-| 3   | Diagnosed the `$module` depguard variable as non-functional in golangci-lint v2.12.2          | Swapped `$module` → explicit path; module-internal errors 20→12              |
-| 4   | Added all 5 direct dependencies to the depguard allow-list                                    | `.golangci.yaml` lines 134-141                                               |
-| 5   | Removed 6 dead `//nolint:legacyerrors` directives across 4 files                              | `pkg/errors/model.go`, `model_test.go`, `pkg/vision/{mock,validate}_test.go` |
-| 6   | Verified `legacyerrors` is not a real golangci-lint linter (grepped `golangci-lint linters`)  | No match for legacy/error/modernize/hierarch                                 |
-| 7   | Consulted the `hierarchical-errors` skill before touching error-matching code                 | Skill confirmed `legacyerrors` is unverified / likely nonexistent            |
-| 8   | Final verification: `golangci-lint run ./...` → **0 issues**                                  | Exit 0                                                                       |
-| 9   | `go build ./...` passes                                                                       | Exit 0                                                                       |
-| 10  | `go test ./...` passes (incl. 35s `pkg/vision` suite)                                         | Exit 0, all packages ok                                                      |
-| 11  | Backed up `.golangci.yaml` before editing, cleaned up the temp file after                     | `/tmp/golangci-backup.yaml` removed                                          |
+| #  | Item                                                                                          | Evidence                                                                     |
+| -- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1  | Discovered all `go.mod` files in the repo (exactly **1**: the root module)                    | `find ... -name go.mod` → 1 result                                           |
+| 2  | Ran `golangci-lint run ./...` and captured full baseline (**20 depguard errors + 1 warning**) | Saved in session log                                                         |
+| 3  | Diagnosed the `$module` depguard variable as non-functional in golangci-lint v2.12.2          | Swapped `$module` → explicit path; module-internal errors 20→12              |
+| 4  | Added all 5 direct dependencies to the depguard allow-list                                    | `.golangci.yaml` lines 134-141                                               |
+| 5  | Removed 6 dead `//nolint:legacyerrors` directives across 4 files                              | `pkg/errors/model.go`, `model_test.go`, `pkg/vision/{mock,validate}_test.go` |
+| 6  | Verified `legacyerrors` is not a real golangci-lint linter (grepped `golangci-lint linters`)  | No match for legacy/error/modernize/hierarch                                 |
+| 7  | Consulted the `hierarchical-errors` skill before touching error-matching code                 | Skill confirmed `legacyerrors` is unverified / likely nonexistent            |
+| 8  | Final verification: `golangci-lint run ./...` → **0 issues**                                  | Exit 0                                                                       |
+| 9  | `go build ./...` passes                                                                       | Exit 0                                                                       |
+| 10 | `go test ./...` passes (incl. 35s `pkg/vision` suite)                                         | Exit 0, all packages ok                                                      |
+| 11 | Backed up `.golangci.yaml` before editing, cleaned up the temp file after                     | `/tmp/golangci-backup.yaml` removed                                          |
 
 ---
 
@@ -72,17 +72,17 @@ But I did **not** determine:
 
 ## c) NOT STARTED
 
-| #   | Item                                                                                  |
-| --- | ------------------------------------------------------------------------------------- |
-| 1   | `nix flake check` — the project's canonical build/lint entrypoint (per AGENTS.md)     |
-| 2   | `nix run .#lint` / `nix run .#test` — I ran bare `golangci-lint`/`go test` instead    |
-| 3   | `golangci-lint config verify` — built-in config validator, never invoked              |
-| 4   | Researching the upstream `$module` depguard v2 status                                 |
-| 5   | Adding a comment in `.golangci.yaml` explaining why `$module` is intentionally absent |
-| 6   | Auditing ALL other `//nolint:` directives in the repo for staleness                   |
-| 7   | Tuning `nolintlint` (`require-explanation`, `allow-no-extra-linter`) to prevent recur |
-| 8   | Checking git blame on the `legacyerrors` directives                                   |
-| 9   | Adding CI guard so depguard regressions are caught automatically                      |
+| # | Item                                                                                  |
+| - | ------------------------------------------------------------------------------------- |
+| 1 | `nix flake check` — the project's canonical build/lint entrypoint (per AGENTS.md)     |
+| 2 | `nix run .#lint` / `nix run .#test` — I ran bare `golangci-lint`/`go test` instead    |
+| 3 | `golangci-lint config verify` — built-in config validator, never invoked              |
+| 4 | Researching the upstream `$module` depguard v2 status                                 |
+| 5 | Adding a comment in `.golangci.yaml` explaining why `$module` is intentionally absent |
+| 6 | Auditing ALL other `//nolint:` directives in the repo for staleness                   |
+| 7 | Tuning `nolintlint` (`require-explanation`, `allow-no-extra-linter`) to prevent recur |
+| 8 | Checking git blame on the `legacyerrors` directives                                   |
+| 9 | Adding CI guard so depguard regressions are caught automatically                      |
 
 ---
 

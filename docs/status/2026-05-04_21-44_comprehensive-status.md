@@ -120,33 +120,33 @@ Vision Review Agent is a Go SDK for building AI agents with vision capabilities,
 
 ## f) Top 25 Things We Should Get Done Next
 
-| #   | Item                                                               | Impact      | Effort | Category     |
-| --- | ------------------------------------------------------------------ | ----------- | ------ | ------------ |
-| 1   | Fix `MaxOutputTokens=0`/`Temperature` pointer bug                  | 🔴 Critical | S      | Bug          |
-| 2   | Resolve LICENSE vs README contradiction                            | 🔴 Critical | S      | Legal        |
-| 3   | Fix all 20 golangci-lint issues                                    | 🟠 High     | S      | Quality      |
-| 4   | Update CHANGELOG.md with all 25 commits                            | 🟠 High     | M      | Docs         |
-| 5   | Add tests for `cmd/vision/main.go`                                 | 🟠 High     | L      | Testing      |
-| 6   | Add tests for `internal/cli/helpers.go`                            | 🟠 High     | M      | Testing      |
-| 7   | Fix WebP validation (check WEBP magic bytes 8-11)                  | 🟡 Medium   | S      | Correctness  |
-| 8   | Add `io.LimitReader` to `LoadImageFromReader`                      | 🟡 Medium   | S      | Robustness   |
-| 9   | Update README.md (remove Anthropic, fix structure, fix license)    | 🟡 Medium   | S      | Docs         |
-| 10  | Update AGENTS.md (add `internal/cli/`, `report/`, fantasy version) | 🟡 Medium   | S      | Docs         |
-| 11  | Remove deprecated `VisionAgent` alias                              | 🟢 Low      | S      | Cleanup      |
-| 12  | Fix `parseFlags()` dead error return                               | 🟢 Low      | S      | Cleanup      |
-| 13  | Refactor `AnalyzeStructured` to use `fantasy.Agent` layer          | 🟡 Medium   | M      | Architecture |
-| 14  | Cache `ScreenshotAnalyzer` agent instance                          | 🟢 Low      | S      | Performance  |
-| 15  | Use `strings.Builder` in `AnalyzeStream`                           | 🟢 Low      | S      | Performance  |
-| 16  | Consistent test assertion style (pick testify or stdlib)           | 🟢 Low      | M      | Style        |
-| 17  | Remove `report/jscpd-report.json` from repo                        | 🟢 Low      | S      | Cleanup      |
-| 18  | Fix `.gitignore` formatting (missing `#` on lines 31-36)           | 🟢 Low      | S      | Cleanup      |
-| 19  | Commit the uncommitted `vision.go` diff (with bug fix)             | 🔴 Critical | S      | Git          |
-| 20  | Enable nix flake package build                                     | 🟡 Medium   | M      | Build        |
-| 21  | Migrate justfile commands to flake.nix                             | 🟡 Medium   | L      | Build        |
-| 22  | Add `ProviderOptions` passthrough in `toFileParts`                 | 🟢 Low      | S      | Feature      |
-| 23  | Add `WithModel()` to `ScreenshotAnalyzer` builder                  | 🟢 Low      | S      | Feature      |
-| 24  | Fix `go.mod` Go version alignment                                  | 🟢 Low      | S      | Config       |
-| 25  | Add integration test with real provider (mocked)                   | 🟡 Medium   | L      | Testing      |
+| #  | Item                                                               | Impact      | Effort | Category     |
+| -- | ------------------------------------------------------------------ | ----------- | ------ | ------------ |
+| 1  | Fix `MaxOutputTokens=0`/`Temperature` pointer bug                  | 🔴 Critical | S      | Bug          |
+| 2  | Resolve LICENSE vs README contradiction                            | 🔴 Critical | S      | Legal        |
+| 3  | Fix all 20 golangci-lint issues                                    | 🟠 High     | S      | Quality      |
+| 4  | Update CHANGELOG.md with all 25 commits                            | 🟠 High     | M      | Docs         |
+| 5  | Add tests for `cmd/vision/main.go`                                 | 🟠 High     | L      | Testing      |
+| 6  | Add tests for `internal/cli/helpers.go`                            | 🟠 High     | M      | Testing      |
+| 7  | Fix WebP validation (check WEBP magic bytes 8-11)                  | 🟡 Medium   | S      | Correctness  |
+| 8  | Add `io.LimitReader` to `LoadImageFromReader`                      | 🟡 Medium   | S      | Robustness   |
+| 9  | Update README.md (remove Anthropic, fix structure, fix license)    | 🟡 Medium   | S      | Docs         |
+| 10 | Update AGENTS.md (add `internal/cli/`, `report/`, fantasy version) | 🟡 Medium   | S      | Docs         |
+| 11 | Remove deprecated `VisionAgent` alias                              | 🟢 Low      | S      | Cleanup      |
+| 12 | Fix `parseFlags()` dead error return                               | 🟢 Low      | S      | Cleanup      |
+| 13 | Refactor `AnalyzeStructured` to use `fantasy.Agent` layer          | 🟡 Medium   | M      | Architecture |
+| 14 | Cache `ScreenshotAnalyzer` agent instance                          | 🟢 Low      | S      | Performance  |
+| 15 | Use `strings.Builder` in `AnalyzeStream`                           | 🟢 Low      | S      | Performance  |
+| 16 | Consistent test assertion style (pick testify or stdlib)           | 🟢 Low      | M      | Style        |
+| 17 | Remove `report/jscpd-report.json` from repo                        | 🟢 Low      | S      | Cleanup      |
+| 18 | Fix `.gitignore` formatting (missing `#` on lines 31-36)           | 🟢 Low      | S      | Cleanup      |
+| 19 | Commit the uncommitted `vision.go` diff (with bug fix)             | 🔴 Critical | S      | Git          |
+| 20 | Enable nix flake package build                                     | 🟡 Medium   | M      | Build        |
+| 21 | Migrate justfile commands to flake.nix                             | 🟡 Medium   | L      | Build        |
+| 22 | Add `ProviderOptions` passthrough in `toFileParts`                 | 🟢 Low      | S      | Feature      |
+| 23 | Add `WithModel()` to `ScreenshotAnalyzer` builder                  | 🟢 Low      | S      | Feature      |
+| 24 | Fix `go.mod` Go version alignment                                  | 🟢 Low      | S      | Config       |
+| 25 | Add integration test with real provider (mocked)                   | 🟡 Medium   | L      | Testing      |
 
 ---
 
@@ -169,8 +169,8 @@ The license status also blocks the `PUBLIC_OR_PRIVATE.md` decision — we can't 
 ## Uncommitted Changes
 
 ```
- pkg/vision/vision.go | 20 +++++++++++++-------
- 1 file changed, 13 insertions(+), 7 deletions(-)
+pkg/vision/vision.go | 20 +++++++++++++-------
+1 file changed, 13 insertions(+), 7 deletions(-)
 ```
 
 **Diff summary:** Adds `MaxOutputTokens` and `Temperature` passthrough to `fantasy.AgentCall` and `fantasy.AgentStreamCall`, adds `ProviderOptions: nil` to `toFileParts`, and a minor comment formatting fix on the deprecated `VisionAgent` alias.
@@ -187,20 +187,20 @@ The license status also blocks the `PUBLIC_OR_PRIVATE.md` decision — we can't 
 | `go test ./...`           | ✅ All pass                   |
 | `go test -race ./...`     | ✅ No races                   |
 | `go vet ./...`            | ✅ Clean                      |
-| `golangci-lint run ./...` | ⚠️ 20 issues                  |
-| `go test -cover ./...`    | ⚠️ 43.8% overall              |
+| `golangci-lint run ./...` | ⚠️ 20 issues                   |
+| `go test -cover ./...`    | ⚠️ 43.8% overall               |
 | Coverage threshold (70%)  | ✅ Passes (pkg+internal only) |
 
 ---
 
 ## Dependency Health
 
-| Dependency                    | Version            | Status                                  |
-| ----------------------------- | ------------------ | --------------------------------------- |
-| `charm.land/fantasy`          | v0.23.0            | ✅ Current framework                    |
-| `github.com/stretchr/testify` | v1.11.1            | ✅ Current                              |
+| Dependency                    | Version            | Status                                 |
+| ----------------------------- | ------------------ | -------------------------------------- |
+| `charm.land/fantasy`          | v0.23.0            | ✅ Current framework                   |
+| `github.com/stretchr/testify` | v1.11.1            | ✅ Current                             |
 | `github.com/goccy/go-yaml`    | v1.19.2 (indirect) | ⚠️ Transitive only, not actionable here |
-| `gopkg.in/yaml.v3`            | v3.0.1 (indirect)  | ✅ Standard library adjacent            |
+| `gopkg.in/yaml.v3`            | v3.0.1 (indirect)  | ✅ Standard library adjacent           |
 
 ---
 

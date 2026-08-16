@@ -41,7 +41,7 @@ Immutable objects defined by their attributes:
 | **RetryConfig**      | Retry policy: max attempts, initial backoff, cap, multiplier, jitter. Zero-value falls back to defaults.        | Used by `Config.Retry` and `WithRetry[T]` |
 | **Usage**            | Token usage from a single call: input, output, total.                                                           | Accumulated by `CostTracker`              |
 | **ErrorKind**        | Classified category of a model error (16 kinds). Drives retry vs. fix-input decisions.                          | Enum-like string type                     |
-| **CostTracker**       | Thread-safe token accumulator with optional pricing. `CostUSD()` returns 0 without `ModelInfo`.               | `pkg/vision.CostTracker`                  |
+| **CostTracker**      | Thread-safe token accumulator with optional pricing. `CostUSD()` returns 0 without `ModelInfo`.                 | `pkg/vision.CostTracker`                  |
 
 ## Error Classification
 
@@ -115,14 +115,14 @@ Actions the system performs:
 
 ## Bounded Contexts
 
-| Context                  | Description                                                                                                                                                       |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Analysis**             | Core image-analysis lifecycle: validation → preprocessing → model call → hooks → result                                                                           |
-| **Error Classification** | Translating provider-specific errors into domain-level `ErrorKind` categories                                                                                     |
-| **Preprocessing**        | Image transformation (resize, compress) before model invocation                                                                                                   |
-| **Retry**                | Two-layer: `Config.MaxRetries` (fantasy HTTP-layer, default 0=disabled) + `Config.Retry` (vision-layer backoff+jitter via `WithRetry[T]`)                         |
-| **Cost Tracking**        | Token usage accumulation across analysis calls; USD pricing when `ModelInfo` is set                                                                               |
-| **Model Catalog**        | Catwalk-integrated model/provider discovery (40+ providers, vision model filtering, pricing metadata). Offline-first via embedded data; optional remote sync.     |
+| Context                  | Description                                                                                                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Analysis**             | Core image-analysis lifecycle: validation → preprocessing → model call → hooks → result                                                                                                          |
+| **Error Classification** | Translating provider-specific errors into domain-level `ErrorKind` categories                                                                                                                    |
+| **Preprocessing**        | Image transformation (resize, compress) before model invocation                                                                                                                                  |
+| **Retry**                | Two-layer: `Config.MaxRetries` (fantasy HTTP-layer, default 0=disabled) + `Config.Retry` (vision-layer backoff+jitter via `WithRetry[T]`)                                                        |
+| **Cost Tracking**        | Token usage accumulation across analysis calls; USD pricing when `ModelInfo` is set                                                                                                              |
+| **Model Catalog**        | Catwalk-integrated model/provider discovery (40+ providers, vision model filtering, pricing metadata). Offline-first via embedded data; optional remote sync.                                    |
 | **CLI**                  | `parseFlags` parses flags into a `config` struct without calling `os.Exit`, enabling isolated testing. `createProvider` maps provider names to fantasy providers via the catwalk catalog bridge. |
 
 ---

@@ -212,33 +212,33 @@ The project is in **strong shape** after two rounds of quality improvements. Bui
 
 ## F) Top 25 Things To Do Next (Sorted by Impact × Effort)
 
-| #   | Task                                                         | Impact | Effort | File(s)                      |
-| --- | ------------------------------------------------------------ | ------ | ------ | ---------------------------- |
-| 1   | Add `sync.Once` to `ScreenshotAnalyzer.agent()`              | High   | Tiny   | `screenshot.go`              |
-| 2   | Route `AnalyzeStructured` through `fantasy.Agent`            | High   | Medium | `structured.go`              |
-| 3   | Extract shared call-options method (DRY 3x dup)              | Medium | Small  | `vision.go`, `structured.go` |
-| 4   | Invalidate `cachedAgent` on `With*` mutation                 | Medium | Small  | `screenshot.go`              |
-| 5   | Validate `MediaType` in `NewImageSource`                     | Medium | Small  | `image.go`                   |
-| 6   | Replace `testify` with Gomega in `errors_test.go`            | Medium | Tiny   | `pkg/errors/errors_test.go`  |
-| 7   | Add size limit to `LoadImageFromFile`                        | Medium | Tiny   | `image.go`                   |
-| 8   | Add `ValidateImage` call in `LoadImageFromFile`              | Medium | Tiny   | `image.go`                   |
-| 9   | Resolve BMP inconsistency (add constant or remove detection) | Low    | Tiny   | `validate.go`, `image.go`    |
-| 10  | Refactor `cmd/vision/main.go` for testability (inject deps)  | High   | Medium | `cmd/vision/main.go`         |
-| 11  | Remove dead code from `internal/cli/`                        | Low    | Tiny   | `internal/cli/helpers.go`    |
-| 12  | Add GitHub Actions CI (test + lint + build)                  | High   | Medium | `.github/workflows/`         |
-| 13  | Clean up LSP ghost files (`go clean -testcache`)             | Low    | Tiny   | —                            |
-| 14  | Delete `coverage.out` from working directory                 | None   | Tiny   | `coverage.out`               |
-| 15  | Add `justfile` targets: `run`, `install`, `tidy`             | Low    | Small  | `justfile`                   |
-| 16  | Include `./cmd/...` in `justfile` test target                | Low    | Tiny   | `justfile`                   |
-| 17  | Resolve LICENSE: MIT or PROPRIETARY decision                 | High   | Small  | `LICENSE`, `README.md`       |
-| 18  | Remove `PUBLIC_OR_PRIVATE.md` if decision made               | Low    | Tiny   | `PUBLIC_OR_PRIVATE.md`       |
-| 19  | Add `CONTRIBUTING.md` if going public                        | Medium | Medium | `CONTRIBUTING.md`            |
-| 20  | Tag v0.1.0 release                                           | Medium | Tiny   | git tag                      |
-| 21  | Add GoDoc examples for key APIs                              | Medium | Medium | `pkg/vision/`                |
-| 22  | Add `AnalyzeStructuredStream` public API                     | Medium | Medium | `pkg/vision/`                |
-| 23  | Consider removing `internal/visionutil` indirection          | Low    | Small  | `internal/visionutil/`       |
-| 24  | Remove or document deprecated `VisionAgent` alias            | Low    | Tiny   | `vision.go`                  |
-| 25  | Add `MediaTypeBMP` if BMP support is desired                 | Low    | Tiny   | `image.go`, `validate.go`    |
+| #  | Task                                                         | Impact | Effort | File(s)                      |
+| -- | ------------------------------------------------------------ | ------ | ------ | ---------------------------- |
+| 1  | Add `sync.Once` to `ScreenshotAnalyzer.agent()`              | High   | Tiny   | `screenshot.go`              |
+| 2  | Route `AnalyzeStructured` through `fantasy.Agent`            | High   | Medium | `structured.go`              |
+| 3  | Extract shared call-options method (DRY 3x dup)              | Medium | Small  | `vision.go`, `structured.go` |
+| 4  | Invalidate `cachedAgent` on `With*` mutation                 | Medium | Small  | `screenshot.go`              |
+| 5  | Validate `MediaType` in `NewImageSource`                     | Medium | Small  | `image.go`                   |
+| 6  | Replace `testify` with Gomega in `errors_test.go`            | Medium | Tiny   | `pkg/errors/errors_test.go`  |
+| 7  | Add size limit to `LoadImageFromFile`                        | Medium | Tiny   | `image.go`                   |
+| 8  | Add `ValidateImage` call in `LoadImageFromFile`              | Medium | Tiny   | `image.go`                   |
+| 9  | Resolve BMP inconsistency (add constant or remove detection) | Low    | Tiny   | `validate.go`, `image.go`    |
+| 10 | Refactor `cmd/vision/main.go` for testability (inject deps)  | High   | Medium | `cmd/vision/main.go`         |
+| 11 | Remove dead code from `internal/cli/`                        | Low    | Tiny   | `internal/cli/helpers.go`    |
+| 12 | Add GitHub Actions CI (test + lint + build)                  | High   | Medium | `.github/workflows/`         |
+| 13 | Clean up LSP ghost files (`go clean -testcache`)             | Low    | Tiny   | —                            |
+| 14 | Delete `coverage.out` from working directory                 | None   | Tiny   | `coverage.out`               |
+| 15 | Add `justfile` targets: `run`, `install`, `tidy`             | Low    | Small  | `justfile`                   |
+| 16 | Include `./cmd/...` in `justfile` test target                | Low    | Tiny   | `justfile`                   |
+| 17 | Resolve LICENSE: MIT or PROPRIETARY decision                 | High   | Small  | `LICENSE`, `README.md`       |
+| 18 | Remove `PUBLIC_OR_PRIVATE.md` if decision made               | Low    | Tiny   | `PUBLIC_OR_PRIVATE.md`       |
+| 19 | Add `CONTRIBUTING.md` if going public                        | Medium | Medium | `CONTRIBUTING.md`            |
+| 20 | Tag v0.1.0 release                                           | Medium | Tiny   | git tag                      |
+| 21 | Add GoDoc examples for key APIs                              | Medium | Medium | `pkg/vision/`                |
+| 22 | Add `AnalyzeStructuredStream` public API                     | Medium | Medium | `pkg/vision/`                |
+| 23 | Consider removing `internal/visionutil` indirection          | Low    | Small  | `internal/visionutil/`       |
+| 24 | Remove or document deprecated `VisionAgent` alias            | Low    | Tiny   | `vision.go`                  |
+| 25 | Add `MediaTypeBMP` if BMP support is desired                 | Low    | Tiny   | `image.go`, `validate.go`    |
 
 ---
 

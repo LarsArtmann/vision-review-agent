@@ -12,19 +12,19 @@ This session took the vision-review-agent SDK from a basic single-shot image ana
 
 ## A) FULLY DONE (high confidence, tested, verified)
 
-| #   | Feature                                                          | Files                                                 | Evidence                                                                              |
-| --- | ---------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 1   | `LoadImageFromURL`                                               | `image.go`                                            | HTTP download with Content-Type detection, context-aware, tested with httptest server |
-| 2   | `LoadImageFromBase64`                                            | `image.go`                                            | Standard/URL-safe/raw base64 decoding, tested with all 3 encodings + error cases      |
-| 3   | `Conversation` type                                              | `conversation.go`                                     | AddUserMessage/AddAssistantMessage, nil filtering, tested                             |
-| 4   | `AnalyzeConversation` + Stream                                   | `vision.go`                                           | Both on Agent and ScreenshotAnalyzer, tested with mock                                |
-| 5   | `AnalyzeBatch`                                                   | `batch.go`                                            | Concurrent with semaphore, per-image error capture, nil handling, tested              |
-| 6   | `Hooks` (OnStart/OnFinish/OnError)                               | `hooks.go`                                            | Wired into Analyze + AnalyzeStream, tested with atomic counter                        |
-| 7   | Config expansion (TopP, TopK, PresencePenalty, FrequencyPenalty) | `vision.go`, `errors.go`                              | Validation, wiring to fantasy options, per-call overrides, tested                     |
-| 8   | ScreenshotAnalyzer cache invalidation fix                        | `screenshot.go`                                       | All 9 builder methods set cachedAgent=nil, tested                                     |
-| 9   | `AnalyzeStructuredStream[T]`                                     | `structured.go`                                       | Streams partial objects via callback, tested with mock                                |
-| 10  | AnalyzeStructured param fix                                      | `structured.go`                                       | Now passes all 6 model params to ObjectCall                                           |
-| 11  | Documentation updates                                            | `README.md`, `FEATURES.md`, `ROADMAP.md`, `AGENTS.md` | All new features documented                                                           |
+| #  | Feature                                                          | Files                                                 | Evidence                                                                              |
+| -- | ---------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 1  | `LoadImageFromURL`                                               | `image.go`                                            | HTTP download with Content-Type detection, context-aware, tested with httptest server |
+| 2  | `LoadImageFromBase64`                                            | `image.go`                                            | Standard/URL-safe/raw base64 decoding, tested with all 3 encodings + error cases      |
+| 3  | `Conversation` type                                              | `conversation.go`                                     | AddUserMessage/AddAssistantMessage, nil filtering, tested                             |
+| 4  | `AnalyzeConversation` + Stream                                   | `vision.go`                                           | Both on Agent and ScreenshotAnalyzer, tested with mock                                |
+| 5  | `AnalyzeBatch`                                                   | `batch.go`                                            | Concurrent with semaphore, per-image error capture, nil handling, tested              |
+| 6  | `Hooks` (OnStart/OnFinish/OnError)                               | `hooks.go`                                            | Wired into Analyze + AnalyzeStream, tested with atomic counter                        |
+| 7  | Config expansion (TopP, TopK, PresencePenalty, FrequencyPenalty) | `vision.go`, `errors.go`                              | Validation, wiring to fantasy options, per-call overrides, tested                     |
+| 8  | ScreenshotAnalyzer cache invalidation fix                        | `screenshot.go`                                       | All 9 builder methods set cachedAgent=nil, tested                                     |
+| 9  | `AnalyzeStructuredStream[T]`                                     | `structured.go`                                       | Streams partial objects via callback, tested with mock                                |
+| 10 | AnalyzeStructured param fix                                      | `structured.go`                                       | Now passes all 6 model params to ObjectCall                                           |
+| 11 | Documentation updates                                            | `README.md`, `FEATURES.md`, `ROADMAP.md`, `AGENTS.md` | All new features documented                                                           |
 
 ---
 

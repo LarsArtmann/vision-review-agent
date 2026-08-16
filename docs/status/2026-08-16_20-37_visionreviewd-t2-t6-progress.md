@@ -9,12 +9,12 @@
 
 ## What was done this session (all verified green at their commit)
 
-| Task | Content | Commit |
-| ---- | ------- | ------ |
-| T2 | Domain: event payloads (`view.captured/reviewed/compared`), `ParseViewKey` with deterministic fallbacks, streaming `SHA256File`, content-addressed `BlobStore`; spike test deleted | `df51b84` |
-| T3 | `Config` (JSON durations as strings, `~` expansion, validation with offending values), `LoadConfig`, `DiscoverProjects` walker (testdata/visual, gallery-shots, screenshots, ui-screenshots) + paste-ready JSON; default llama port **8390** (verified free in SystemNix `lib/ports.nix`; 8080 taken) | `b9d873a` |
-| T4 | `Reviewer` via fantasy openaicompat provider + vision SDK; caption-tuned prompts (describe→judge, mandatory `Score: N/10` final line); `ExtractScore` (bold/case/space tolerant, last-match-wins); `Compare` A→B (rates AFTER); mock `fantasy.LanguageModel` tests | `47a4137` |
-| T5 | Markdown renderer (view review, comparison, INDEX with score table + trend arrows ▲▼▬·), `Writer` with atomic temp+rename writes, project-name sanitization (path-traversal safe), UTC timestamps; plus repo-lint hardening of T2/T3 | `b24561a` |
+| Task | Content                                                                                                                                                                                                                                                                                               | Commit    |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| T2   | Domain: event payloads (`view.captured/reviewed/compared`), `ParseViewKey` with deterministic fallbacks, streaming `SHA256File`, content-addressed `BlobStore`; spike test deleted                                                                                                                    | `df51b84` |
+| T3   | `Config` (JSON durations as strings, `~` expansion, validation with offending values), `LoadConfig`, `DiscoverProjects` walker (testdata/visual, gallery-shots, screenshots, ui-screenshots) + paste-ready JSON; default llama port **8390** (verified free in SystemNix `lib/ports.nix`; 8080 taken) | `b9d873a` |
+| T4   | `Reviewer` via fantasy openaicompat provider + vision SDK; caption-tuned prompts (describe→judge, mandatory `Score: N/10` final line); `ExtractScore` (bold/case/space tolerant, last-match-wins); `Compare` A→B (rates AFTER); mock `fantasy.LanguageModel` tests                                    | `47a4137` |
+| T5   | Markdown renderer (view review, comparison, INDEX with score table + trend arrows ▲▼▬·), `Writer` with atomic temp+rename writes, project-name sanitization (path-traversal safe), UTC timestamps; plus repo-lint hardening of T2/T3                                                                  | `b24561a` |
 
 Every commit passed `go build ./...`, `go test ./internal/reviewd/`,
 `golangci-lint run ./internal/reviewd/...` (0 issues), and the BuildFlow

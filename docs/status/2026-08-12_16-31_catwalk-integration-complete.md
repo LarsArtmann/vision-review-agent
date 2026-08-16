@@ -19,14 +19,15 @@ However, several documentation gaps, one real bug (provider alias in ModelInfo l
 
 ### Foundation (T01-T04)
 
-| Task | Status | Evidence |
-|------|--------|----------|
-| T01: Add catwalk dependency | DONE | `charm.land/catwalk v0.51.21` in go.mod, `go mod verify` passes |
-| T02: Create internal/catalog package | DONE | `internal/catalog/catalog.go` — Service, FindProvider, FindModel, FindModelInProvider, VisionModels |
-| T03: Create provider bridge | DONE | `internal/catalog/provider.go` — BuildProvider (5 types), ResolveAPIKey, ResolveBaseURL, RequiresAPIKey |
-| T04: Replace CLI createProvider | DONE | `cmd/vision/main.go:470` — catalog-driven lookup, all 9 existing provider tests pass |
+| Task                                 | Status | Evidence                                                                                                |
+| ------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------- |
+| T01: Add catwalk dependency          | DONE   | `charm.land/catwalk v0.51.21` in go.mod, `go mod verify` passes                                         |
+| T02: Create internal/catalog package | DONE   | `internal/catalog/catalog.go` — Service, FindProvider, FindModel, FindModelInProvider, VisionModels     |
+| T03: Create provider bridge          | DONE   | `internal/catalog/provider.go` — BuildProvider (5 types), ResolveAPIKey, ResolveBaseURL, RequiresAPIKey |
+| T04: Replace CLI createProvider      | DONE   | `cmd/vision/main.go:470` — catalog-driven lookup, all 9 existing provider tests pass                    |
 
 **New files created:**
+
 - `internal/catalog/catalog.go` (98 lines)
 - `internal/catalog/catalog_test.go` (165 lines)
 - `internal/catalog/provider.go` (180 lines)
@@ -36,18 +37,19 @@ However, several documentation gaps, one real bug (provider alias in ModelInfo l
 
 ### UX + SDK (T05-T12)
 
-| Task | Status | Evidence |
-|------|--------|----------|
-| T05: -list-providers flag | DONE | Formatted table output, 40 providers listed |
-| T06: -list-models flag | DONE | Vision filter, provider filter, pricing columns |
-| T07: Model ID validation + suggestions | DONE | Levenshtein distance (max 3 edits), stderr warning |
-| T08: -provider-info flag | DONE | Full provider detail with models, capabilities, pricing |
-| T09: pkg/vision.ModelInfo type | DONE | `modelinfo.go` — all fields mapped from catwalk.Model |
-| T10: Wire ModelInfo into Config | DONE | `Config.ModelInfo *ModelInfo`, applyModelInfoDefaults in NewAgent |
-| T11: CostTracker pricing | DONE | SetPricing, CostUSD, auto-wired from ModelInfo |
-| T12: Auto-configure defaults | DONE | CLI resolves ModelInfo from catalog, passes to Config |
+| Task                                   | Status | Evidence                                                          |
+| -------------------------------------- | ------ | ----------------------------------------------------------------- |
+| T05: -list-providers flag              | DONE   | Formatted table output, 40 providers listed                       |
+| T06: -list-models flag                 | DONE   | Vision filter, provider filter, pricing columns                   |
+| T07: Model ID validation + suggestions | DONE   | Levenshtein distance (max 3 edits), stderr warning                |
+| T08: -provider-info flag               | DONE   | Full provider detail with models, capabilities, pricing           |
+| T09: pkg/vision.ModelInfo type         | DONE   | `modelinfo.go` — all fields mapped from catwalk.Model             |
+| T10: Wire ModelInfo into Config        | DONE   | `Config.ModelInfo *ModelInfo`, applyModelInfoDefaults in NewAgent |
+| T11: CostTracker pricing               | DONE   | SetPricing, CostUSD, auto-wired from ModelInfo                    |
+| T12: Auto-configure defaults           | DONE   | CLI resolves ModelInfo from catalog, passes to Config             |
 
 **New files created:**
+
 - `cmd/vision/listing.go` (220 lines)
 - `cmd/vision/listing_test.go` (255 lines)
 - `cmd/vision/integration_test.go` (135 lines)
@@ -57,25 +59,25 @@ However, several documentation gaps, one real bug (provider alias in ModelInfo l
 
 ### Remote Sync + Polish (T13-T18)
 
-| Task | Status | Evidence |
-|------|--------|----------|
-| T13: Remote catalog sync | DONE | ETag-based conditional GET, 30s timeout, embedded fallback |
-| T14: Cache file management | DONE | XDG path, atomic write, corrupted cache deletion |
-| T15: Update CLI env docs | DONE | usageFunc rewritten with dynamic provider references |
-| T16: Integration tests | DONE | catalog-to-agent-to-cost flow, bridge for 4 types, suggestions |
-| T17: Update AGENTS.md | DONE | Architecture diagram, 8 new design decisions, dependencies |
-| T18: Resolve ROADMAP + TODO | DONE | Catwalk question removed from both, CHANGELOG entry added |
+| Task                        | Status | Evidence                                                       |
+| --------------------------- | ------ | -------------------------------------------------------------- |
+| T13: Remote catalog sync    | DONE   | ETag-based conditional GET, 30s timeout, embedded fallback     |
+| T14: Cache file management  | DONE   | XDG path, atomic write, corrupted cache deletion               |
+| T15: Update CLI env docs    | DONE   | usageFunc rewritten with dynamic provider references           |
+| T16: Integration tests      | DONE   | catalog-to-agent-to-cost flow, bridge for 4 types, suggestions |
+| T17: Update AGENTS.md       | DONE   | Architecture diagram, 8 new design decisions, dependencies     |
+| T18: Resolve ROADMAP + TODO | DONE   | Catwalk question removed from both, CHANGELOG entry added      |
 
 ### Quality Gates
 
-| Gate | Result |
-|------|--------|
-| `go build ./...` | PASS |
-| `go vet ./...` | PASS |
-| `go test -race ./...` | PASS (all 5 test packages) |
-| `gofmt -l .` | CLEAN (0 files) |
-| `golangci-lint run ./...` | 0 issues |
-| `go mod verify` | all modules verified |
+| Gate                      | Result                     |
+| ------------------------- | -------------------------- |
+| `go build ./...`          | PASS                       |
+| `go vet ./...`            | PASS                       |
+| `go test -race ./...`     | PASS (all 5 test packages) |
+| `gofmt -l .`              | CLEAN (0 files)            |
+| `golangci-lint run ./...` | 0 issues                   |
+| `go mod verify`           | all modules verified       |
 
 ### Test Count
 
@@ -89,18 +91,23 @@ However, several documentation gaps, one real bug (provider alias in ModelInfo l
 ## b) PARTIALLY DONE
 
 ### 1. FEATURES.md — NOT updated
+
 The AGENTS.md documentation table says FEATURES.md tracks the feature inventory. Catwalk integration is a major new feature but was not added to FEATURES.md.
 
 ### 2. README.md — NOT updated
+
 README is the "sales page for end-users." The CLI now supports 40+ providers, `-list-providers`, `-list-models`, and pricing-aware cost tracking. None of this is reflected in README. Users discovering the project won't know these capabilities exist.
 
 ### 3. docs/DOMAIN_LANGUAGE.md — NOT updated
+
 New domain vocabulary introduced: "catalog", "provider bridge", "ModelInfo", "ETag sync", "vision-capable model filtering". None documented in the domain language glossary.
 
 ### 4. Remote sync error handling — basic but silent
+
 The `Sync.Fetch()` method swallows all errors silently. When remote fetch fails, it falls back to cache/embedded without logging. This makes debugging "why is my catalog stale?" hard. Should at minimum log to stderr on fallback.
 
 ### 5. BDD tests — not written
+
 The project convention is Ginkgo BDD for user-facing behavior. The catalog is a major user-facing feature. Only testify table-driven tests were written. A BDD spec like "When I list vision models, I should see only image-capable models" would match project conventions.
 
 ---
@@ -108,15 +115,19 @@ The project convention is Ginkgo BDD for user-facing behavior. The catalog is a 
 ## c) NOT STARTED
 
 ### 1. Examples
+
 No catalog-based example in `examples/`. The directory has examples for each provider but none showing how to use the SDK with ModelInfo, CostTracker pricing, or catalog discovery.
 
 ### 2. Benchmarks
+
 No benchmark tests for catalog operations. `FindModel` iterates across 40 providers x 800+ models. `VisionModels()` builds a slice of 800+ entries every call. Performance impact is unknown.
 
 ### 3. CATWALK_URL CLI integration test
+
 The `CATWALK_URL` env var path in `main()` is tested indirectly (sync_test.go tests the Sync type), but there's no CLI-level integration test that sets `CATWALK_URL` and verifies the flow through `main()`.
 
 ### 4. flake.nix update
+
 Not checked whether the flake needs catwalk in its build inputs or vendor hash update. `go build` handles this automatically, but the nix build might need explicit declaration.
 
 ---
@@ -124,9 +135,11 @@ Not checked whether the flake needs catwalk in its build inputs or vendor hash u
 ## d) TOTALLY FUCKED UP (Bugs + Mistakes)
 
 ### 1. BUG: Provider alias not applied in ModelInfo lookup
+
 **Severity: Medium (silent feature degradation)**
 
 In `main.go`:
+
 ```go
 if m, ok := svc.FindModelInProvider(cfg.providerName, cfg.modelID); ok {
 ```
@@ -136,21 +149,25 @@ if m, ok := svc.FindModelInProvider(cfg.providerName, cfg.modelID); ok {
 **Fix:** `FindModelInProvider` should normalize the provider name, or `main()` should normalize before calling it.
 
 ### 2. BUG: Stray binary left in repo root
+
 **Severity: Low (cosmetic, already cleaned)**
 
 Running `go build ./cmd/vision/` created a `vision` binary (66MB) in the repo root. Cleaned up with `trash vision` but this could have been accidentally committed by the auto-git daemon. The `.gitignore` doesn't cover `vision` (only `vision-cli` and `/vision-review-agent`).
 
 ### 3. ISSUE: CATWALK_URL causes 30-second startup delay when server unreachable
+
 **Severity: Medium (UX problem)**
 
 When `CATWALK_URL` is set but no catwalk server is running, the HTTP client has a 30-second timeout. The CLI will hang for 30 seconds on startup before falling back to embedded data. Should use a shorter context timeout (e.g., 5s) for the sync attempt.
 
 ### 4. ISSUE: usageFunc no longer lists specific env var names
+
 **Severity: Low (onboarding friction)**
 
 The old usage listed `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, etc. directly. The new usage says "Set per your -provider (use -provider-info)". This requires an extra step to discover which env var to set. Less helpful for quick start.
 
 ### 5. CODE SMELL: Duplicate mock model
+
 **Severity: Low (code duplication)**
 
 `integrationMockModel` in `integration_test.go` duplicates `cliMockModel` in `run_test.go`. Both implement `fantasy.LanguageModel` with identical mock behavior. Should reuse the existing mock.
@@ -271,6 +288,7 @@ The old usage listed `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, etc. directly. The 
 ### Q1: Should the catalog auto-refresh in the background?
 
 Currently, `CATWALK_URL` triggers a blocking sync at startup. Should we instead:
+
 - (a) Start with embedded data immediately, refresh in background goroutine
 - (b) Keep blocking but with a 5s timeout
 - (c) Keep current behavior (30s timeout, blocking)
@@ -284,6 +302,7 @@ If a user calls both `Config.ModelInfo = &ModelInfo{CostPer1MIn: 2.5}` AND `trac
 ### Q3: Should we add catwalk as a direct dependency of `pkg/vision` (public SDK)?
 
 Currently `pkg/vision/modelinfo.go` imports `charm.land/catwalk/pkg/catwalk` for the `NewModelInfo(catwalk.Model)` constructor. This means SDK consumers transitively depend on catwalk. Should we:
+
 - (a) Keep it — catwalk is lightweight, and `NewModelInfo` is convenient
 - (b) Remove the catwalk import from pkg/vision — make `NewModelInfo` take primitive fields instead
 - (c) Move `NewModelInfo` to a separate `pkg/vision/catalog` package

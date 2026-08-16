@@ -92,18 +92,18 @@ For `AnalyzeStructuredStream`, my edits left malformed indentation (manual `})` 
 
 ## e) WHAT WE SHOULD IMPROVE
 
-| #   | Improvement                                                                     | Impact                               |
-| --- | ------------------------------------------------------------------------------- | ------------------------------------ |
-| 1   | Root-cause the `TestIsContentFilterRejection` race                              | High — flaky tests erode trust       |
-| 2   | Make `cli` helpers testable (return errors, don't `os.Exit`)                    | High — enables real coverage         |
-| 3   | Add unit tests for `NewAgentFromArgs`, `AnalyzeAndPrint`, `withPrepared`        | High — 4 new exports, 0 tests        |
-| 4   | Untrack the `vision` binary from git                                            | High — 66 MB in history              |
-| 5   | Fix the 2 `infertypeargs` gopls infos                                           | Trivial — 2 one-line edits           |
-| 6   | Refactor `examples/conversation/main.go` for consistency                        | Low — consistency only               |
-| 7   | Restore the explicit `Analyze` call in `hooks` example                          | Low — pedagogy                       |
-| 8   | Annotate (don't rewrite) old status reports going forward                       | Process — non-destructive            |
-| 9   | Investigate why LSP `documentSymbol` is unsupported here                        | Medium — blocks `lsp_replace_symbol` |
-| 10  | Separate my dedup changes from pre-existing uncommitted work before next commit | Process — clean history              |
+| #  | Improvement                                                                     | Impact                               |
+| -- | ------------------------------------------------------------------------------- | ------------------------------------ |
+| 1  | Root-cause the `TestIsContentFilterRejection` race                              | High — flaky tests erode trust       |
+| 2  | Make `cli` helpers testable (return errors, don't `os.Exit`)                    | High — enables real coverage         |
+| 3  | Add unit tests for `NewAgentFromArgs`, `AnalyzeAndPrint`, `withPrepared`        | High — 4 new exports, 0 tests        |
+| 4  | Untrack the `vision` binary from git                                            | High — 66 MB in history              |
+| 5  | Fix the 2 `infertypeargs` gopls infos                                           | Trivial — 2 one-line edits           |
+| 6  | Refactor `examples/conversation/main.go` for consistency                        | Low — consistency only               |
+| 7  | Restore the explicit `Analyze` call in `hooks` example                          | Low — pedagogy                       |
+| 8  | Annotate (don't rewrite) old status reports going forward                       | Process — non-destructive            |
+| 9  | Investigate why LSP `documentSymbol` is unsupported here                        | Medium — blocks `lsp_replace_symbol` |
+| 10 | Separate my dedup changes from pre-existing uncommitted work before next commit | Process — clean history              |
 
 ---
 

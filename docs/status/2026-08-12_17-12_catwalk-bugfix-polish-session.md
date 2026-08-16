@@ -26,46 +26,46 @@ from the previous report are still open.
 
 ### Bug Fixes
 
-| Fix | File | What Changed |
-|-----|------|-------------|
-| Provider alias in ModelInfo lookup | `cmd/vision/main.go:105` | `normalizeProviderName(cfg.providerName)` before `FindModelInProvider` — so `-provider google` now correctly resolves ModelInfo for Gemini models |
-| 30s startup delay | `cmd/vision/main.go:49-60` | Extracted `buildCatalog(ctx)` helper with `syncTimeout = 5 * time.Second` context; fixes both the delay AND the `exitAfterDefer` lint hazard (defer was in main() before os.Exit) |
-| Duplicate mock model | `cmd/vision/integration_test.go` | Removed `integrationMockModel` (44 lines: struct + 6 methods); integration tests now reuse existing `cliMockModel` from `run_test.go` |
-| Env var hints in usageFunc | `cmd/vision/main.go:200-209` | Restored specific env var names: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENROUTER_API_KEY, XAI_API_KEY — plus CATWALK_URL and OPENAICOMPAT_* |
-| `.gitignore` | `.gitignore:2` | Added `vision` to the binaries section |
+| Fix                                | File                             | What Changed                                                                                                                                                                      |
+| ---------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Provider alias in ModelInfo lookup | `cmd/vision/main.go:105`         | `normalizeProviderName(cfg.providerName)` before `FindModelInProvider` — so `-provider google` now correctly resolves ModelInfo for Gemini models                                 |
+| 30s startup delay                  | `cmd/vision/main.go:49-60`       | Extracted `buildCatalog(ctx)` helper with `syncTimeout = 5 * time.Second` context; fixes both the delay AND the `exitAfterDefer` lint hazard (defer was in main() before os.Exit) |
+| Duplicate mock model               | `cmd/vision/integration_test.go` | Removed `integrationMockModel` (44 lines: struct + 6 methods); integration tests now reuse existing `cliMockModel` from `run_test.go`                                             |
+| Env var hints in usageFunc         | `cmd/vision/main.go:200-209`     | Restored specific env var names: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENROUTER_API_KEY, XAI_API_KEY — plus CATWALK_URL and OPENAICOMPAT_*                         |
+| `.gitignore`                       | `.gitignore:2`                   | Added `vision` to the binaries section                                                                                                                                            |
 
 ### Regression Tests Added
 
-| Test | File | What It Guards |
-|------|------|---------------|
-| `TestNormalizeProviderNameGoogleAlias` | `cmd/vision/main_test.go:214` | Verifies `google`/`Google`/`GOOGLE` all normalize to `gemini`; other names pass through unchanged |
+| Test                                     | File                          | What It Guards                                                                                              |
+| ---------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `TestNormalizeProviderNameGoogleAlias`   | `cmd/vision/main_test.go:214` | Verifies `google`/`Google`/`GOOGLE` all normalize to `gemini`; other names pass through unchanged           |
 | `TestFindModelInProviderWithGoogleAlias` | `cmd/vision/main_test.go:223` | End-to-end: normalizing "google" then calling `FindModelInProvider` finds `gemini-2.5-flash` in the catalog |
 
 ### Documentation Updates
 
-| Doc | What Changed |
-|-----|-------------|
-| `FEATURES.md` | Added "Model Catalog" section (40+ providers, discovery, suggestions, bridge, remote sync); Added "Cost Tracking (pricing-aware)" section (ModelInfo, SetPricing, CostUSD, auto-wire); Rewrote CLI section to reflect catalog-driven providers, alias support, listing flags; Removed stale "CLI providers (Anthropic, Google, openaicompat)" PARTIALLY DONE entry |
-| `README.md` | Rewrote Features list (added catalog, discovery, pricing, remote sync); Rewrote CLI Usage section (added -list-providers, -list-models, -provider-info, google/gemini example, xAI example); Updated Cost Tracking example to show `CostUSD()`; Added `ModelInfo` to Configuration table; Updated Project Structure with `internal/catalog/` |
-| `docs/DOMAIN_LANGUAGE.md` | Added `ModelInfo` and `Service` to Glossary; Added `CostTracker` to Value Objects; Added `Model Catalog` Bounded Context; Updated CLI bounded context description to mention catalog bridge |
-| `CHANGELOG.md` | Added "Fixed" section under [Unreleased] with 4 entries: provider alias normalization, sync timeout, duplicate mock removal, usage hints |
+| Doc                       | What Changed                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `FEATURES.md`             | Added "Model Catalog" section (40+ providers, discovery, suggestions, bridge, remote sync); Added "Cost Tracking (pricing-aware)" section (ModelInfo, SetPricing, CostUSD, auto-wire); Rewrote CLI section to reflect catalog-driven providers, alias support, listing flags; Removed stale "CLI providers (Anthropic, Google, openaicompat)" PARTIALLY DONE entry |
+| `README.md`               | Rewrote Features list (added catalog, discovery, pricing, remote sync); Rewrote CLI Usage section (added -list-providers, -list-models, -provider-info, google/gemini example, xAI example); Updated Cost Tracking example to show `CostUSD()`; Added `ModelInfo` to Configuration table; Updated Project Structure with `internal/catalog/`                       |
+| `docs/DOMAIN_LANGUAGE.md` | Added `ModelInfo` and `Service` to Glossary; Added `CostTracker` to Value Objects; Added `Model Catalog` Bounded Context; Updated CLI bounded context description to mention catalog bridge                                                                                                                                                                        |
+| `CHANGELOG.md`            | Added "Fixed" section under [Unreleased] with 4 entries: provider alias normalization, sync timeout, duplicate mock removal, usage hints                                                                                                                                                                                                                           |
 
 ### Refactoring
 
-| Change | Why |
-|--------|-----|
+| Change                                      | Why                                                                                                                                                                    |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Extracted `buildCatalog(ctx)` from `main()` | Reduced `main()` from 41 to ~33 statements (fixing `funlen` violation); moved `defer cancel()` out of `main()` scope (fixing `exitAfterDefer` violation from gocritic) |
 
 ### Quality Gates (Final)
 
-| Gate | Result |
-|------|--------|
-| `go build ./...` | PASS |
-| `go vet ./...` | PASS |
+| Gate                           | Result                                 |
+| ------------------------------ | -------------------------------------- |
+| `go build ./...`               | PASS                                   |
+| `go vet ./...`                 | PASS                                   |
 | `go test -race -count=1 ./...` | PASS (all 5 test packages, ~14s total) |
-| `gofmt -l .` | CLEAN (0 files) |
-| `golangci-lint run ./...` | 0 issues |
-| `go mod verify` | all modules verified |
+| `gofmt -l .`                   | CLEAN (0 files)                        |
+| `golangci-lint run ./...`      | 0 issues                               |
+| `go mod verify`                | all modules verified                   |
 
 ---
 
@@ -84,6 +84,7 @@ reasonable 80/20 tradeoff.
 
 The previous session added 8 design decisions to AGENTS.md. This session
 introduced 3 more design decisions that are NOT documented there:
+
 - `buildCatalog()` extraction and the `syncTimeout` constant
 - Provider alias normalization regression test convention
 - The `errEnvVarNotSet` alias is already documented, but the fact that it was
@@ -92,6 +93,7 @@ introduced 3 more design decisions that are NOT documented there:
 ### 3. CHANGELOG — incomplete for refactoring
 
 The CHANGELOG "Fixed" section covers the 4 bug fixes but does NOT mention:
+
 - The `buildCatalog()` extraction (it's a structural refactor, not just a fix)
 - The 2 new regression tests
 - The lint violations that were fixed (funlen, exitAfterDefer)
@@ -101,26 +103,31 @@ The CHANGELOG "Fixed" section covers the 4 bug fixes but does NOT mention:
 ## c) NOT STARTED
 
 ### 1. Nix build verification
+
 Did NOT run `nix build .` or `nix run .#test` or `nix flake check`. The Go
 toolchain build passes, but the Nix build may need vendorHash updates or
 buildInput changes for the catwalk dependency. This was flagged in the previous
 report (items 45-48) and remains untested.
 
 ### 2. `.golangci.yaml` comments
+
 The previous report (item #8) called for inline comments explaining the new
 exclusions (G117, G101, depguard additions, ireturn paths, varnamelen `p`).
 Not done.
 
 ### 3. BDD tests for catalog
+
 The project convention is Ginkgo BDD for user-facing behavior. The catalog is a
 major user-facing feature. Still only testify table-driven tests. (Previous
 report item #26.)
 
 ### 4. Examples
+
 No `examples/catalog/` or `examples/cost-tracking/` directory. (Previous report
 items 36-38.)
 
 ### 5. Benchmarks
+
 No benchmark tests for catalog operations. `FindModel` iterates 40 providers x
 800+ models. Performance impact unknown. (Previous report items 28-29.)
 
@@ -135,6 +142,7 @@ is a specific model ID in the current catwalk embedded data. When catwalk
 updates its embedded catalog (new models, deprecations), this test will break.
 I even hit this during development — I initially used `gemini-2.0-flash` which
 doesn't exist, and the test failed. The test should either:
+
 - Use a model ID that's extremely stable (like `gemini-pro`), or
 - Dynamically find any Gemini model from the catalog and use that, or
 - Just assert `FindProvider("gemini")` succeeds (testing the alias, not the model)
@@ -291,6 +299,7 @@ a release that hasn't happened.
 The catwalk integration is a significant feature addition. The code is stable
 (all tests pass, lint clean), but several polish items remain (examples, BDD
 tests, nix verification). Should we:
+
 - (a) Tag 0.4.0 now — the code is solid, polish can come in 0.4.1
 - (b) Wait until examples and nix verification are done
 - (c) Release as 0.4.0-dev first, then formal release after polish
@@ -310,6 +319,7 @@ or is env-based testing (`t.Setenv`) sufficient for this CLI startup code?
 `normalizeProviderName` is a switch with one case (`google` → `gemini`). As
 catwalk evolves, more aliases may be needed (e.g., `aws` → `bedrock`,
 `vercel` → some catwalk ID). Should this be:
+
 - (a) A map constant that's easy to extend
 - (b) Sourced from catwalk metadata (if catwalk ever adds an "aliases" field)
 - (c) Left as a switch (YAGNI until a second alias is needed)

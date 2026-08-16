@@ -136,33 +136,33 @@ Since the last status report (May 4, 2026), the project has undergone significan
 
 ## f) Top 25 Things We Should Get Done Next
 
-| #   | Item                                                               | Impact      | Effort | Category     |
-| --- | ------------------------------------------------------------------ | ----------- | ------ | ------------ |
-| 1   | Fix `nix flake check` vendorHash                                   | 🔴 Critical | S      | Build        |
-| 2   | Fix pre-commit hook (4 failing steps)                              | 🔴 Critical | M      | DevEx        |
-| 3   | Resolve LICENSE vs README contradiction                            | 🔴 Critical | S      | Legal        |
-| 4   | Add CLI tests (`cmd/vision/main.go`)                               | 🟠 High     | L      | Testing      |
-| 5   | Add `internal/cli/helpers.go` tests                                | 🟠 High     | M      | Testing      |
-| 6   | Update CHANGELOG.md with 31 commits                                | 🟠 High     | M      | Docs         |
-| 7   | Fix WebP validation (check WEBP magic)                             | 🟡 Medium   | S      | Correctness  |
-| 8   | Add `io.LimitReader` to `LoadImageFromReader`                      | 🟡 Medium   | S      | Robustness   |
-| 9   | Update README.md (fix license, structure)                          | 🟡 Medium   | S      | Docs         |
-| 10  | Fix LSP ghost file (`agent_test.go`)                               | 🟡 Medium   | S      | DevEx        |
-| 11  | Refactor `AnalyzeStream` to `strings.Builder`                      | 🟢 Low      | S      | Performance  |
-| 12  | Add BDD tests for `AnalyzeStructured`                              | 🟢 Low      | S      | Testing      |
-| 13  | Add context cancellation tests                                     | 🟡 Medium   | M      | Testing      |
-| 14  | Fix `go-structure-linter` issues (coverage.out, binary, AGENTS.md) | 🟡 Medium   | S      | Quality      |
-| 15  | Remove deprecated `VisionAgent` alias                              | 🟢 Low      | S      | Cleanup      |
-| 16  | Fix `parseFlags()` dead error return                               | 🟢 Low      | S      | Cleanup      |
-| 17  | Cache `ScreenshotAnalyzer` agent instance safely                   | 🟢 Low      | S      | Performance  |
-| 18  | Refactor `AnalyzeStructured` to use `fantasy.Agent`                | 🟡 Medium   | M      | Architecture |
-| 19  | Remove `report/jscpd-report.json` from repo                        | 🟢 Low      | S      | Cleanup      |
-| 20  | Enable nix flake package build                                     | 🟡 Medium   | M      | Build        |
-| 21  | Migrate justfile commands to flake.nix                             | 🟡 Medium   | L      | Build        |
-| 22  | Add `ProviderOptions` passthrough                                  | 🟢 Low      | S      | Feature      |
-| 23  | Add `WithModel()` to `ScreenshotAnalyzer`                          | 🟢 Low      | S      | Feature      |
-| 24  | Add real provider integration tests                                | 🟡 Medium   | L      | Testing      |
-| 25  | Add benchmark tests for hot paths                                  | 🟢 Low      | M      | Performance  |
+| #  | Item                                                               | Impact      | Effort | Category     |
+| -- | ------------------------------------------------------------------ | ----------- | ------ | ------------ |
+| 1  | Fix `nix flake check` vendorHash                                   | 🔴 Critical | S      | Build        |
+| 2  | Fix pre-commit hook (4 failing steps)                              | 🔴 Critical | M      | DevEx        |
+| 3  | Resolve LICENSE vs README contradiction                            | 🔴 Critical | S      | Legal        |
+| 4  | Add CLI tests (`cmd/vision/main.go`)                               | 🟠 High     | L      | Testing      |
+| 5  | Add `internal/cli/helpers.go` tests                                | 🟠 High     | M      | Testing      |
+| 6  | Update CHANGELOG.md with 31 commits                                | 🟠 High     | M      | Docs         |
+| 7  | Fix WebP validation (check WEBP magic)                             | 🟡 Medium   | S      | Correctness  |
+| 8  | Add `io.LimitReader` to `LoadImageFromReader`                      | 🟡 Medium   | S      | Robustness   |
+| 9  | Update README.md (fix license, structure)                          | 🟡 Medium   | S      | Docs         |
+| 10 | Fix LSP ghost file (`agent_test.go`)                               | 🟡 Medium   | S      | DevEx        |
+| 11 | Refactor `AnalyzeStream` to `strings.Builder`                      | 🟢 Low      | S      | Performance  |
+| 12 | Add BDD tests for `AnalyzeStructured`                              | 🟢 Low      | S      | Testing      |
+| 13 | Add context cancellation tests                                     | 🟡 Medium   | M      | Testing      |
+| 14 | Fix `go-structure-linter` issues (coverage.out, binary, AGENTS.md) | 🟡 Medium   | S      | Quality      |
+| 15 | Remove deprecated `VisionAgent` alias                              | 🟢 Low      | S      | Cleanup      |
+| 16 | Fix `parseFlags()` dead error return                               | 🟢 Low      | S      | Cleanup      |
+| 17 | Cache `ScreenshotAnalyzer` agent instance safely                   | 🟢 Low      | S      | Performance  |
+| 18 | Refactor `AnalyzeStructured` to use `fantasy.Agent`                | 🟡 Medium   | M      | Architecture |
+| 19 | Remove `report/jscpd-report.json` from repo                        | 🟢 Low      | S      | Cleanup      |
+| 20 | Enable nix flake package build                                     | 🟡 Medium   | M      | Build        |
+| 21 | Migrate justfile commands to flake.nix                             | 🟡 Medium   | L      | Build        |
+| 22 | Add `ProviderOptions` passthrough                                  | 🟢 Low      | S      | Feature      |
+| 23 | Add `WithModel()` to `ScreenshotAnalyzer`                          | 🟢 Low      | S      | Feature      |
+| 24 | Add real provider integration tests                                | 🟡 Medium   | L      | Testing      |
+| 25 | Add benchmark tests for hot paths                                  | 🟢 Low      | M      | Performance  |
 
 ---
 
@@ -222,11 +222,11 @@ This design defeats the purpose of pre-commit hooks, which should validate _the 
 
 ## Dependency Health
 
-| Dependency                    | Version | Status                                                  |
-| ----------------------------- | ------- | ------------------------------------------------------- |
-| `charm.land/fantasy`          | v0.23.0 | ✅ Current framework                                    |
-| `github.com/onsi/ginkgo/v2`   | v2.29.0 | ✅ New — BDD testing                                    |
-| `github.com/onsi/gomega`      | v1.41.0 | ✅ New — BDD assertions                                 |
+| Dependency                    | Version | Status                                                 |
+| ----------------------------- | ------- | ------------------------------------------------------ |
+| `charm.land/fantasy`          | v0.23.0 | ✅ Current framework                                   |
+| `github.com/onsi/ginkgo/v2`   | v2.29.0 | ✅ New — BDD testing                                   |
+| `github.com/onsi/gomega`      | v1.41.0 | ✅ New — BDD assertions                                |
 | `github.com/stretchr/testify` | v1.11.1 | ⚠️ Flagged by library-policy (recommend Ginkgo instead) |
 | `go.yaml.in/yaml/v3`          | v3.0.4  | ⚠️ Flagged by library-policy (archived repo)            |
 

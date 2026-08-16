@@ -110,33 +110,33 @@ The name "vision-review-agent" suggests an agent framework rather than an SDK. I
 
 ### Must-Do Before Publishing (blocking)
 
-| #   | Action                                                                                                                      | Effort |
-| --- | --------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 1   | **Fix LICENSE** — Replace proprietary license with MIT (matching README and flake.nix)                                      | 5 min  |
-| 2   | **Remove AGENTS.md** — Contains internal workflow instructions, not user-facing docs. Move to `.github/` or keep local-only | 10 min |
-| 3   | **Remove docs/status/** — Internal status reports shouldn't be public                                                       | 2 min  |
-| 4   | **Review git history** — Ensure no secrets were ever committed (currently clean, but verify)                                | 5 min  |
-| 5   | **Fix .gitignore** formatting                                                                                               | 2 min  |
+| # | Action                                                                                                                      | Effort |
+| - | --------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 1 | **Fix LICENSE** — Replace proprietary license with MIT (matching README and flake.nix)                                      | 5 min  |
+| 2 | **Remove AGENTS.md** — Contains internal workflow instructions, not user-facing docs. Move to `.github/` or keep local-only | 10 min |
+| 3 | **Remove docs/status/** — Internal status reports shouldn't be public                                                       | 2 min  |
+| 4 | **Review git history** — Ensure no secrets were ever committed (currently clean, but verify)                                | 5 min  |
+| 5 | **Fix .gitignore** formatting                                                                                               | 2 min  |
 
 ### Should-Do Before Publishing (recommended)
 
-| #   | Action                                                                      | Effort |
-| --- | --------------------------------------------------------------------------- | ------ |
-| 6   | Fix `fullText` O(n²) concatenation → `strings.Builder`                      | 10 min |
-| 7   | Uncomment and complete flake.nix package build                              | 30 min |
-| 8   | Add `CONTRIBUTING.md` with guidelines                                       | 30 min |
-| 9   | Add GitHub Actions CI (test, lint, build)                                   | 1 hour |
-| 10  | Remove deprecated `VisionAgent` alias or properly document deprecation path | 5 min  |
+| #  | Action                                                                      | Effort |
+| -- | --------------------------------------------------------------------------- | ------ |
+| 6  | Fix `fullText` O(n²) concatenation → `strings.Builder`                      | 10 min |
+| 7  | Uncomment and complete flake.nix package build                              | 30 min |
+| 8  | Add `CONTRIBUTING.md` with guidelines                                       | 30 min |
+| 9  | Add GitHub Actions CI (test, lint, build)                                   | 1 hour |
+| 10 | Remove deprecated `VisionAgent` alias or properly document deprecation path | 5 min  |
 
 ### Nice-to-Have After Publishing
 
-| #   | Action                                                                        | Effort  |
-| --- | ----------------------------------------------------------------------------- | ------- |
-| 11  | Add Go module badge, CI badge to README                                       | 15 min  |
-| 12  | Publish to `pkg.go.dev` by tagging v0.1.0                                     | 5 min   |
-| 13  | Add `Agent` pooling/caching in `ScreenshotAnalyzer`                           | 1 hour  |
-| 14  | Add more provider examples (Anthropic direct, Google Gemini)                  | 2 hours |
-| 15  | Consider renaming to something more SDK-like (e.g., `go-vision`, `visionsdk`) | —       |
+| #  | Action                                                                        | Effort  |
+| -- | ----------------------------------------------------------------------------- | ------- |
+| 11 | Add Go module badge, CI badge to README                                       | 15 min  |
+| 12 | Publish to `pkg.go.dev` by tagging v0.1.0                                     | 5 min   |
+| 13 | Add `Agent` pooling/caching in `ScreenshotAnalyzer`                           | 1 hour  |
+| 14 | Add more provider examples (Anthropic direct, Google Gemini)                  | 2 hours |
+| 15 | Consider renaming to something more SDK-like (e.g., `go-vision`, `visionsdk`) | —       |
 
 ---
 

@@ -221,12 +221,12 @@ This session closed every P0 item from both prior status reports and most P1 ite
 ## Files Changed This Session
 
 ```
- M internal/cli/helpers.go       (+temperature in error message)
- M pkg/errors/errors_test.go     (+TestSentinelsSurviveErrorfWrapping, -copyloopvar)
- M pkg/vision/features_test.go   (+TestLoadImageFromURL_ErrorPathsIncludeURL)
- M pkg/vision/mock_test.go       (+streamObjectErr field, +field priority docs)
- M pkg/vision/structured_test.go (+8 tests: initial error, consumeObjectStream x7)
- + docs/ERROR_DESIGN.md          (new, 205 lines)
+M internal/cli/helpers.go       (+temperature in error message)
+M pkg/errors/errors_test.go     (+TestSentinelsSurviveErrorfWrapping, -copyloopvar)
+M pkg/vision/features_test.go   (+TestLoadImageFromURL_ErrorPathsIncludeURL)
+M pkg/vision/mock_test.go       (+streamObjectErr field, +field priority docs)
+M pkg/vision/structured_test.go (+8 tests: initial error, consumeObjectStream x7)
++ docs/ERROR_DESIGN.md          (new, 205 lines)
 ```
 
 6 files changed, 531 insertions(+), 1 deletion(-)
