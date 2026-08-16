@@ -177,6 +177,11 @@ linters:
     gocritic:
       disabled-checks:
         - ifElseChain
+    misspell:
+      # "reviewd" is the deliberate visionreviewd daemon name, used in the
+      # internal/reviewd directory and import paths.
+      ignore-rules:
+        - reviewd
     gomoddirectives:
       replace-local: true
     gosec:
