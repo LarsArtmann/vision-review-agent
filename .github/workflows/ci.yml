@@ -9,6 +9,11 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      # go-cqrs-lite imports encoding/json/v2, which only exists under
+      # GOEXPERIMENT=jsonv2 (local dev sets it via `go env`). Every job that
+      # loads packages (build/vet/test/tidy) needs it.
+      GOEXPERIMENT: jsonv2
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -47,6 +52,8 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    env:
+      GOEXPERIMENT: jsonv2
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -63,7 +70,9 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6
         with:
-          version: latest
+          # Pinned, not `latest`: the action resolved "latest" to a stale
+          # v1.64.8 binary (built with go1.24) that cannot target go 1.26.
+          version: v2.12.2
           args: --timeout 5m
 
   format-check:
