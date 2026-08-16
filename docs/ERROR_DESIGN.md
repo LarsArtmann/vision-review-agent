@@ -70,7 +70,7 @@ if errors.Is(err, vision.ErrInvalidTemperature) {
 **Where:** `pkg/errors/model.go`, re-exported as `vision.ModelError`.
 
 When the model invocation itself fails (HTTP error, timeout, content filter,
-unparseable structured output), the SDK wraps the cause in a `*ModelError`
+malformed structured output), the SDK wraps the cause in a `*ModelError`
 carrying a domain-level `ErrorKind` and diagnostic metadata.
 
 ### Structure

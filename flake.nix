@@ -236,16 +236,16 @@
                   daemonUnits = builtins.attrNames nixosModuleDisabled.config.systemd.services;
                 }
                 ''
-                # Nix serializes booleans in derivation environments as "1"/"".
-                if [ "$moduleEnable" = "1" ]; then
-                echo "services.vision-review-agent.enable must default to false"
-                exit 1
-                fi
-                (printf '%s\n' "$daemonUnits" | grep -qx visionreviewd) && {
-                echo "visionreviewd unit must be absent when disabled"
-                exit 1
-                }
-                echo "module evaluates disabled (defaults)" > $out
+                  # Nix serializes booleans in derivation environments as "1"/"".
+                  if [ "$moduleEnable" = "1" ]; then
+                  echo "services.vision-review-agent.enable must default to false"
+                  exit 1
+                  fi
+                  (printf '%s\n' "$daemonUnits" | grep -qx visionreviewd) && {
+                  echo "visionreviewd unit must be absent when disabled"
+                  exit 1
+                  }
+                  echo "module evaluates disabled (defaults)" > $out
                 '';
           };
 
