@@ -1,5 +1,10 @@
 # Catwalk Integration — Comprehensive Status Report
 
+> **ANNOTATED 2026-08-16 (docs-health):** all 5 bugs in section d and the 3
+> documentation gaps were fixed by the `17:12` session; v0.5.0/v0.5.1 shipped
+> the work. Open remainder (examples, benchmarks, BDD, SDK conveniences) is
+> tracked in `ROADMAP.md`.
+
 **Date:** 2026-08-12 16:31
 **Session scope:** Execute the 18-task catwalk integration plan (T01-T18)
 **Branch:** master (no commits made — auto-git daemon handles commits)
@@ -90,51 +95,33 @@ However, several documentation gaps, one real bug (provider alias in ModelInfo l
 
 ## b) PARTIALLY DONE
 
-### 1. FEATURES.md — NOT updated
+### ~~1. FEATURES.md — NOT updated~~ done at the `17:12` session — "Model Catalog" + pricing-aware cost tracking sections
 
-The AGENTS.md documentation table says FEATURES.md tracks the feature inventory. Catwalk integration is a major new feature but was not added to FEATURES.md.
+### ~~2. README.md — NOT updated~~ done at the `17:12` session — catalog features, listing flags, cost example
 
-### 2. README.md — NOT updated
+### ~~3. docs/DOMAIN_LANGUAGE.md — NOT updated~~ done at the `17:12` session — `ModelInfo`, `Service`, `CostTracker`, Model Catalog bounded context
 
-README is the "sales page for end-users." The CLI now supports 40+ providers, `-list-providers`, `-list-models`, and pricing-aware cost tracking. None of this is reflected in README. Users discovering the project won't know these capabilities exist.
+### 4. Remote sync error handling — basic but silent ← still open (no logging in `internal/catalog/sync.go`; ROADMAP)
 
-### 3. docs/DOMAIN_LANGUAGE.md — NOT updated
-
-New domain vocabulary introduced: "catalog", "provider bridge", "ModelInfo", "ETag sync", "vision-capable model filtering". None documented in the domain language glossary.
-
-### 4. Remote sync error handling — basic but silent
-
-The `Sync.Fetch()` method swallows all errors silently. When remote fetch fails, it falls back to cache/embedded without logging. This makes debugging "why is my catalog stale?" hard. Should at minimum log to stderr on fallback.
-
-### 5. BDD tests — not written
-
-The project convention is Ginkgo BDD for user-facing behavior. The catalog is a major user-facing feature. Only testify table-driven tests were written. A BDD spec like "When I list vision models, I should see only image-capable models" would match project conventions.
+### 5. BDD tests — not written ← still open (ROADMAP)
 
 ---
 
 ## c) NOT STARTED
 
-### 1. Examples
+### 1. Examples ← still open — no `examples/catalog/` exists
 
-No catalog-based example in `examples/`. The directory has examples for each provider but none showing how to use the SDK with ModelInfo, CostTracker pricing, or catalog discovery.
+### 2. Benchmarks ← still open — no catalog benchmarks
 
-### 2. Benchmarks
+### 3. CATWALK_URL CLI integration test ← still open
 
-No benchmark tests for catalog operations. `FindModel` iterates across 40 providers x 800+ models. `VisionModels()` builds a slice of 800+ entries every call. Performance impact is unknown.
-
-### 3. CATWALK_URL CLI integration test
-
-The `CATWALK_URL` env var path in `main()` is tested indirectly (sync_test.go tests the Sync type), but there's no CLI-level integration test that sets `CATWALK_URL` and verifies the flow through `main()`.
-
-### 4. flake.nix update
-
-Not checked whether the flake needs catwalk in its build inputs or vendor hash update. `go build` handles this automatically, but the nix build might need explicit declaration.
+### ~~4. flake.nix update~~ done — `nix build .` green since (`7368882`, verified again at `9fd3117`)
 
 ---
 
 ## d) TOTALLY FUCKED UP (Bugs + Mistakes)
 
-### 1. BUG: Provider alias not applied in ModelInfo lookup
+### ~~1. BUG: Provider alias not applied in ModelInfo lookup~~ fixed at the `17:12` session — `normalizeProviderName` before lookup + regression tests
 
 **Severity: Medium (silent feature degradation)**
 
@@ -146,31 +133,15 @@ if m, ok := svc.FindModelInProvider(cfg.providerName, cfg.modelID); ok {
 
 `cfg.providerName` can be `"google"` (the legacy CLI alias), but `FindModelInProvider` calls `FindProvider` which matches on catwalk IDs. The catwalk ID is `"gemini"`, not `"google"`. So when a user passes `-provider google -model gemini-3.6-flash`, ModelInfo is NOT populated. Cost tracking and auto-defaults silently don't work for the Google provider.
 
-**Fix:** `FindModelInProvider` should normalize the provider name, or `main()` should normalize before calling it.
+~~**Fix:** `FindModelInProvider` should normalize the provider name, or `main()` should normalize before calling it.~~ applied in `429c41b` follow-up work (v0.5.0 "Fixed" section)
 
-### 2. BUG: Stray binary left in repo root
+### ~~2. BUG: Stray binary left in repo root~~ fixed — cleaned; `.gitignore` covered since, anchored to `/vision` in v0.5.1 (`35d5b88`)
 
-**Severity: Low (cosmetic, already cleaned)**
+### ~~3. ISSUE: CATWALK_URL causes 30-second startup delay when server unreachable~~ fixed at the `17:12` session — `buildCatalog` with 5s `syncTimeout`
 
-Running `go build ./cmd/vision/` created a `vision` binary (66MB) in the repo root. Cleaned up with `trash vision` but this could have been accidentally committed by the auto-git daemon. The `.gitignore` doesn't cover `vision` (only `vision-cli` and `/vision-review-agent`).
+### ~~4. ISSUE: usageFunc no longer lists specific env var names~~ fixed at the `17:12` session — common env vars restored
 
-### 3. ISSUE: CATWALK_URL causes 30-second startup delay when server unreachable
-
-**Severity: Medium (UX problem)**
-
-When `CATWALK_URL` is set but no catwalk server is running, the HTTP client has a 30-second timeout. The CLI will hang for 30 seconds on startup before falling back to embedded data. Should use a shorter context timeout (e.g., 5s) for the sync attempt.
-
-### 4. ISSUE: usageFunc no longer lists specific env var names
-
-**Severity: Low (onboarding friction)**
-
-The old usage listed `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, etc. directly. The new usage says "Set per your -provider (use -provider-info)". This requires an extra step to discover which env var to set. Less helpful for quick start.
-
-### 5. CODE SMELL: Duplicate mock model
-
-**Severity: Low (code duplication)**
-
-`integrationMockModel` in `integration_test.go` duplicates `cliMockModel` in `run_test.go`. Both implement `fantasy.LanguageModel` with identical mock behavior. Should reuse the existing mock.
+### ~~5. CODE SMELL: Duplicate mock model~~ fixed at the `17:12` session — `integrationMockModel` removed, `cliMockModel` reused
 
 ---
 
@@ -206,20 +177,20 @@ The old usage listed `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, etc. directly. The 
 
 ### Critical (fix bugs first)
 
-1. Fix provider alias bug: normalize provider name before `FindModelInProvider` call
-2. Add shorter timeout (5s) for remote sync in CLI startup
-3. Add `vision` to `.gitignore` (prevent binary commits)
-4. Reuse `cliMockModel` instead of duplicating `integrationMockModel`
+1. ~~Fix provider alias bug: normalize provider name before `FindModelInProvider` call~~ done at the `17:12` session (v0.5.0)
+2. ~~Add shorter timeout (5s) for remote sync in CLI startup~~ done at the `17:12` session
+3. ~~Add `vision` to `.gitignore` (prevent binary commits)~~ done — anchored to `/vision` in v0.5.1 (`35d5b88`)
+4. ~~Reuse `cliMockModel` instead of duplicating `integrationMockModel`~~ done at the `17:12` session
 
 ### Documentation
 
-5. Update FEATURES.md with catwalk integration feature inventory
-6. Update README.md with 40+ provider support, new CLI flags, pricing examples
-7. Update docs/DOMAIN_LANGUAGE.md with catalog vocabulary
-8. Add inline comments to `.golangci.yaml` explaining the new exclusions
-9. Add a "Quick Start with Catalog" section to README showing `-list-models`
-10. Document `CATWALK_URL` environment variable in README
-11. Add a migration note for users upgrading from the old 5-provider CLI
+5. ~~Update FEATURES.md with catwalk integration feature inventory~~ done at the `17:12` session
+6. ~~Update README.md with 40+ provider support, new CLI flags, pricing examples~~ done at the `17:12` session
+7. ~~Update docs/DOMAIN_LANGUAGE.md with catalog vocabulary~~ done at the `17:12` session
+8. Add inline comments to `.golangci.yaml` explaining the new exclusions ← still open (partial — 17 comment lines exist; G117/G101 rationale undocumented)
+9. ~~Add a "Quick Start with Catalog" section to README showing `-list-models`~~ done — README Quick Start + CLI usage cover the listing flags
+10. ~~Document `CATWALK_URL` environment variable in README~~ done — README "Remote Catalog Sync" bullet
+11. Add a migration note for users upgrading from the old 5-provider CLI ← still open (ROADMAP)
 
 ### SDK Enhancements
 
@@ -238,7 +209,7 @@ The old usage listed `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, etc. directly. The 
 21. Print cost summary after analysis when pricing is available
 22. Add `--json` output for `-list-providers` and `-list-models`
 23. Add fuzzy matching for provider names (not just model IDs)
-24. Restore specific env var hints in usageFunc (hybrid: list common ones + reference -provider-info)
+24. ~~Restore specific env var hints in usageFunc (hybrid: list common ones + reference -provider-info)~~ done at the `17:12` session
 25. Add `-validate-model` flag that checks if the model exists without running analysis
 
 ### Testing
@@ -247,7 +218,7 @@ The old usage listed `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, etc. directly. The 
 27. Write BDD specs for cost tracking with pricing (Ginkgo)
 28. Add benchmark for FindModel across full catalog
 29. Add benchmark for VisionModels() with 800+ entries
-30. Test "google" → "gemini" alias through full createProvider + ModelInfo flow
+30. ~~Test "google" → "gemini" alias through full createProvider + ModelInfo flow~~ done at the `17:12` session — `TestFindModelInProviderWithGoogleAlias`
 31. Test SetPricing after Add (mid-stream pricing change)
 32. Test corrupted cache + remote available path
 33. Add property-based test for Levenshtein (symmetry, triangle inequality)
@@ -271,10 +242,10 @@ The old usage listed `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, etc. directly. The 
 
 ### Nix / Build
 
-45. Verify `nix build .` works with catwalk dependency
-46. Verify `nix run .#test` passes
-47. Update flake vendorHash if needed
-48. Add catwalk to flake devShell buildInputs if needed for IDE
+45. ~~Verify `nix build .` works with catwalk dependency~~ done — green
+46. ~~Verify `nix run .#test` passes~~ done — green
+47. ~~Update flake vendorHash if needed~~ done — fresh hash maintained (re-fixed at `9fd3117`)
+48. ~~Add catwalk to flake devShell buildInputs if needed for IDE~~ moot — not needed; builds resolve via go.mod
 
 ### Code Quality
 
