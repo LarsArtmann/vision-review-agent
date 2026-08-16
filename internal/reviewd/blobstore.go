@@ -74,6 +74,7 @@ func copyFileAtomic(src, target string) error {
 
 	if _, err := io.Copy(temp, source); err != nil {
 		_ = temp.Close()
+
 		os.Remove(tempName)
 
 		return fmt.Errorf("blob store copy %s: %w", src, err)
