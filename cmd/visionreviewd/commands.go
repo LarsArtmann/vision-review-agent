@@ -2,22 +2,23 @@ package main
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
+	"strings"
 	"syscall"
+	"time"
 
 	reviewed "github.com/larsartmann/vision-review-agent/internal/reviewd"
 )
-
-// errNotImplemented marks subcommands whose backing feature lands in a later
-// task; it keeps dispatch complete while the bodies catch up.
-var errNotImplemented = errors.New("not implemented yet")
 
 // newFlagSet builds a ContinueOnError flag set that writes to the command's
 // stderr, so parse failures return errors instead of exiting.
@@ -399,12 +400,190 @@ func runReplayCommand(args []string, stdout, stderr io.Writer) int {
 }
 
 // runDoctorCommand checks config, directories, globs, and the model endpoint.
-//
-//nolint:unparam // stdout writes output once the command body lands
 func runDoctorCommand(args []string, stdout, stderr io.Writer) int {
-	_ = args
+	flagSet := newFlagSet("doctor", stderr)
 
-	fmt.Fprintf(stderr, "visionreviewd doctor: %v\n", errNotImplemented)
+	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
 
-	return exitFailed
+	if err := flagSet.Parse(args); err != nil {
+		return exitUsage
+	}
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd doctor: %v\n", err)
+
+		return exitFailed
+	}
+
+	checks := doctorChecks(context.Background(), config)
+
+	failed := 0
+
+	for _, check := range checks {
+		status := "ok"
+
+		if !check.ok {
+			status = "FAIL"
+			failed++
+		}
+
+		fmt.Fprintf(stdout, "%-4s %s: %s\n", status, check.name, check.detail)
+	}
+
+	fmt.Fprintf(stdout, "%d checks, %d failed\n", len(checks), failed)
+
+	if failed > 0 {
+		return exitFailed
+	}
+
+	return exitOK
+}
+
+// doctorEndpointTimeout bounds the model endpoint probe.
+const doctorEndpointTimeout = 10 * time.Second
+
+// doctorEndpointName labels the model endpoint check in doctor output.
+const doctorEndpointName = "model endpoint"
+
+// doctorCheck is the outcome of one health probe.
+type doctorCheck struct {
+	name   string
+	ok     bool
+	detail string
+}
+
+// doctorChecks runs every probe: writability of both directories, glob match
+// counts per project, and the model endpoint's model list.
+func doctorChecks(ctx context.Context, config reviewed.Config) []doctorCheck {
+	checks := make([]doctorCheck, 0, len(config.Projects)+doctorCheckExtra)
+	checks = append(checks, checkWritableDir("dataDir", config.DataDir))
+	checks = append(checks, checkWritableDir("reviewsDir", config.ReviewsDir))
+	checks = append(checks, checkProjectGlobs(config)...)
+	checks = append(checks, checkModelEndpoint(ctx, config))
+
+	return checks
+}
+
+// doctorCheckExtra is the number of non-glob checks doctorChecks runs.
+const doctorCheckExtra = 3
+
+// checkWritableDir probes that dir exists (or can be created) and a file can
+// be written and removed inside it.
+func checkWritableDir(name string, dir string) doctorCheck {
+	if err := os.MkdirAll(dir, reviewsDirPermission); err != nil {
+		return doctorCheck{name: name, ok: false, detail: fmt.Sprintf("create %s: %v", dir, err)}
+	}
+
+	probe := filepath.Join(dir, ".visionreviewd-doctor-probe")
+
+	if err := os.WriteFile(probe, []byte("probe"), reviewsFilePermission); err != nil {
+		return doctorCheck{name: name, ok: false, detail: fmt.Sprintf("write %s: %v", probe, err)}
+	}
+
+	if err := os.Remove(probe); err != nil {
+		return doctorCheck{name: name, ok: false, detail: fmt.Sprintf("remove %s: %v", probe, err)}
+	}
+
+	return doctorCheck{name: name, ok: true, detail: dir}
+}
+
+// reviewsDirPermission and reviewsFilePermission mirror the Writer's modes so
+// doctor probes with the same access the daemon will use.
+const (
+	reviewsDirPermission  = 0o750
+	reviewsFilePermission = 0o640
+)
+
+// checkProjectGlobs counts how many screenshots every project's globs match.
+// A project with zero matches is reported as failing: it would never be
+// reviewed.
+func checkProjectGlobs(config reviewed.Config) []doctorCheck {
+	checks := make([]doctorCheck, 0, len(config.Projects))
+
+	for _, project := range slices.Sorted(maps.Keys(config.Projects)) {
+		total := 0
+
+		for _, pattern := range config.Projects[project] {
+			matches, err := filepath.Glob(pattern)
+			if err != nil {
+				checks = append(checks, doctorCheck{
+					name:   "globs " + project,
+					ok:     false,
+					detail: fmt.Sprintf("pattern %s: %v", pattern, err),
+				})
+
+				continue
+			}
+
+			total += len(matches)
+		}
+
+		checks = append(checks, doctorCheck{
+			name:   "globs " + project,
+			ok:     total > 0,
+			detail: fmt.Sprintf("%d screenshots match", total),
+		})
+	}
+
+	return checks
+}
+
+// checkModelEndpoint fetches {baseUrl}/models and verifies the configured
+// model is offered.
+func checkModelEndpoint(ctx context.Context, config reviewed.Config) doctorCheck {
+	modelsURL := strings.TrimSuffix(config.BaseURL, "/") + "/models"
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, modelsURL, nil)
+	if err != nil {
+		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("build request: %v", err)}
+	}
+
+	if config.APIKey != "" {
+		request.Header.Set("Authorization", "Bearer "+config.APIKey)
+	}
+
+	client := &http.Client{Timeout: doctorEndpointTimeout}
+
+	response, err := client.Do(request)
+	if err != nil {
+		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("%s: %v", modelsURL, err)}
+	}
+
+	defer func() {
+		if closeErr := response.Body.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "visionreviewd doctor: close response: %v\n", closeErr)
+		}
+	}()
+
+	if response.StatusCode != http.StatusOK {
+		return doctorCheck{
+			name:   "model endpoint",
+			ok:     false,
+			detail: fmt.Sprintf("%s: status %s", modelsURL, response.Status),
+		}
+	}
+
+	var listed struct {
+		Data []struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&listed); err != nil {
+		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("decode %s: %v", modelsURL, err)}
+	}
+
+	for _, model := range listed.Data {
+		if model.ID == config.Model {
+			return doctorCheck{name: doctorEndpointName, ok: true, detail: config.Model + " listed at " + modelsURL}
+		}
+	}
+
+	return doctorCheck{
+		name: doctorEndpointName,
+		ok:   false,
+		detail: fmt.Sprintf("model %q not listed at %s (%d models offered)",
+			config.Model, modelsURL, len(listed.Data)),
+	}
 }

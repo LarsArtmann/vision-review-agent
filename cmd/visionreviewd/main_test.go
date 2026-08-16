@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -175,17 +177,170 @@ func TestRunCompareRequiresTwoPaths(t *testing.T) {
 	}
 }
 
-func TestRunDoctorNotImplementedYet(t *testing.T) {
+func TestRunDoctorAllChecksPass(t *testing.T) {
 	t.Parallel()
+
+	modelsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/v1/models" {
+			http.NotFound(w, req)
+
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[{"id":"stub"},{"id":"other"}]}`)
+	}))
+	t.Cleanup(modelsServer.Close)
+
+	dir := t.TempDir()
+	shotsDir := filepath.Join(dir, "shots")
+
+	if err := os.MkdirAll(shotsDir, 0o750); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(shotsDir, "Home--dark--desktop.png"), []byte("png"), 0o600); err != nil {
+		t.Fatalf("write shot: %v", err)
+	}
+
+	config := fmt.Sprintf(
+		`{"model":"stub","baseUrl":%q,"dataDir":%q,"reviewsDir":%q,"projects":{"myapp":[%q]}}`,
+		modelsServer.URL+"/v1",
+		filepath.Join(dir, "data"),
+		filepath.Join(dir, "reviews"),
+		filepath.Join(shotsDir, "*.png"),
+	)
+
+	configPath := filepath.Join(dir, "config.json")
+
+	if err := os.WriteFile(configPath, []byte(config), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
 
 	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 
-	if code := run([]string{"doctor"}, stdout, stderr); code != exitFailed {
+	code := run([]string{"doctor", "-config", configPath}, stdout, stderr)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d (stderr: %s)\n%s", code, exitOK, stderr, stdout)
+	}
+
+	out := stdout.String()
+
+	for _, want := range []string{
+		"ok   dataDir",
+		"ok   reviewsDir",
+		"ok   globs myapp: 1 screenshots match",
+		"ok   model endpoint: stub listed",
+		"4 checks, 0 failed",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("stdout missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestRunDoctorFailsOnUnreachableEndpointAndEmptyGlobs(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	emptyShots := filepath.Join(dir, "empty")
+
+	if err := os.MkdirAll(emptyShots, 0o750); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	config := fmt.Sprintf(
+		`{"model":"stub","baseUrl":"http://127.0.0.1:1/v1","dataDir":%q,"reviewsDir":%q,"projects":{"myapp":[%q]}}`,
+		filepath.Join(dir, "data"),
+		filepath.Join(dir, "reviews"),
+		filepath.Join(emptyShots, "*.png"),
+	)
+
+	configPath := filepath.Join(dir, "config.json")
+
+	if err := os.WriteFile(configPath, []byte(config), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-config", configPath}, stdout, stderr)
+	if code != exitFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitFailed, stdout)
+	}
+
+	out := stdout.String()
+
+	if !strings.Contains(out, "FAIL globs myapp: 0 screenshots match") {
+		t.Fatalf("stdout should report zero glob matches:\n%s", out)
+	}
+
+	if !strings.Contains(out, "FAIL model endpoint") {
+		t.Fatalf("stdout should report endpoint failure:\n%s", out)
+	}
+}
+
+func TestRunDoctorFailsWhenModelNotListed(t *testing.T) {
+	t.Parallel()
+
+	modelsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[{"id":"something-else"}]}`)
+	}))
+	t.Cleanup(modelsServer.Close)
+
+	dir := t.TempDir()
+	shotsDir := filepath.Join(dir, "shots")
+
+	if err := os.MkdirAll(shotsDir, 0o750); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(shotsDir, "Home--dark--desktop.png"), []byte("png"), 0o600); err != nil {
+		t.Fatalf("write shot: %v", err)
+	}
+
+	config := fmt.Sprintf(
+		`{"model":"stub","baseUrl":%q,"dataDir":%q,"reviewsDir":%q,"projects":{"myapp":[%q]}}`,
+		modelsServer.URL+"/v1",
+		filepath.Join(dir, "data"),
+		filepath.Join(dir, "reviews"),
+		filepath.Join(shotsDir, "*.png"),
+	)
+
+	configPath := filepath.Join(dir, "config.json")
+
+	if err := os.WriteFile(configPath, []byte(config), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-config", configPath}, stdout, stderr)
+	if code != exitFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitFailed, stdout)
+	}
+
+	if !strings.Contains(stdout.String(), `model "stub" not listed`) {
+		t.Fatalf("stdout should report the missing model:\n%s", stdout)
+	}
+}
+
+func TestRunDoctorMissingConfigFails(t *testing.T) {
+	t.Parallel()
+
+	missing := filepath.Join(t.TempDir(), "missing.json")
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-config", missing}, stdout, stderr)
+	if code != exitFailed {
 		t.Fatalf("exit = %d, want %d", code, exitFailed)
 	}
 
-	if !strings.Contains(stderr.String(), "not implemented yet") {
-		t.Fatalf("stderr should say not implemented yet:\n%s", stderr)
+	if !strings.Contains(stderr.String(), missing) {
+		t.Fatalf("stderr should mention config path:\n%s", stderr)
 	}
 }
 
