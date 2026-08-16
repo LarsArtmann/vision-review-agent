@@ -12,18 +12,9 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## visionreviewd activation (post-build)
 
-- [ ] **Finish the v0.6.0 release** — CHANGELOG, version vars, `retract
-      v0.3.0`, and the full verification matrix are done on the working tree;
-      what remains is commit → push → wait for green CI (the lint job's
-      `golangci-lint config verify` step is the proof the wrapcheck fix works
-      with `@latest`) → annotated tag → push tag → consumer-side `go get`
-      verification → GitHub Release (`--prerelease` per 0.x policy).
-- [ ] **Bump the SystemNix `vision-review-agent` input** — both repos are
-      pushed, but the SystemNix lock still pins `de7c4c6`, which predates the
-      NixOS module (`b2d9c0c`), so the lazy wrapper stays inert. Run
-      `nix flake lock --update-input vision-review-agent` in SystemNix **after**
-      the v0.6.0 tag is pushed. (Steps: `docs/visionreviewd-systemnix.md`.)
-- [ ] **Enable on a host** — import `nixosModules.visionreviewd`, set
+- [ ] **Enable on a host** — the SystemNix lock now pins `dcd50a0` (done
+      2026-08-17, uncommitted alongside other SystemNix WIP). Import
+      `nixosModules.visionreviewd`, set
       `configFile = "/etc/visionreviewd/config.json"` (template:
       `docs/visionreviewd-config.example.json`), optionally
       `llamaServer.enable = true` (~9–10 GB model pull on first start). Gate
