@@ -11,27 +11,27 @@ verified-fresh state. Based on this session's run and what I noticed during it
 
 ## a) FULLY DONE
 
-| Item | Evidence |
-| --- | --- |
-| Skill loaded properly — SKILL.md + 5 references (harvest-guide, verify-checklist, resolving-items, agents-quality-guide, health-report-format) read before acting | session transcript |
-| Read ALL 14 `2026-08-*` artifacts: 11 status reports + 3 planning docs (2 of them HTML — text-extracted via script) | `docs/status/2026-08-*`, `docs/planning/2026-08-*` |
-| Read all 6 living docs + verified claims against code/git/remote | session transcript |
-| **Verified tag state against origin** — found `v0.3.0` still exists at `d5dda4b` despite the v0.4.0 release note claiming its deletion; `v0.2.1` also still there | `git ls-remote --tags origin` |
-| Verified code claims: `ErrorKind` = 16 (AGENTS said 14), no `.erraudit.yaml`, no godoc examples, `internal/cli` zero tests, brittle `gemini-2.5-flash` test still at `cmd/vision/main_test.go:229`, no catalog BDD/benchmarks/`examples/catalog`, wrapcheck schema-invalid keys still at `.golangci.yaml:239,250`, `doctorCheckExtra` still at `commands.go:469`, INDEX still `CapturedAt` (`pipeline.go:291`), `docs/DUPLICATION_POLICY.md` has 0 reviewd mentions, `go mod tidy -diff` clean | greps in session |
-| Verified SystemNix wiring state — both repos pushed (remotes match local HEADs), but SystemNix lock still pins `de7c4c6` (pre-module) → wrapper inert | `~/projects/SystemNix` flake.lock + git |
-| Annotated ALL 11 status reports inline — per-item `~~…~~ done at \`hash\`` markers, `Won't implement` verdicts, open items routed with `← still open` | each `docs/status/2026-08-*.md` now carries a banner + inline verdicts |
-| Annotated plan v2 with a 17-row Status column (every T2–T18 resolved with commits) + section note covering all 53 fine tasks | `docs/planning/archived/2026-08-16_20-00_…plan-v2.md` |
-| Added STATUS banners to both HTML planning docs (fully-executed notices with commits) | `docs/planning/archived/*.html` |
-| Archived 4 fully-done artifacts via `git mv` (never plain mv): plan v2, T2–T6 snapshot, catwalk plan HTML, daemon plan v1 HTML | `docs/status/archived/`, `docs/planning/archived/` |
-| Fixed 5 stale links pointing at the moved files; ran a full link-integrity check over every edited file — zero broken targets | python link check, clean |
-| Rebuilt `TODO_LIST.md` from scratch — ~20 verified open items in 5 sections, every item cites source report + code path | `TODO_LIST.md` |
-| `ROADMAP.md` — corrected the false `v0.3.0`-deleted claim (correction note in Open Question 4), added daemon-operations + catalog-polish sections, removed shipped "Diff analysis" idea (visionreviewd `Compare` covers it), added the `erraudit` gate-vs-advisory open question | `ROADMAP.md` |
-| `AGENTS.md` — fixed ErrorKind list (14→16 incl. `KindOverloaded`, `KindPaymentRequired`), added "Verification matrix" section (the 7 canonical checks), added `nix build .#visionreviewd`, documented mock-model field priority, linked `docs/ERROR_DESIGN.md` | `AGENTS.md` |
-| `README.md` — linked `docs/ERROR_DESIGN.md` from the classified-errors section | `README.md:347` |
-| `CHANGELOG.md` — `[Unreleased]` Added entry for the audit work + Fixed entry for the two documentation corrections (ErrorKind count, ghost-tag reality) | `CHANGELOG.md` |
-| Quality gates: `go build ./...`, `go vet ./...`, `gofmt -l .`, `go test -race -count=1 ./...` — **all green**; markdown link check clean | session output |
-| Health report printed inline with the two independent scores (Accuracy, Fitness) and visible math | conversation output |
-| Self-review pass executed (this report's cause) — caught 2 gaps, fixed 1 on sight (see d) | below |
+| Item                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Evidence                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Skill loaded properly — SKILL.md + 5 references (harvest-guide, verify-checklist, resolving-items, agents-quality-guide, health-report-format) read before acting                                                                                                                                                                                                                                                                                                                              | session transcript                                                     |
+| Read ALL 14 `2026-08-*` artifacts: 11 status reports + 3 planning docs (2 of them HTML — text-extracted via script)                                                                                                                                                                                                                                                                                                                                                                            | `docs/status/2026-08-*`, `docs/planning/2026-08-*`                     |
+| Read all 6 living docs + verified claims against code/git/remote                                                                                                                                                                                                                                                                                                                                                                                                                               | session transcript                                                     |
+| **Verified tag state against origin** — found `v0.3.0` still exists at `d5dda4b` despite the v0.4.0 release note claiming its deletion; `v0.2.1` also still there                                                                                                                                                                                                                                                                                                                              | `git ls-remote --tags origin`                                          |
+| Verified code claims: `ErrorKind` = 16 (AGENTS said 14), no `.erraudit.yaml`, no godoc examples, `internal/cli` zero tests, brittle `gemini-2.5-flash` test still at `cmd/vision/main_test.go:229`, no catalog BDD/benchmarks/`examples/catalog`, wrapcheck schema-invalid keys still at `.golangci.yaml:239,250`, `doctorCheckExtra` still at `commands.go:469`, INDEX still `CapturedAt` (`pipeline.go:291`), `docs/DUPLICATION_POLICY.md` has 0 reviewd mentions, `go mod tidy -diff` clean | greps in session                                                       |
+| Verified SystemNix wiring state — both repos pushed (remotes match local HEADs), but SystemNix lock still pins `de7c4c6` (pre-module) → wrapper inert                                                                                                                                                                                                                                                                                                                                          | `~/projects/SystemNix` flake.lock + git                                |
+| Annotated ALL 11 status reports inline — per-item `~~…~~ done at \`hash\``markers,`Won't implement`verdicts, open items routed with`← still open`                                                                                                                                                                                                                                                                                                                                              | each `docs/status/2026-08-*.md` now carries a banner + inline verdicts |
+| Annotated plan v2 with a 17-row Status column (every T2–T18 resolved with commits) + section note covering all 53 fine tasks                                                                                                                                                                                                                                                                                                                                                                   | `docs/planning/archived/2026-08-16_20-00_…plan-v2.md`                  |
+| Added STATUS banners to both HTML planning docs (fully-executed notices with commits)                                                                                                                                                                                                                                                                                                                                                                                                          | `docs/planning/archived/*.html`                                        |
+| Archived 4 fully-done artifacts via `git mv` (never plain mv): plan v2, T2–T6 snapshot, catwalk plan HTML, daemon plan v1 HTML                                                                                                                                                                                                                                                                                                                                                                 | `docs/status/archived/`, `docs/planning/archived/`                     |
+| Fixed 5 stale links pointing at the moved files; ran a full link-integrity check over every edited file — zero broken targets                                                                                                                                                                                                                                                                                                                                                                  | python link check, clean                                               |
+| Rebuilt `TODO_LIST.md` from scratch — ~20 verified open items in 5 sections, every item cites source report + code path                                                                                                                                                                                                                                                                                                                                                                        | `TODO_LIST.md`                                                         |
+| `ROADMAP.md` — corrected the false `v0.3.0`-deleted claim (correction note in Open Question 4), added daemon-operations + catalog-polish sections, removed shipped "Diff analysis" idea (visionreviewd `Compare` covers it), added the `erraudit` gate-vs-advisory open question                                                                                                                                                                                                               | `ROADMAP.md`                                                           |
+| `AGENTS.md` — fixed ErrorKind list (14→16 incl. `KindOverloaded`, `KindPaymentRequired`), added "Verification matrix" section (the 7 canonical checks), added `nix build .#visionreviewd`, documented mock-model field priority, linked `docs/ERROR_DESIGN.md`                                                                                                                                                                                                                                 | `AGENTS.md`                                                            |
+| `README.md` — linked `docs/ERROR_DESIGN.md` from the classified-errors section                                                                                                                                                                                                                                                                                                                                                                                                                 | `README.md:347`                                                        |
+| `CHANGELOG.md` — `[Unreleased]` Added entry for the audit work + Fixed entry for the two documentation corrections (ErrorKind count, ghost-tag reality)                                                                                                                                                                                                                                                                                                                                        | `CHANGELOG.md`                                                         |
+| Quality gates: `go build ./...`, `go vet ./...`, `gofmt -l .`, `go test -race -count=1 ./...` — **all green**; markdown link check clean                                                                                                                                                                                                                                                                                                                                                       | session output                                                         |
+| Health report printed inline with the two independent scores (Accuracy, Fitness) and visible math                                                                                                                                                                                                                                                                                                                                                                                              | conversation output                                                    |
+| Self-review pass executed (this report's cause) — caught 2 gaps, fixed 1 on sight (see d)                                                                                                                                                                                                                                                                                                                                                                                                      | below                                                                  |
 
 ## b) PARTIALLY DONE
 
@@ -117,6 +117,7 @@ verified-fresh state. Based on this session's run and what I noticed during it
 ## f) Up to 50 things to get done next (impact-sorted)
 
 **CI (blocks everything visible):**
+
 1. Fix `.golangci.yaml` wrapcheck schema — remove/rename `ignoreSigs`,
    `ignore-type-assert-ok` (`.golangci.yaml:239,250`) so
    `golangci-lint config verify` passes.
@@ -128,49 +129,49 @@ verified-fresh state. Based on this session's run and what I noticed during it
 
 **visionreviewd activation:**
 6. Bump SystemNix `vision-review-agent` input (lock pins pre-module
-   `de7c4c6`); confirm lazy wrapper imports the module.
+`de7c4c6`); confirm lazy wrapper imports the module.
 7. Place `/etc/visionreviewd/config.json` on target host; enable service
-   (+ optional llama-server, ~9–10 GB pull).
+(+ optional llama-server, ~9–10 GB pull).
 8. Run `visionreviewd doctor` as the activation gate.
 9. First real `visionreviewd once`; eyeball one review markdown + INDEX.
 10. Wire DiscordSync goldens as the first watched project.
 11. Real-model prompt tuning session (caption-tuned contract unvalidated).
 12. Let it run a day; review `events -last 50` + journal size; verify trend
-    arrows across ≥2 real changes.
+arrows across ≥2 real changes.
 
 **Docs debt found this session:**
 13. Add visionreviewd vocabulary to `docs/DOMAIN_LANGUAGE.md` (View, ViewKey,
-    view.captured/reviewed/compared, blob store, pass, replay, doctor,
-    reviewsDir).
+view.captured/reviewed/compared, blob store, pass, replay, doctor,
+reviewsDir).
 14. Document the `archived/` convention in AGENTS.md.
 15. Annotate + archive the pre-August status reports (~30 files) with the
-    same pass.
+same pass.
 16. Refresh `docs/DUPLICATION_POLICY.md` — pre-dates `internal/reviewd`
-    (0 mentions); re-run art-dupl and record.
+(0 mentions); re-run art-dupl and record.
 
 **Code quality (small, bounded):**
 17. doctor stderr injection (`commands.go:555` writes to `os.Stderr`,
-    bypassing injected writer).
+bypassing injected writer).
 18. Kill `doctorCheckExtra` magic constant (`commands.go:469`).
 19. INDEX "Updated" column: `ReviewedAt` vs `CapturedAt`
-    (`pipeline.go:291`, `replay.go:235`).
+(`pipeline.go:291`, `replay.go:235`).
 20. Guard `Pipeline.Pass` on cancelled context — explicit skip semantics.
 21. exhaustruct excludes for reviewd counter result types.
 22. codespell: `unparseable` ignore-rule or reword.
 23. flake meta: `homepage`/`platforms` on both packages; extract
-    `vendorHash.nix`.
+`vendorHash.nix`.
 24. Fix brittle `gemini-2.5-flash` test (`cmd/vision/main_test.go:229`).
 25. Round-trip test: `CompareManually` → wipe → `Replay`.
 26. BDD spec for replay behavior (currently table tests).
 27. llama unit readiness gate (ExecStartPost `/health`) so first pass
-    doesn't race model load.
+doesn't race model load.
 
 **SDK/docs polish:**
 28. godoc example: `pkg/errors` (`errors.AsType[*ModelError]` +
-    `IsRetryable()`).
+`IsRetryable()`).
 29. godoc example: `pkg/vision` (`errors.Is` + enriched sentinel message).
 30. `internal/cli` tests (`NewAgent` error path incl. `temperature=%.2f`,
-    `RequireArgc`).
+`RequireArgc`).
 31. Cross-link `docs/ERROR_DESIGN.md` from CHANGELOG.
 32. `examples/structured-stream` review vs unmarshal-error behavior.
 33. `consumeObjectStream` partial-malformed-object test.
@@ -180,7 +181,7 @@ verified-fresh state. Based on this session's run and what I noticed during it
 35. Delete ghost tags `v0.2.1` + `v0.3.0` (needs approval — destructive).
 36. Cut 0.6.0 after CI is green; CHANGELOG `[Unreleased]` is loaded.
 37. Consumer-side `go get …@v0.6.0` in a clean dir (skipped for
-    v0.5.0/v0.5.1).
+v0.5.0/v0.5.1).
 
 **Product decisions (gate future work):**
 38. `erraudit`: CI gate or advisory → drives suppression config.
@@ -188,8 +189,8 @@ verified-fresh state. Based on this session's run and what I noticed during it
 40. Semver policy for 0.x.
 41. Decide push cadence policy in writing (it was asked 3× across reports).
 
-*(42–50 intentionally unused — the lists above are the real queue; padding
-would be noise.)*
+_(42–50 intentionally unused — the lists above are the real queue; padding
+would be noise.)_
 
 ## g) Questions I can NOT figure out myself
 

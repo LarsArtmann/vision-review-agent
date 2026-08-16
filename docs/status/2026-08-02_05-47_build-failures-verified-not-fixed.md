@@ -1,8 +1,8 @@
 # Status Report — 2026-08-02 05:47
 
 > **ANNOTATED 2026-08-16 (docs-health):** verification gaps (jsonv2 test,
-`nix run .#test`) were closed by the `15:26`/`15:49` sessions; the
-`go-auto-upgrade` daemon items (1–5, 13, 15–17, 20) are external to this repo
+> `nix run .#test`) were closed by the `15:26`/`15:49` sessions; the
+> `go-auto-upgrade` daemon items (1–5, 13, 15–17, 20) are external to this repo
 > and remain open.
 
 **Session goal:** Fix two CI build failures reported via `buildflow`:

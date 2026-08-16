@@ -14,6 +14,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Nothing yet.
 
+## [0.6.1] - 2026-08-17
+
+### Fixed
+
+- **CI workflow green again** (module content is identical to v0.6.0; only
+  the workflow changed). Three stacked causes resolved: the wrapcheck
+  schema keys rejected by `golangci-lint config verify` (fixed in v0.6.0),
+  the missing `GOEXPERIMENT=jsonv2` on every package-loading CI job (the
+  daemon's go-cqrs-lite dependency imports `encoding/json/v2`, which the
+  default toolchain excludes — local dev already set it via `go env`), and
+  `golangci-lint-action` v6, which cannot run golangci-lint v2 at all and
+  silently resolved `version: latest` to a stale v1.64.8 binary built with
+  go1.24. The action is now v7.0.1 with the linter pinned to v2.12.2.
+
 ## [0.6.0] - 2026-08-17
 
 ### Added

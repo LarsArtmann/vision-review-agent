@@ -125,10 +125,10 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 ### P2 — Broader error system improvements
 
-> *(Checked 2026-08-16 during docs-health: none of items 11–20 shipped — no
+> _(Checked 2026-08-16 during docs-health: none of items 11–20 shipped — no
 > `ValidationError`, `RetryAdvice`, `HTTPStatus()`, `ErrRetriesExhausted`,
 > `apperrors.Join`, or `Unwrap() []error` exists in code. All routed to
-> ROADMAP; unmarked = open.)*
+> ROADMAP; unmarked = open.)_
 
 11. **Consider a `ValidationError` type** carrying `Field`, `Value`, `Constraint` — consumers could render form-validation UI without parsing the error string.
 12. **Consider `RetryAdvice` on `ModelError`** — structured hint derived from `RetryAfter` + `Kind`.
@@ -164,10 +164,10 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 ### P5 — Deep error system audit (future)
 
-> *(Checked 2026-08-16 during docs-health: none of items 36–50 shipped —
+> _(Checked 2026-08-16 during docs-health: none of items 36–50 shipped —
 > grep confirms no `GRPCStatus`, `WithCause`, `ErrorKind.String`,
 > `LogValue`/`LogKV`, or decode-failure sentinel in code. Routed to ROADMAP;
-> unmarked = open.)*
+> unmarked = open.)_
 
 36. **Evaluate `cockroachdb/errors`** — the banned list says "use instead of `pkg/errors`". Does the project need it? Currently uses stdlib only.
 37. **Consider `ModelError.GRPCStatus()`** for gRPC consumers.
