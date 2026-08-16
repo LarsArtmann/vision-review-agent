@@ -1,5 +1,9 @@
 # Status Report — 2026-08-02 06:13
 
+> **ANNOTATED 2026-08-16 (docs-health):** P0 items 1–4 and most P1 items
+> were closed by the `15:26`/`15:49` follow-up sessions; remaining open work
+> is tracked in `TODO_LIST.md` / `ROADMAP.md`.
+
 **Session goal:** Design a superb error system based on `erraudit --type-aware` output (229 errors found, 125 violations).
 
 **Starting HEAD:** `6c744e2 build(deps): bump charm.land/fantasy to v0.40.0 and refresh nixpkgs + flake-parts`
@@ -36,22 +40,22 @@ The `erraudit` report surfaced 125 violations. After thorough analysis, the majo
 
 ## b) PARTIALLY DONE
 
-1. **Error system analysis — real issues fixed, false positives documented but not suppressed via linting config.** I documented in AGENTS.md WHY the `context_loss` and `generic_return` findings are false positives, but I did not configure `erraudit` (or any linter) to suppress them. The 108 `context_loss` ERROR-severity findings will reappear on every future run, creating noise.
+1. ~~**Error system analysis — real issues fixed, false positives documented but not suppressed via linting config.** I documented in AGENTS.md WHY the `context_loss` and `generic_return` findings are false positives, but I did not configure `erraudit` (or any linter) to suppress them. The 108 `context_loss` ERROR-severity findings will reappear on every future run, creating noise.~~ still open — no `.erraudit.yaml`; advisory-vs-gate question (g1) unanswered
 
-2. **`internal/cli/helpers.go:75` context loss — addressed via documentation only.** The `erraudit` tool flagged that `model`, `temp`, and `agent` are in scope but not included in the error message at `create vision agent (systemPrompt=%q)`. These are inputs to the agent constructor that failed — including them would be sensible, but they include a `fantasy.LanguageModel` interface value (could be noisy in logs) and a float64. I documented the principle ("only include INPUTS relevant to diagnosis") but didn't fix this specific site.
+2. ~~**`internal/cli/helpers.go:75` context loss — addressed via documentation only.**~~ done at `8ac8dde` — `temperature=%.2f` added to the error message
 
-3. **`cmd/vision/main.go` context losses — not touched at all.** The `parseFlags` site (line 120) has 11 flagged variables in scope. But these are all flag-parse results — the error `"parse flags: %w"` with the underlying flag error is already sufficient context. Not fixed, not documented individually.
+3. ~~**`cmd/vision/main.go` context losses — not touched at all.**~~ closed as intentional — AGENTS.md decision: result variables never go in error messages; flag errors are self-describing
 
 ---
 
 ## c) NOT STARTED
 
-1. **No linting integration for the error system.** No `erraudit` config, `.erraudit.yaml`, CI gate, or `//nolint` directives were added.
-2. **No errors.Is/errors.AsType migration audit.** The `hierarchical-errors` skill was loaded but the project already uses `errors.AsType[E]` correctly — no `errors.As` to migrate. This was verified by reading the code but no formal audit tool was run.
-3. **No nix flake verification** (`nix build`, `nix run .#test`, `nix run .#lint`, `nix flake check`) — only Go toolchain checks were run.
-4. **No jsonv2 test verification** (`GOEXPERIMENT=jsonv2 go test ./...`).
-5. **No CHANGELOG entry** for the error system improvements.
-6. **No example update** — `examples/error-handling/main.go` was not reviewed for alignment with the new enriched error messages.
+1. **No linting integration for the error system.** No `erraudit` config, `.erraudit.yaml`, CI gate, or `//nolint` directives were added. ← still open
+2. ~~**No errors.Is/errors.AsType migration audit.** The `hierarchical-errors` skill was loaded but the project already uses `errors.AsType[E]` correctly — no `errors.As` to migrate. This was verified by reading the code but no formal audit tool was run.~~ closed — verified; AGENTS.md documents the `errors.AsType` convention
+3. ~~**No nix flake verification** (`nix build`, `nix run .#test`, `nix run .#lint`, `nix flake check`) — only Go toolchain checks were run.~~ done in the `15:49` session — all green
+4. ~~**No jsonv2 test verification** (`GOEXPERIMENT=jsonv2 go test ./...`).~~ done in the `15:26` session
+5. ~~**No CHANGELOG entry** for the error system improvements.~~ done at `389e788`
+6. ~~**No example update** — `examples/error-handling/main.go` was not reviewed for alignment with the new enriched error messages.~~ done at `e1c633d`
 
 ---
 
@@ -95,21 +99,21 @@ The `erraudit` report surfaced 125 violations. After thorough analysis, the majo
 
 ### P0 — Close critical gaps from this session
 
-1. **Write a test for `AnalyzeStructuredStream` final-object unmarshal failure.** Mock a stream that emits `ObjectStreamPartTypeFinish` with a non-unmarshallable object; assert the returned error is `KindStructuredParse` and `errors.AsType[*ModelError]` extracts it.
-2. **Run `GOEXPERIMENT=jsonv2 go test ./...`** to confirm the error changes work under both JSON regimes.
-3. **Run `nix run .#test`** for the full race + coverprofile path.
-4. **Run `nix run .#lint`** — golangci-lint may flag new `fmt.Errorf` wrapping patterns or the `cost.go` import addition.
+1. ~~**Write a test for `AnalyzeStructuredStream` final-object unmarshal failure.**~~ done at `7cc90bc` — `TestAnalyzeStructuredStreamUnmarshalFailure`
+2. ~~**Run `GOEXPERIMENT=jsonv2 go test ./...`**~~ done in the `15:26` session; permanent CI job since
+3. ~~**Run `nix run .#test`**~~ done in the `15:26` session
+4. ~~**Run `nix run .#lint`**~~ done in the `15:26` session (0 issues)
 
 ### P1 — Error system hardening
 
-5. Add an `erraudit` config or `//nolint` directives to suppress false-positive `context_loss` and `generic_return` findings, so the tool output becomes actionable.
-6. Extract a `wrapSentinel(sentinel error, got, want string) error` helper to standardize the validation error format and prevent drift.
-7. Add tests for `LoadImageFromURLWithClient` that verify the URL appears in all error paths (currently the test checks `"404"` substring but not the wrapping context).
-8. Review `examples/error-handling/main.go` and update it to demonstrate the new enriched error messages.
-9. Add a CHANGELOG entry for the error system improvements.
-10. Audit `internal/cli/helpers.go:75` — consider including `temperature` in the error message since it's a direct input to the failed `NewAgent` call.
-11. Consider adding structured fields to `ModelError` for `Op`, `Prompt`, and `StatusCode` so consumers can log/serialize them without parsing the error string.
-12. Add `errors.Is` tests for the enriched sentinels at the `pkg/errors` level (currently only tested in `pkg/vision`).
+5. Add an `erraudit` config or `//nolint` directives to suppress false-positive `context_loss` and `generic_return` findings, so the tool output becomes actionable. ← still open
+6. ~~Extract a `wrapSentinel(sentinel error, got, want string) error` helper to standardize the validation error format and prevent drift.~~ **Won't implement — evaluated and rejected in the `15:26` session** (per-site format verbs differ; 6 inline calls are table-tested)
+7. ~~Add tests for `LoadImageFromURLWithClient` that verify the URL appears in all error paths~~ done at `8ac8dde` (3 subtests)
+8. ~~Review `examples/error-handling/main.go` and update it~~ done at `e1c633d`
+9. ~~Add a CHANGELOG entry for the error system improvements.~~ done at `389e788`
+10. ~~Audit `internal/cli/helpers.go:75` — consider including `temperature`~~ done at `8ac8dde`
+11. ~~Consider adding structured fields to `ModelError` for `Op`, `Prompt`, and `StatusCode`~~ already present — the fields exist on `ModelError`; only a godoc example is missing (see #22)
+12. ~~Add `errors.Is` tests for the enriched sentinels at the `pkg/errors` level~~ done at `8ac8dde` (12 table cases)
 
 ### P2 — Broader error system improvements
 
@@ -121,30 +125,30 @@ The `erraudit` report surfaced 125 violations. After thorough analysis, the majo
 18. **Review all `//nolint:wrapcheck` directives** — are they still needed after the error system improvements?
 19. **Add error sentinel for retry exhaustion** — `ErrRetriesExhausted` wrapping `lastErr`, so consumers can distinguish "failed after N retries" from "failed immediately".
 20. **Consider `apperrors.Join(errs ...error) error`** for batch analysis that collects per-image errors.
-21. **Document the error taxonomy in a diagram** — sentinels vs ModelError vs wrapped errors, when each appears.
+21. ~~**Document the error taxonomy in a diagram** — sentinels vs ModelError vs wrapped errors, when each appears.~~ done at `5bc97b4` — `docs/ERROR_DESIGN.md`
 22. **Add a `godoc` example** for `pkg/errors` showing `errors.AsType[*ModelError]` extraction + `IsRetryable()` check.
 23. **Add a `godoc` example** for `pkg/vision` showing `errors.Is(err, vision.ErrInvalidTemperature)` with enriched message.
 
 ### P3 — Verification and CI
 
-24. Run `go test -race -coverprofile=coverage.out ./...` and check error-path coverage.
-25. Add `erraudit` as a flake app (`nix run .#erraudit`) if it's useful, or document why it's excluded.
-26. Add a CI gate on `golangci-lint run ./...` with the project's specific linter config.
-27. Review whether `erraudit --type-aware` should be a CI gate or an advisory tool.
-28. Run `nix flake check` to confirm the flake still builds after uncommitted changes.
-29. Commit the error system work with a descriptive message.
-30. Review `go.mod` — no dependency changes needed for this work, but confirm.
+24. ~~Run `go test -race -coverprofile=coverage.out ./...` and check error-path coverage.~~ done in the `15:26`/`15:49` sessions (coverage 90.1% in `pkg/vision`)
+25. Add `erraudit` as a flake app (`nix run .#erraudit`) if it's useful, or document why it's excluded. ← still open
+26. ~~Add a CI gate on `golangci-lint run ./...` with the project's specific linter config.~~ exists — `lint` job in `.github/workflows/ci.yml`
+27. Review whether `erraudit --type-aware` should be a CI gate or an advisory tool. ← still open (needs user decision)
+28. ~~Run `nix flake check` to confirm the flake still builds after uncommitted changes.~~ done in the `15:49` session
+29. ~~Commit the error system work with a descriptive message.~~ done (`23d74ec`…`5bc97b4`)
+30. ~~Review `go.mod` — no dependency changes needed for this work, but confirm.~~ confirmed — no changes needed
 
 ### P4 — Documentation and examples
 
-31. Update `README.md` error-handling section with the new enriched messages.
-32. Update `docs/DOMAIN_LANGUAGE.md` if it references error terminology.
-33. Add a `docs/ERROR_DESIGN.md` documenting the full error taxonomy and design decisions.
-34. Update `FEATURES.md` if error classification is listed as a feature.
-35. Create a comprehensive error-handling example in `examples/error-handling/main.go`.
-36. Document the `erraudit` false-positive categories in AGENTS.md "Gotchas".
-37. Add the validation error format (`"sentinel: got %v, want ..."`) to AGENTS.md code conventions.
-38. Review `examples/structured-stream/main.go` for alignment with the new unmarshal error behavior.
+31. Update `README.md` error-handling section with the new enriched messages. ← still open (README documents classified errors but not the enriched format; no `docs/ERROR_DESIGN.md` link)
+32. ~~Update `docs/DOMAIN_LANGUAGE.md` if it references error terminology.~~ done — `ErrorKind` (16 kinds), `ModelError`, `Classify` defined
+33. ~~Add a `docs/ERROR_DESIGN.md` documenting the full error taxonomy and design decisions.~~ done at `5bc97b4`
+34. ~~Update `FEATURES.md` if error classification is listed as a feature.~~ done — FEATURES.md "Error Handling" section
+35. ~~Create a comprehensive error-handling example in `examples/error-handling/main.go`.~~ done at `e1c633d`
+36. ~~Document the `erraudit` false-positive categories in AGENTS.md "Gotchas".~~ done — AGENTS.md error-handling decisions
+37. ~~Add the validation error format (`"sentinel: got %v, want ..."`) to AGENTS.md code conventions.~~ done — "Validation errors include offending values"
+38. Review `examples/structured-stream/main.go` for alignment with the new unmarshal error behavior. ← still open
 
 ### P5 — Deep error system audit (future)
 

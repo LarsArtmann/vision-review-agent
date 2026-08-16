@@ -1,5 +1,9 @@
 # visionreviewd build-out — T2–T6 progress snapshot
 
+> **STATUS: superseded — everything in this snapshot landed.** T6 was fixed
+> and committed as `b0d3bd5`; T7–T18 all shipped by the sessions of
+> `2026-08-16_21-18` and `2026-08-16_22-50`. Archived 2026-08-16.
+
 **Date:** 2026-08-16 20:37 CEST
 **Mission:** Turn vision-review-agent into the event-sourced UI review daemon
 (visionreviewd) per
@@ -20,14 +24,16 @@ Every commit passed `go build ./...`, `go test ./internal/reviewd/`,
 `golangci-lint run ./internal/reviewd/...` (0 issues), and the BuildFlow
 pre-commit hook.
 
-## Current state: T6 IN PROGRESS, RED, uncommitted
+## Current state: ~~T6 IN PROGRESS, RED, uncommitted~~ resolved — T6 shipped
+green as `d48c947` + fixup `b0d3bd5`
 
 `internal/reviewd/store.go` + `store_test.go` (new, untracked) implement the
 bbolt event store: `OpenStore/Close`, `ViewState` fold for the 3 event types,
 `RecordCapture/RecordReview/RecordComparison`, `LoadView`, `ViewEvents`,
 `AllEvents` (journal `ReadAll`).
 
-**1 test fails right now:**
+~~**1 test fails right now:**~~ fixed at `b0d3bd5` — test expectation updated
+to `PrevScore == ScoreUnknown` (the initializer was correct)
 
 ```
 --- FAIL: TestStoreScoreTrend
@@ -40,7 +46,8 @@ CORRECT (no prior review = unknown trend), so the fix is updating the test
 expectation to `PrevScore == ScoreUnknown` after the first review — not
 reverting the initializer.
 
-**3 lint findings remain in T6 files:**
+~~**3 lint findings remain in T6 files:**~~ cleared at `b0d3bd5`
+(`initialViewState` var→function, `errors.Join` for close error, golines).
 `gochecknoglobals` on `initialViewState`, `errorlint` on the
 `(close error: %s)` verb, one `golines` long line.
 
@@ -88,26 +95,30 @@ reverting the initializer.
 - Auto-git daemon + BuildFlow active; hook occasionally reformats files
   post-commit (next task picks the diffs up — nothing lost).
 
-## What is NOT done yet (T6 remainder + T7–T18)
+## What is NOT done yet (~~T6 remainder + T7–T18~~ all done)
 
-- T6: fix test expectation, clear 3 lint findings, commit.
-- T7 pipeline (scan→ingest→compare→review→write + INDEX refresh + BDD),
-- T8 auto/manual compare flows, T9 CLI (7 subcommands), T10 daemon loop +
-  SIGTERM, T11 events/replay, T12 fake-server E2E, T13 doctor,
-  T14 flake package (+stale `vendorHash` at flake.nix:52), T15 NixOS module
-  (+optional llama-server unit on 8390), T16 SystemNix lazy wrapper +
-  activation docs, T17 docs, T18 final `-race`/vet/lint/gofmt gate.
+- ~~T6: fix test expectation, clear 3 lint findings, commit.~~ done at `b0d3bd5`
+- ~~T7 pipeline (scan→ingest→compare→review→write + INDEX refresh + BDD),~~ done at `f9e77dd`
+- ~~T8 auto/manual compare flows,~~ done at `4e8316d` ~~T9 CLI (7 subcommands),~~ done at `660e9d3` ~~T10 daemon loop +
+  SIGTERM,~~ done at `de7c4c6` + `efe9acf` ~~T11 events/replay,~~ done at `5cddff4` ~~T12 fake-server E2E,~~ done at `99dcdfe` ~~T13 doctor,~~ done at `cee0ba7`
+- ~~T14 flake package (+stale `vendorHash` at flake.nix:52),~~ done at `9fd3117` ~~T15 NixOS module
+  (+optional llama-server unit on 8390),~~ done at `b2d9c0c` ~~T16 SystemNix lazy wrapper +
+  activation docs,~~ done at `4c03af9`/`df7cdf2` ~~T17 docs,~~ done at `5af6d22` ~~T18 final `-race`/vet/lint/gofmt gate.~~ green at session close
 
 ## Open questions (max 3)
 
-1. **Push policy:** push each task commit to origin/master as it lands, or
-   only on explicit request / session end?
-2. **Reviews home:** keep default
+1. ~~**Push policy:** push each task commit to origin/master as it lands, or
+   only on explicit request / session end?~~ resolved — pushed at session end;
+   remote master now matches `5da8022`
+2. ~~**Reviews home:** keep default
    `~/.local/share/vision-review-agent/reviews`, or point the shipped
    example config at a dedicated git-tracked repo (e.g.
-   `~/projects/ui-reviews`) from day one?
-3. **INDEX trend baseline:** OK that the first-ever review of a view shows
-   trend "·" (unknown previous score) rather than pretending 0?
+   ~/projects/ui-reviews) from day one?~~ resolved — default state dir shipped;
+   `reviewsDir` is configurable (plan v2 decision 1)
+3. ~~**INDEX trend baseline:** OK that the first-ever review of a view shows
+   trend "·" (unknown previous score) rather than pretending 0?~~ resolved —
+   yes; `TestStoreScoreTrend` asserts `PrevScore == ScoreUnknown` after the
+   first review (`b0d3bd5`)
 
-**Next action (awaiting go-ahead):** fix `TestStoreScoreTrend` expectation +
-the 3 lint findings, commit T6, then proceed to T7.
+~~**Next action (awaiting go-ahead):** fix `TestStoreScoreTrend` expectation +
+the 3 lint findings, commit T6, then proceed to T7.~~ done at `b0d3bd5`, `f9e77dd`

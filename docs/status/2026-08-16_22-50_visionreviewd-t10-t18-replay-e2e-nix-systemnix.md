@@ -1,5 +1,10 @@
 # Status Report — visionreviewd T10→T18: replay, E2E, doctor, Nix, SystemNix
 
+> **ANNOTATED 2026-08-16 (docs-health):** item 1 (push repo) and item 2 (push
+> SystemNix) are done — both remotes match their local HEADs. The SystemNix
+> lock still pins `de7c4c6` (pre-module), so input bump + host activation
+> remain the gating open work — tracked in `TODO_LIST.md`.
+
 **Date:** 2026-08-16 22:50
 **Scope of this report:** the continuation session that picked up at T10's
 outstanding lint findings and drove the plan
@@ -95,10 +100,12 @@ SystemNix flake still evaluates with the wrapper imported.
   ~9–10 GB model was deliberately not pulled). Everything model-related is
   covered by the fake server, which proves wiring, not model behavior. The
   caption-tuned prompt contract (descriptive→critical) is UNVALIDATED.
-- **SystemNix integration** — committed locally only. The locked
+- **SystemNix integration** — committed locally only. ~~The locked
   `vision-review-agent` input points at GitHub `master`, which does NOT yet
   contain the module; the wrapper stays inert (by design) until this repo is
-  pushed. No host enables it yet; no `/etc/visionreviewd/config.json` exists.
+  pushed.~~ repo pushed since (remote master = `5da8022`); the lock entry
+  still pins `de7c4c6` (pre-module) so the wrapper remains inert until the
+  input is bumped. No host enables it yet; no `/etc/visionreviewd/config.json` exists.
 - **Replay coverage of manual compares** — the byte-identical test exercises
   the pipeline path (capture→compare→review). `CompareManually`-only streams
   are handled by replay (INDEX row inclusion is implemented and reasoned
@@ -113,8 +120,10 @@ SystemNix flake still evaluates with the wrapper imported.
 
 ## c) NOT STARTED
 
-- **Pushing either repo** (policy default was session-end push; nothing
-  pushed — awaiting instruction, see g).
+- ~~**Pushing either repo** (policy default was session-end push; nothing
+  pushed — awaiting instruction, see g).~~ done — both repos pushed
+  (`vision-review-agent` remote master = `5da8022`; SystemNix remote master
+  matches `8ffb2762`)
 - **Host activation**: evo-x2 (or any host) enablement, config placement,
   llama-server bring-up, first real pass.
 - **DiscordSync goldens wiring** as the first real project.
@@ -200,10 +209,10 @@ SystemNix flake still evaluates with the wrapper imported.
 
 **Activation (highest impact):**
 
-1. Push this repo to `origin/master` (blocks everything below).
-2. Push SystemNix (or confirm its own sync flow commits it).
+1. ~~Push this repo to `origin/master` (blocks everything below).~~ done — remote master = `5da8022`
+2. ~~Push SystemNix (or confirm its own sync flow commits it).~~ done — remote master = `8ffb2762`
 3. Bump SystemNix `vision-review-agent` input; confirm the lazy wrapper
-   starts importing the real module.
+   starts importing the real module. ← still open — lock pins `de7c4c6` (TODO_LIST)
 4. Place `/etc/visionreviewd/config.json` on the target host (from
    `docs/visionreviewd-config.example.json` + `visionreviewd discover`).
 5. Enable `services.vision-review-agent` on the first host with
@@ -278,19 +287,20 @@ SystemNix flake still evaluates with the wrapper imported.
 44. Cut 0.6.0: finalize CHANGELOG `[Unreleased]`, tag, push, verify proxy.
 45. `nix flake check --all-systems` for aarch64 module eval.
 46. Fix or work around the broken editor buildcache mount (environment).
-47. Delete the `v0.2.1` ghost tag (pre-existing TODO; needs your approval).
+47. Delete the `v0.2.1` ghost tag (pre-existing TODO; needs your approval). ← still open — **and note: `v0.3.0` also still exists on origin pointing at `d5dda4b`, despite the v0.4.0 release note claiming its deletion** (TODO_LIST)
 48. Add an `examples/visionreviewd` walkthrough (compose config + run).
 49. Expand `internal/reviewd/doc.go` into a real architecture overview.
 50. After activation: write the follow-up status report and ANNOTATE this
-    one non-destructively (docs-health).
+    one non-destructively (docs-health). ← annotation done 2026-08-16 (this
+    pass); the post-activation follow-up report is still open
 
 ---
 
 ## g) Questions I cannot answer myself
 
-1. **Push now?** The stated default was "session-end push", and this session
+1. ~~**Push now?** The stated default was "session-end push", and this session
    is complete — but I never push without an explicit instruction. Push
-   `vision-review-agent` master and SystemNix master now?
+   `vision-review-agent` master and SystemNix master now?~~ resolved — both pushed
 2. **First host + config channel** — evo-x2? And is a plain
    `/etc/visionreviewd/config.json` acceptable, or should the config go
    through your sops secret flow from day one (it contains no secrets today,

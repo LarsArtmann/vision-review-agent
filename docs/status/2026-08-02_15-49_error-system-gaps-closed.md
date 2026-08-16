@@ -1,5 +1,9 @@
 # Status Report — 2026-08-02 15:49
 
+> **ANNOTATED 2026-08-16 (docs-health):** all P0 items from this session were
+> closed. Notable still-open items: ERROR_DESIGN.md cross-links (#2), godoc
+> examples, `internal/cli` tests — tracked in `TODO_LIST.md`.
+
 **Session goal:** Execute the remaining P0/P1 gaps from two prior error-system sessions (`2026-08-02_06-13` and `2026-08-02_15-26`), then self-reflect.
 
 **Starting HEAD:** `14b36b9 docs(status): record session where build failures were verified, not fixed`
@@ -48,35 +52,26 @@ This session closed every P0 item from both prior status reports and most P1 ite
 
 ## b) PARTIALLY DONE
 
-1. **Error system documentation — consolidated but not cross-linked everywhere.** `docs/ERROR_DESIGN.md` is comprehensive but `AGENTS.md` doesn't reference it, `README.md` doesn't mention it, and `CHANGELOG.md` doesn't note its creation. The document exists in isolation; the rest of the docs don't point to it yet.
+1. **Error system documentation — consolidated but not cross-linked everywhere.** ← still open — verified 2026-08-16: neither `README.md` nor `AGENTS.md` links `docs/ERROR_DESIGN.md`
 
-2. **Mock model field priority — documented in struct comment but not in AGENTS.md.** The struct comment on `mockModel` now clearly states priority ordering, but `AGENTS.md`'s "Test Organization" section doesn't mention it. A developer reading AGENTS.md wouldn't know about the priority rules without opening the mock file.
+2. **Mock model field priority — documented in struct comment but not in AGENTS.md.** ← still open
 
-3. **`cli/helpers.go` error enrichment — done but not tested.** I added `temperature=%.2f` to the error message but there are no tests for `internal/cli` (the package has `[no test files]`). The change is a one-line format string edit, but it's technically untested.
+3. **`cli/helpers.go` error enrichment — done but not tested.** ← still open — `internal/cli` still has zero test files
 
 ---
 
 ## c) NOT STARTED
 
-1. **No `erraudit` suppression config.** Both prior reports identified 125 violations (108 `context_loss` false positives + 17 `generic_return`). Neither this session nor prior sessions created `.erraudit.yaml` or `//nolint` directives. The tool output remains noisy on every run. (Still unclear if `erraudit` is a CI gate or advisory — see Questions.)
-
-2. **No `godoc` examples.** The prior report's P3 items 22-23 (testable examples in `pkg/errors` and `pkg/vision` showing `errors.AsType[*ModelError]` and `errors.Is` usage) were not addressed.
-
-3. **No `ValidationError` structured type.** The prior report's P2 item 11 (a type carrying `Field`, `Value`, `Constraint` for form-validation UI) was not started. Currently the offending value is baked into the error string via `fmt.Errorf`.
-
-4. **No `ErrRetriesExhausted` sentinel.** Prior reports' P2 item 14 — distinguish "failed after N retries" from "failed immediately" — not started.
-
-5. **No `apperrors.Join` for batch errors.** Prior report's P2 item 15 — per-image error collection in `AnalyzeBatch` — not started.
-
-6. **No README update.** The error-handling section in `README.md` was not updated with the enriched messages or the new `docs/ERROR_DESIGN.md` reference.
-
-7. **No `FEATURES.md` / `DOMAIN_LANGUAGE.md` review.** Not checked whether these reference error terminology that should be updated.
-
-8. **No `examples/structured-stream/main.go` review.** Not verified whether the streaming example aligns with the new unmarshal-error behavior.
-
-9. **No `internal/cli` tests created.** The package has zero test files. The `NewAgent` function's error path (which I just enriched with temperature) is untested.
-
-10. **No CI integration of `erraudit`.** Not added as a flake app or CI gate.
+1. **No `erraudit` suppression config.** ← still open
+2. **No `godoc` examples.** ← still open
+3. **No `ValidationError` structured type.** ← still open (ROADMAP "Typed config-validation errors")
+4. **No `ErrRetriesExhausted` sentinel.** ← still open (ROADMAP)
+5. **No `apperrors.Join` for batch errors.** ← still open
+6. **No README update.** ← still open
+7. ~~**No `FEATURES.md` / `DOMAIN_LANGUAGE.md` review.**~~ done — both accurate (ErrorKind 16 kinds verified)
+8. **No `examples/structured-stream/main.go` review.** ← still open
+9. **No `internal/cli` tests created.** ← still open
+10. **No CI integration of `erraudit`.** ← still open
 
 ---
 
@@ -122,17 +117,17 @@ This session closed every P0 item from both prior status reports and most P1 ite
 
 ### P0 — Close remaining gaps from this session
 
-1. **Update `CHANGELOG.md`** with this session's additions: consumeObjectStream unit tests, streamObjectErr mock field, sentinel wrapping tests, URL-in-error tests, cli temperature fix, `docs/ERROR_DESIGN.md`.
-2. **Cross-link `docs/ERROR_DESIGN.md`** from `AGENTS.md` (Key Design Decisions or a new Documentation section), `README.md` (error handling section), and `CHANGELOG.md`.
-3. **Update `AGENTS.md` Test Organization section** with mock model field priority and `mockObjectStream` helper reference.
+1. ~~**Update `CHANGELOG.md`**~~ done — covered by the `[0.5.0]` entry (tests, example, fixes)
+2. **Cross-link `docs/ERROR_DESIGN.md`** from `AGENTS.md`, `README.md`, and `CHANGELOG.md`. ← still open (verified missing)
+3. **Update `AGENTS.md` Test Organization section** with mock model field priority and `mockObjectStream` helper reference. ← still open
 
 ### P1 — Error system hardening (from prior reports, still open)
 
-4. **Add `erraudit` suppression config** (`.erraudit.yaml` or `//nolint` directives) for false-positive `context_loss` on result variables and `generic_return` on public API functions.
-5. **Add a test for `consumeObjectStream` partial-object malformed unmarshal** — verify a bad partial doesn't crash the stream and doesn't invoke the callback.
-6. **Add `internal/cli` tests** — at minimum cover `NewAgent` error path (verifying temperature appears in the message) and `RequireArgc`.
-7. **Review `examples/structured-stream/main.go`** for alignment with the new unmarshal-error behavior.
-8. **Update `README.md`** error-handling section with enriched message examples and link to `docs/ERROR_DESIGN.md`.
+4. **Add `erraudit` suppression config** ← still open
+5. **Add a test for `consumeObjectStream` partial-object malformed unmarshal** ← still open
+6. **Add `internal/cli` tests** ← still open
+7. **Review `examples/structured-stream/main.go`** ← still open
+8. **Update `README.md`** error-handling section ← still open
 
 ### P2 — Broader error system improvements (from prior reports)
 
@@ -151,22 +146,22 @@ This session closed every P0 item from both prior status reports and most P1 ite
 
 ### P3 — Documentation and examples (from prior reports)
 
-21. **Add `godoc` example for `pkg/errors`** showing `errors.AsType[*ModelError]` + `IsRetryable()`.
-22. **Add `godoc` example for `pkg/vision`** showing `errors.Is(err, vision.ErrInvalidTemperature)` with enriched message.
-23. **Convert `docs/ERROR_DESIGN.md` ASCII flow diagram to Mermaid** for native rendering on GitHub.
-24. **Update `docs/DOMAIN_LANGUAGE.md`** if it references error terminology.
-25. **Update `FEATURES.md`** if error classification is listed as a feature.
-26. **Document the validation error format** (`"sentinel: got %v, want ..."`) in AGENTS.md code conventions.
-27. **Document the `erraudit` false-positive categories** in AGENTS.md "Gotchas".
-28. **Consolidate `printConfigError` and `printModelError` patterns** in the example — use the same map-lookup style for consistency.
+21. **Add `godoc` example for `pkg/errors`** ← still open
+22. **Add `godoc` example for `pkg/vision`** ← still open
+23. **Convert `docs/ERROR_DESIGN.md` ASCII flow diagram to Mermaid** ← still open
+24. ~~**Update `docs/DOMAIN_LANGUAGE.md`**~~ done — accurate
+25. ~~**Update `FEATURES.md`**~~ done — "Error Handling" section
+26. ~~**Document the validation error format** in AGENTS.md~~ done
+27. ~~**Document the `erraudit` false-positive categories** in AGENTS.md~~ done
+28. **Consolidate `printConfigError` and `printModelError` patterns** ← still open (ROADMAP)
 
 ### P4 — CI and verification (from prior reports)
 
-29. **Add `erraudit` as a flake app** (`nix run .#erraudit`) or document why it's excluded.
-30. **Add CI gate on `golangci-lint run ./...`** if not already present.
-31. **Review whether `erraudit --type-aware` should be a CI gate** or advisory tool.
-32. **Run a coverage analysis** on error paths specifically — are there untested `return err` sites?
-33. **Add CI job for `nix flake check`** — it passes locally but may not be in CI.
+29. **Add `erraudit` as a flake app** ← still open
+30. ~~**Add CI gate on `golangci-lint run ./...`**~~ exists — `lint` job in ci.yml
+31. **Review whether `erraudit --type-aware` should be a CI gate** ← still open (needs user decision)
+32. ~~**Run a coverage analysis** on error paths~~ done — 90.1% `pkg/vision` this session
+33. ~~**Add CI job for `nix flake check`**~~ exists — `nix-flake-check` job (ci.yml:101)
 
 ### P5 — Deep error system audit (future, from prior reports)
 
@@ -183,10 +178,10 @@ This session closed every P0 item from both prior status reports and most P1 ite
 44. **Consider an error sentinel for image decode failures** distinct from `ErrInvalidImage`.
 45. **Review `cmd/vision/main.go` flag-parse error** — could include the flag name.
 46. **Run a full `brutal-self-review` or `full-code-review` skill pass** focused on error handling.
-47. **Add `nix build .` to the standard verification matrix** — it was missing for two full sessions.
-48. **Add `nix flake check` to the standard verification matrix** — same.
-49. **Consider moving `mockObjectStream` to `mock_test.go`** for consistency with other mock helpers.
-50. **Review whether the `consumeObjectStream` extraction should be merged back** — it's single-call; the funlen threshold could be raised instead. (Design tradeoff, not a bug.)
+47. ~~**Add `nix build .` to the standard verification matrix**~~ done — AGENTS.md "Verification matrix"
+48. ~~**Add `nix flake check` to the standard verification matrix**~~ done — AGENTS.md "Verification matrix"
+49. **Consider moving `mockObjectStream` to `mock_test.go`** ← still open — helper lives in `structured_test.go`
+50. **Review whether the `consumeObjectStream` extraction should be merged back** ← still open as a design tradeoff
 
 ---
 

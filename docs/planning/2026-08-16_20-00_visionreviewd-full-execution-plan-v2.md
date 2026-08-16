@@ -1,5 +1,10 @@
 # visionreviewd — Full Execution Plan v2 (Remaining Work)
 
+> **STATUS: FULLY EXECUTED — archived 2026-08-16.** Every task T2–T18
+> shipped (see Status column below); final verification passed at `5da8022`.
+> Post-build activation work (push, SystemNix bump, host enablement, real-model
+> bring-up) is tracked in `TODO_LIST.md`, not here.
+
 **Date:** 2026-08-16 20:00
 **Mission:** Turn vision-review-agent into the event-sourced UI review daemon: watch all
 projects' UI screenshots, review each view with local llama-server
@@ -54,27 +59,31 @@ Stream: `View` type, ID = `<project>:<Page--theme--viewport>`. Reviews layout:
 
 ## Medium plan (30–100 min each, 17 tasks, impact-sorted)
 
-| #   | Tier | Task                                                                     | Impact   | Effort |
-| --- | ---- | ------------------------------------------------------------------------ | -------- | ------ |
-| T2  | P0   | Domain: events.go, viewkey.go, hash.go, blobstore.go + tests             | High     | M      |
-| T3  | P0   | Config JSON load/validate/defaults + discover walker + tests             | High     | M      |
-| T4  | P0   | Reviewer: openaicompat provider ctor, prompts, score parse + mock tests  | Critical | M      |
-| T5  | P0   | Markdown writer: view/comparison templates, INDEX, atomic writes + tests | Critical | M      |
-| T6  | P1   | Store: bbolt wiring, ViewState fold, Record*/LoadState + tests           | High     | M      |
-| T7  | P1   | Pipeline: scan→ingest→compare→review→write + BDD test                    | Critical | L      |
-| T8  | P1   | Compare flows: auto (changed capture) + manual core + tests              | High     | M      |
-| T9  | P2   | CLI: 7 subcommands, testable parsing, help/exit codes                    | Med      | M      |
-| T10 | P2   | Daemon: ticker loop, SIGTERM graceful stop, single-flight + BDD          | High     | M      |
-| T11 | P2   | events + replay commands (rebuild reviews from log) + test               | High     | S      |
-| T12 | P2   | E2E: fake OpenAI-compatible httptest server through real provider        | High     | M      |
-| T13 | P2   | doctor: config, dirs, globs, /v1/models + model-id check                 | Med      | S      |
-| T14 | P3   | flake.nix visionreviewd package (+ stale vendorHash fix), nix build      | High     | M      |
-| T15 | P3   | NixOS module here: service + optional llama-server unit                  | High     | M      |
-| T16 | P3   | SystemNix lazy wrapper module + activation docs                          | High     | S      |
-| T17 | P3   | Docs: README, CHANGELOG, AGENTS, TODO_LIST, FEATURES                     | Med      | S      |
-| T18 | P3   | Final verify: -race suite, vet, golangci-lint, gofmt                     | High     | S      |
+| #   | Tier | Task                                                                     | Impact   | Effort | Status                |
+| --- | ---- | ------------------------------------------------------------------------ | -------- | ------ | --------------------- |
+| T2  | P0   | Domain: events.go, viewkey.go, hash.go, blobstore.go + tests             | High     | M      | Done `df51b84`        |
+| T3  | P0   | Config JSON load/validate/defaults + discover walker + tests             | High     | M      | Done `b9d873a`        |
+| T4  | P0   | Reviewer: openaicompat provider ctor, prompts, score parse + mock tests  | Critical | M      | Done `681915e`, `47a4137` |
+| T5  | P0   | Markdown writer: view/comparison templates, INDEX, atomic writes + tests | Critical | M      | Done `b24561a`        |
+| T6  | P1   | Store: bbolt wiring, ViewState fold, Record*/LoadState + tests           | High     | M      | Done `d48c947`, fixed `b0d3bd5` |
+| T7  | P1   | Pipeline: scan→ingest→compare→review→write + BDD test                    | Critical | L      | Done `f9e77dd`        |
+| T8  | P1   | Compare flows: auto (changed capture) + manual core + tests              | High     | M      | Done `4e8316d`        |
+| T9  | P2   | CLI: 7 subcommands, testable parsing, help/exit codes                    | Med      | M      | Done `660e9d3`        |
+| T10 | P2   | Daemon: ticker loop, SIGTERM graceful stop, single-flight + BDD          | High     | M      | Done `de7c4c6`, lint-cleared `efe9acf` |
+| T11 | P2   | events + replay commands (rebuild reviews from log) + test               | High     | S      | Done `5cddff4`        |
+| T12 | P2   | E2E: fake OpenAI-compatible httptest server through real provider        | High     | M      | Done `99dcdfe`        |
+| T13 | P2   | doctor: config, dirs, globs, /v1/models + model-id check                 | Med      | S      | Done `cee0ba7`        |
+| T14 | P3   | flake.nix visionreviewd package (+ stale vendorHash fix), nix build      | High     | M      | Done `9fd3117`        |
+| T15 | P3   | NixOS module here: service + optional llama-server unit                  | High     | M      | Done `b2d9c0c`        |
+| T16 | P3   | SystemNix lazy wrapper module + activation docs                          | High     | S      | Done `4c03af9`, `df7cdf2` (SystemNix `8fc2b80c`) |
+| T17 | P3   | Docs: README, CHANGELOG, AGENTS, TODO_LIST, FEATURES                     | Med      | S      | Done `5af6d22`        |
+| T18 | P3   | Final verify: -race suite, vet, golangci-lint, gofmt                     | High     | S      | Done — all gates green at session close |
 
 ## Fine breakdown (≤12 min each)
+
+> **STATUS: every fine task below shipped with its parent task** — the parent
+> Status column above is the verdict; per-row markers omitted to avoid 53
+> duplicate annotations of the same 17 commits.
 
 | ID   | Fine task                                                                  | Parent |
 | ---- | -------------------------------------------------------------------------- | ------ |

@@ -1,5 +1,8 @@
 # Status Report — 2026-08-02 15:26
 
+> **ANNOTATED 2026-08-16 (docs-health):** all four P0 items were closed by the
+> `15:49` session. Open remainder is tracked in `TODO_LIST.md` / `ROADMAP.md`.
+
 **Session goal:** Execute the P0/P1 gaps from the prior error-system-redesign session (`2026-08-02_06-13`), then self-reflect on what was forgotten, what could be better, and what remains.
 
 **Starting HEAD:** `2dab0bd docs(status): record session where build failures were verified, not fixed`
@@ -43,24 +46,24 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 ## b) PARTIALLY DONE
 
-1. **`wrapSentinel` helper — evaluated and rejected.** The prior session's report suggested extracting `wrapSentinel(sentinel, got, want)` to standardize the `"sentinel: got %v, want ..."` pattern. I analyzed it: each call site has different types (`%.2f` for floats, `%d` for ints) and a helper would either lose float precision (using `%v`) or require more parameters than the inline `fmt.Errorf`. The current 6 inline calls are already well-tested by `TestValidationErrorsIncludeOffendingValues` (7 table cases). Rejected as over-engineering. Documented in todo as completed-rejected.
+1. ~~**`wrapSentinel` helper — evaluated and rejected.**~~ closed — rejected (documented above)
 
-2. **`erraudit` false-positive suppression — not addressed.** The prior session identified 108 `context_loss` ERROR-severity findings (mostly false positives on result variables) and 17 `generic_return` warnings. This session did not create an `.erraudit.yaml` config or `//nolint` directives. The false positives are documented in `AGENTS.md` but not machine-suppressed. The tool will continue to produce 125 violations on every run.
+2. **`erraudit` false-positive suppression — not addressed.** ← still open — no `.erraudit.yaml`; advisory-vs-gate question unanswered
 
-3. **`internal/cli/helpers.go:75` context loss — not addressed.** The `create vision agent (systemPrompt=%q)` error site was flagged for not including `temperature` (a direct input). Not fixed this session. The error message already includes `systemPrompt`; adding `temperature` is a minor improvement.
+3. ~~**`internal/cli/helpers.go:75` context loss — not addressed.**~~ done at `8ac8dde` — `temperature=%.2f` added
 
 ---
 
 ## c) NOT STARTED
 
-1. **No `nix flake check`.** The prior session listed it. I ran `nix run .#test` and `nix run .#lint` but not `nix flake check` or `nix build .`.
-2. **No `docs/ERROR_DESIGN.md`.** The error taxonomy (sentinels vs `*ModelError` vs wrapped errors) is documented across `AGENTS.md` and `CHANGELOG.md` but not consolidated into a single design document.
-3. **No `godoc` examples** (`pkg/errors` and `pkg/vision` testable examples showing `errors.AsType[*ModelError]` extraction).
-4. **No `errors.Is` tests at the `pkg/errors` level** for the enriched sentinels (currently only tested in `pkg/vision`).
-5. **No `LoadImageFromURLWithClient` test** verifying the URL appears in error paths (P1 item 7 from prior report).
-6. **No retry-exhaustion sentinel** (`ErrRetriesExhausted`).
-7. **No `ModelError` structured fields** (`Op`, `Prompt`, `StatusCode` already exist as struct fields, but no godoc example or JSON serialization test).
-8. **No CI integration of `erraudit`** — not added as a flake app or CI gate.
+1. ~~**No `nix flake check`.**~~ done in the `15:49` session
+2. ~~**No `docs/ERROR_DESIGN.md`.**~~ done at `5bc97b4`
+3. **No `godoc` examples** (`pkg/errors` and `pkg/vision` testable examples showing `errors.AsType[*ModelError]` extraction). ← still open
+4. ~~**No `errors.Is` tests at the `pkg/errors` level**~~ done at `8ac8dde`
+5. ~~**No `LoadImageFromURLWithClient` test**~~ done at `8ac8dde`
+6. **No retry-exhaustion sentinel** (`ErrRetriesExhausted`). ← still open (ROADMAP)
+7. **No `ModelError` structured fields** — the fields already exist; only serialization tests / godoc example are missing. ← still open
+8. **No CI integration of `erraudit`.** ← still open
 
 ---
 
@@ -106,19 +109,19 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 ### P0 — Close remaining gaps from this and prior sessions
 
-1. **Run `nix flake check`** to confirm the flake builds after all changes.
-2. **Run `nix build .`** to confirm the package builds in the nix environment.
-3. **Add unit tests for `consumeObjectStream[T]`** covering the 4 stream part types (Object, TextDelta, Error, Finish) in isolation, including the partial-callback invocation path.
-4. **Add `streamObjectErr` field to mock model** and a test for `StreamObject` returning an initial error (not just a stream-part error).
+1. ~~**Run `nix flake check`**~~ done in the `15:49` session
+2. ~~**Run `nix build .`**~~ done in the `15:49` session
+3. ~~**Add unit tests for `consumeObjectStream[T]`**~~ done at `8ac8dde` (7 tests, all 4 part types)
+4. ~~**Add `streamObjectErr` field to mock model**~~ done at `97b2e01`
 
 ### P1 — Error system hardening
 
-5. **Add `erraudit` suppression config** (`.erraudit.yaml` or `//nolint` directives) for false-positive `context_loss` on result variables and `generic_return` on public API functions, so future runs are actionable.
-6. **Add `errors.Is` tests at the `pkg/errors` level** for the enriched sentinels (currently only tested in `pkg/vision`).
-7. **Add `LoadImageFromURLWithClient` tests** verifying the URL appears in all error paths (download failure, HTTP error, invalid image).
-8. **Audit `internal/cli/helpers.go:75`** — include `temperature` in the error message since it's a direct input to the failed `NewAgent` call.
-9. **Consolidate `printConfigError` and `printModelError` patterns** in the example — use the same map-lookup style for consistency.
-10. **Document the mock model field priority** (`generateObjectErr` > `generateObjectResponse` > default) in the `mockModel` struct comment.
+5. **Add `erraudit` suppression config** ← still open
+6. ~~**Add `errors.Is` tests at the `pkg/errors` level**~~ done at `8ac8dde`
+7. ~~**Add `LoadImageFromURLWithClient` tests**~~ done at `8ac8dde`
+8. ~~**Audit `internal/cli/helpers.go:75`**~~ done at `8ac8dde`
+9. **Consolidate `printConfigError` and `printModelError` patterns** in the example ← still open (ROADMAP)
+10. ~~**Document the mock model field priority**~~ done at `97b2e01` (struct comment)
 
 ### P2 — Broader error system improvements
 
@@ -135,24 +138,24 @@ This session closed the highest-risk gap from the prior session (streaming unmar
 
 ### P3 — Documentation and examples
 
-21. **Create `docs/ERROR_DESIGN.md`** documenting the full error taxonomy (sentinels vs ModelError vs wrapped errors) with a diagram.
-22. **Add `godoc` example for `pkg/errors`** showing `errors.AsType[*ModelError]` + `IsRetryable()`.
-23. **Add `godoc` example for `pkg/vision`** showing `errors.Is(err, vision.ErrInvalidTemperature)` with enriched message.
-24. **Update `README.md`** error-handling section with the new enriched messages.
-25. **Update `docs/DOMAIN_LANGUAGE.md`** if it references error terminology.
-26. **Update `FEATURES.md`** if error classification is listed as a feature.
-27. **Review `examples/structured-stream/main.go`** for alignment with the new unmarshal error behavior.
-28. **Document the validation error format** (`"sentinel: got %v, want ..."`) in AGENTS.md code conventions.
-29. **Document the `erraudit` false-positive categories** in AGENTS.md "Gotchas".
-30. **Add the mock model field priority** to AGENTS.md test organization section.
+21. ~~**Create `docs/ERROR_DESIGN.md`** documenting the full error taxonomy (sentinels vs ModelError vs wrapped errors) with a diagram.~~ done at `5bc97b4`
+22. **Add `godoc` example for `pkg/errors`** ← still open
+23. **Add `godoc` example for `pkg/vision`** ← still open
+24. **Update `README.md`** error-handling section with the new enriched messages. ← still open
+25. ~~**Update `docs/DOMAIN_LANGUAGE.md`**~~ done — error terms present and accurate
+26. ~~**Update `FEATURES.md`**~~ done — "Error Handling" section
+27. **Review `examples/structured-stream/main.go`** ← still open
+28. ~~**Document the validation error format** in AGENTS.md code conventions.~~ done
+29. ~~**Document the `erraudit` false-positive categories** in AGENTS.md "Gotchas".~~ done
+30. **Add the mock model field priority** to AGENTS.md test organization section. ← still open
 
 ### P4 — CI and verification
 
-31. **Add `erraudit` as a flake app** (`nix run .#erraudit`) or document why it's excluded.
-32. **Add CI gate on `golangci-lint run ./...`** if not already present.
-33. **Review whether `erraudit --type-aware` should be a CI gate** or advisory tool.
-34. **Run a coverage analysis** on error paths specifically — are there untested `return err` sites?
-35. **Commit/error-system work is already committed** by auto-git daemon — verify the commit messages are accurate.
+31. **Add `erraudit` as a flake app** ← still open
+32. ~~**Add CI gate on `golangci-lint run ./...`**~~ exists — `lint` job in ci.yml
+33. **Review whether `erraudit --type-aware` should be a CI gate** ← still open (needs user decision)
+34. ~~**Run a coverage analysis** on error paths specifically~~ done in the `15:49` session (90.1% `pkg/vision`)
+35. ~~**Commit/error-system work is already committed** by auto-git daemon — verify the commit messages are accurate.~~ verified — commits `23d74ec`…`5bc97b4` match the work
 
 ### P5 — Deep error system audit (future)
 

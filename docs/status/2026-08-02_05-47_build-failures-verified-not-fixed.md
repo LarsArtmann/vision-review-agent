@@ -1,5 +1,10 @@
 # Status Report — 2026-08-02 05:47
 
+> **ANNOTATED 2026-08-16 (docs-health):** verification gaps (jsonv2 test,
+`nix run .#test`) were closed by the `15:26`/`15:49` sessions; the
+`go-auto-upgrade` daemon items (1–5, 13, 15–17, 20) are external to this repo
+> and remain open.
+
 **Session goal:** Fix two CI build failures reported via `buildflow`:
 
 1. `nix-build` / `nix-build-verify` — `vendorHash` mismatch in `flake.nix`
@@ -36,13 +41,13 @@
 
 ## c) NOT STARTED
 
-1. **Root-causing the recurring `go-auto-upgrade` json migration.** This is the **core systemic issue** and I did not touch it. The daemon repeatedly migrates `encoding/json` → `encoding/json/v2` + `jsontext`, which breaks compilation (`jsontext.Encoder` has no `SetIndent`). The daemon then auto-restores — but this creates a **flapping CI loop**: migrate → break → restore → migrate → break. No exclusion rule, guard, or marker was added.
-2. **Finding/configuring the auto-upgrade daemon's exclusion mechanism** (if one exists).
-3. **Adding a permanent guard** to stop the json migration recurrence — e.g., a CI check, a comment marker the daemon respects, or a daemon config entry.
-4. **Reviewing the actual `git diff` of commit `6c744e2`** to confirm it is complete and correct (e.g., go.sum fully updated, no leftover files). I trusted the commit message.
-5. **Reviewing the `buildflow` / CI config** to confirm all failing jobs (`nix-build`, `nix-build-verify`, `go-auto-upgrade`) are now satisfied. I verified locally but never opened the CI definition.
-6. **Running `nix run .#test`** — the flake test app runs `go test -race -v -coverprofile`. I ran plain `go test -race` via the Go toolchain but not the nix-wrapped version.
-7. **Updating `AGENTS.md`** with new learnings (fantasy v0.40.0, buildflow CI structure, recurring daemon issue).
+1. **Root-causing the recurring `go-auto-upgrade` json migration.** This is the **core systemic issue** and I did not touch it. The daemon repeatedly migrates `encoding/json` → `encoding/json/v2` + `jsontext`, which breaks compilation (`jsontext.Encoder` has no `SetIndent`). The daemon then auto-restores — but this creates a **flapping CI loop**: migrate → break → restore → migrate → break. No exclusion rule, guard, or marker was added. ← still open (external daemon; repo-side mitigation: AGENTS.md "do NOT migrate imports" rule + `jsonv2-compat` CI job)
+2. **Finding/configuring the auto-upgrade daemon's exclusion mechanism** (if one exists). ← still open (external)
+3. **Adding a permanent guard** to stop the json migration recurrence — e.g., a CI check, a comment marker the daemon respects, or a daemon config entry. ← partially done — `jsonv2-compat` CI job (.github/workflows/ci.yml:84) guards the dual regime; no daemon-side exclusion
+4. **Reviewing the actual `git diff` of commit `6c744e2`** to confirm it is complete and correct (e.g., go.sum fully updated, no leftover files). I trusted the commit message. ~~moot — superseded by v0.5.0/v0.5.1 releases and later dependency bumps~~
+5. **Reviewing the `buildflow` / CI config** to confirm all failing jobs (`nix-build`, `nix-build-verify`, `go-auto-upgrade`) are now satisfied. I verified locally but never opened the CI definition. ← still open (external tooling)
+6. ~~**Running `nix run .#test`** — the flake test app runs `go test -race -v -coverprofile`. I ran plain `go test -race` via the Go toolchain but not the nix-wrapped version.~~ done in the `15:26` session — `nix run .#test` green (88.7% coverage)
+7. ~~**Updating `AGENTS.md`** with new learnings (fantasy v0.40.0, buildflow CI structure, recurring daemon issue).~~ done — AGENTS.md documents the dual-json rule, dependencies, and test conventions (updated through `5af6d22`)
 
 ---
 
@@ -84,19 +89,19 @@
 
 ### P1 — Close verification gaps
 
-6. Run `GOEXPERIMENT=jsonv2 go test ./...` (not just build).
-7. Run `nix run .#test` (the full race + coverprofile path).
-8. `git show 6c744e2 --stat` and review the diff for completeness (go.sum, all files).
-9. Review the `buildflow` CI config — map every job to a local equivalent so future failures can be reproduced without CI.
-10. Confirm `go.sum` is consistent: `go mod tidy && git diff --exit-code go.sum` (should be clean).
+6. ~~Run `GOEXPERIMENT=jsonv2 go test ./...` (not just build).~~ done in the `15:26` session; now a permanent CI job (`jsonv2-compat`, ci.yml:84)
+7. ~~Run `nix run .#test` (the full race + coverprofile path).~~ done in the `15:26` session
+8. ~~`git show 6c744e2 --stat` and review the diff for completeness (go.sum, all files).~~ moot — superseded by later dependency bumps and releases
+9. Review the `buildflow` CI config — map every job to a local equivalent so future failures can be reproduced without CI. ← still open (external)
+10. ~~Confirm `go.sum` is consistent: `go mod tidy && git diff --exit-code go.sum` (should be clean).~~ verified clean (`go mod tidy -diff`, 2026-08-16)
 
 ### P2 — Durability & docs
 
-11. Add a `jsonv2-compat` local check script (if not present) so devs can run the dual-regime test without remembering the env var.
-12. Update `AGENTS.md` with: fantasy bumped to v0.40.0; buildflow CI job names; the daemon recurrence and its fix (once applied).
-13. Add the daemon's exclusion rule to `AGENTS.md` "Gotchas" so future sessions know it's configured.
-14. Consider a `make check` / flake `check` app alias that runs the full 8-step verification matrix in one command.
-15. Audit whether other forbidden migrations (beyond json) could be attempted by the daemon and preempt them.
+11. ~~Add a `jsonv2-compat` local check script (if not present) so devs can run the dual-regime test without remembering the env var.~~ covered by the `jsonv2-compat` CI job (ci.yml:84); local equivalent is one env var
+12. ~~Update `AGENTS.md` with: fantasy bumped to v0.40.0; buildflow CI job names; the daemon recurrence and its fix (once applied).~~ done for repo-side knowledge (AGENTS.md dependencies + dual-json rule)
+13. Add the daemon's exclusion rule to `AGENTS.md` "Gotchas" so future sessions know it's configured. ← still open (external daemon; no exclusion configured)
+14. ~~Consider a `make check` / flake `check` app alias that runs the full 8-step verification matrix in one command.~~ covered — `nix flake check` + `nix run .#test` / `.#lint` apps already provide this; canonical matrix documented in AGENTS.md
+15. Audit whether other forbidden migrations (beyond json) could be attempted by the daemon and preempt them. ← still open (external)
 
 ### P3 — Broader improvements observed
 
@@ -105,11 +110,11 @@
 18. Add a CI badge or local `ci-local` script that mirrors `buildflow` jobs for fast pre-push feedback.
 19. The `jsonv2-compat` CI job is critical infrastructure — make sure it's required (not a warning) on PRs.
 20. Consider pinning the auto-upgrade daemon to a migration allowlist (only _approved_ migrations run) rather than a denylist (everything runs except excluded).
-21. Review whether the fantasy v0.40.0 bump introduced any new API surface the project should adopt (deprecations, new options).
-22. Check if `flake.lock` nixpkgs refresh in `6c744e2` moved any package versions that affect the devShell (golangci-lint version, Go version).
-23. Verify the `overlays.default` still composes correctly after the flake-parts refresh.
-24. Run `nix flake update` review — confirm the lockfile diff is intentional and minimal.
-25. Add a "verification matrix" section to `AGENTS.md` listing the canonical 8 checks.
+21. ~~Review whether the fantasy v0.40.0 bump introduced any new API surface the project should adopt (deprecations, new options).~~ moot — superseded by the v0.41.1 bump (`757a38a`)
+22. ~~Check if `flake.lock` nixpkgs refresh in `6c744e2` moved any package versions that affect the devShell (golangci-lint version, Go version).~~ moot — further lock refreshes since (`7368882`)
+23. ~~Verify the `overlays.default` still composes correctly after the flake-parts refresh.~~ done — `nix flake check` green (15:49 session)
+24. ~~Run `nix flake update` review — confirm the lockfile diff is intentional and minimal.~~ moot — lock has been refreshed deliberately since
+25. ~~Add a "verification matrix" section to `AGENTS.md` listing the canonical 8 checks.~~ done 2026-08-16 — AGENTS.md "Verification matrix"
 
 ---
 

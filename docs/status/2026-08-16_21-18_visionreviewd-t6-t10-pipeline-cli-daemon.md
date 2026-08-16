@@ -1,5 +1,9 @@
 # visionreviewd Status — T6–T10 Complete (Pipeline, CLI, Daemon)
 
+> **ANNOTATED 2026-08-16 (docs-health):** T11–T18 (section c) and queue items
+> 1–33, 36–37, 41 all shipped. Open remainders (#34-35, #38-40, #42) are
+> tracked in `TODO_LIST.md` / `ROADMAP.md`.
+
 **Date:** 2026-08-16 21:18
 **Session scope:** Fixed and finished T6, delivered T7–T10 of
 [`docs/planning/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md`](../planning/2026-08-16_20-00_visionreviewd-full-execution-plan-v2.md).
@@ -23,25 +27,25 @@ T4 `681915e`+`47a4137`, T5 `b24561a`.
 
 ## b) PARTIALLY DONE
 
-- **T10 daemon** — code complete, tests + `-race` green, but committed with
+- ~~**T10 daemon** — code complete, tests + `-race` green, but committed with
   3 lint findings in `internal/reviewd/daemon_bdd_test.go` (gci import
   grouping; wrapcheck on `c.inner.Pass` return; wsl_v5 blank line in
-  `startDaemon`). Needs a small fix commit.
-- **CLI stubs** — `events`, `replay`, `doctor` subcommands exist, dispatch
+  `startDaemon`). Needs a small fix commit.~~ done at `efe9acf`
+- ~~**CLI stubs** — `events`, `replay`, `doctor` subcommands exist, dispatch
   correctly, and fail with explicit `errNotImplemented`; bodies land in
-  T11/T13.
+  T11/T13.~~ done at `5cddff4` (events/replay), `cee0ba7` (doctor)
 
 ## c) NOT STARTED
 
-- **T11** events command (filters, pretty print) + replay command (rebuild
-  reviews dir from journal) + replay test (wipe → regenerate → diff)
-- **T12** E2E against fake OpenAI-compatible `/v1/chat/completions` server
-- **T13** doctor command (config, dirs, globs, `/v1/models` model check)
-- **T14** flake.nix `visionreviewd` buildGoModule package + stale vendorHash
-- **T15** NixOS module (options, unit, optional llama-server on 8390)
-- **T16** SystemNix lazy wrapper + activation docs
-- **T17** README/CHANGELOG/AGENTS/TODO_LIST/FEATURES
-- **T18** final full verification (`go test -race ./...`, vet, lint, gofmt)
+- ~~**T11** events command (filters, pretty print) + replay command (rebuild
+  reviews dir from journal) + replay test (wipe → regenerate → diff)~~ done at `5cddff4`
+- ~~**T12** E2E against fake OpenAI-compatible `/v1/chat/completions` server~~ done at `99dcdfe`
+- ~~**T13** doctor command (config, dirs, globs, `/v1/models` model check)~~ done at `cee0ba7`
+- ~~**T14** flake.nix `visionreviewd` buildGoModule package + stale vendorHash~~ done at `9fd3117`
+- ~~**T15** NixOS module (options, unit, optional llama-server on 8390)~~ done at `b2d9c0c`
+- ~~**T16** SystemNix lazy wrapper + activation docs~~ done at `4c03af9` (SystemNix `8fc2b80c`)
+- ~~**T17** README/CHANGELOG/AGENTS/TODO_LIST/FEATURES~~ done at `5af6d22`
+- ~~**T18** final full verification (`go test -race ./...`, vet, lint, gofmt)~~ done — all gates green at close
 
 ## d) TOTALLY FUCKED UP (honest list)
 
@@ -85,57 +89,59 @@ T4 `681915e`+`47a4137`, T5 `b24561a`.
 
 ## f) NEXT UP TO 50 (realistic queue, in order)
 
-1. Fix 3 T10 lint findings; verify lint=0; fixup commit
-2. T11: `reviewd.Replay(store, writer)` core (fold streams → re-render all markdown)
-3. T11: `events` CLI body (+ remove stub nolint)
-4. T11: `replay` CLI body
-5. T11: replay test (pass → wipe reviews → replay → byte-diff INDEX/views)
-6. T11: events output format (one line per event: seq, stream, type, sha, score)
-7. T11: events filters (`-project`, `-view`, `-type`, `-last N`)
-8. T12: fake `/v1/chat/completions` httptest server (content parts w/ image_url)
-9. T12: E2E provider→reviewer over real HTTP incl. score parse
-10. T12: E2E compare path over real HTTP
-11. T13: doctor — config load check
-12. T13: doctor — data/reviews dir writability
-13. T13: doctor — glob match counts per project
-14. T13: doctor — `GET {BaseURL}/models` contains configured Model
-15. T13: doctor exit code reflects failures; tests
-16. T14: flake.nix `visionreviewd` package (buildGoModule, ldflags version)
-17. T14: fix stale vendorHash (fake-hash → build → real hash)
-18. T14: `nix build .#visionreviewd` green
-19. T15: NixOS module options (enable, config path, interval overrides)
-20. T15: systemd unit with StateDirectory wiring
-21. T15: optional llama-server unit (`-hf` model, port 8390) disabled by default
-22. T15: module eval check (`nixos-option`/eval test)
-23. T16: SystemNix lazy wrapper module file
-24. T16: activation docs (input, lock, host enable, port registration)
-25. T17: README daemon section (quickstart: discover → config → run)
-26. T17: CHANGELOG entry
-27. T17: AGENTS.md architecture notes for internal/reviewd + cmd/visionreviewd
-28. T17: TODO_LIST/FEATURES rows
-29. T17: example config JSON in docs
-30. T18: `go test -race ./...` green
-31. T18: vet + golangci + gofmt across repo green
-32. Decide + execute push policy (default: session end)
-33. Status report refresh after T11–T13
-34. Consider `Interval()` accessor test / daemon options hardening
-35. Consider per-view `ReviewedAt` in INDEX Updated column (currently CapturedAt)
-36. Consider replay writing INDEX from folded state (may differ from pass-time INDEX)
-37. Deduplicate PNG fixtures (scan_test/compare_test/BDD shotPNG copies)
-38. Consider a `PassResult.String()` for CLI output
-39. Guard: `Pipeline.Pass` on cancelled ctx — verify skip semantics
-40. Consider blob GC (orphans after replay pruning) — document as future
-41. Check `go.sum`/`go mod tidy` after all tasks
-42. Update `docs/DUPLICATION_POLICY.md` if clone count changed
+1. ~~Fix 3 T10 lint findings; verify lint=0; fixup commit~~ done at `efe9acf`
+2. ~~T11: `reviewd.Replay(store, writer)` core (fold streams → re-render all markdown)~~ done at `5cddff4`
+3. ~~T11: `events` CLI body (+ remove stub nolint)~~ done at `5cddff4`
+4. ~~T11: `replay` CLI body~~ done at `5cddff4`
+5. ~~T11: replay test (pass → wipe reviews → replay → byte-diff INDEX/views)~~ done at `5cddff4`
+6. ~~T11: events output format (one line per event: seq, stream, type, sha, score)~~ done at `5cddff4`
+7. ~~T11: events filters (`-project`, `-view`, `-type`, `-last N`)~~ done at `5cddff4`
+8. ~~T12: fake `/v1/chat/completions` httptest server (content parts w/ image_url)~~ done at `99dcdfe`
+9. ~~T12: E2E provider→reviewer over real HTTP incl. score parse~~ done at `99dcdfe`
+10. ~~T12: E2E compare path over real HTTP~~ done at `99dcdfe`
+11. ~~T13: doctor — config load check~~ done at `cee0ba7`
+12. ~~T13: doctor — data/reviews dir writability~~ done at `cee0ba7`
+13. ~~T13: doctor — glob match counts per project~~ done at `cee0ba7`
+14. ~~T13: doctor — `GET {BaseURL}/models` contains configured Model~~ done at `cee0ba7`
+15. ~~T13: doctor exit code reflects failures; tests~~ done at `cee0ba7`
+16. ~~T14: flake.nix `visionreviewd` package (buildGoModule, ldflags version)~~ done at `9fd3117`
+17. ~~T14: fix stale vendorHash (fake-hash → build → real hash)~~ done at `9fd3117`
+18. ~~T14: `nix build .#visionreviewd` green~~ done at `9fd3117`
+19. ~~T15: NixOS module options (enable, config path, interval overrides)~~ done at `b2d9c0c`
+20. ~~T15: systemd unit with StateDirectory wiring~~ done at `b2d9c0c`
+21. ~~T15: optional llama-server unit (`-hf` model, port 8390) disabled by default~~ done at `b2d9c0c`
+22. ~~T15: module eval check (`nixos-option`/eval test)~~ done at `b2d9c0c` (full `nixosSystem` eval, enabled + disabled)
+23. ~~T16: SystemNix lazy wrapper module file~~ done at `4c03af9` (SystemNix `8fc2b80c`)
+24. ~~T16: activation docs (input, lock, host enable, port registration)~~ done at `4c03af9`
+25. ~~T17: README daemon section (quickstart: discover → config → run)~~ done at `5af6d22`
+26. ~~T17: CHANGELOG entry~~ done at `5af6d22`
+27. ~~T17: AGENTS.md architecture notes for internal/reviewd + cmd/visionreviewd~~ done at `5af6d22`
+28. ~~T17: TODO_LIST/FEATURES rows~~ done at `5af6d22`
+29. ~~T17: example config JSON in docs~~ done at `5af6d22` (`docs/visionreviewd-config.example.json`)
+30. ~~T18: `go test -race ./...` green~~ done
+31. ~~T18: vet + golangci + gofmt across repo green~~ done
+32. ~~Decide + execute push policy (default: session end)~~ done — pushed; remote master = `5da8022`
+33. ~~Status report refresh after T11–T13~~ done at `5da8022`
+34. Consider `Interval()` accessor test / daemon options hardening ← still open (TODO_LIST)
+35. Consider per-view `ReviewedAt` in INDEX Updated column (currently CapturedAt) ← still open — `pipeline.go:291` / `replay.go:235` use `CapturedAt` (TODO_LIST)
+36. ~~Consider replay writing INDEX from folded state (may differ from pass-time INDEX)~~ done at `5cddff4` — `Replay` rewrites every project INDEX from folded state
+37. ~~Deduplicate PNG fixtures (scan_test/compare_test/BDD shotPNG copies)~~ done — single `shotPNG` helper in `helpers_test.go`
+38. Consider a `PassResult.String()` for CLI output ← still open (ROADMAP)
+39. Guard: `Pipeline.Pass` on cancelled ctx — verify skip semantics ← still open (TODO_LIST)
+40. Consider blob GC (orphans after replay pruning) — document as future ← still open (ROADMAP)
+41. ~~Check `go.sum`/`go mod tidy` after all tasks~~ done — `go mod tidy -diff` clean (verified 2026-08-16)
+42. Update `docs/DUPLICATION_POLICY.md` if clone count changed ← still open (TODO_LIST)
 
 ## g) QUESTIONS (cannot figure out ourselves)
 
-1. **Push policy:** push each task commit to origin/master as it lands, or
+1. ~~**Push policy:** push each task commit to origin/master as it lands, or
    only at session end? (Only `c241fdc` is pushed; master is 10 commits
-   ahead locally.)
-2. **Reviews home for the example config (T17):** keep default
+   ahead locally.)~~ resolved — pushed at session end; remote master = `5da8022`
+2. ~~**Reviews home for the example config (T17):** keep default
    `~/.local/share/vision-review-agent/reviews`, or ship the example
    pointing at a git-tracked repo (e.g. `~/projects/ui-reviews`) so Crush
-   reads versioned reviews?
-3. **llama-server unit in T15:** default-disabled as planned, or enabled by
-   default on your NixOS host (model auto-pull is ~9–10 GB on first start)?
+   reads versioned reviews?~~ resolved — example ships the default state dir;
+   `reviewsDir` is configurable
+3. ~~**llama-server unit in T15:** default-disabled as planned, or enabled by
+   default on your NixOS host (model auto-pull is ~9–10 GB on first start)?~~ resolved —
+   default-disabled (`b2d9c0c`)
