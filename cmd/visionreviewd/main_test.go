@@ -126,6 +126,23 @@ func TestRunOnceMissingConfigFails(t *testing.T) {
 	}
 }
 
+func TestRunDaemonMissingConfigFails(t *testing.T) {
+	t.Parallel()
+
+	missing := filepath.Join(t.TempDir(), "missing.json")
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"run", "-config", missing}, stdout, stderr)
+	if code != exitFailed {
+		t.Fatalf("exit = %d, want %d", code, exitFailed)
+	}
+
+	if !strings.Contains(stderr.String(), missing) {
+		t.Fatalf("stderr should mention config path:\n%s", stderr)
+	}
+}
+
 func TestRunCompareRequiresProject(t *testing.T) {
 	t.Parallel()
 
@@ -155,7 +172,7 @@ func TestRunCompareRequiresTwoPaths(t *testing.T) {
 func TestRunUnimplementedCommandsFailCleanly(t *testing.T) {
 	t.Parallel()
 
-	for _, name := range []string{"run", "events", "replay", "doctor"} {
+	for _, name := range []string{"events", "replay", "doctor"} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

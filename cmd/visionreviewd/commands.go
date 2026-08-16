@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	reviewed "github.com/larsartmann/vision-review-agent/internal/reviewd"
 )
@@ -205,16 +208,57 @@ func runCompareCommand(args []string, stdout, stderr io.Writer) int {
 // compareArgCount is the positional argument count compare expects.
 const compareArgCount = 2
 
-// runDaemonCommand runs the interval loop until the context is cancelled.
-// stdout gains output (per-pass summaries) when the daemon loop lands.
-//
-//nolint:unparam // stdout writes output once the command body lands
+// runDaemonCommand runs the interval loop until SIGINT/SIGTERM.
 func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
-	_ = args
+	flagSet := newFlagSet("run", stderr)
 
-	fmt.Fprintf(stderr, "visionreviewd run: %v (landing with the daemon loop task)\n", errNotImplemented)
+	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
 
-	return exitFailed
+	if err := flagSet.Parse(args); err != nil {
+		return exitUsage
+	}
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
+
+		return exitFailed
+	}
+
+	pipeline, store, err := openPipeline(context.Background(), config)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
+
+		return exitFailed
+	}
+
+	defer func() {
+		if closeErr := store.Close(); closeErr != nil {
+			fmt.Fprintf(stderr, "visionreviewd run: close store: %v\n", closeErr)
+		}
+	}()
+
+	daemon, err := reviewed.NewDaemon(pipeline, config.Projects, config.Interval, slog.Default())
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
+
+		return exitFailed
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	fmt.Fprintf(stdout, "visionreviewd: reviewing every %s, Ctrl-C to stop\n", config.Interval)
+
+	if err := daemon.Run(ctx); err != nil {
+		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
+
+		return exitFailed
+	}
+
+	fmt.Fprintln(stdout, "visionreviewd: stopped")
+
+	return exitOK
 }
 
 // runEventsCommand prints the recorded event journal.
