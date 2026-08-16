@@ -2,16 +2,16 @@ package reviewed_test
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	reviewed "github.com/larsartmann/vision-review-agent/internal/reviewd"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	reviewed "github.com/larsartmann/vision-review-agent/internal/reviewd"
 )
 
 // countingRunner wraps a pipeline and counts passes, so specs can observe
@@ -27,7 +27,12 @@ func (c *countingRunner) Pass(ctx context.Context, projects map[string][]string)
 	c.count++
 	c.mu.Unlock()
 
-	return c.inner.Pass(ctx, projects)
+	result, err := c.inner.Pass(ctx, projects)
+	if err != nil {
+		return result, fmt.Errorf("inner pass: %w", err)
+	}
+
+	return result, nil
 }
 
 func (c *countingRunner) passes() int {
@@ -58,6 +63,7 @@ var _ = Describe("Daemon", func() {
 
 	startDaemon := func(interval time.Duration) *reviewed.Daemon {
 		model := &stubLanguageModel{markdown: "## Review\nFine.\n\n**Score: 7/10**"}
+
 		Expect(writeShotPNG(filepath.Join(shotsDir, "Home--dark--desktop.png"))).To(Succeed())
 
 		reviewer, err := reviewed.NewReviewer(model, "stub-model", 0)
