@@ -321,6 +321,13 @@ func LoadConfig(path string) (Config, error) {
 	return normalized, nil
 }
 
+// ExpandTilde replaces a leading "~" with the user's home directory. It is
+// the exported form of the path expansion Config.Normalize applies, so
+// callers (e.g. the CLI resolving the config path itself) share one rule.
+func ExpandTilde(path string) (string, error) {
+	return expandTilde(path)
+}
+
 // expandTilde replaces a leading "~" with the user's home directory.
 func expandTilde(path string) (string, error) {
 	if path == "~" || strings.HasPrefix(path, "~/") {
