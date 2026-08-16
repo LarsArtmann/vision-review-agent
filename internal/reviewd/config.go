@@ -30,6 +30,8 @@ var ErrInvalidConfig = errors.New("invalid visionreviewd config")
 
 // Config is the full daemon configuration. JSON field semantics: durations
 // are strings like "10m"; paths may start with "~" and are expanded on load.
+//
+//nolint:recvcheck // UnmarshalJSON must take a pointer, MarshalJSON a value (standard JSON pattern).
 type Config struct {
 	Model      string              `json:"model"`
 	BaseURL    string              `json:"baseUrl"`
@@ -60,6 +62,7 @@ func DefaultConfig() Config {
 	return Config{
 		Model:      DefaultModel,
 		BaseURL:    DefaultBaseURL,
+		APIKey:     "",
 		Interval:   DefaultInterval,
 		Timeout:    DefaultTimeout,
 		DataDir:    DefaultDataDir,

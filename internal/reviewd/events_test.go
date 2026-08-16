@@ -7,6 +7,8 @@ import (
 )
 
 func TestPayloadJSONRoundtrip(t *testing.T) {
+	t.Parallel()
+
 	stamp := time.Date(2026, 8, 16, 20, 0, 0, 0, time.UTC)
 
 	tests := []struct {
@@ -37,6 +39,8 @@ func TestPayloadJSONRoundtrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			encoded, err := json.Marshal(tt.value)
 			if err != nil {
 				t.Fatalf("marshal: %v", err)
@@ -59,6 +63,8 @@ func TestPayloadJSONRoundtrip(t *testing.T) {
 }
 
 func TestEventTypeConstants(t *testing.T) {
+	t.Parallel()
+
 	if EventViewCaptured != "view.captured" {
 		t.Fatalf("EventViewCaptured = %q", EventViewCaptured)
 	}

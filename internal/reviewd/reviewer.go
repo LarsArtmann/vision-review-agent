@@ -56,7 +56,7 @@ func (r *Reviewer) Model() string {
 // Review asks the model to review the screenshot at imagePath and returns its
 // markdown judgment plus the parsed score.
 func (r *Reviewer) Review(ctx context.Context, viewKey ViewKey, imagePath string) (ReviewResult, error) {
-	result, err := r.analyze(ctx, ReviewPrompt(viewKey), viewKey, imagePath)
+	result, err := r.analyze(ctx, ReviewPrompt(viewKey), imagePath)
 	if err != nil {
 		return ReviewResult{}, fmt.Errorf("review %s: %w", viewKey, err)
 	}
@@ -88,7 +88,7 @@ func (r *Reviewer) Compare(ctx context.Context, viewKey ViewKey, beforePath, aft
 	}, nil
 }
 
-func (r *Reviewer) analyze(ctx context.Context, prompt string, viewKey ViewKey, imagePath string) (ReviewResult, error) {
+func (r *Reviewer) analyze(ctx context.Context, prompt string, imagePath string) (ReviewResult, error) {
 	image, err := vision.LoadImageFromFile(imagePath)
 	if err != nil {
 		return ReviewResult{}, fmt.Errorf("load %s: %w", imagePath, err)
@@ -96,7 +96,7 @@ func (r *Reviewer) analyze(ctx context.Context, prompt string, viewKey ViewKey, 
 
 	response, err := r.agent.Analyze(ctx, prompt, image)
 	if err != nil {
-		return ReviewResult{}, err
+		return ReviewResult{}, fmt.Errorf("analyze: %w", err)
 	}
 
 	return ReviewResult{

@@ -15,7 +15,9 @@ func SHA256File(path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("hash %s: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	digest := sha256.New()
 	if _, err := io.Copy(digest, file); err != nil {

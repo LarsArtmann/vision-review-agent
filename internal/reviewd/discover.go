@@ -10,33 +10,17 @@ import (
 	"strings"
 )
 
-// screenshotDirBases are directory base names that conventionally hold UI
-// screenshots. "visual" additionally requires a "testdata" parent (the
-// DiscordSync golden pattern) to avoid false positives.
-var screenshotDirBases = map[string]bool{
-	"gallery-shots":  true,
-	"screenshots":    true,
-	"ui-screenshots": true,
-}
+// Screenshot file extensions recognized by discovery and blob storage.
+const (
+	ExtensionPNG  = ".png"
+	ExtensionJPG  = ".jpg"
+	ExtensionJPEG = ".jpeg"
+	ExtensionWebP = ".webp"
+)
 
-// walkSkipDirs are never entered while discovering projects.
-var walkSkipDirs = map[string]bool{
-	".git":         true,
-	".cache":       true,
-	".venv":        true,
-	"node_modules": true,
-	"result":       true,
-	"target":       true,
-	"vendor":       true,
-}
-
-// screenshotExtensions are the file extensions counted as screenshots.
-var screenshotExtensions = map[string]bool{
-	".png":  true,
-	".jpg":  true,
-	".jpeg": true,
-	".webp": true,
-}
+// projectPathSegments bounds the path segments considered when deriving the
+// owning project: the first segment under the discovery root.
+const projectPathSegments = 2
 
 // SuggestedProject is one discovered project with the absolute screenshot
 // globs that cover everything the walker found for it.
@@ -55,6 +39,38 @@ type projectAccumulator struct {
 	dirs map[string]map[string]int
 }
 
+// isScreenshotDirBase reports whether a directory base name conventionally
+// holds UI screenshots. "visual" additionally requires a "testdata" parent
+// (the DiscordSync golden pattern) to avoid false positives.
+func isScreenshotDirBase(base string) bool {
+	switch base {
+	case "gallery-shots", "screenshots", "ui-screenshots":
+		return true
+	default:
+		return false
+	}
+}
+
+// isWalkSkipDir reports whether a directory is never entered while walking.
+func isWalkSkipDir(name string) bool {
+	switch name {
+	case ".git", ".cache", ".venv", "node_modules", "result", "target", "vendor":
+		return true
+	default:
+		return false
+	}
+}
+
+// isScreenshotExtension reports whether a file extension is a screenshot.
+func isScreenshotExtension(extension string) bool {
+	switch extension {
+	case ExtensionPNG, ExtensionJPG, ExtensionJPEG, ExtensionWebP:
+		return true
+	default:
+		return false
+	}
+}
+
 // DiscoverProjects walks root looking for known screenshot directory
 // patterns (testdata/visual, gallery-shots, screenshots, ui-screenshots) and
 // returns one suggestion per project, named after the directory directly
@@ -71,7 +87,7 @@ func DiscoverProjects(root string) ([]SuggestedProject, error) {
 			return nil
 		}
 
-		if walkSkipDirs[entry.Name()] && path != root {
+		if isWalkSkipDir(entry.Name()) && path != root {
 			return filepath.SkipDir
 		}
 
@@ -79,10 +95,14 @@ func DiscoverProjects(root string) ([]SuggestedProject, error) {
 			return nil
 		}
 
-		return accumulateDir(found, root, path)
+		if err := accumulateDir(found, root, path); err != nil {
+			return err
+		}
+
+		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("discover projects under %s: %w", root, err)
 	}
 
 	return sortedSuggestions(found), nil
@@ -97,7 +117,7 @@ func isScreenshotDir(root, path string) bool {
 
 	base := filepath.Base(path)
 
-	if screenshotDirBases[base] {
+	if isScreenshotDirBase(base) {
 		return true
 	}
 
@@ -138,7 +158,7 @@ func accumulateDir(found map[string]*projectAccumulator, root, dir string) error
 func countImagesByExtension(dir string) (map[string]int, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list %s: %w", dir, err)
 	}
 
 	counts := map[string]int{}
@@ -149,7 +169,7 @@ func countImagesByExtension(dir string) (map[string]int, error) {
 		}
 
 		extension := strings.ToLower(filepath.Ext(entry.Name()))
-		if screenshotExtensions[extension] {
+		if isScreenshotExtension(extension) {
 			counts[extension]++
 		}
 	}
@@ -160,18 +180,16 @@ func countImagesByExtension(dir string) (map[string]int, error) {
 // projectOf derives the owning project of a screenshot directory: the first
 // path segment under root. When the directory sits directly in root, root
 // itself is the project.
-func projectOf(root, path string) (name string, projectRoot string, ok bool) {
+func projectOf(root, path string) (string, string, bool) {
 	relative, err := filepath.Rel(root, path)
 	if err != nil || relative == "." {
 		return "", "", false
 	}
 
-	segments := strings.SplitN(relative, string(filepath.Separator), 2)
+	segments := strings.SplitN(relative, string(filepath.Separator), projectPathSegments)
 
 	if len(segments) == 1 {
-		base := filepath.Base(root)
-
-		return strings.ToLower(base), root, true
+		return strings.ToLower(filepath.Base(root)), root, true
 	}
 
 	return strings.ToLower(segments[0]), filepath.Join(root, segments[0]), true
@@ -183,36 +201,7 @@ func sortedSuggestions(found map[string]*projectAccumulator) []SuggestedProject 
 	suggestions := make([]SuggestedProject, 0, len(found))
 
 	for _, project := range found {
-		suggestion := SuggestedProject{
-			Name:   project.name,
-			Root:   project.root,
-			Globs:  make([]string, 0, len(project.dirs)),
-			Images: 0,
-		}
-
-		dirs := make([]string, 0, len(project.dirs))
-		for dir := range project.dirs {
-			dirs = append(dirs, dir)
-		}
-
-		sort.Strings(dirs)
-
-		for _, dir := range dirs {
-			extensions := make([]string, 0, len(project.dirs[dir]))
-			for extension := range project.dirs[dir] {
-				extensions = append(extensions, extension)
-			}
-
-			sort.Strings(extensions)
-
-			for _, extension := range extensions {
-				count := project.dirs[dir][extension]
-				suggestion.Globs = append(suggestion.Globs, filepath.Join(dir, "*"+extension))
-				suggestion.Images += count
-			}
-		}
-
-		suggestions = append(suggestions, suggestion)
+		suggestions = append(suggestions, suggestionOf(project))
 	}
 
 	sort.Slice(suggestions, func(i, j int) bool {
@@ -220,6 +209,37 @@ func sortedSuggestions(found map[string]*projectAccumulator) []SuggestedProject 
 	})
 
 	return suggestions
+}
+
+func suggestionOf(project *projectAccumulator) SuggestedProject {
+	suggestion := SuggestedProject{
+		Name:   project.name,
+		Root:   project.root,
+		Globs:  make([]string, 0, len(project.dirs)),
+		Images: 0,
+	}
+
+	for _, dir := range sortedNestedKeys(project.dirs) {
+		for _, extension := range sortedIntMapKeys(project.dirs[dir]) {
+			count := project.dirs[dir][extension]
+			suggestion.Globs = append(suggestion.Globs, filepath.Join(dir, "*"+extension))
+			suggestion.Images += count
+		}
+	}
+
+	return suggestion
+}
+
+// sortedIntMapKeys returns the sorted keys of a map[string]int.
+func sortedIntMapKeys(m map[string]int) []string {
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
 
 // SuggestedConfigJSON renders discovered projects as the pretty-printed JSON
@@ -237,4 +257,16 @@ func SuggestedConfigJSON(suggestions []SuggestedProject) (string, error) {
 	}
 
 	return string(encoded), nil
+}
+
+// sortedNestedKeys returns the sorted keys of a map[string]map[string]int.
+func sortedNestedKeys(m map[string]map[string]int) []string {
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }

@@ -81,10 +81,14 @@ func scoreRules(prompt *strings.Builder, ratesAfter bool) {
 	prompt.WriteString("Rules:\n")
 
 	if ratesAfter {
-		prompt.WriteString("- The FINAL line MUST be exactly \"" + scoreContractLine + "\" where N is an integer 0-10\n")
+		prompt.WriteString(
+			"- The FINAL line MUST be exactly \"" + scoreContractLine + "\" where N is an integer 0-10\n",
+		)
 		prompt.WriteString("  rating the AFTER (second) image.\n")
 	} else {
-		prompt.WriteString("- The FINAL line MUST be exactly \"" + scoreContractLine + "\" where N is an integer 0-10.\n")
+		prompt.WriteString(
+			"- The FINAL line MUST be exactly \"" + scoreContractLine + "\" where N is an integer 0-10.\n",
+		)
 	}
 
 	prompt.WriteString("- Be concrete and reference what is actually visible. Do not invent elements.\n")

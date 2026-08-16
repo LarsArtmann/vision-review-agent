@@ -26,18 +26,25 @@ func (b *BlobStore) Dir() string {
 	return b.dir
 }
 
+// blobDirPermission and blobFilePermission restrict the data directory to
+// the running user; the event store and blobs are private daemon state.
+const (
+	blobDirPermission  = 0o750
+	blobFilePermission = 0o600
+)
+
 // Store copies src into the blob store under its content hash and returns the
 // hex SHA-256 and the blob path. When the blob already exists the copy is
 // skipped; identical content is stored exactly once.
-func (b *BlobStore) Store(src string) (sha string, blobPath string, err error) {
-	sha, err = SHA256File(src)
+func (b *BlobStore) Store(src string) (string, string, error) {
+	sha, err := SHA256File(src)
 	if err != nil {
 		return "", "", err
 	}
 
 	ext := strings.ToLower(filepath.Ext(src))
 	if ext == "" {
-		ext = ".png"
+		ext = ExtensionPNG
 	}
 
 	target := filepath.Join(b.dir, sha+ext)
@@ -45,7 +52,7 @@ func (b *BlobStore) Store(src string) (sha string, blobPath string, err error) {
 		return sha, target, nil
 	}
 
-	if err := os.MkdirAll(b.dir, 0o755); err != nil {
+	if err := os.MkdirAll(b.dir, blobDirPermission); err != nil {
 		return "", "", fmt.Errorf("blob store mkdir %s: %w", b.dir, err)
 	}
 
@@ -63,7 +70,9 @@ func copyFileAtomic(src, target string) error {
 	if err != nil {
 		return fmt.Errorf("blob store open %s: %w", src, err)
 	}
-	defer source.Close()
+	defer func() {
+		_ = source.Close()
+	}()
 
 	temp, err := os.CreateTemp(filepath.Dir(target), ".blob-*")
 	if err != nil {
@@ -75,25 +84,25 @@ func copyFileAtomic(src, target string) error {
 	if _, err := io.Copy(temp, source); err != nil {
 		_ = temp.Close()
 
-		os.Remove(tempName)
+		_ = os.Remove(tempName)
 
 		return fmt.Errorf("blob store copy %s: %w", src, err)
 	}
 
 	if err := temp.Close(); err != nil {
-		os.Remove(tempName)
+		_ = os.Remove(tempName)
 
 		return fmt.Errorf("blob store close %s: %w", tempName, err)
 	}
 
-	if err := os.Chmod(tempName, 0o644); err != nil {
-		os.Remove(tempName)
+	if err := os.Chmod(tempName, blobFilePermission); err != nil {
+		_ = os.Remove(tempName)
 
 		return fmt.Errorf("blob store chmod %s: %w", tempName, err)
 	}
 
 	if err := os.Rename(tempName, target); err != nil {
-		os.Remove(tempName)
+		_ = os.Remove(tempName)
 
 		return fmt.Errorf("blob store rename %s: %w", target, err)
 	}

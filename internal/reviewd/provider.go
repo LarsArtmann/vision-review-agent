@@ -11,6 +11,8 @@ import (
 // LanguageModel builds the fantasy.LanguageModel that talks to the configured
 // OpenAI-compatible endpoint (llama-server). The API key is optional:
 // llama-server ignores it, other compatible servers may require it.
+//
+//nolint:ireturn // boundary function whose whole job is handing back the fantasy interface
 func LanguageModel(ctx context.Context, config Config) (fantasy.LanguageModel, error) {
 	opts := []openaicompat.Option{openaicompat.WithBaseURL(config.BaseURL)}
 

@@ -2,6 +2,7 @@ package reviewed
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -27,6 +28,12 @@ type ViewKey struct {
 	Viewport string
 }
 
+const (
+	// viewKeyPartsPageTheme is the segment count "Page--theme" (viewport
+	// missing, fallback applies).
+	viewKeyPartsPageTheme = 2
+)
+
 // ParseViewKey extracts a ViewKey from a screenshot filename following the
 // {Page}--{theme}--{viewport} convention. When the name does not conform, the
 // whole stem becomes the page and deterministic fallbacks fill theme and
@@ -47,7 +54,7 @@ func ParseViewKey(name string) (ViewKey, error) {
 	switch len(parts) {
 	case 1:
 		page, theme, viewport = parts[0], FallbackTheme, FallbackViewport
-	case 2:
+	case viewKeyPartsPageTheme:
 		page, theme, viewport = parts[0], parts[1], FallbackViewport
 	default:
 		viewport = parts[len(parts)-1]
@@ -75,5 +82,10 @@ func ViewStreamID(project string, viewKey ViewKey) (id.StreamID, error) {
 		return id.StreamID{}, ErrEmptyProject
 	}
 
-	return id.ParseStreamID(project + ":" + viewKey.String())
+	streamID, err := id.ParseStreamID(project + ":" + viewKey.String())
+	if err != nil {
+		return id.StreamID{}, fmt.Errorf("parse view stream id for %s: %w", project, err)
+	}
+
+	return streamID, nil
 }

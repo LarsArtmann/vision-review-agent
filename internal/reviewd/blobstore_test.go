@@ -8,6 +8,8 @@ import (
 )
 
 func TestBlobStoreStoreNewBlob(t *testing.T) {
+	t.Parallel()
+
 	dir := t.TempDir()
 
 	src := filepath.Join(dir, "shot.png")
@@ -42,6 +44,8 @@ func TestBlobStoreStoreNewBlob(t *testing.T) {
 }
 
 func TestBlobStoreStoreSkipsExisting(t *testing.T) {
+	t.Parallel()
+
 	dir := t.TempDir()
 
 	src := filepath.Join(dir, "shot.png")
@@ -88,6 +92,8 @@ func TestBlobStoreStoreSkipsExisting(t *testing.T) {
 }
 
 func TestBlobStoreDifferentContentDifferentBlob(t *testing.T) {
+	t.Parallel()
+
 	dir := t.TempDir()
 	store := NewBlobStore(dir)
 
@@ -118,6 +124,8 @@ func TestBlobStoreDifferentContentDifferentBlob(t *testing.T) {
 }
 
 func TestBlobStoreDefaultExtension(t *testing.T) {
+	t.Parallel()
+
 	dir := t.TempDir()
 	store := NewBlobStore(dir)
 
@@ -138,6 +146,8 @@ func TestBlobStoreDefaultExtension(t *testing.T) {
 }
 
 func TestBlobStoreMissingSource(t *testing.T) {
+	t.Parallel()
+
 	store := NewBlobStore(t.TempDir())
 
 	if _, _, err := store.Store(filepath.Join(t.TempDir(), "missing.png")); err == nil {

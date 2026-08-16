@@ -142,6 +142,7 @@ linters:
           allow:
             - $gostd
             - github.com/larsartmann/vision-review-agent
+            - github.com/larsartmann/go-cqrs-lite
             - charm.land/fantasy
             - charm.land/catwalk
             - github.com/onsi/ginkgo

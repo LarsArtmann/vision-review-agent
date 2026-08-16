@@ -1,12 +1,17 @@
 package reviewed
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
 
 func writeFile(path string, data []byte) error {
-	return os.WriteFile(path, data, 0o644)
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		return fmt.Errorf("write %s: %w", path, err)
+	}
+
+	return nil
 }
 
 func TestExtractScore(t *testing.T) {

@@ -9,6 +9,8 @@ import (
 )
 
 func TestSHA256FileKnownVector(t *testing.T) {
+	t.Parallel()
+
 	path := filepath.Join(t.TempDir(), "content.bin")
 	if err := os.WriteFile(path, []byte("hello world"), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
@@ -27,6 +29,8 @@ func TestSHA256FileKnownVector(t *testing.T) {
 }
 
 func TestSHA256FileEmpty(t *testing.T) {
+	t.Parallel()
+
 	path := filepath.Join(t.TempDir(), "empty.bin")
 	if err := os.WriteFile(path, nil, 0o644); err != nil {
 		t.Fatalf("write: %v", err)
@@ -45,6 +49,8 @@ func TestSHA256FileEmpty(t *testing.T) {
 }
 
 func TestSHA256FileMissing(t *testing.T) {
+	t.Parallel()
+
 	if _, err := SHA256File(filepath.Join(t.TempDir(), "missing.png")); err == nil {
 		t.Fatal("SHA256File on missing file should error")
 	}

@@ -10,7 +10,7 @@ import (
 func createShots(t *testing.T, dir string, names ...string) {
 	t.Helper()
 
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		t.Fatalf("mkdir %s: %v", dir, err)
 	}
 

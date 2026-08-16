@@ -6,6 +6,8 @@ import (
 )
 
 func TestParseViewKey(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		input   string
@@ -61,6 +63,8 @@ func TestParseViewKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := ParseViewKey(tt.input)
 			if tt.wantErr != nil {
 				if !errors.Is(err, tt.wantErr) {
@@ -82,6 +86,8 @@ func TestParseViewKey(t *testing.T) {
 }
 
 func TestViewKeyStringRoundtrip(t *testing.T) {
+	t.Parallel()
+
 	tests := []string{
 		"Settings--dark--desktop.png",
 		"Login--light--mobile.png",
@@ -107,6 +113,8 @@ func TestViewKeyStringRoundtrip(t *testing.T) {
 }
 
 func TestViewStreamID(t *testing.T) {
+	t.Parallel()
+
 	key := ViewKey{Page: "Settings", Theme: "dark", Viewport: "desktop"}
 
 	streamID, err := ViewStreamID("discordsync", key)
@@ -120,6 +128,8 @@ func TestViewStreamID(t *testing.T) {
 }
 
 func TestViewStreamIDRejectsEmptyProject(t *testing.T) {
+	t.Parallel()
+
 	key := ViewKey{Page: "Settings", Theme: "dark", Viewport: "desktop"}
 
 	if _, err := ViewStreamID("", key); err == nil {
