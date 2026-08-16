@@ -28,6 +28,7 @@ keeps evaluating cleanly with the service simply absent.
    target host (generate a starting point with `visionreviewd discover ~/projects`).
    Point `dataDir` and `reviewsDir` under `/var/lib/visionreviewd`, and
    `baseUrl` at `http://127.0.0.1:8390/v1` when the llama unit is enabled:
+
    ```json
    {
      "model": "GitMylo/nsfwcaption-qwen3-vl-8b-v3-gguf:Q8_0",
@@ -37,9 +38,11 @@ keeps evaluating cleanly with the service simply absent.
      "projects": { "discordsync": ["/var/lib/discordsync/goldens/*.png"] }
    }
    ```
+
    Keep API keys out of store paths — manage the file via the host's secret
    tooling if it contains any.
 4. **Enable on a host** (e.g. `systems/evo-x2.nix`):
+
    ```nix
    imports = [ nixosModules.visionreviewd ];  # or add to the host's module list
    services.vision-review-agent = {
@@ -48,12 +51,15 @@ keeps evaluating cleanly with the service simply absent.
      llamaServer.enable = true;  # first start pulls ~9-10 GB of weights
    };
    ```
+
 5. **Rebuild and verify**:
+
    ```bash
    nixos-rebuild switch --flake ~/projects/SystemNix#evo-x2
    systemctl status visionreviewd llama-vision-server
    journalctl -u visionreviewd -f
    ```
+
    The daemon's own health command doubles as a smoke test:
    `visionreviewd doctor -config /etc/visionreviewd/config.json`.
 
