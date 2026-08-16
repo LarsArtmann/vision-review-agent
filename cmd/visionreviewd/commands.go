@@ -456,7 +456,7 @@ type doctorCheck struct {
 // doctorChecks runs every probe: writability of both directories, glob match
 // counts per project, and the model endpoint's model list.
 func doctorChecks(ctx context.Context, config reviewed.Config) []doctorCheck {
-	checks := make([]doctorCheck, 0, len(config.Projects)+doctorCheckExtra)
+	checks := make([]doctorCheck, 0, len(config.Projects))
 	checks = append(checks, checkWritableDir("dataDir", config.DataDir))
 	checks = append(checks, checkWritableDir("reviewsDir", config.ReviewsDir))
 	checks = append(checks, checkProjectGlobs(config)...)
@@ -464,9 +464,6 @@ func doctorChecks(ctx context.Context, config reviewed.Config) []doctorCheck {
 
 	return checks
 }
-
-// doctorCheckExtra is the number of non-glob checks doctorChecks runs.
-const doctorCheckExtra = 3
 
 // checkWritableDir probes that dir exists (or can be created) and a file can
 // be written and removed inside it.
@@ -550,15 +547,27 @@ func checkModelEndpoint(ctx context.Context, config reviewed.Config) doctorCheck
 		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("%s: %v", modelsURL, err)}
 	}
 
-	defer func() {
-		if closeErr := response.Body.Close(); closeErr != nil {
-			fmt.Fprintf(os.Stderr, "visionreviewd doctor: close response: %v\n", closeErr)
+	// Read and close eagerly (instead of defer) so every failure below can
+	// report through the check detail instead of os.Stderr, which would
+	// bypass the command's injected writers.
+	body, readErr := io.ReadAll(response.Body)
+	closeErr := response.Body.Close()
+
+	if readErr != nil {
+		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("read %s: %v", modelsURL, readErr)}
+	}
+
+	if closeErr != nil {
+		return doctorCheck{
+			name:   doctorEndpointName,
+			ok:     false,
+			detail: fmt.Sprintf("close %s: %v", modelsURL, closeErr),
 		}
-	}()
+	}
 
 	if response.StatusCode != http.StatusOK {
 		return doctorCheck{
-			name:   "model endpoint",
+			name:   doctorEndpointName,
 			ok:     false,
 			detail: fmt.Sprintf("%s: status %s", modelsURL, response.Status),
 		}
@@ -570,7 +579,7 @@ func checkModelEndpoint(ctx context.Context, config reviewed.Config) doctorCheck
 		} `json:"data"`
 	}
 
-	if err := json.NewDecoder(response.Body).Decode(&listed); err != nil {
+	if err := json.Unmarshal(body, &listed); err != nil {
 		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("decode %s: %v", modelsURL, err)}
 	}
 

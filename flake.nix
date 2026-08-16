@@ -47,6 +47,32 @@
           # dependency set (extracted so dependency bumps touch exactly one line).
           src = lib.cleanSource ./.;
           vendorHash = "sha256-gwJZWwfWl/ldNGQJWyNIpkgpu7j9w6ZtoDlp6o2rC4k=";
+
+          # NixOS-module evaluation fixtures for the checks below (enabled +
+          # disabled). Evaluating forces the systemd units; ExecStart depends
+          # on the visionreviewd store path, so the enabled case also proves
+          # the package builds. The llama unit's ExecStart is deliberately NOT
+          # forced: it would build llama-cpp (~heavy) just for an eval check;
+          # the plain `description` literal proves the unit exists when
+          # enabled.
+          nixosModuleEnabled = lib.nixosSystem {
+            system = pkgs.stdenv.hostPlatform.system;
+            modules = [
+              self.nixosModules.visionreviewd
+              {
+                services.vision-review-agent = {
+                  enable = true;
+                  configFile = "/etc/visionreviewd/config.json";
+                  llamaServer.enable = true;
+                };
+              }
+            ];
+          };
+
+          nixosModuleDisabled = lib.nixosSystem {
+            system = pkgs.stdenv.hostPlatform.system;
+            modules = [ self.nixosModules.visionreviewd ];
+          };
         in
         {
           packages.default = pkgs.buildGoModule {
@@ -160,86 +186,65 @@
             };
           };
 
-          # NixOS-module evaluation checks (enabled + disabled). Evaluating
-          # forces the systemd units; ExecStart depends on the visionreviewd
-          # store path, so the enabled case also proves the package builds.
-          # The llama unit's ExecStart is deliberately NOT forced: it would
-          # build llama-cpp (~heavy) just for an eval check; the plain
-          # `description` literal proves the unit exists when enabled.
-          nixosModuleEnabled = lib.nixosSystem {
-            system = pkgs.stdenv.hostPlatform.system;
-            modules = [
-              self.nixosModules.visionreviewd
-              {
-                services.vision-review-agent = {
-                  enable = true;
-                  configFile = "/etc/visionreviewd/config.json";
-                  llamaServer.enable = true;
-                };
-              }
-            ];
-          };
-
-          nixosModuleDisabled = lib.nixosSystem {
-            system = pkgs.stdenv.hostPlatform.system;
-            modules = [ self.nixosModules.visionreviewd ];
-          };
-
           checks = {
             format = config.treefmt.build.check self;
             build = config.packages.default;
             test = config.packages.default.overrideAttrs (_: {
               doCheck = true;
             });
-          } // lib.optionalAttrs pkgs.stdenv.isLinux {
+          }
+          // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
             # The daemon surface: build, version smoke, module eval.
             visionreviewd = config.packages.visionreviewd;
 
             # Catches the silent-empty-build class: if buildGoModule ever
             # "succeeds" with an empty output again (e.g. the GOEXPERIMENT
             # sandbox regression), running the binary fails here.
-            visionreviewd-version-smoke = pkgs.runCommand "visionreviewd-version-smoke" {} ''
-                version_output=$(${lib.getExe config.packages.visionreviewd} version)
-                echo "$version_output" | grep -q '^visionreviewd .\+'
-                echo "$version_output" > $out
-              '';
+            visionreviewd-version-smoke = pkgs.runCommand "visionreviewd-version-smoke" { } ''
+              version_output=$(${lib.getExe config.packages.visionreviewd} version)
+              echo "$version_output" | grep -q '^visionreviewd .\+'
+              echo "$version_output" > $out
+            '';
 
-            nixos-module-enabled = pkgs.runCommand "visionreviewd-nixos-module-enabled-eval"
-              {
-                execStart = toString (
-                  nixosModuleEnabled.config.systemd.services.visionreviewd.serviceConfig.ExecStart or ""
-                );
-                llamaUnit =
-                  nixosModuleEnabled.config.systemd.services.llama-vision-server.description or null;
-              }
-              ''
-                [ -n "$execStart" ] || {
-                  echo "visionreviewd service ExecStart evaluated empty"
-                  exit 1
+            nixos-module-enabled =
+              pkgs.runCommand "visionreviewd-nixos-module-enabled-eval"
+                {
+                  execStart = toString (
+                    nixosModuleEnabled.config.systemd.services.visionreviewd.serviceConfig.ExecStart or ""
+                  );
+                  llamaUnit = lib.optionalString (
+                    nixosModuleEnabled.config.systemd.services ? llama-vision-server
+                  ) nixosModuleEnabled.config.systemd.services.llama-vision-server.description;
                 }
-                [ -n "$llamaUnit" ] || {
-                  echo "llama-vision-server unit missing despite llamaServer.enable"
-                  exit 1
-                }
-                printf 'module evaluates enabled: %s\n' "$execStart" > $out
-              '';
+                ''
+                  [ -n "$execStart" ] || {
+                    echo "visionreviewd service ExecStart evaluated empty"
+                    exit 1
+                  }
+                  [ -n "$llamaUnit" ] || {
+                    echo "llama-vision-server unit missing despite llamaServer.enable"
+                    exit 1
+                  }
+                  printf 'module evaluates enabled: %s\n' "$execStart" > $out
+                '';
 
-            nixos-module-disabled = pkgs.runCommand "visionreviewd-nixos-module-disabled-eval"
-              {
-                moduleEnable = nixosModuleDisabled.config.services.vision-review-agent.enable;
-                daemonUnits = builtins.attrNames nixosModuleDisabled.config.systemd.services;
-              }
-              ''
-                [ "$moduleEnable" = "false" ] || {
-                  echo "services.vision-review-agent.enable must default to false"
-                  exit 1
+            nixos-module-disabled =
+              pkgs.runCommand "visionreviewd-nixos-module-disabled-eval"
+                {
+                  moduleEnable = nixosModuleDisabled.config.services.vision-review-agent.enable;
+                  daemonUnits = builtins.attrNames nixosModuleDisabled.config.systemd.services;
                 }
-                (printf '%s\n' "$daemonUnits" | grep -qx visionreviewd) && {
-                  echo "visionreviewd unit must be absent when disabled"
-                  exit 1
-                }
-                echo "module evaluates disabled (defaults)" > $out
-              '';
+                ''
+                  [ "$moduleEnable" = "false" ] || {
+                    echo "services.vision-review-agent.enable must default to false"
+                    exit 1
+                  }
+                  (printf '%s\n' "$daemonUnits" | grep -qx visionreviewd) && {
+                    echo "visionreviewd unit must be absent when disabled"
+                    exit 1
+                  }
+                  echo "module evaluates disabled (defaults)" > $out
+                '';
           };
 
           treefmt = {
