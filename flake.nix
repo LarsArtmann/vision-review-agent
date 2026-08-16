@@ -43,14 +43,19 @@
           };
           inherit (pkgs) lib;
           version = self.rev or self.dirtyRev or "dev";
+          # Shared by every Go package in this flake: one source, one vendored
+          # dependency set (extracted so dependency bumps touch exactly one line).
+          src = lib.cleanSource ./.;
+          vendorHash = "sha256-gwJZWwfWl/ldNGQJWyNIpkgpu7j9w6ZtoDlp6o2rC4k=";
         in
         {
           packages.default = pkgs.buildGoModule {
             pname = "vision-review-agent";
-            inherit version;
-            src = lib.cleanSource ./.;
-            vendorHash = "sha256-gwJZWwfWl/ldNGQJWyNIpkgpu7j9w6ZtoDlp6o2rC4k=";
+            inherit version src vendorHash;
             proxyVendor = true;
+            # go-cqrs-lite imports encoding/json/v2, which only exists under
+            # GOEXPERIMENT=jsonv2 (the local dev env sets it via `go env`).
+            env.GOEXPERIMENT = "jsonv2";
             # Inject the nix-derived version into the Go binary so `vision
             # -version` reports the real release tag instead of the hardcoded
             # dev default in cmd/vision/main.go.
@@ -67,6 +72,29 @@
                 }
               ];
               mainProgram = "vision";
+            };
+          };
+
+          packages.visionreviewd = pkgs.buildGoModule {
+            pname = "visionreviewd";
+            inherit version src vendorHash;
+            proxyVendor = true;
+            subPackages = [ "cmd/visionreviewd" ];
+            env.GOEXPERIMENT = "jsonv2";
+            # Inject the nix-derived version into the daemon binary so
+            # `visionreviewd version` reports the real release tag instead of
+            # the hardcoded default in cmd/visionreviewd/main.go.
+            ldflags = [ "-X main.version=${version}" ];
+            meta = with lib; {
+              description = "Event-sourced UI review daemon over local vision models";
+              license = licenses.unfree;
+              maintainers = [
+                {
+                  name = "Lars Artmann";
+                  github = "LarsArtmann";
+                }
+              ];
+              mainProgram = "visionreviewd";
             };
           };
 
@@ -148,6 +176,7 @@
 
       flake.overlays.default = final: _prev: {
         vision-review-agent = self.packages.${final.stdenv.system}.default;
+        visionreviewd = self.packages.${final.stdenv.system}.visionreviewd;
       };
     };
 }
