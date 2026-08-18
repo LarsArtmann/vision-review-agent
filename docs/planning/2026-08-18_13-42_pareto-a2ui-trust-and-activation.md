@@ -281,3 +281,34 @@ _Point-in-time plan. Living task tracking stays in `TODO_LIST.md`; when
 tasks land, docs-health HARVEST moves them to CHANGELOG and this file gets
 annotated, never rewritten. Verschlimmbesserung guard: every gate above is
 an existing repo check — this plan adds no new mechanisms to the build._
+
+---
+
+## Execution annotation (2026-08-18, appended — plan body above is untouched)
+
+Executed to completion across the 08-18 sessions (halt for the 15:05 status
+report, resumed and finished same day). Outcome per tier:
+
+- **T2 (trust rails): DONE.** M5 conformance suite (kaptinlin pivoted to
+  santhosh-tekuri — kaptinlin cannot compile the official schemas), M6 CI
+  grep guard (probe-verified, `--untracked` lesson), M7 flake gates +
+  coverage recorded, M8 semantics bundle, M9 catalog pin (caught missing
+  `Tabs`; also corrected the 19→18 kinds misclaim).
+- **T1 (activation): DONE via user-space substitute.** M1 readiness gate
+  landed; M2/M3 ran against a user-space llama-server (sudo unavailable in
+  the sandbox): doctor 4/4, 8 real reviews scored 4–7, replay byte-identical,
+  plus a real manual comparison (`view.compared` event). SystemNix host
+  enablement remains a user action (TODO_LIST).
+- **T3 (surface completion): DONE.** All 18 builders, Theme/DataModel,
+  Decompile, fuzz, benchmarks, `-a2ui` CLI, glossary, duplication policy,
+  replay BDD, stream tolerance, lint comments, A2UI.md + package README.
+- **T4 (hygiene): DONE except user-gated pieces.** BUILDFLOW.md with real
+  `journalctl -k` OOM evidence (llama-server was the hog), vendorHash.nix,
+  lint-noise policy + configs, `no-jsonv2` CI job, Go 1.26.6 probed (not
+  shipped in nixpkgs — no bump). M24 (ghost tags + release presentation) and
+  the `0.7.0-dev` reset remain user-gated/ordered.
+
+Real-model quirk discovered late: the fine-tune nests props under a literal
+`"*"` key (repaired in `Generate`, verified ALL LINES VALID against the
+official schema on a 22-component surface) and occasionally emits dangling
+child refs (correctly rejected; prompt strengthened).

@@ -149,13 +149,17 @@ export OPENROUTER_API_KEY=your-key
 # Structured JSON output (built-in UI review schema)
 ./vision -structured -prompt "Review this UI" screenshot.png
 
+# Generate an A2UI surface (JSON Lines on stdout, pipeable; status on stderr)
+./vision -a2ui mockup.png > surface.jsonl
+./vision -a2ui -prompt "Recreate only the navigation bar" mockup.png > nav.jsonl
+
 # Custom system prompt + timeout
 ./vision -system "You are an accessibility expert" -prompt "Check WCAG compliance" -timeout 30 screenshot.png
 ```
 
 CLI flags: `-provider`, `-model`, `-prompt`, `-system`, `-stream`,
-`-temperature`, `-max-tokens`, `-json`, `-structured`, `-timeout`, `-version`,
-`-list-providers`, `-list-models`, `-provider-info`.
+`-temperature`, `-max-tokens`, `-json`, `-structured`, `-a2ui`, `-timeout`,
+`-version`, `-list-providers`, `-list-models`, `-provider-info`.
 
 ## visionreviewd — the UI review daemon
 
@@ -470,7 +474,7 @@ See the [`examples/`](examples/) directory for complete working examples:
 
 ## Project Structure
 
-```
+```text
 pkg/
   vision/         Public SDK (Agent, Config, image loading, analysis, preprocessing, ModelInfo)
   errors/         Centralized domain errors (re-exported from pkg/vision)

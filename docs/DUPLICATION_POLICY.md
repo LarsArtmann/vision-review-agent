@@ -71,3 +71,23 @@ Go's type system:
 | Mock model method signatures (`Generate`, `Stream`, `GenerateObject`, `StreamObject`)             | Required by `fantasy.LanguageModel` interface                                                                                                          |
 | `type testReview struct{...}` in `internal/visionutil/helpers_test.go`                            | Cross-package test fixture; cannot be shared without a third test-helper package                                                                       |
 | `once`/`run` command prologue (6 lines: `openConfiguredPipeline` + `if !ok` + `defer closeStore`) | Two commands genuinely perform the same opening; a closure-passing abstraction would hide control flow for zero duplication gain (accepted 2026-08-17) |
+
+## pkg/vision/a2ui (scanned 2026-08-18, post-builders)
+
+`art-dupl --type-aware -t 1` over the package: **0 actionable clone groups**
+after extracting `urlDescriptionProps` (the shared url+optional-description
+property set of NewImage/NewAudioPlayer).
+
+Judgment calls:
+
+- **Builder similarity is intentional** — the 18 `New<Kind>` constructors
+  share a shape (id → Component with Kind + props) by design: each is a
+  two-to-six-line typed wrapper whose value is its exact signature. Further
+  extraction (a generic `newComponent(kind, props)` helper) would erase the
+  type-level documentation the builders exist to provide.
+- **Wire marshal/unmarshal pairs** (Component, ChildList, the four message
+  kinds) look structurally similar but encode opposite directions with
+  kind-specific envelope handling; merging them would trade clarity for a
+  false DRY win.
+- Test files remain below scan scope by policy (table-driven tests repeat
+  shapes deliberately).

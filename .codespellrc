@@ -1,0 +1,8 @@
+[codespell]
+# Historical session docs (docs/status, docs/planning) are point-in-time and
+# never rewritten; findings there are frozen with the session that wrote them.
+# go.sum is generated. coverage.out is a transient build artifact.
+skip = .git,*go.sum,*coverage.out,*docs/status*,*docs/planning*
+# onText: streaming callback parameter name (not "context").
+# unparseable: accepted variant, also present in released CHANGELOG history.
+ignore-words-list = ontext,unparseable

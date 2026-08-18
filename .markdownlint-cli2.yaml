@@ -1,0 +1,9 @@
+# Historical session docs are point-in-time and never rewritten
+# (docs-health policy); markdown findings there are frozen with the
+# session that wrote them. Rule tweaks live in .markdownlint.json.
+ignores:
+  - "docs/status/**"
+  - "docs/planning/**"
+globs:
+  - "*.md"
+  - "**/*.md"

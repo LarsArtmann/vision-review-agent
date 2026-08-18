@@ -17,9 +17,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   prompt). The package also stands alone: typed wire messages for all four
   message kinds with a JSON Lines codec, `Compile` from the LLM-facing
   `SurfaceSpec` inference format, `Validate` structural checks (root, unique
-  IDs, resolvable refs, cycles, surface lifecycle), component builders
-  (Text/Column/Row/Card/Button/Image/Divider/Icon), and `Bind`/`Literal`
-  dynamic values. Ships with a BDD suite and `examples/a2ui`.
+  IDs, resolvable refs, cycles, surface lifecycle), component constructors
+  for all 18 basic-catalog kinds, and `Bind`/`Literal` dynamic values. Ships
+  with a BDD suite, official-schema conformance tests, fuzz targets,
+  benchmarks, and `examples/a2ui`.
+- **Official-schema conformance suite** — the official A2UI v0.9.1 JSON
+  schemas are pinned verbatim under `pkg/vision/a2ui/testdata/official/`
+  (upstream commit `29b715fa`, provenance + refresh procedure documented) and
+  every test run validates compiled output, all four message kinds, and all
+  18 builders against them (`conformance_test.go`, positive control
+  included, so the suite cannot pass vacuously). Uses
+  `santhosh-tekuri/jsonschema/v6` — `kaptinlin/jsonschema` v0.9.8 cannot
+  compile the official schemas at all (its exact-number decoder rejects
+  non-number values decoded into `any`, killing every string `const`/`enum`).
+- **`Decompile`** — folds a wire message stream back into a `SurfaceSpec`
+  (RFC 6901 pointer writes/removes for data-model edits), enabling edit
+  round-trips and surface diffing; rejects non-representable streams with the
+  `ErrDecompile` sentinel.
+- **All 18 basic-catalog builders** — constructors for the remaining ten
+  kinds (CheckBox, ChoicePicker, DateTimeInput, Slider, Tabs, TextField,
+  List, Modal, AudioPlayer, Video) plus `Tab`/`ChoicePickerOption` types and
+  enum constants; every builder's wire output is schema-checked.
+- **`GenerateOptions.Theme` + `DataModel`** — theme passthrough when the
+  model emitted none; data-model seeding with model keys winning.
+- **CLI `-a2ui` flag** — `vision -a2ui mockup.png > surface.jsonl`: JSON
+  Lines on stdout (pipeable), status on stderr. Verified end-to-end against
+  a real llama-server model (22-component surface, all lines valid against
+  the official schema).
+- **Codec fuzzing + benchmarks** — four fuzz targets over
+  `UnmarshalMessage`/`UnmarshalJSONL`/`Component`/`ChildList` (~1M execs,
+  zero failures) and benchmarks for `MarshalJSONL`/`Validate`/
+  `UnmarshalMessage`/`Decompile` plus tested `Example` functions.
+- **llama readiness gate** — the NixOS llama unit now probes `/health` via
+  `ExecStartPost` (retries up to 1 h) with `TimeoutStartSec=infinity`, so a
+  first start downloading the ~10 GB model no longer races the daemon's
+  first pass; the enabled-module flake check asserts the probe exists.
+- **`no-jsonv2` CI job** — locks in the consumer guarantee that the SDK
+  (everything except the daemon, whose go-cqrs-lite dependency needs the
+  jsonv2 experiment) builds, vets, and tests under the DEFAULT Go regime.
+- **Docs: A2UI, BuildFlow, glossary, activation** — `docs/A2UI.md` (wire vs
+  inference formats, lifecycle, error taxonomy, real-model quirks),
+  `docs/BUILDFLOW.md` (OOM evidence + retry policy, json/v2 guard
+  explainer, lint-noise policy), `pkg/vision/a2ui/README.md` for pkg.go.dev
+  browsers, visionreviewd + a2ui vocabulary in `docs/DOMAIN_LANGUAGE.md`,
+  a2ui judgment calls in `docs/DUPLICATION_POLICY.md`, and worked activation
+  examples in `docs/activation/`.
+- **Replay coverage** — round-trip + BDD specs proving a
+  manual-compare-only stream replays byte-identically after wiping the
+  reviews directory; structured-stream partial-malformed tolerance test.
 
 ### Changed
 
@@ -28,7 +73,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   message. The go-auto-upgrade daemon has broken compilation four documented
   times migrating to those paths (`jsontext.Encoder` has no `SetIndent`);
   this repo deliberately imports only `encoding/json`, which transparently
-  supports both the default and `GOEXPERIMENT=jsonv2` regimes.
+  supports both the default and `GOEXPERIMENT=jsonv2` regimes. The CI grep
+  guard (first step of `build-and-test`, `--untracked`-aware, probe-verified
+  both directions) closes the non-lint path.
+- **A2UI wire semantics decided** — `UpdateDataModel` now distinguishes
+  explicit `"value": null` (a write) from an omitted `value` (a remove) via
+  key-presence decoding; `UnmarshalMessage` rejects unknown top-level keys
+  (schema parity, `additionalProperties: false`) while staying lenient
+  inside payloads for forward compatibility.
+- **exhaustruct narrowed to 13 named wire/inference types** (+
+  `ValidationIssue`) — new a2ui types are no longer auto-excluded from
+  exhaustiveness checks.
+- **`*`-nested property unwrap in `Generate`** — caption-tuned fine-tunes
+  (nsfwcaption Qwen-VL family) emit most components' props under a literal
+  `"*"` key; `Generate` unwraps a properties object that is exactly one
+  `"*"` entry before compiling (repair, then validate).
+- **Prompt hardening** — `BuildPrompt` signatures reworded to `(required, ...)`
+  notation with a legend and concrete example; pinned against the official
+  catalog so drift fails the build.
+- **vendorHash extracted to `vendorHash.nix`** — dependency bumps now touch
+  exactly one line (update procedure documented in the file).
+- **Lint-noise policy with configs** — markdownlint (`.markdownlint.json` +
+  `.markdownlint-cli2.yaml` historical ignores) and codespell (`.codespellrc`)
+  are configured with recorded verdicts; living docs lint clean.
+- **go-licenses in the devShell.**
 
 ### Fixed
 
@@ -45,6 +113,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   layers) and gained the harvested 2026-08-18 audit queue; AGENTS.md now
   documents the `archived/` snapshot convention and scopes the
   art-dupl "0 clones" claim to pre-a2ui state.
+- **"19 kinds" catalog misclaim** — the A2UI basic catalog has 18 component
+  kinds, not 19 (fixed in two AGENTS.md places and the package doc); the
+  prompt-signature pin test caught `Tabs` missing from `BuildPrompt` and it
+  was added with true catalog props.
+- **Score duplication in view reviews** — the rendered header's Score bullet
+  duplicated the model's in-body "Score: N/10" line; view reviews now strip
+  in-body score lines (`StripScoreLines`), comparisons keep them (their
+  header carries no score bullet). Verified by wipe + replay.
+- **CHANGELOG `[0.4.0]` duplicate `Changed` section** — the second block's
+  bullets were merged into the first (found by the markdownlint pass).
 
 ## [0.6.1] - 2026-08-17
 
@@ -365,6 +443,18 @@ true`; all `//nolint:` directives now carry explanations. `funlen` config
   hardcoded module path (works around a golangci-lint v2 regression);
   6 dead `//nolint:legacyerrors` directives removed; project-wide lint issues
   driven from 39 to 0.
+- **cmd/vision coverage 37.9% → 73.3%** — added tests for `loadImages`,
+  `printJSON`, `printText`, `runAnalysis` (text/json/stream/structured branches),
+  `runStructured`, `createProvider` (openaicompat happy + missing-baseURL),
+  and `printAnalysisError` (classified + unclassified).
+- **`infertypeargs` cleanup** — removed unnecessary explicit `[testReview]` type
+  arguments from `AnalyzeStructuredStream` calls where Go can infer T from the
+  callback; kept them where `nil` callbacks prevent inference.
+- **DOMAIN_LANGUAGE.md updated** — added `CompressImage`, `ResizeImageWithQuality`,
+  `encodeImage`, `parseFlags`, two-layer retry architecture note, and CLI context.
+- **README snippets compile-verified** — all 13 Go code blocks extracted and
+  built against the real module; every API call, type, and method signature is
+  correct.
 
 ### Removed
 
@@ -404,21 +494,6 @@ safety"`, `"removed for safety"`) that only match real content-policy rejections
   response bodies.
 - ScreenshotAnalyzer cache invalidation: all `With*` builder methods now set
   `cachedAgent = nil`.
-
-### Changed
-
-- **cmd/vision coverage 37.9% → 73.3%** — added tests for `loadImages`,
-  `printJSON`, `printText`, `runAnalysis` (text/json/stream/structured branches),
-  `runStructured`, `createProvider` (openaicompat happy + missing-baseURL),
-  and `printAnalysisError` (classified + unclassified).
-- **`infertypeargs` cleanup** — removed unnecessary explicit `[testReview]` type
-  arguments from `AnalyzeStructuredStream` calls where Go can infer T from the
-  callback; kept them where `nil` callbacks prevent inference.
-- **DOMAIN_LANGUAGE.md updated** — added `CompressImage`, `ResizeImageWithQuality`,
-  `encodeImage`, `parseFlags`, two-layer retry architecture note, and CLI context.
-- **README snippets compile-verified** — all 13 Go code blocks extracted and
-  built against the real module; every API call, type, and method signature is
-  correct.
 
 ## [0.3.0] - 2026-07-27
 

@@ -4,9 +4,13 @@
 
 A Go SDK for building AI agents with vision capabilities. Built on top of [charm.land/fantasy](https://github.com/charmbracelet/fantasy).
 
+Shared vocabulary for the SDK, the visionreviewd daemon, and the a2ui package
+lives in [`docs/DOMAIN_LANGUAGE.md`](docs/DOMAIN_LANGUAGE.md) — use those
+terms in code, docs, and conversations.
+
 ## Architecture
 
-```
+```text
 cmd/vision/              CLI tool
   main.go                Catalog-driven provider construction, listing flags, analysis
   listing.go             printProviders, printVisionModels, printProviderInfo, suggestModel
@@ -26,14 +30,16 @@ pkg/                     Public library code
     hooks.go             Hooks (OnStart, OnFinish, OnError)
     errors.go            Re-Exports domain errors + ModelError classification
     validate.go          Image format validation (magic bytes)
-    a2ui/                A2UI protocol sub package (https://a2ui.org/, v0.9.1)
+    a2ui/                A2UI protocol sub package (https://a2ui.org/, v0.9.1) — concepts: docs/A2UI.md
       a2ui.go            Package doc, version/catalog/root constants
-      component.go       Component, ChildList, builders (NewText, NewButton, ...), Bind/Literal
+      component.go       Component, ChildList, builders for all 18 catalog kinds, Bind/Literal
       messages.go        Message tagged union (4 kinds), UnmarshalMessage, JSONL codec
       validate.go        Validate/Issues: structural rules, ErrValidation sentinels
       surface.go         SurfaceSpec inference format + Compile → wire messages
-      prompt.go          BuildPrompt with basic-catalog component signatures
-      generate.go        Generate(ctx, agent, opts, images...) vision bridge
+      prompt.go          BuildPrompt with basic-catalog component signatures (pinned to testdata/official)
+      generate.go        Generate(ctx, agent, opts, images...) vision bridge + "*"-unwrap repair
+      decompile.go       Decompile: wire messages → SurfaceSpec (RFC 6901 fold)
+      testdata/official/ Pinned official v0.9.1 schemas (conformance + pin tests)
   errors/                Centralized domain-specific errors (apperrors)
     errors.go            Sentinel validation errors
     model.go             ModelError, ErrorKind, Classify, IsRetryable
@@ -119,7 +125,7 @@ examples/                Working examples for each provider
 - **`version` is a `var` (not `const`)** — set to the released semver at cut time ("0.6.0" as of 2026-08-17), reset to a `-dev` default when the next cycle opens; `flake.nix` injects the real rev via `-ldflags "-X main.version=..."`
 - **CLI parseFlags is testable** — `parseFlags(fs *flag.FlagSet, args []string) (*config, error)` takes a FlagSet and returns errors instead of calling `os.Exit`. `main()` passes `flag.CommandLine`; tests pass a fresh `flag.ContinueOnError` set with `io.Discard` output. Version/no-args decisions surface as `cfg.showVersion` / `cfg.args` so the caller acts on them.
 - **Retry tests must NOT set MaxRetries** — Vision-layer retry tests leave `MaxRetries` at 0 (default) and rely solely on `Config.Retry`. Setting `MaxRetries: 1` re-enables fantasy's HTTP-layer retry (~5s backoff per retryable mock call) and makes call counts non-deterministic. The full race suite is ~3.6s.
-- **Dual json v1+v2 support — do NOT migrate imports** — All code imports only `encoding/json` (the v1 path). This transparently supports BOTH regimes: default Go (v1 behavior) AND `GOEXPERIMENT=jsonv2` (v2 behavior), because the jsonv2 experiment swaps the _implementation_ of `encoding/json` while preserving the v1 API surface (`Marshal`, `Unmarshal`, `NewEncoder`, `SetIndent`, `Decoder`). The auto-upgrade daemon repeatedly tried to switch imports to `encoding/json/v2` and `encoding/json/jsontext` — those paths are NOT supported here: they require a `go.mod` replace directive AND have a different low-level API (`jsontext.Encoder` has no `SetIndent`), which broke compilation. CI runs a dedicated `jsonv2-compat` job (`GOEXPERIMENT=jsonv2 go build/vet/test`) to guard this. Verified passing under both Go 1.26.5 default and jsonv2. **Enforced by `depguard`** (`.golangci.yaml` `rules.main.deny`): `encoding/json/v2` and `encoding/json/jsontext` are denied (deny wins over `$gostd`), so a migration attempt fails lint with an explanatory message instead of silently breaking compilation.
+- **Dual json v1+v2 support — do NOT migrate imports** — All code imports only `encoding/json` (the v1 path). This transparently supports BOTH regimes: default Go (v1 behavior) AND `GOEXPERIMENT=jsonv2` (v2 behavior), because the jsonv2 experiment swaps the _implementation_ of `encoding/json` while preserving the v1 API surface (`Marshal`, `Unmarshal`, `NewEncoder`, `SetIndent`, `Decoder`). The auto-upgrade daemon repeatedly tried to switch imports to `encoding/json/v2` and `encoding/json/jsontext` — those paths are NOT supported here: they require a `go.mod` replace directive AND have a different low-level API (`jsontext.Encoder` has no `SetIndent`), which broke compilation. CI runs two regime jobs: `jsonv2-compat` (`GOEXPERIMENT=jsonv2` over the whole module) and `no-jsonv2` (default regime over the SDK subset). Regime split (verified 2026-08-18): the SDK (`pkg/...`, `cmd/vision`, `internal/{catalog,cli,visionutil}`, `examples`) builds AND tests green under BOTH regimes — that is the consumer guarantee. The daemon (`internal/reviewd`, `cmd/visionreviewd`) requires jsonv2: its dependency go-cqrs-lite imports `encoding/json/v2`, which does not exist without the experiment; `GOEXPERIMENT=none go build ./...` fails there by design. **Enforced by `depguard`** (`.golangci.yaml` `rules.main.deny`): `encoding/json/v2` and `encoding/json/jsontext` are denied (deny wins over `$gostd`), so a migration attempt fails lint with an explanatory message instead of silently breaking compilation.
 - **Validation errors include offending values** — `Config.Validate()` wraps each sentinel with `fmt.Errorf("%w: got %v, want ...", sentinel, value)`. This preserves `errors.Is` matching while making the error self-diagnosing: `"vision agent: temperature must be between 0.0 and 2.0: got 3.50, want [0.0, 2.0]"`. Tests use `require.ErrorIs` (which traverses wraps) and `require.Contains` (which checks the message).
 - **No context dumping in error messages** — Variables that are RESULTS of a failed operation (`decoded`, `data`, `img`, `jsonBytes`) are never included in error messages. They are nil/garbage on the error path. Only INPUTS relevant to diagnosis (path, url, mediaType, filename, offending value) are included. The `erraudit` tool's `context_loss` findings on result variables are false positives — adding them would produce misleading error strings.
 - **Bare `return err` is intentional at boundary sentinels** — When a function returns a sentinel error (`ErrEmptyPrompt`, `ErrNoImages`, `ErrInvalidImage`), propagating it without wrapping is correct: the sentinel IS the error. Wrapping `"analyze: %w"` would just add noise. Context wrapping is reserved for sites where the calling context genuinely adds diagnostic value (URL, operation name, image index).
@@ -137,13 +143,18 @@ examples/                Working examples for each provider
 
 - **Spec v0.9.1 (current), not v1.0 candidate** — v1.0 (`actionResponse`, `theme` → `surfaceProperties` rename) waits until it leaves candidate status; the package emits `VersionV091`, accepts v0.9 on input, and the upgrade is a ROADMAP item.
 - **`Message` is a tagged-union interface, not a struct** — exactly one of the four concrete kinds (`*CreateSurface`, `*UpdateComponents`, `*UpdateDataModel`, `*DeleteSurface`); a two-kind envelope is unrepresentable. Each type self-marshals its `{version, kind}` envelope; `UnmarshalMessage` dispatches on the single kind key and rejects zero/two-kind payloads with `ErrMalformedMessage`. The interface is in the lint `ireturn` allow list for this reason.
-- **`Component` splits structural fields from catalog props** — `ID`/`Kind`/`Accessibility`/`Child`/`Children` typed (what validation walks), catalog-specific properties in `Props map[string]any` (the basic catalog has 19 component kinds; a 40-field god struct would be worse). Custom Marshal/Unmarshal merge/split the flat wire shape losslessly.
+- **`Component` splits structural fields from catalog props** — `ID`/`Kind`/`Accessibility`/`Child`/`Children` typed (what validation walks), catalog-specific properties in `Props map[string]any` (the basic catalog has 18 component kinds; a 40-field god struct would be worse). Custom Marshal/Unmarshal merge/split the flat wire shape losslessly.
 - **Dynamic values are `any` + constructors** — A2UI DynamicString is `literal | {"path": ...} | function`; `Literal(x)` and `Bind(path)` construct both shapes with zero custom marshalers. `ChildList` keeps the static/dynamic shapes exclusive via `StaticChildren`/`DynamicChildrenOf` (zero value = invalid, caught by Validate).
 - **`SurfaceSpec` is a separate LLM-facing inference format** — mirrors the official Python SDK's "inference format" concept: ONE object for the whole surface, catalog props nested under `properties` (NOT inlined) so the JSON schema derived by `AnalyzeStructured` stays exact — custom marshalers are invisible to schema reflection, so inlined props would vanish from the derived schema. `Compile` flattens props back into wire components and runs `Validate` before returning; compiled output is renderable by construction.
 - **Validation is structural, not catalog-aware** — root presence, unique/non-empty IDs, resolvable child refs, acyclicity (DFS from root), surface lifecycle ordering (create-before-update, no double-create, no use-after-delete), envelope versions. Orphan components are legal per spec. Typed causes survive aggregation: `errors.Is(err, ErrComponentCycle)` works through `errors.Join` because `ValidationIssue.Err` is wrapped, not stringified.
-- **Prompt carries the catalog, schema carries the shape** — `BuildPrompt` embeds the 19 basic-catalog component signatures (extracted from the official `catalog.json`) plus adjacency/dynamic-value rules; the structured-output schema enforces the `SurfaceSpec` shape. Both are needed: schema alone gives no prop guidance, prompt alone gives no shape guarantee.
+- **Prompt carries the catalog, schema carries the shape** — `BuildPrompt` embeds the basic-catalog component signatures (18 kinds + one Text-variant guidance line, pinned by `prompt_pin_test.go` against `testdata/official/catalog.json`) plus adjacency/dynamic-value rules; the structured-output schema enforces the `SurfaceSpec` shape (BDD fake asserts `SchemaName == "SurfaceSpec"`). Both are needed: schema alone gives no prop guidance, prompt alone gives no shape guarantee. Historical note: the catalog was long miscounted as 19 kinds and `Tabs` was missing from the signatures until the pin test caught it (2026-08-18).
 - **`Generate` = AnalyzeStructured + defaults + Compile** — model failures arrive classified (`*vision.ModelError` via the chain, wrapped with `"a2ui generate:"`); a structurally broken model output fails with `ErrValidation` and returns no messages. Empty `surfaceId`/`catalogId` from the model fall back to `GenerateOptions` values (`"main"` / `DefaultCatalogID`).
-- **Wire/prop key strings are constants** — `kindCreateSurface`... (wire keys), exported `KindText`... (catalog kinds for programmatic builders) satisfy goconst; `.golangci.yaml` excludes the whole package for exhaustruct (wire types are partial by design: zero = absent from the wire object).
+- **Wire/prop key strings are constants** — `kindCreateSurface`... (wire keys), exported `KindText`... (catalog kinds for programmatic builders), `propEvent`/`propURL`/`defaultSurfaceID` (property keys) satisfy goconst; exhaustruct excludes only the listed wire/inference types (M8/F24 decision) — new a2ui types must be constructed exhaustively or added with justification.
+- **Explicit `null` is a write, omission is a remove (`UpdateDataModel`)** — decoding detects the presence of the `value` key: `{"path": "/a", "value": null}` decodes to `Value: nil, Remove: false` (a legal write per spec); an absent `value` with a path decodes to `Remove: true`. Round trips preserve the distinction (M8/F22 decision; tested in `messages_test.go`).
+- **Envelope decoding is strict, payload decoding is lenient** — `UnmarshalMessage` rejects unknown top-level keys (schema parity: `additionalProperties: false`), but payload fields inside each kind are ignored when unknown, so additive fields from newer minor revisions (e.g. v1.0's `surfaceProperties`) still decode (M8/F23 decision).
+- **Official-schema conformance is machine-proven** — `conformance_test.go` validates compiled output and hand-built messages of all four kinds against the pinned official v0.9.1 schemas in `testdata/official/` (santhosh-tekuri/jsonschema/v6, added because kaptinlin v0.9.8 cannot compile schemas containing string `const`/`enum` values — its exact-decoder rejects non-number values decoded into `any`; repro: see test file header). Failure-path table documents what the official schema rejects; the validator has a positive control (official example) so it cannot pass vacuously.
+- **`Generate` unwraps `"*"`-nested properties (real-model quirk repair)** — caption-tuned fine-tunes (nsfwcaption Qwen-VL family) nest catalog props under a literal `"*"` key (`{"properties": {"*": {"text": ...}}}`) in most components; prompt-side fixes do not help (baked into the fine-tune). `unwrapStarProperties` in `generate.go` unwraps when `properties` is exactly one `"*"` object before `Compile` — repair, then validate. Verified end-to-end against the real model (2026-08-18: 22-component surface, ALL LINES VALID). Mixed shapes (`"*"` plus real props) are left untouched on purpose.
+- **a2ui test baselines (2026-08-18)** — coverage 89% of statements (`go test -cover ./pkg/vision/a2ui/`, 32-core); benchmarks on an 82-component surface: `MarshalJSONL` 130 µs/op, `Validate` 3.2 µs/op, `UnmarshalMessage` 221 µs/op (3-line JSONL), `Decompile` 2.2 µs/op (1 alloc). 4 fuzz targets in `fuzz_test.go` (~1M execs, zero failures) cover the codecs.
 - **`CostTracker.CostUSD()` returns 0 without pricing** — No breaking change: existing `CostTracker` users see no cost unless `SetPricing` is called or `ModelInfo` is set.
 
 ## Build & Test Commands
@@ -174,10 +185,11 @@ changes; CI mirrors these):
 1. `go build ./...` / `go vet ./...` / `gofmt -l .`
 2. `go test -race ./...`
 3. `GOEXPERIMENT=jsonv2 go build ./... && ... go vet ./... && ... go test ./...`
-4. `go mod verify`; `go mod tidy -diff` must be empty
-5. `nix run .#test` / `nix run .#lint`
-6. `nix build .` and `nix build .#visionreviewd`
-7. `nix flake check`
+4. `GOEXPERIMENT=none go build ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/... ./examples/...` plus vet/test of the same set (SDK-only; the daemon needs jsonv2 — mirrors the `no-jsonv2` CI job)
+5. `go mod verify`; `go mod tidy -diff` must be empty
+6. `nix run .#test` / `nix run .#lint`
+7. `nix build .` and `nix build .#visionreviewd`
+8. `nix flake check`
 
 ### GOWORK
 

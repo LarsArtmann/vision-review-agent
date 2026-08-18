@@ -128,7 +128,7 @@ if errors.AsType(err, &me) {
 
 ### Classification Flow
 
-```
+```text
 model call error
       │
       ▼

@@ -1,0 +1,12 @@
+{
+  "default": true,
+  "MD013": false,
+  "MD040": true,
+  "MD024": {
+    "siblings_only": true,
+    "allow_different_nesting": true
+  },
+  "MD010": {
+    "code_blocks": false
+  }
+}

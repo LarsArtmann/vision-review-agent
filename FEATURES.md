@@ -180,10 +180,34 @@ Real-model bring-up and host activation are tracked in
   IDs, resolvable child references, acyclicity, surface lifecycle ordering,
   envelope versions; typed sentinels (`ErrValidation`, `ErrComponentCycle`,
   `ErrMalformedMessage`)
+- **Official-schema conformance** — compiled output, hand-built messages of
+  all four kinds, and every builder are validated against the pinned official
+  v0.9.1 schemas in `conformance_test.go` (positive control included)
 - **Typed components + builders** — `Component` adjacency-list nodes with
   static/dynamic `ChildList`, accessibility labels, `Bind`/`Literal` dynamic
-  values, and constructors for the basic-catalog staples (Text, Column, Row,
-  Card, Button, Image, Divider, Icon)
+  values, and a constructor for every kind in the basic catalog (18/18; every
+  builder's wire output is schema-checked in
+  `TestAllBuildersConformToOfficialSchema`):
+
+| Kind                   | Constructor                                           |
+| ---------------------- | ----------------------------------------------------- |
+| Text                   | `NewText`                                             |
+| Button                 | `NewButton`                                           |
+| Column / Row / List    | `NewColumn` / `NewRow` / `NewList`                    |
+| Card / Modal           | `NewCard` / `NewModal`                                |
+| Image / Icon / Divider | `NewImage` / `NewIcon` / `NewDivider`                 |
+| Tabs                   | `NewTabs` (takes `Tab{Title, ChildID}` values)        |
+| TextField / CheckBox   | `NewTextField` / `NewCheckBox`                        |
+| ChoicePicker           | `NewChoicePicker` (takes `ChoicePickerOption` values) |
+| DateTimeInput / Slider | `NewDateTimeInput` / `NewSlider`                      |
+| AudioPlayer / Video    | `NewAudioPlayer` / `NewVideo`                         |
+
+- **Decompile** — `a2ui.Decompile` folds a wire message stream back into a
+  `SurfaceSpec` (RFC 6901 pointer writes/removes for data-model edits),
+  closing the `Compile` asymmetry for diffing and edit round-trips
+- **Theme + DataModel options** — `GenerateOptions.Theme` passes through when
+  the model emitted none; `GenerateOptions.DataModel` seeds the data model
+  with model keys winning
 - **Spec version** — v0.9.1 emitted, v0.9 accepted on input; components from
   the A2UI basic catalog
 

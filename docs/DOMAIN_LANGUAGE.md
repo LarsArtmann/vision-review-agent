@@ -115,15 +115,47 @@ Actions the system performs:
 
 ## Bounded Contexts
 
-| Context                  | Description                                                                                                                                                                                      |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Analysis**             | Core image-analysis lifecycle: validation → preprocessing → model call → hooks → result                                                                                                          |
-| **Error Classification** | Translating provider-specific errors into domain-level `ErrorKind` categories                                                                                                                    |
-| **Preprocessing**        | Image transformation (resize, compress) before model invocation                                                                                                                                  |
-| **Retry**                | Two-layer: `Config.MaxRetries` (fantasy HTTP-layer, default 0=disabled) + `Config.Retry` (vision-layer backoff+jitter via `WithRetry[T]`)                                                        |
-| **Cost Tracking**        | Token usage accumulation across analysis calls; USD pricing when `ModelInfo` is set                                                                                                              |
-| **Model Catalog**        | Catwalk-integrated model/provider discovery (40+ providers, vision model filtering, pricing metadata). Offline-first via embedded data; optional remote sync.                                    |
-| **CLI**                  | `parseFlags` parses flags into a `config` struct without calling `os.Exit`, enabling isolated testing. `createProvider` maps provider names to fantasy providers via the catwalk catalog bridge. |
+| Context                       | Description                                                                                                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Analysis**                  | Core image-analysis lifecycle: validation → preprocessing → model call → hooks → result                                                                                                          |
+| **Error Classification**      | Translating provider-specific errors into domain-level `ErrorKind` categories                                                                                                                    |
+| **Preprocessing**             | Image transformation (resize, compress) before model invocation                                                                                                                                  |
+| **Retry**                     | Two-layer: `Config.MaxRetries` (fantasy HTTP-layer, default 0=disabled) + `Config.Retry` (vision-layer backoff+jitter via `WithRetry[T]`)                                                        |
+| **Cost Tracking**             | Token usage accumulation across analysis calls; USD pricing when `ModelInfo` is set                                                                                                              |
+| **Model Catalog**             | Catwalk-integrated model/provider discovery (40+ providers, vision model filtering, pricing metadata). Offline-first via embedded data; optional remote sync.                                    |
+| **UI Review (visionreviewd)** | Event-sourced screenshot review daemon: watches project goldens, reviews each view with a vision model, projects markdown. See the vocabulary section below.                                     |
+| **A2UI**                      | Agent-to-UI protocol support: turns images into declarative, validated A2UI surfaces. See the vocabulary section below.                                                                          |
+| **CLI**                       | `parseFlags` parses flags into a `config` struct without calling `os.Exit`, enabling isolated testing. `createProvider` maps provider names to fantasy providers via the catwalk catalog bridge. |
+
+## UI Review Vocabulary (visionreviewd)
+
+| Term           | Definition                                                                                                              | Context                                    |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| **ViewKey**    | `{Page}--{theme}--{viewport}`, the identity of one reviewed view (parsed from golden file names)                        | `ParseViewKey`                             |
+| **Golden**     | A screenshot a project regenerates on change; the daemon's review subject                                               | `testdata/visual/*.png` convention         |
+| **Capture**    | The `view.captured` event: a golden's content hash was seen (first time or changed)                                     | Event store, blob store                    |
+| **Review**     | The `view.reviewed` event: a vision model judged one capture; carries markdown + score                                  | `Reviewer.Review`                          |
+| **Comparison** | The `view.compared` event: model diffed the previous capture (BEFORE) against the new one (AFTER)                       | `Pipeline` auto-compare, `CompareManually` |
+| **Pass**       | One scan-review-write cycle over every configured project: scan → skip-seen → blob → compare → review → write           | `Pipeline.Pass`, daemon ticker             |
+| **Blob store** | Content-addressed image archive (`<dataDir>/images/<sha256>.<ext>`) keeping BEFORE images alive for compares and replay | `BlobStore`                                |
+| **Replay**     | Rebuild the whole markdown projection (views/, comparisons/, INDEX.md) byte-identically from the event journal          | `Replay`                                   |
+| **Doctor**     | Preflight check: config paths, glob matches, model endpoint reachability                                                | `visionreviewd doctor`                     |
+| **Discover**   | Walk a project for known golden patterns and emit a suggested config                                                    | `visionreviewd discover`                   |
+| **INDEX**      | Per-project markdown table of every view with score + trend                                                             | `RenderIndex`                              |
+
+## A2UI Vocabulary
+
+| Term                 | Definition                                                                                                  | Context                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| **Surface**          | One A2UI UI instance identified by a surfaceId; created, updated, deleted via messages                      | `CreateSurface`, `RootID`          |
+| **Catalog**          | The set of component types a client can render (basic catalog: 18 kinds)                                    | `DefaultCatalogID`                 |
+| **Adjacency list**   | The flat component model: every component has an id; containers reference children by id                    | `Component`                        |
+| **Wire format**      | The JSON messages sent to clients: `{version, <kind>: {...}}` envelopes, one per JSONL line                 | `MarshalJSONL`, `UnmarshalMessage` |
+| **Inference format** | The LLM-facing `SurfaceSpec`: one object, props nested under `properties` so the derived schema stays exact | `SurfaceSpec`, `Compile`           |
+| **Compile**          | SurfaceSpec → validated wire messages (createSurface, updateComponents, optionally updateDataModel)         | `Compile`                          |
+| **Decompile**        | Wire messages → SurfaceSpec; the inverse of Compile (enables edit round-trips)                              | `Decompile`                        |
+| **Generate**         | Images → SurfaceSpec → validated messages, via the vision model with structured output                      | `Generate`                         |
+| **Dynamic value**    | A property that is a literal, a `{path}` data binding, or a function call                                   | `Bind`, `Literal`                  |
 
 ---
 
