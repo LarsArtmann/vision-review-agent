@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Nothing yet.
+
+### Changed
+
+- Nothing yet.
+
+### Fixed
+
+- Nothing yet.
+
+## [0.6.2] - 2026-08-18
+
+### Added
+
 - **A2UI sub package (`pkg/vision/a2ui`)** — Go support for the
   [A2UI protocol](https://a2ui.org/) (v0.9.1) — to our knowledge the only
   A2UI SDK in Go driven by vision (other Go A2UI libraries exist, but none
