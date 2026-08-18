@@ -376,3 +376,50 @@ func TestConsumeObjectStream_FinishMalformedObjectReturnsParseError(t *testing.T
 	require.Equal(t, apperrors.KindStructuredParse, me.Kind)
 	require.False(t, me.IsRetryable())
 }
+
+// TestAnalyzeStructuredStreamToleratesMalformedPartials verifies the
+// best-effort contract for PARTIAL objects during streaming: a partial that
+// fails to unmarshal is skipped (the callback never sees it), later valid
+// partials still arrive, and only a malformed FINAL object is a hard error.
+func TestAnalyzeStructuredStreamToleratesMalformedPartials(t *testing.T) {
+	t.Parallel()
+
+	model := &mockModel{
+		streamObjectFunc: func(yield func(fantasy.ObjectStreamPart) bool) {
+			_ = yield(fantasy.ObjectStreamPart{
+				Type:   fantasy.ObjectStreamPartTypeObject,
+				Object: "a bare string partial cannot unmarshal into testReview",
+			})
+			_ = yield(fantasy.ObjectStreamPart{
+				Type:   fantasy.ObjectStreamPartTypeTextDelta,
+				Delta:  "thinking...",
+				Object: nil,
+			})
+			_ = yield(fantasy.ObjectStreamPart{
+				Type:   fantasy.ObjectStreamPartTypeObject,
+				Object: map[string]any{"score": 5},
+			})
+			_ = yield(fantasy.ObjectStreamPart{
+				Type:   fantasy.ObjectStreamPartTypeFinish,
+				Object: map[string]any{"score": 9},
+				Usage:  fantasy.Usage{TotalTokens: 7}, FinishReason: fantasy.FinishReasonStop,
+			})
+		},
+	}
+	agent := newTestAgent(t, model)
+
+	var partials []testReview
+
+	streamResult, err := AnalyzeStructuredStream[testReview](
+		context.Background(),
+		agent,
+		"test prompt",
+		func(partial testReview) { partials = append(partials, partial) },
+		ImageSrc(),
+	)
+	require.NoError(t, err)
+	require.Equal(t, 9, streamResult.Object.Score, "final object wins")
+	require.Len(t, partials, 1, "malformed partials must be skipped, valid ones delivered")
+	require.Equal(t, 5, partials[0].Score)
+	require.Equal(t, "thinking...", streamResult.RawText)
+}

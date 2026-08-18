@@ -14,11 +14,12 @@ import (
 // fakeModel is a minimal fantasy.LanguageModel whose GenerateObject returns a
 // canned object (the SurfaceSpec the "model" produced) or an error.
 type fakeModel struct {
-	object     map[string]any
-	err        error
-	called     int
-	promptSeen fantasy.Prompt
-	schemaSeen bool
+	object         map[string]any
+	err            error
+	called         int
+	promptSeen     fantasy.Prompt
+	schemaSeen     bool
+	schemaNameSeen string
 }
 
 func (m *fakeModel) Generate(_ context.Context, _ fantasy.Call) (*fantasy.Response, error) {
@@ -36,6 +37,7 @@ func (m *fakeModel) GenerateObject(_ context.Context, in fantasy.ObjectCall) (*f
 	m.called++
 	m.promptSeen = in.Prompt
 	m.schemaSeen = in.Schema.Type != ""
+	m.schemaNameSeen = in.SchemaName
 
 	if m.err != nil {
 		return nil, m.err

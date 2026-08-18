@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+// defaultSurfaceID is the conventional surface identifier Compile and
+// Generate fall back to.
+const defaultSurfaceID = "main"
+
 // SurfaceSpec is the LLM-facing inference format for a complete A2UI
 // surface: a simplified, schema-friendly shape that models fill in directly
 // (mirroring the official SDK's "inference format" concept). Compile turns a
@@ -63,7 +67,7 @@ type ComponentSpec struct {
 // returned, so a spec that compiles is a spec a client can render.
 func Compile(spec SurfaceSpec) ([]Message, error) {
 	if spec.SurfaceID == "" {
-		spec.SurfaceID = "main"
+		spec.SurfaceID = defaultSurfaceID
 	}
 
 	if spec.CatalogID == "" {

@@ -29,8 +29,9 @@
 //
 // The generated messages implement the v0.9.1 message shapes
 // (https://a2ui.org/specification/v0_9_1/); components come from the A2UI
-// basic catalog. Machine-checking the output against the official JSON
-// schemas is a tracked TODO_LIST follow-up.
+// basic catalog. Conformance against the official v0.9.1 JSON schemas is
+// machine-checked in every test run (conformance_test.go, with the schemas
+// pinned under testdata/official/).
 package a2ui
 
 // VersionV09 is the v0.9 protocol version, accepted on input.

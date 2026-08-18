@@ -3,6 +3,7 @@ package a2ui
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"charm.land/fantasy"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
@@ -22,6 +23,15 @@ type GenerateOptions struct {
 	// CatalogID overrides the component catalog; defaults to
 	// DefaultCatalogID.
 	CatalogID string
+
+	// Theme carries theme parameters (e.g. {"primaryColor": "#FF0000"})
+	// applied to the createSurface message when the model produced none.
+	// A model-emitted theme wins.
+	Theme map[string]any
+
+	// DataModel seeds the initial data model. Keys the model also produced
+	// win; seed keys only fill gaps.
+	DataModel map[string]any
 }
 
 // GenerateResult is the outcome of a Generate call: the validated wire
@@ -73,6 +83,19 @@ func Generate(
 		spec.CatalogID = opts.CatalogID
 	}
 
+	unwrapStarProperties(spec.Components)
+
+	if spec.Theme == nil {
+		spec.Theme = opts.Theme
+	}
+
+	if len(spec.DataModel) > 0 || len(opts.DataModel) > 0 {
+		merged := make(map[string]any, len(opts.DataModel)+len(spec.DataModel))
+		maps.Copy(merged, opts.DataModel)
+		maps.Copy(merged, spec.DataModel)
+		spec.DataModel = merged
+	}
+
 	messages, err := Compile(spec)
 	if err != nil {
 		return nil, fmt.Errorf("a2ui generate: %w", err)
@@ -89,10 +112,32 @@ func Generate(
 // applyDefaults fills the zero-value option fields.
 func (o *GenerateOptions) applyDefaults() {
 	if o.SurfaceID == "" {
-		o.SurfaceID = "main"
+		o.SurfaceID = defaultSurfaceID
 	}
 
 	if o.CatalogID == "" {
 		o.CatalogID = DefaultCatalogID
+	}
+}
+
+// unwrapStarProperties repairs a model quirk observed with caption-tuned
+// fine-tunes (e.g. the nsfwcaption Qwen-VL family): properties arrive nested
+// under a literal "*" key — {"properties": {"*": {"text": ...}}} — instead of
+// at the top of the properties object. "*" is never a real catalog property,
+// and the nesting survives schema-ignoring JSON decode, so Generate unwraps
+// it before Compile; otherwise the catalog props vanish from the wire output.
+func unwrapStarProperties(components []ComponentSpec) {
+	for i := range components {
+		props := components[i].Properties
+		if len(props) != 1 {
+			continue
+		}
+
+		nested, ok := props[propStar].(map[string]any)
+		if !ok {
+			continue
+		}
+
+		components[i].Properties = nested
 	}
 }

@@ -6,6 +6,7 @@
 //	vision -provider openrouter -model openai/gpt-4o -prompt "Find bugs" *.png
 //	vision -stream -prompt "Analyze this" screenshot.png
 //	vision -json -prompt "Find bugs" screenshot.png | jq '.text'
+//	vision -a2ui -prompt "" -provider openaicompat mockup.png > surface.jsonl
 package main
 
 import (
@@ -24,6 +25,7 @@ import (
 	"github.com/larsartmann/vision-review-agent/internal/catalog"
 	"github.com/larsartmann/vision-review-agent/internal/cli"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
+	"github.com/larsartmann/vision-review-agent/pkg/vision/a2ui"
 )
 
 const (
@@ -131,6 +133,7 @@ type config struct {
 	systemPrompt  string
 	stream        bool
 	structured    bool
+	a2ui          bool
 	temperature   float64
 	maxTokens     int64
 	jsonOutput    bool
@@ -164,6 +167,11 @@ func parseFlags(flagSet *flag.FlagSet, args []string) (*config, error) {
 	maxTokens := flagSet.Int64("max-tokens", 0, "Max output tokens (0 = unlimited)")
 	jsonOutput := flagSet.Bool("json", false, "Output result as JSON")
 	structured := flagSet.Bool("structured", false, "Emit a structured UI review as JSON (built-in schema)")
+	a2uiMode := flagSet.Bool(
+		"a2ui",
+		false,
+		"Generate an A2UI surface from the image(s) and print the wire messages as JSON Lines",
+	)
 	timeout := flagSet.Int64("timeout", 0, "Request timeout in seconds (0 = unlimited)")
 	showVersion := flagSet.Bool("version", false, "Show version and exit")
 	listProviders := flagSet.Bool("list-providers", false, "List all supported providers and exit")
@@ -186,6 +194,7 @@ func parseFlags(flagSet *flag.FlagSet, args []string) (*config, error) {
 		maxTokens:     *maxTokens,
 		jsonOutput:    *jsonOutput,
 		structured:    *structured,
+		a2ui:          *a2uiMode,
 		timeout:       *timeout,
 		showVersion:   *showVersion,
 		listProviders: *listProviders,
@@ -278,6 +287,12 @@ func runAnalysis(
 	images []*vision.ImageSource,
 	stdout, stderr io.Writer,
 ) {
+	if cfg.a2ui {
+		runA2UI(ctx, agent, cfg, images, stdout, stderr)
+
+		return
+	}
+
 	if cfg.structured {
 		runStructured(ctx, agent, cfg, images, stdout, stderr)
 
@@ -313,6 +328,36 @@ func runAnalysis(
 	} else {
 		printText(stdout, result, cfg.stream)
 	}
+}
+
+// runA2UI generates an A2UI surface from the images and writes the wire
+// messages as JSON Lines to stdout (status goes to stderr, so the output
+// stays pipeable). -prompt doubles as the generation task; an empty prompt
+// uses a2ui's built-in faithful-reconstruction default.
+func runA2UI(
+	ctx context.Context,
+	agent *vision.Agent,
+	cfg *config,
+	images []*vision.ImageSource,
+	stdout, stderr io.Writer,
+) {
+	fmt.Fprintln(stderr, "Generating A2UI surface...")
+
+	result, err := a2ui.Generate(ctx, agent, a2ui.GenerateOptions{Task: cfg.prompt}, images...)
+	if err != nil {
+		printAnalysisError(stderr, err, false)
+		os.Exit(1)
+	}
+
+	encoded, err := a2ui.MarshalJSONL(result.Messages)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error encoding A2UI messages: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Fprintln(stdout, string(encoded))
+	fmt.Fprintf(stderr, "Surface %q: %d messages, %d components.\n",
+		result.Spec.SurfaceID, len(result.Messages), len(result.Spec.Components))
 }
 
 // runStructured performs a structured UI review and prints it as JSON.

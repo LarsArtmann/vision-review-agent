@@ -71,6 +71,106 @@ var _ = ginkgo.Describe("Generate", func() {
 		})
 	})
 
+	ginkgo.Context("model quirks", func() {
+		ginkgo.It("unwraps properties nested under a literal * key", func() {
+			object := validSpecObject()
+			rawComponents, ok := object["components"].([]any)
+			gomega.Expect(ok).To(gomega.BeTrue())
+
+			for _, raw := range rawComponents {
+				component, ok := raw.(map[string]any)
+				gomega.Expect(ok).To(gomega.BeTrue())
+
+				if props, ok := component["properties"].(map[string]any); ok {
+					component["properties"] = map[string]any{"*": props}
+				}
+			}
+
+			model := &fakeModel{object: object}
+
+			result, err := a2ui.Generate(ginkgoCtx(), newAgent(model), a2ui.GenerateOptions{}, testImage())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			update, ok := result.Messages[1].(*a2ui.UpdateComponents)
+			gomega.Expect(ok).To(gomega.BeTrue())
+
+			for _, component := range update.Components {
+				gomega.Expect(component.Props).NotTo(gomega.HaveKey("*"),
+					"star-nested properties must be unwrapped")
+			}
+
+			title := update.Components[1]
+			gomega.Expect(title.Props).To(gomega.HaveKeyWithValue("text", "Latest review"))
+
+			button := update.Components[2]
+			gomega.Expect(button.Props).To(gomega.HaveKey("action"),
+				"unwrapping must keep the real properties")
+		})
+	})
+
+	ginkgo.Context("theme passthrough", func() {
+		ginkgo.It("applies the option theme when the model produced none", func() {
+			model := &fakeModel{object: validSpecObject()}
+
+			result, err := a2ui.Generate(ginkgoCtx(), newAgent(model), a2ui.GenerateOptions{
+				Theme: map[string]any{"primaryColor": "#0055FF"},
+			}, testImage())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			create, ok := result.Messages[0].(*a2ui.CreateSurface)
+			gomega.Expect(ok).To(gomega.BeTrue())
+			gomega.Expect(create.Theme).To(gomega.Equal(map[string]any{"primaryColor": "#0055FF"}))
+		})
+
+		ginkgo.It("keeps the model theme when both are set", func() {
+			object := validSpecObject()
+			object["theme"] = map[string]any{"primaryColor": "#FF0000"}
+			model := &fakeModel{object: object}
+
+			result, err := a2ui.Generate(ginkgoCtx(), newAgent(model), a2ui.GenerateOptions{
+				Theme: map[string]any{"primaryColor": "#0055FF"},
+			}, testImage())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			create, ok := result.Messages[0].(*a2ui.CreateSurface)
+			gomega.Expect(ok).To(gomega.BeTrue())
+			gomega.Expect(create.Theme).To(gomega.Equal(map[string]any{"primaryColor": "#FF0000"}))
+		})
+	})
+
+	ginkgo.Context("data model seeding", func() {
+		ginkgo.It("merges the seed under the model's keys", func() {
+			model := &fakeModel{object: validSpecObject()}
+
+			result, err := a2ui.Generate(ginkgoCtx(), newAgent(model), a2ui.GenerateOptions{
+				DataModel: map[string]any{"score": 3, "appName": "Seed"},
+			}, testImage())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			update, ok := result.Messages[len(result.Messages)-1].(*a2ui.UpdateDataModel)
+			gomega.Expect(ok).To(gomega.BeTrue())
+			gomega.Expect(update.Value).To(gomega.Equal(map[string]any{
+				"score":   float64(8), // the model's value wins over the seed
+				"appName": "Seed",
+			}))
+		})
+
+		ginkgo.It("seeds a data model the model omitted entirely", func() {
+			object := validSpecObject()
+			object["dataModel"] = nil
+			model := &fakeModel{object: object}
+
+			result, err := a2ui.Generate(ginkgoCtx(), newAgent(model), a2ui.GenerateOptions{
+				DataModel: map[string]any{"title": "Seeded"},
+			}, testImage())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			update, ok := result.Messages[len(result.Messages)-1].(*a2ui.UpdateDataModel)
+			gomega.Expect(ok).To(gomega.BeTrue())
+			gomega.Expect(update.Value).To(gomega.Equal(map[string]any{"title": "Seeded"}))
+		})
+	})
+
 	ginkgo.Context("when the model returns a structurally broken spec", func() {
 		ginkgo.It("fails with ErrValidation instead of broken messages", func() {
 			object := validSpecObject()
@@ -109,10 +209,12 @@ var _ = ginkgo.Describe("Generate", func() {
 
 			gomega.Expect(model.called).To(gomega.Equal(1))
 			gomega.Expect(model.schemaSeen).To(gomega.BeTrue(), "structured output schema must be attached")
+			gomega.Expect(model.schemaNameSeen).To(gomega.Equal("SurfaceSpec"),
+				"the wire schema name pins the inference format type")
 
 			prompt := promptText(model.promptSeen)
 			gomega.Expect(prompt).To(gomega.ContainSubstring("A2UI"))
-			gomega.Expect(prompt).To(gomega.ContainSubstring("Column: children*"))
+			gomega.Expect(prompt).To(gomega.ContainSubstring("Column: children (required"))
 			gomega.Expect(prompt).To(gomega.ContainSubstring(`"root"`))
 			gomega.Expect(prompt).To(gomega.ContainSubstring("Build a review dashboard from the screenshot"))
 		})
