@@ -27,3 +27,10 @@ func ExtractScore(markdown string) int {
 
 	return score
 }
+
+// StripScoreLines removes the score contract lines from a review body after
+// extraction: the rendered file carries the score in its header, so keeping
+// the model's trailing "Score: N/10" would show it twice.
+func StripScoreLines(markdown string) string {
+	return strings.TrimSpace(scoreLineRegex.ReplaceAllString(markdown, ""))
+}

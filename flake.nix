@@ -44,9 +44,10 @@
           inherit (pkgs) lib;
           version = self.rev or self.dirtyRev or "dev";
           # Shared by every Go package in this flake: one source, one vendored
-          # dependency set (extracted so dependency bumps touch exactly one line).
+          # dependency set (hash lives in vendorHash.nix; see its update
+          # procedure comment).
           src = lib.cleanSource ./.;
-          vendorHash = "sha256-gwJZWwfWl/ldNGQJWyNIpkgpu7j9w6ZtoDlp6o2rC4k=";
+          vendorHash = import ./vendorHash.nix;
 
           # NixOS-module evaluation fixtures for the checks below (enabled +
           # disabled). nixosSystem comes from the flake's lib — pkgs.lib
@@ -167,6 +168,9 @@
                 golangci-lint
                 gopls
                 gotools
+                # License reporting for the dependency set (repo is
+                # proprietary; this documents what the deps require).
+                go-licenses
               ];
 
               inputsFrom = [ config.packages.default ];
@@ -216,6 +220,9 @@
                   llamaUnit = lib.optionalString (
                     nixosModuleEnabled.config.systemd.services ? llama-vision-server
                   ) nixosModuleEnabled.config.systemd.services.llama-vision-server.description;
+                  llamaProbe = builtins.concatStringsSep " " (
+                    nixosModuleEnabled.config.systemd.services.llama-vision-server.serviceConfig.ExecStartPost or [ ]
+                  );
                 }
                 ''
                   [ -n "$execStart" ] || {
@@ -226,6 +233,13 @@
                     echo "llama-vision-server unit missing despite llamaServer.enable"
                     exit 1
                   }
+                  case "$llamaProbe" in
+                    */health*) ;;
+                    *)
+                      echo "llama-vision-server must carry an ExecStartPost /health readiness probe"
+                      exit 1
+                      ;;
+                  esac
                   printf 'module evaluates enabled: %s\n' "$execStart" > $out
                 '';
 

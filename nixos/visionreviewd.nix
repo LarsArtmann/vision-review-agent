@@ -123,6 +123,21 @@ in
         ExecStart =
           "${lib.getExe cfg.llamaServer.package} server "
           + "--host 127.0.0.1 --port ${toString cfg.llamaServer.port} -hf ${cfg.llamaServer.model}";
+        # Readiness gate: llama-server's /health answers 503 until the
+        # model is fully loaded, so this probe keeps the unit "activating"
+        # until the endpoint actually serves. visionreviewd (after= and
+        # wants= this unit) therefore cannot race the ~10 GB first-start
+        # model download/load. Retries cover up to ~1h of pulling.
+        ExecStartPost = [
+          (
+            "${lib.getExe pkgs.curl} --silent --fail --retry 720 --retry-delay 5"
+            + " --retry-connrefused --retry-all-errors"
+            + " http://127.0.0.1:${toString cfg.llamaServer.port}/health"
+          )
+        ];
+        # The first start can spend a long time downloading weights; the
+        # 90s default would kill it mid-download.
+        TimeoutStartSec = "infinity";
         Environment = [ "HF_HOME=/var/lib/llama-vision-server/huggingface" ];
         WorkingDirectory = "/var/lib/llama-vision-server";
         DynamicUser = true;

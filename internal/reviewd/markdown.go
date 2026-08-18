@@ -44,7 +44,7 @@ func RenderViewReview(project string, viewKey ViewKey, capture Captured, review 
 	doc.WriteString("- **Comparisons:** [comparisons/](comparisons/)\n")
 
 	doc.WriteString("\n## Model review\n\n")
-	doc.WriteString(strings.TrimSpace(review.Markdown))
+	doc.WriteString(StripScoreLines(review.Markdown))
 	doc.WriteString("\n\n")
 	doc.WriteString(agentFooter)
 	doc.WriteString("\n")
@@ -73,6 +73,9 @@ func RenderComparison(project string, viewKey ViewKey, compared Compared) string
 	fmt.Fprintf(&doc, "- **Before:** `%s`\n", ShortSHA(compared.BeforeSHA256))
 	fmt.Fprintf(&doc, "- **After:** `%s`\n", ShortSHA(compared.AfterSHA256))
 
+	// The score contract line stays in comparison bodies: unlike view
+	// reviews, the comparison header carries no score bullet, so the model's
+	// final "Score: N/10" line is the score display, not a duplicate.
 	doc.WriteString("\n## Model comparison\n\n")
 	doc.WriteString(strings.TrimSpace(compared.Markdown))
 	doc.WriteString("\n")
