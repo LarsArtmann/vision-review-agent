@@ -17,6 +17,21 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      # Guards the repo against the recurring json/v2 breakage class
+      # (documented 4 incidents in AGENTS.md): the go-auto-upgrade daemon
+      # edits imports directly, bypassing lint. depguard only covers lint
+      # runs, so this grep is the only gate that fires on a plain commit.
+      # Mirror of the depguard deny list in .golangci.yaml.
+      - name: Forbid encoding/json/v2 and jsontext imports
+        run: |
+          if git grep -nE --untracked '"encoding/json/(v2|jsontext)(/[a-z0-9]+)?"' -- '*.go'; then
+            echo "::error::Direct encoding/json/v2 or encoding/json/jsontext imports are forbidden."
+            echo "::error::The jsonv2 experiment swaps encoding/json in place; the v2 import paths need a go.mod replace and a different low-level API (see AGENTS.md)."
+            echo "::error::Import plain encoding/json instead - it transparently supports both regimes."
+            exit 1
+          fi
+          echo "No forbidden json/v2 imports found."
+
       - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
@@ -106,6 +121,28 @@ jobs:
           GOEXPERIMENT=jsonv2 go build ./...
           GOEXPERIMENT=jsonv2 go vet ./...
           GOEXPERIMENT=jsonv2 go test -race ./...
+
+  no-jsonv2:
+    # Consumer guarantee: the SDK (everything except the daemon) must build
+    # and test under the DEFAULT Go regime too — consumers do not set
+    # GOEXPERIMENT. internal/reviewd + cmd/visionreviewd are excluded:
+    # go-cqrs-lite imports encoding/json/v2, which only exists under the
+    # jsonv2 experiment (the daemon always builds with it; see flake.nix).
+    name: SDK without GOEXPERIMENT=jsonv2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build, vet, test SDK packages (default regime)
+        run: |
+          go build ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/... ./examples/...
+          go vet ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/...
+          go test -race ./pkg/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/...
 
   nix-flake-check:
     runs-on: ubuntu-latest

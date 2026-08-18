@@ -180,3 +180,54 @@ func TestJSONLSkipsBlankLinesAndReportsLineNumbers(t *testing.T) {
 	_, err = UnmarshalJSONL([]byte(`{"version":"v0.9.1"}\n{bogus}`))
 	require.ErrorContains(t, err, "line ")
 }
+
+func TestUpdateDataModelExplicitNullIsAWrite(t *testing.T) {
+	t.Parallel()
+
+	// The spec allows "value": null as a legal write; omission means remove.
+	// The two must stay distinguishable across a decode/encode round trip.
+	writeNull := []byte(`{"version":"v0.9.1","updateDataModel":{"surfaceId":"s","path":"/a","value":null}}`)
+	decoded, err := UnmarshalMessage(writeNull)
+	require.NoError(t, err)
+
+	update, ok := decoded.(*UpdateDataModel)
+	require.True(t, ok)
+	require.False(t, update.Remove, "explicit null must decode as a write, not a remove")
+	require.Nil(t, update.Value)
+
+	reencoded, err := json.Marshal(decoded)
+	require.NoError(t, err)
+	require.JSONEq(t, string(writeNull), string(reencoded))
+
+	remove := []byte(`{"version":"v0.9.1","updateDataModel":{"surfaceId":"s","path":"/a"}}`)
+	decodedRemove, err := UnmarshalMessage(remove)
+	require.NoError(t, err)
+
+	updateRemove, ok := decodedRemove.(*UpdateDataModel)
+	require.True(t, ok)
+	require.True(t, updateRemove.Remove, "omitted value with a path must decode as a remove")
+
+	reencodedRemove, err := json.Marshal(decodedRemove)
+	require.NoError(t, err)
+	require.JSONEq(t, string(remove), string(reencodedRemove))
+}
+
+func TestUnmarshalMessageRejectsUnknownEnvelopeKeys(t *testing.T) {
+	t.Parallel()
+
+	// The official schema sets additionalProperties: false on the envelope;
+	// unknown top-level keys are rejected instead of silently ignored.
+	_, err := UnmarshalMessage(
+		[]byte(`{"version":"v0.9.1","surfaceProperties":{"a":1},"deleteSurface":{"surfaceId":"s"}}`),
+	)
+	require.ErrorIs(t, err, ErrMalformedMessage)
+	require.ErrorContains(t, err, "unknown envelope key")
+
+	// Payload-level leniency is deliberate: additive payload fields from
+	// newer minor revisions must not break decoding.
+	decoded, err := UnmarshalMessage(
+		[]byte(`{"version":"v0.9.1","deleteSurface":{"surfaceId":"s","futureField":true}}`),
+	)
+	require.NoError(t, err)
+	require.Equal(t, "s", decoded.Surface())
+}

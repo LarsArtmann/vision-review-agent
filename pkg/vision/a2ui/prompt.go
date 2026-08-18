@@ -11,28 +11,29 @@ const DefaultTask = "Recreate the interface shown in the image(s) as faithfully 
 	"same content, hierarchy, grouping, and reading order."
 
 // catalogSignatures lists the A2UI basic catalog's components with their key
-// properties, mirroring the official catalog's LLM instructions. Values in
-// square brackets are enums; * marks required properties.
+// properties, mirroring the official catalog's component schemas. Values in
+// square brackets are enum options; "(required)" marks mandatory properties.
 func catalogSignatures() []string {
 	return []string{
-		"Text: text* (string), variant [h1 h2 h3 h4 h5 caption body]",
+		"Text: text (required, string), variant [h1 h2 h3 h4 h5 caption body]",
 		"Heading shortcuts: use Text with variant h1..h5 instead of inventing heading components",
-		"Button: child* (id of a Text label or Icon), action* (e.g. {\"event\": {\"name\": \"...\"}}), variant [default primary borderless]",
-		"Icon: name* (catalog icon name)",
-		"Image: url*, description (alt text), fit [contain cover fill none scaleDown], variant [icon avatar smallFeature mediumFeature largeFeature header]",
+		"Button: child (required, id of a Text label or Icon), action (required, e.g. {\"event\": {\"name\": \"...\"}}), variant [default primary borderless]",
+		"Icon: name (required, catalog icon name)",
+		"Image: url (required), description (alt text), fit [contain cover fill none scaleDown], variant [icon avatar smallFeature mediumFeature largeFeature header]",
 		"Divider: axis [horizontal vertical]",
-		"Column: children* (vertical stack), align [start center end stretch], justify [start center end spaceBetween spaceAround spaceEvenly stretch]",
-		"Row: children* (horizontal stack), align [start center end stretch], justify [center end spaceAround spaceBetween spaceEvenly start stretch]",
-		"List: children* (direction-aware stack), direction [vertical horizontal], align [start center end stretch]",
-		"Card: child* (single child to elevate)",
-		"Modal: content*, trigger* (child id that opens the modal)",
-		"CheckBox: label*, value (boolean)",
-		"ChoicePicker: label*, options* (array of strings), value, variant [multipleSelection mutuallyExclusive], displayStyle [checkbox chips], filterable (boolean)",
-		"TextField: label*, value, variant [shortText longText number obscured], validationRegexp",
-		"DateTimeInput: label*, value, min, max, enableDate (boolean), enableTime (boolean)",
-		"Slider: label*, value (number), min (number), max (number)",
-		"AudioPlayer: url*, description",
-		"Video: url*",
+		"Column: children (required, vertical stack), align [start center end stretch], justify [start center end spaceBetween spaceAround spaceEvenly stretch]",
+		"Row: children (required, horizontal stack), align [start center end stretch], justify [center end spaceAround spaceBetween spaceEvenly start stretch]",
+		"List: children (required, direction-aware stack), direction [vertical horizontal], align [start center end stretch]",
+		"Card: child (required, single child to elevate)",
+		"Modal: content (required), trigger (required, child id that opens the modal)",
+		"Tabs: tabs (required, array of {title, child}), each child is a tab's content id",
+		"CheckBox: label (required), value (boolean)",
+		"ChoicePicker: label (required), options (required, array of strings), value, variant [multipleSelection mutuallyExclusive], displayStyle [checkbox chips], filterable (boolean)",
+		"TextField: label (required), value, variant [shortText longText number obscured], validationRegexp",
+		"DateTimeInput: label (required), value, min, max, enableDate (boolean), enableTime (boolean)",
+		"Slider: label (required), value (number), min (number), max (number)",
+		"AudioPlayer: url (required), description",
+		"Video: url (required)",
 	}
 }
 
@@ -62,6 +63,9 @@ func BuildPrompt(task string) string {
 		"- Containers reference children BY ID: \"children\": [\"id1\", \"id2\"] for Column/Row/List, \"child\": \"id\" for Card/Button/Modal.\n",
 	)
 	out.WriteString(
+		"- Every referenced id MUST have its own component entry in the same components list — list a child only after defining its component; when a container holds N similar rows, define all N row components and count them.\n",
+	)
+	out.WriteString(
 		"- Put catalog-specific properties (text, variant, url, action, ...) in the \"properties\" object.\n",
 	)
 	out.WriteString("- Use short, descriptive, unique ids (header, title, submit-button, form-column).\n\n")
@@ -73,6 +77,13 @@ func BuildPrompt(task string) string {
 	out.WriteString("Button actions dispatch server events: {\"event\": {\"name\": \"event-name\"}}.\n\n")
 
 	out.WriteString("## Basic catalog components\n")
+	out.WriteString(
+		"Signature notation: values in [square brackets] are enum options; " +
+			"(required) marks a mandatory property.\n",
+	)
+	out.WriteString(
+		"Example component: {\"id\": \"title\", \"component\": \"Text\", \"properties\": {\"text\": \"Hello\", \"variant\": \"h1\"}}\n",
+	)
 
 	signatures := catalogSignatures()
 	for _, signature := range signatures {

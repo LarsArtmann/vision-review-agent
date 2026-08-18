@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -166,7 +167,9 @@ func (m *UpdateComponents) UnmarshalJSON(data []byte) error {
 
 // UpdateDataModel updates application state for an existing surface. With
 // Path empty (or "/") it replaces the entire data model; otherwise it
-// replaces (Remove=false) or deletes (Remove=true) the value at Path.
+// writes Value at Path. An explicit JSON null is a legal write (Value nil,
+// Remove false); an omitted value key means remove (Remove true), which is
+// how the distinction survives a decode/encode round trip.
 type UpdateDataModel struct {
 	// SurfaceID identifies the surface whose data model changes.
 	SurfaceID string
@@ -175,10 +178,13 @@ type UpdateDataModel struct {
 	// Empty means the whole data model.
 	Path string
 
-	// Value is the data to write. Only meaningful when Remove is false.
+	// Value is the data to write; nil with Remove false writes an explicit
+	// null. Meaningless when Remove is true.
 	Value any
 
-	// Remove deletes the key at Path instead of writing Value.
+	// Remove deletes the key at Path instead of writing Value. Decoding an
+	// updateDataModel whose "value" key is absent sets this; the
+	// NewRemoveDataModelEntry constructor sets it directly.
 	Remove bool
 
 	version string
@@ -222,7 +228,10 @@ func (m *UpdateDataModel) MarshalJSON() ([]byte, error) {
 	return marshalEnvelope(m.version, kindUpdateDataModel, encoded)
 }
 
-// UnmarshalJSON decodes the updateDataModel wire shape.
+// UnmarshalJSON decodes the updateDataModel wire shape. The presence of
+// the "value" key is significant: an explicit null decodes to Value nil
+// with Remove false (a legal write), an absent key with a path decodes to
+// Remove true (the spec's omission-means-remove).
 func (m *UpdateDataModel) UnmarshalJSON(data []byte) error {
 	var payload struct {
 		SurfaceID string `json:"surfaceId"`
@@ -236,7 +245,14 @@ func (m *UpdateDataModel) UnmarshalJSON(data []byte) error {
 	m.SurfaceID = payload.SurfaceID
 	m.Path = payload.Path
 	m.Value = payload.Value
-	m.Remove = payload.Value == nil && payload.Path != ""
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return fmt.Errorf("%w: decode updateDataModel fields: %w", ErrMalformedMessage, err)
+	}
+
+	_, valuePresent := fields["value"]
+	m.Remove = !valuePresent && payload.Path != ""
 
 	return nil
 }
@@ -309,6 +325,12 @@ func marshalEnvelope(version, kind string, payload []byte) ([]byte, error) {
 // concrete type is one of *CreateSurface, *UpdateComponents,
 // *UpdateDataModel, or *DeleteSurface; the envelope version is copied into
 // the message.
+//
+// Envelope decoding is strict, matching the official schema's
+// additionalProperties: false: exactly one kind key may appear, and no
+// unknown top-level keys are tolerated. Payload decoding inside each kind
+// is deliberately lenient (unknown payload keys are ignored) so messages
+// from newer minor revisions with additive payload fields still decode.
 func UnmarshalMessage(data []byte) (Message, error) {
 	var envelope struct {
 		Version string `json:"version"`
@@ -331,6 +353,15 @@ func UnmarshalMessage(data []byte) (Message, error) {
 	for _, kind := range kinds {
 		if _, ok := fields[kind]; ok {
 			present = append(present, kind)
+		}
+	}
+
+	for key := range fields {
+		if !slices.Contains(kinds, key) {
+			return nil, fmt.Errorf(
+				"%w: unknown envelope key %q (allowed: version, %s)",
+				ErrMalformedMessage, key, strings.Join(kinds, ", "),
+			)
 		}
 	}
 

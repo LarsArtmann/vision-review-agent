@@ -11,6 +11,7 @@ require (
 	github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4 v4.0.0
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/image v0.45.0
 	golang.org/x/sync v0.22.0

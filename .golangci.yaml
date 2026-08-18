@@ -148,6 +148,10 @@ linters:
             - github.com/onsi/ginkgo
             - github.com/onsi/gomega
             - github.com/stretchr/testify
+            # Official-schema conformance test validator; kaptinlin (the
+            # fantasy indirect) cannot compile the official schemas (string
+            # const/enum bug), see conformance_test.go.
+            - github.com/santhosh-tekuri/jsonschema
             - golang.org/x/sync
             - golang.org/x/image
           # Deny wins over the $gostd allow entry above. The go-auto-upgrade
@@ -176,9 +180,27 @@ linters:
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.Conversation$
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.CostTracker$
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.ScreenshotAnalyzer$
-        # A2UI package: wire/inference types where zero values mean "field
-        # absent from the wire object"; messages are built via constructors.
-        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\..*$
+        # A2UI wire/inference types where zero values mean "field absent
+        # from the wire object" and messages/specs are built via builders
+        # or the model (deliberate, documented partial initialization).
+        # Scoped to these types only (M8/F24 decision): new a2ui types are
+        # NOT excluded and must be constructed exhaustively or added here
+        # with justification.
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.Component$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.ChildList$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.DynamicChildren$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.CreateSurface$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.UpdateComponents$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.UpdateDataModel$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.DeleteSurface$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.SurfaceSpec$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.ComponentSpec$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.GenerateOptions$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.GenerateResult$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.Accessibility$
+        # ValidationIssue: both Detail and Err are optional by design (an
+        # issue carries either a human-readable detail or a typed cause).
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.ValidationIssue$
         # Daemon config and counters: zero values mean "unset"/"nothing" (the
         # CLI returns reviewed.Config{} on load failures; PassResult and
         # ReplayResult start all-zero).
@@ -207,7 +229,13 @@ linters:
       excludes:
         - G306
         - G304
+        # G117 (file permissions on creation): test fixtures and cache files
+        # are non-sensitive local artifacts; os.WriteFile's 0644/0666 default
+        # is fine there and restricting it adds chmod noise for no gain.
         - G117
+        # G101 (hardcoded credentials): flags benign test constants like
+        # apiKeyHeader or passwordField names, never actual secrets. Real
+        # secret leakage is covered by gitleaks, not by string-name heuristics.
         - G101
     ireturn:
       allow:

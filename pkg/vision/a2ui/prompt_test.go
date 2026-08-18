@@ -12,8 +12,10 @@ func TestBuildPrompt(t *testing.T) {
 	prompt := BuildPrompt("")
 
 	require.Contains(t, prompt, "A2UI surface")
-	require.Contains(t, prompt, "Column: children*")
-	require.Contains(t, prompt, "Button: child*")
+	require.Contains(t, prompt, "Column: children (required")
+	require.Contains(t, prompt, "Button: child (required")
+	require.Contains(t, prompt, `(required) marks a mandatory property`)
+	require.Contains(t, prompt, `"properties": {"text": "Hello", "variant": "h1"}`)
 	require.Contains(t, prompt, `"root"`)
 	require.Contains(t, prompt, DefaultTask)
 
