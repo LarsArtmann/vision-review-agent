@@ -166,6 +166,13 @@ linters:
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.Conversation$
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.CostTracker$
         - github\.com/larsartmann/vision-review-agent/pkg/vision\.ScreenshotAnalyzer$
+        # A2UI wire types: flat adjacency-list nodes where zero values mean
+        # "field absent from the wire object" (partial by design).
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.Component$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.ChildList$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.ComponentSpec$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.Accessibility$
+        - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.DynamicChildren$
         # Daemon config and counters: zero values mean "unset"/"nothing" (the
         # CLI returns reviewed.Config{} on load failures; PassResult and
         # ReplayResult start all-zero).
