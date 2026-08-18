@@ -20,7 +20,7 @@ import (
 
 // version is the daemon version string. It is a var (not a const) so release
 // tooling can override it at build time via -ldflags "-X main.version=...".
-var version = "0.6.2"
+var version = "0.7.0-dev"
 
 // Exit codes: usage errors are distinguishable from runtime failures so
 // scripts can treat 2 as "operator fixable" and 1 as "something broke".

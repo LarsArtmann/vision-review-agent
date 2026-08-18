@@ -85,3 +85,26 @@ closes it out.
 
 llama-server was left RUNNING (restartable via the command in
 `docs/activation/README.md`).
+
+---
+
+## Addendum: decisions executed (post-report)
+
+The user answered the gated questions: commit in slices, **cut v0.6.2 +
+delete ghost tags**, user-space activation is sufficient, **keep the
+`*`-unwrap repair**, keep llama-server running. Executed:
+
+- 5 commits (conformance+guards / builders+decompile+generate /
+  daemon+replay+activation / docs+hygiene / release prep), pushed; CI green
+  on the release commit including the json/v2 grep guard's and the
+  `no-jsonv2` job's first real runs.
+- **v0.6.2 tagged** (`ac2172f`, annotated), pushed, proxy verified
+  (`v0.6.2.info` serves the right hash), `go get` in a clean module works
+  (under the default Go regime), GitHub prerelease published.
+- **Ghost tags `v0.2.1`/`v0.3.0` deleted** (both dereferenced the known
+  ghost commit `d5dda4b`; verified before deletion). Version list is now
+  clean with v0.6.2 latest.
+- Cycle opened: `version` vars reset to `0.7.0-dev` in both binaries.
+- dprint excludes `**/testdata/**` — the pinned official schemas must stay
+  byte-identical to upstream (hash-verified against `29b715fa` after the
+  hook first flagged them).

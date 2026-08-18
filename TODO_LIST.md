@@ -40,16 +40,6 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Release mechanics
 
-- [ ] **Delete the ghost tags (needs explicit approval)** — `v0.2.1` and
-      `v0.3.0` both point at `d5dda4b`. `v0.3.0` is already burned into
-      proxy.golang.org (verified 2026-08-17), so deletion only cleans the git
-      remote; `retract v0.3.0` in go.mod remains the consumer-visible remedy.
-      Pair with the release presentation decision (promote v0.6.1 / cut a
-      synced v0.6.2 with the 2026-08-18 work).
-- [ ] **Reset `version` vars to `0.7.0-dev` when the next cycle opens** —
-      both `cmd/vision` and `cmd/visionreviewd` currently say `"0.6.1"`
-      (per the AGENTS.md version-var convention). Do this right after the
-      release presentation decision, not before.
 - [ ] **Bump the Go toolchain when nixpkgs ships 1.26.6** — govulncheck
       reports 5 stdlib vulnerabilities (GO-2026-6218, GO-2026-6090,
       GO-2026-6088, GO-2026-5972, GO-2026-5026), all fixed in go1.26.6.
