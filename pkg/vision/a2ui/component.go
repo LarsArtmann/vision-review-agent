@@ -6,6 +6,18 @@ import (
 	"maps"
 )
 
+// Wire keys of the four server-to-client message kinds.
+const (
+	kindCreateSurface    = "createSurface"
+	kindUpdateComponents = "updateComponents"
+	kindUpdateDataModel  = "updateDataModel"
+	kindDeleteSurface    = "deleteSurface"
+)
+
+// componentStructuralFields counts the wire keys a component carries besides
+// its Props: id, component, accessibility, child, children.
+const componentStructuralFields = 5
+
 // Component is a single node in an A2UI surface's adjacency list. Components
 // reference children by ID (flat list, not a nested tree), which keeps the
 // structure easy for models to emit incrementally and for clients to patch.
@@ -17,8 +29,6 @@ import (
 //
 // Exactly one of Child or Children is set for container components; Validate
 // rejects ambiguity.
-//
-//nolint:recvcheck // MarshalJSON takes a value, UnmarshalJSON a pointer (standard JSON pattern).
 type Component struct {
 	// ID uniquely identifies the component within its surface. The root
 	// component uses the conventional ID "root".
@@ -46,7 +56,7 @@ type Component struct {
 // MarshalJSON renders the component in the flat wire shape: id, component,
 // accessibility, child, children, then all Props merged in.
 func (c Component) MarshalJSON() ([]byte, error) {
-	obj := make(map[string]any, len(c.Props)+5)
+	obj := make(map[string]any, len(c.Props)+componentStructuralFields)
 	maps.Copy(obj, c.Props)
 	obj["id"] = c.ID
 	obj["component"] = c.Kind
@@ -103,13 +113,13 @@ func (c *Component) UnmarshalJSON(data []byte) error {
 	delete(raw, "children")
 
 	props := make(map[string]any, len(raw))
-	for k, v := range raw {
+	for key, rawValue := range raw {
 		var value any
-		if err := json.Unmarshal(v, &value); err != nil {
-			return fmt.Errorf("component %q property %q: %w", structural.ID, k, err)
+		if err := json.Unmarshal(rawValue, &value); err != nil {
+			return fmt.Errorf("component %q property %q: %w", structural.ID, key, err)
 		}
 
-		props[k] = value
+		props[key] = value
 	}
 
 	if len(props) > 0 {
@@ -123,8 +133,6 @@ func (c *Component) UnmarshalJSON(data []byte) error {
 // active: a static list of component IDs, or a dynamic template that
 // instantiates one component per data-model list entry. The zero ChildList is
 // invalid; use StaticChildren or DynamicChildrenOf.
-//
-//nolint:recvcheck // MarshalJSON takes a value, UnmarshalJSON a pointer (standard JSON pattern).
 type ChildList struct {
 	// Static lists child component IDs explicitly.
 	Static []string
@@ -212,6 +220,27 @@ func Bind(path string) any {
 	return map[string]any{"path": path}
 }
 
+// Component kind names from the A2UI basic catalog. Every Kind is a string
+// so custom catalogs extend naturally; these cover the kinds this package's
+// builders and prompt teach.
+const (
+	KindText    = "Text"
+	KindButton  = "Button"
+	KindCard    = "Card"
+	KindColumn  = "Column"
+	KindRow     = "Row"
+	KindList    = "List"
+	KindImage   = "Image"
+	KindDivider = "Divider"
+	KindIcon    = "Icon"
+)
+
+// propText is the catalog property key holding a Text component's content.
+const propText = "text"
+
+// propEventName is the property key naming the event a Button dispatches.
+const propName = "name"
+
 // Text style variants (Text.variant).
 const (
 	TextH1      = "h1"
@@ -225,29 +254,29 @@ const (
 
 // NewText builds a Text component. variant selects the base text style; pass
 // TextBody (or "") for the default.
-func NewText(id, text, variant string) Component {
-	props := map[string]any{"text": text}
+func NewText(componentID, text, variant string) Component {
+	props := map[string]any{propText: text}
 
 	if variant != "" {
 		props["variant"] = variant
 	}
 
-	return Component{ID: id, Kind: "Text", Props: props}
+	return Component{ID: componentID, Kind: KindText, Props: props}
 }
 
 // NewColumn builds a Column container laying children out vertically.
 func NewColumn(id string, children ...string) Component {
-	return Component{ID: id, Kind: "Column", Children: StaticChildren(children...)}
+	return Component{ID: id, Kind: KindColumn, Children: StaticChildren(children...)}
 }
 
 // NewRow builds a Row container laying children out horizontally.
 func NewRow(id string, children ...string) Component {
-	return Component{ID: id, Kind: "Row", Children: StaticChildren(children...)}
+	return Component{ID: id, Kind: KindRow, Children: StaticChildren(children...)}
 }
 
 // NewCard builds a Card wrapping a single child.
 func NewCard(id, childID string) Component {
-	return Component{ID: id, Kind: "Card", Child: &childID}
+	return Component{ID: id, Kind: KindCard, Child: new(childID)}
 }
 
 // NewButton builds a Button whose labeled child is childID and which
@@ -255,32 +284,32 @@ func NewCard(id, childID string) Component {
 func NewButton(id, childID, event string) Component {
 	return Component{
 		ID:    id,
-		Kind:  "Button",
-		Child: &childID,
+		Kind:  KindButton,
+		Child: new(childID),
 		Props: map[string]any{
-			"action": map[string]any{"event": map[string]any{"name": event}},
+			"action": map[string]any{"event": map[string]any{propName: event}},
 		},
 	}
 }
 
 // NewImage builds an Image component showing url. description is optional
 // alt text; pass "" to omit.
-func NewImage(id, url, description string) Component {
+func NewImage(componentID, url, description string) Component {
 	props := map[string]any{"url": url}
 
 	if description != "" {
 		props["description"] = description
 	}
 
-	return Component{ID: id, Kind: "Image", Props: props}
+	return Component{ID: componentID, Kind: KindImage, Props: props}
 }
 
 // NewDivider builds a horizontal Divider.
 func NewDivider(id string) Component {
-	return Component{ID: id, Kind: "Divider"}
+	return Component{ID: id, Kind: KindDivider}
 }
 
 // NewIcon builds an Icon component by catalog icon name.
 func NewIcon(id, name string) Component {
-	return Component{ID: id, Kind: "Icon", Props: map[string]any{"name": name}}
+	return Component{ID: id, Kind: KindIcon, Props: map[string]any{propName: name}}
 }

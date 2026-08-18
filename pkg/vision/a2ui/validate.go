@@ -10,22 +10,27 @@ import (
 // use Issues) for the individual structural problems.
 var ErrValidation = errors.New("a2ui: message stream failed structural validation")
 
+// ErrInvalidMessage wraps every per-message structural problem reported by
+// Validate and Issues.
+var ErrInvalidMessage = errors.New("a2ui: invalid message")
+
 // ErrComponentCycle is reported (wrapped, with the cycle path) when the
 // component graph reachable from root contains a reference cycle.
 var ErrComponentCycle = errors.New("a2ui: component reference cycle")
 
 // ValidationIssue is one structural validation problem, located by message
-// index in the validated stream.
+// index in the validated stream. It is plain data; Validate turns issues
+// into errors wrapping ErrInvalidMessage (or the issue's typed Err).
 type ValidationIssue struct {
 	// MessageIndex is the position in the validated stream.
 	MessageIndex int
 
-	// Detail describes the problem.
+	// Detail describes the problem; used when Err is nil.
 	Detail string
-}
 
-func (i ValidationIssue) Error() string {
-	return fmt.Sprintf("message %d: %s", i.MessageIndex, i.Detail)
+	// Err is an optional typed cause (e.g. ErrComponentCycle) that Validate
+	// wraps so errors.Is matches.
+	Err error
 }
 
 // Validate checks a message stream against the structural rules of the A2UI
@@ -34,19 +39,27 @@ func (i ValidationIssue) Error() string {
 // references, and acyclicity. Component reachability from root is NOT
 // required (the spec permits unreferenced definitions).
 //
-// It returns nil, or an error wrapping ErrValidation with one detail per issue.
+// It returns nil, or an error wrapping ErrValidation (and, where applicable,
+// typed causes like ErrComponentCycle) with one issue per line.
 func Validate(messages []Message) error {
 	issues := Issues(messages)
 	if len(issues) == 0 {
 		return nil
 	}
 
-	details := make([]string, len(issues))
+	errs := make([]error, len(issues)+1)
+	errs[0] = fmt.Errorf("%w: %d issue(s)", ErrValidation, len(issues))
+
 	for i, issue := range issues {
-		details[i] = issue.Error()
+		switch {
+		case issue.Err != nil:
+			errs[i+1] = fmt.Errorf("message %d: %w", issue.MessageIndex, issue.Err)
+		default:
+			errs[i+1] = fmt.Errorf("%w at index %d: %s", ErrInvalidMessage, issue.MessageIndex, issue.Detail)
+		}
 	}
 
-	return fmt.Errorf("%w: %d issue(s): %s", ErrValidation, len(issues), strings.Join(details, "; "))
+	return errors.Join(errs...)
 }
 
 // Issues runs the same checks as Validate but returns every problem instead
@@ -57,20 +70,26 @@ func Issues(messages []Message) []ValidationIssue {
 	openSurfaces := make(map[string]string) // surfaceID -> catalogID
 
 	for index, msg := range messages {
+		if msg == nil {
+			issues = append(issues, ValidationIssue{MessageIndex: index, Detail: "message is nil"})
+
+			continue
+		}
+
 		issues = append(issues, validateEnvelope(index, msg)...)
 
 		switch typed := msg.(type) {
 		case *CreateSurface:
 			trackCreateSurface(&issues, index, typed, openSurfaces)
 		case *UpdateComponents:
-			issues = append(issues, validateOpenSurface(&issues, index, "updateComponents", typed.SurfaceID, openSurfaces)...)
+			issues = append(
+				issues,
+				validateOpenSurface(index, kindUpdateComponents, typed.SurfaceID, openSurfaces)...)
 			issues = append(issues, validateComponents(index, typed.Components)...)
 		case *UpdateDataModel:
 			issues = append(issues, validateDataModel(index, typed, openSurfaces)...)
 		case *DeleteSurface:
 			trackDeleteSurface(&issues, index, typed, openSurfaces)
-		case nil:
-			issues = append(issues, ValidationIssue{MessageIndex: index, Detail: "message is nil"})
 		}
 	}
 
@@ -138,7 +157,6 @@ func trackDeleteSurface(issues *[]ValidationIssue, index int, msg *DeleteSurface
 // validateOpenSurface reports when a message targets a surface that has not
 // been created (or was already deleted).
 func validateOpenSurface(
-	issues *[]ValidationIssue,
 	index int,
 	kind, surfaceID string,
 	openSurfaces map[string]string,
@@ -158,7 +176,7 @@ func validateOpenSurface(
 func validateDataModel(index int, msg *UpdateDataModel, openSurfaces map[string]string) []ValidationIssue {
 	var issues []ValidationIssue
 
-	issues = append(issues, validateOpenSurface(&issues, index, "updateDataModel", msg.SurfaceID, openSurfaces)...)
+	issues = append(issues, validateOpenSurface(index, kindUpdateDataModel, msg.SurfaceID, openSurfaces)...)
 
 	if msg.Path != "" && !strings.HasPrefix(msg.Path, "/") {
 		issues = append(issues, ValidationIssue{
@@ -198,7 +216,7 @@ func validateComponents(index int, components []Component) []ValidationIssue {
 
 	if root := byID[RootID]; root != nil {
 		if err := detectCycle(root, byID); err != nil {
-			issues = append(issues, ValidationIssue{MessageIndex: index, Detail: err.Error()})
+			issues = append(issues, ValidationIssue{MessageIndex: index, Err: err})
 		}
 	}
 
@@ -298,6 +316,7 @@ func detectCycle(root *Component, byID map[string]*Component) error {
 	state := make(map[string]int, len(byID))
 
 	var visit func(comp *Component, trail []string) error
+
 	visit = func(comp *Component, trail []string) error {
 		switch state[comp.ID] {
 		case done:

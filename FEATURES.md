@@ -165,6 +165,28 @@ as go-cqrs-lite events on bbolt.
 Real-model bring-up and host activation are tracked in
 [TODO_LIST.md](TODO_LIST.md).
 
+### A2UI Support (pkg/vision/a2ui)
+
+- **Vision-driven A2UI generation** — `a2ui.Generate` turns screenshots and
+  mockups into complete, validated A2UI surfaces via any vision model
+  (`AnalyzeStructured` + catalog-grounded prompt)
+- **Inference format + compiler** — `SurfaceSpec` (LLM-facing, schema-derived)
+  compiled by `a2ui.Compile` into the canonical wire sequence
+  (`createSurface` → `updateComponents` → `updateDataModel`)
+- **Wire types + JSONL codec** — the four v0.9.1 message kinds as a
+  tagged-union `Message` interface, plus `MarshalJSONL`/`UnmarshalJSONL` for
+  the JSON Lines transport encoding
+- **Structural validation** — `a2ui.Validate`/`Issues`: root presence, unique
+  IDs, resolvable child references, acyclicity, surface lifecycle ordering,
+  envelope versions; typed sentinels (`ErrValidation`, `ErrComponentCycle`,
+  `ErrMalformedMessage`)
+- **Typed components + builders** — `Component` adjacency-list nodes with
+  static/dynamic `ChildList`, accessibility labels, `Bind`/`Literal` dynamic
+  values, and constructors for the basic-catalog staples (Text, Column, Row,
+  Card, Button, Image, Divider, Icon)
+- **Spec version** — v0.9.1 emitted, v0.9 accepted on input; components from
+  the A2UI basic catalog
+
 ### Examples
 
 - **openai** — Basic OpenAI vision analysis
@@ -176,6 +198,7 @@ Real-model bring-up and host activation are tracked in
 - **structured-stream** — Structured streaming with partial objects
 - **url-loading** — Load from URL (custom client) and base64 round-trip
 - **error-handling** — Classified error handling with kind-to-action lookup
+- **a2ui** — Screenshot → A2UI surface as JSON Lines
 
 ## PARTIALLY DONE
 

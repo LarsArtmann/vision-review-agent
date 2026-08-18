@@ -8,7 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
+- **A2UI sub package (`pkg/vision/a2ui`)** — Go support for the
+  [A2UI protocol](https://a2ui.org/) (v0.9.1), the only agent-side SDK in Go
+  and the only one driven by vision. `a2ui.Generate` turns screenshots into
+  complete, validated A2UI surfaces through any of the SDK's 800+ vision
+  models (`vision.AnalyzeStructured[SurfaceSpec]` + a basic-catalog-grounded
+  prompt). The package also stands alone: typed wire messages for all four
+  message kinds with a JSON Lines codec, `Compile` from the LLM-facing
+  `SurfaceSpec` inference format, `Validate` structural checks (root, unique
+  IDs, resolvable refs, cycles, surface lifecycle), component builders
+  (Text/Column/Row/Card/Button/Image/Divider/Icon), and `Bind`/`Literal`
+  dynamic values. Ships with a BDD suite and `examples/a2ui`.
 
 ### Fixed
 

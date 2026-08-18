@@ -3,18 +3,24 @@ package a2ui
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
 
-// messageKinds lists the wire keys of every server-to-client message kind, in
-// no particular order; used for dispatch and error reporting.
-var messageKinds = []string{
-	"createSurface",
-	"updateComponents",
-	"updateDataModel",
-	"deleteSurface",
+// messageKinds lists the wire keys of every server-to-client message kind;
+// used for dispatch and error reporting.
+func messageKinds() []string {
+	return []string{
+		kindCreateSurface,
+		kindUpdateComponents,
+		kindUpdateDataModel,
+		kindDeleteSurface,
+	}
 }
+
+// ErrMalformedMessage wraps every UnmarshalMessage envelope failure.
+var ErrMalformedMessage = errors.New("a2ui: malformed message")
 
 // Message is one A2UI server-to-client message. Concrete kinds are
 // *CreateSurface, *UpdateComponents, *UpdateDataModel, and *DeleteSurface.
@@ -80,7 +86,7 @@ func (m *CreateSurface) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("encode createSurface payload: %w", err)
 	}
 
-	return marshalEnvelope(m.version, "createSurface", encoded)
+	return marshalEnvelope(m.version, kindCreateSurface, encoded)
 }
 
 // UnmarshalJSON decodes the createSurface wire shape.
@@ -92,7 +98,7 @@ func (m *CreateSurface) UnmarshalJSON(data []byte) error {
 		SendDataModel bool           `json:"sendDataModel"`
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("decode createSurface payload: %w", err)
+		return fmt.Errorf("%w: decode createSurface payload: %w", ErrMalformedMessage, err)
 	}
 
 	m.SurfaceID = payload.SurfaceID
@@ -139,7 +145,7 @@ func (m *UpdateComponents) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("encode updateComponents payload: %w", err)
 	}
 
-	return marshalEnvelope(m.version, "updateComponents", encoded)
+	return marshalEnvelope(m.version, kindUpdateComponents, encoded)
 }
 
 // UnmarshalJSON decodes the updateComponents wire shape.
@@ -149,7 +155,7 @@ func (m *UpdateComponents) UnmarshalJSON(data []byte) error {
 		Components []Component `json:"components"`
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("decode updateComponents payload: %w", err)
+		return fmt.Errorf("%w: decode updateComponents payload: %w", ErrMalformedMessage, err)
 	}
 
 	m.SurfaceID = payload.SurfaceID
@@ -213,7 +219,7 @@ func (m *UpdateDataModel) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("encode updateDataModel payload: %w", err)
 	}
 
-	return marshalEnvelope(m.version, "updateDataModel", encoded)
+	return marshalEnvelope(m.version, kindUpdateDataModel, encoded)
 }
 
 // UnmarshalJSON decodes the updateDataModel wire shape.
@@ -224,7 +230,7 @@ func (m *UpdateDataModel) UnmarshalJSON(data []byte) error {
 		Value     any    `json:"value"`
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("decode updateDataModel payload: %w", err)
+		return fmt.Errorf("%w: decode updateDataModel payload: %w", ErrMalformedMessage, err)
 	}
 
 	m.SurfaceID = payload.SurfaceID
@@ -261,7 +267,7 @@ func (m *DeleteSurface) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("encode deleteSurface payload: %w", err)
 	}
 
-	return marshalEnvelope(m.version, "deleteSurface", encoded)
+	return marshalEnvelope(m.version, kindDeleteSurface, encoded)
 }
 
 // UnmarshalJSON decodes the deleteSurface wire shape.
@@ -270,7 +276,7 @@ func (m *DeleteSurface) UnmarshalJSON(data []byte) error {
 		SurfaceID string `json:"surfaceId"`
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("decode deleteSurface payload: %w", err)
+		return fmt.Errorf("%w: decode deleteSurface payload: %w", ErrMalformedMessage, err)
 	}
 
 	m.SurfaceID = payload.SurfaceID
@@ -283,6 +289,7 @@ func marshalEnvelope(version, kind string, payload []byte) ([]byte, error) {
 	var envelope bytes.Buffer
 
 	envelope.WriteString(`{"version":`)
+
 	encodedVersion, err := json.Marshal(version)
 	if err != nil {
 		return nil, fmt.Errorf("encode version: %w", err)
@@ -307,18 +314,21 @@ func UnmarshalMessage(data []byte) (Message, error) {
 		Version string `json:"version"`
 	}
 	if err := json.Unmarshal(data, &envelope); err != nil {
-		return nil, fmt.Errorf("decode message envelope: %w", err)
+		return nil, fmt.Errorf("%w: decode envelope: %w", ErrMalformedMessage, err)
 	}
 
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
-		return nil, fmt.Errorf("decode message fields: %w", err)
+		return nil, fmt.Errorf("%w: decode fields: %w", ErrMalformedMessage, err)
 	}
 
 	delete(fields, "version")
 
+	kinds := messageKinds()
+
 	var present []string
-	for _, kind := range messageKinds {
+
+	for _, kind := range kinds {
 		if _, ok := fields[kind]; ok {
 			present = append(present, kind)
 		}
@@ -326,48 +336,46 @@ func UnmarshalMessage(data []byte) (Message, error) {
 
 	if len(present) != 1 {
 		return nil, fmt.Errorf(
-			"a2ui message must carry exactly one kind key (%s), got %d: %v",
-			strings.Join(messageKinds, ", "), len(present), present,
+			"%w: exactly one kind key required (%s), got %d: %v",
+			ErrMalformedMessage, strings.Join(kinds, ", "), len(present), present,
 		)
 	}
 
-	kind := present[0]
-	payload := fields[kind]
+	return decodeKind(present[0], fields[present[0]], envelope.Version)
+}
 
-	var msg Message
+// decodeKind decodes one message payload and stamps the envelope version.
+func decodeKind(kind string, payload json.RawMessage, version string) (Message, error) {
+	var (
+		msg Message
+		err error
+	)
+
 	switch kind {
-	case "createSurface":
+	case kindCreateSurface:
 		decoded := &CreateSurface{}
-		if err := decoded.UnmarshalJSON(payload); err != nil {
-			return nil, fmt.Errorf("decode createSurface payload: %w", err)
-		}
-
-		decoded.version = envelope.Version
+		err = decoded.UnmarshalJSON(payload)
+		decoded.version = version
 		msg = decoded
-	case "updateComponents":
+	case kindUpdateComponents:
 		decoded := &UpdateComponents{}
-		if err := decoded.UnmarshalJSON(payload); err != nil {
-			return nil, fmt.Errorf("decode updateComponents payload: %w", err)
-		}
-
-		decoded.version = envelope.Version
+		err = decoded.UnmarshalJSON(payload)
+		decoded.version = version
 		msg = decoded
-	case "updateDataModel":
+	case kindUpdateDataModel:
 		decoded := &UpdateDataModel{}
-		if err := decoded.UnmarshalJSON(payload); err != nil {
-			return nil, fmt.Errorf("decode updateDataModel payload: %w", err)
-		}
-
-		decoded.version = envelope.Version
+		err = decoded.UnmarshalJSON(payload)
+		decoded.version = version
 		msg = decoded
-	case "deleteSurface":
+	case kindDeleteSurface:
 		decoded := &DeleteSurface{}
-		if err := decoded.UnmarshalJSON(payload); err != nil {
-			return nil, fmt.Errorf("decode deleteSurface payload: %w", err)
-		}
-
-		decoded.version = envelope.Version
+		err = decoded.UnmarshalJSON(payload)
+		decoded.version = version
 		msg = decoded
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("%w: decode %s payload: %w", ErrMalformedMessage, kind, err)
 	}
 
 	return msg, nil

@@ -24,8 +24,16 @@ pkg/                     Public library code
     batch.go             AnalyzeBatch for concurrent analysis
     cost.go              CostTracker (with SetPricing + CostUSD), NewAgentWithCostTracker
     hooks.go             Hooks (OnStart, OnFinish, OnError)
-    errors.go            Re-exports domain errors + ModelError classification
+    errors.go            Re-Exports domain errors + ModelError classification
     validate.go          Image format validation (magic bytes)
+    a2ui/                A2UI protocol sub package (https://a2ui.org/, v0.9.1)
+      a2ui.go            Package doc, version/catalog/root constants
+      component.go       Component, ChildList, builders (NewText, NewButton, ...), Bind/Literal
+      messages.go        Message tagged union (4 kinds), UnmarshalMessage, JSONL codec
+      validate.go        Validate/Issues: structural rules, ErrValidation sentinels
+      surface.go         SurfaceSpec inference format + Compile → wire messages
+      prompt.go          BuildPrompt with basic-catalog component signatures
+      generate.go        Generate(ctx, agent, opts, images...) vision bridge
   errors/                Centralized domain-specific errors (apperrors)
     errors.go            Sentinel validation errors
     model.go             ModelError, ErrorKind, Classify, IsRetryable
@@ -124,6 +132,18 @@ examples/                Working examples for each provider
 - **`normalizeProviderName("google") → "gemini"`** — Catwalk uses "gemini" as the InferenceProvider ID for Google; the CLI aliases "google" for backward compatibility.
 - **`openaicompat` is a CLI-only fallback** — Not in the catwalk catalog. When `-provider openaicompat` is passed, the CLI reads `OPENAICOMPAT_BASE_URL`/`OPENAICOMPAT_API_KEY` directly.
 - **`ModelInfo` is optional and backward compatible** — `Config.ModelInfo *ModelInfo` is nil-safe. When set, `applyModelInfoDefaults` fills in `MaxOutputTokens` from catalog defaults if unset. `NewAgentWithCostTracker` auto-wires pricing from `ModelInfo` via `CostTracker.SetPricing`.
+
+### A2UI sub package (pkg/vision/a2ui)
+
+- **Spec v0.9.1 (current), not v1.0 candidate** — v1.0 (`actionResponse`, `theme` → `surfaceProperties` rename) waits until it leaves candidate status; the package emits `VersionV091`, accepts v0.9 on input, and the upgrade is a ROADMAP item.
+- **`Message` is a tagged-union interface, not a struct** — exactly one of the four concrete kinds (`*CreateSurface`, `*UpdateComponents`, `*UpdateDataModel`, `*DeleteSurface`); a two-kind envelope is unrepresentable. Each type self-marshals its `{version, kind}` envelope; `UnmarshalMessage` dispatches on the single kind key and rejects zero/two-kind payloads with `ErrMalformedMessage`. The interface is in the lint `ireturn` allow list for this reason.
+- **`Component` splits structural fields from catalog props** — `ID`/`Kind`/`Accessibility`/`Child`/`Children` typed (what validation walks), catalog-specific properties in `Props map[string]any` (the basic catalog has 19 component kinds; a 40-field god struct would be worse). Custom Marshal/Unmarshal merge/split the flat wire shape losslessly.
+- **Dynamic values are `any` + constructors** — A2UI DynamicString is `literal | {"path": ...} | function`; `Literal(x)` and `Bind(path)` construct both shapes with zero custom marshalers. `ChildList` keeps the static/dynamic shapes exclusive via `StaticChildren`/`DynamicChildrenOf` (zero value = invalid, caught by Validate).
+- **`SurfaceSpec` is a separate LLM-facing inference format** — mirrors the official Python SDK's "inference format" concept: ONE object for the whole surface, catalog props nested under `properties` (NOT inlined) so the JSON schema derived by `AnalyzeStructured` stays exact — custom marshalers are invisible to schema reflection, so inlined props would vanish from the derived schema. `Compile` flattens props back into wire components and runs `Validate` before returning; compiled output is renderable by construction.
+- **Validation is structural, not catalog-aware** — root presence, unique/non-empty IDs, resolvable child refs, acyclicity (DFS from root), surface lifecycle ordering (create-before-update, no double-create, no use-after-delete), envelope versions. Orphan components are legal per spec. Typed causes survive aggregation: `errors.Is(err, ErrComponentCycle)` works through `errors.Join` because `ValidationIssue.Err` is wrapped, not stringified.
+- **Prompt carries the catalog, schema carries the shape** — `BuildPrompt` embeds the 19 basic-catalog component signatures (extracted from the official `catalog.json`) plus adjacency/dynamic-value rules; the structured-output schema enforces the `SurfaceSpec` shape. Both are needed: schema alone gives no prop guidance, prompt alone gives no shape guarantee.
+- **`Generate` = AnalyzeStructured + defaults + Compile** — model failures arrive classified (`*vision.ModelError` via the chain, wrapped with `"a2ui generate:"`); a structurally broken model output fails with `ErrValidation` and returns no messages. Empty `surfaceId`/`catalogId` from the model fall back to `GenerateOptions` values (`"main"` / `DefaultCatalogID`).
+- **Wire/prop key strings are constants** — `kindCreateSurface`... (wire keys), exported `KindText`... (catalog kinds for programmatic builders) satisfy goconst; `.golangci.yaml` excludes the whole package for exhaustruct (wire types are partial by design: zero = absent from the wire object).
 - **`CostTracker.CostUSD()` returns 0 without pricing** — No breaking change: existing `CostTracker` users see no cost unless `SetPricing` is called or `ModelInfo` is set.
 
 ## Build & Test Commands
@@ -177,6 +197,7 @@ errors pointing at a sibling module.
 - `cmd/vision/main_test.go` — CLI tests (advice mapping, config building, provider error paths)
 - `internal/reviewd/fakeserver_test.go` — E2E specs running the real openaicompat provider against a fake OpenAI-compatible httptest server
 - `cmd/visionreviewd/main_test.go` — Daemon CLI tests (dispatch, usage errors, events/replay/doctor with seeded stores)
+- `pkg/vision/a2ui` — table tests for wire roundtrip/validate/compile/prompt live in package `a2ui`; `a2ui_suite_test.go` + `generate_bdd_test.go` + `mock_test.go` are a black-box Ginkgo suite (package `a2ui_test`) with a fake `fantasy.LanguageModel` covering Generate behavior (defaults, broken-spec rejection, classified errors, prompt contents)
 
 ## Dependencies
 

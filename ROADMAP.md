@@ -22,6 +22,25 @@ visionreviewd daemon itself — has shipped and moved to
 
 ## Mid-term ideas
 
+### A2UI (`pkg/vision/a2ui`)
+
+- **A2UI v1.0 candidate** — add `actionResponse` (client-to-server RPC),
+  action IDs, and the `theme` → `surfaceProperties` rename when v1.0 leaves
+  candidate status; keep v0.9.x output as the stable default.
+- **Custom catalogs** — accept a catalog URL/schema in `GenerateOptions` and
+  derive prompt signatures from it (today: basic catalog only, hardcoded
+  signatures).
+- **Streaming generation** — `GenerateStream` on top of
+  `AnalyzeStructuredStream[SurfaceSpec]` for progressive rendering; the
+  adjacency-list model streams well (components arrive one by one).
+- **Transports** — helpers to push messages over SSE/WebSockets/A2A instead
+  of returning them for the caller to deliver.
+- **Render-back loop** — render a generated surface headless, screenshot it,
+  and let the vision agent diff it against the source image (closed-loop
+  pixel fidelity check; composes `Generate` with the review pipeline).
+- **Review results as A2UI** — project visionreviewd's INDEX/reviews into an
+  interactive A2UI surface as an alternative to markdown.
+
 ### visionreviewd operations
 
 - **Retention/GC** — blob store and event journal grow unboundedly; add a

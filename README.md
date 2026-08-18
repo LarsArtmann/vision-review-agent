@@ -24,6 +24,7 @@ A simple, production-ready Go SDK for building AI agents with vision capabilitie
 - **Full Model Parameters** — Temperature, TopP, TopK, PresencePenalty, FrequencyPenalty
 - **Validation** — Strong input validation with clear error types
 - **Configurable** — Token limits, retries, timeouts, sampling parameters
+- **A2UI Generation** — Turn screenshots into interactive [A2UI](https://a2ui.org/) surfaces (`pkg/vision/a2ui`): validated v0.9.1 messages, JSONL codec, structural validation, vision-driven generation
 
 ## Installation
 
@@ -60,6 +61,34 @@ func main() {
 	fmt.Println(result.Text)
 }
 ```
+
+## A2UI — agent-driven UIs from screenshots
+
+The [`pkg/vision/a2ui`](pkg/vision/a2ui) sub package speaks the
+[A2UI protocol](https://a2ui.org/) (v0.9.1): agents emit declarative component
+descriptions that clients render natively — no code execution. It is the only
+A2UI agent SDK in Go, and the only one driven by vision.
+
+```go
+agent, _ := vision.NewAgent(vision.Config{Model: model})
+img, _ := vision.LoadImageFromFile("mockup.png")
+
+result, err := a2ui.Generate(ctx, agent, a2ui.GenerateOptions{}, img)
+if err != nil {
+	log.Fatal(err)
+}
+
+wire, _ := a2ui.MarshalJSONL(result.Messages) // ready for any A2UI renderer
+```
+
+`Generate` runs the vision model with a catalog-grounded prompt via
+`AnalyzeStructured`, compiles the model's `SurfaceSpec` into the canonical
+message sequence (`createSurface` → `updateComponents` → `updateDataModel`),
+and validates it (root presence, unique IDs, resolvable child references,
+acyclicity, surface lifecycle) before returning — a result that compiles is a
+result a client can render. The package is also useful without vision:
+`Compile`, `Validate`, the typed message/component model, and the JSONL codec
+are pure Go. Run `go run examples/a2ui/main.go mockup.png` to try it.
 
 ## Development
 
