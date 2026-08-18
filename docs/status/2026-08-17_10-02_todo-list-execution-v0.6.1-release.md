@@ -1,5 +1,11 @@
 # TODO-List Execution + v0.6.1 Release — Session Report
 
+> **ANNOTATED 2026-08-18 (docs-health):** b.2 (pkg.go.dev) resolved — v0.6.1
+> is published and rendered there (verified 2026-08-18). c.4/f.2 (SystemNix
+> lock commit) resolved — the lock pins `dcd50a0` and is committed. The g
+> questions (tag deletion, v0.6.1 mismatch, Latest pointer) are consolidated
+> into ROADMAP open question 5; the remaining open items live in TODO_LIST.
+
 **Date:** 2026-08-17 (worked ~00:05–00:40, report written 10:02)
 **Scope:** Full execution of TODO_LIST.md as of session start (20 items), ending in the v0.6.0/v0.6.1 releases.
 **End state:** master `2cf3ced`, working tree clean, **CI green** (last 2 runs, first green since 2026-08-12/v0.5.0).
@@ -101,8 +107,11 @@
    (dcd50a0): its `version` vars still say `"0.6.0"` and it has no `[0.6.1]`
    CHANGELOG section (those landed on master after the tag). Cosmetic mismatch,
    nix-built binaries are unaffected (ldflags inject the real version).
-2. **pkg.go.dev refresh** — the fetch trigger returned 404 (normal propagation
-   lag); re-check later.
+   ← routed 2026-08-18 to ROADMAP open question 5 (release presentation
+   policy)
+2. ~~**pkg.go.dev refresh** — the fetch trigger returned 404 (normal propagation
+   lag); re-check later.~~ done — v0.6.1 published on pkg.go.dev (verified
+   2026-08-18)
 3. **govulncheck follow-up** — 5 stdlib vulns (GO-2026-6218/6090/6088/5972/5026)
    all fixed in go1.26.6; local+nix toolchain is 1.26.5. Recorded as a TODO item
    (bump when nixpkgs ships 1.26.6) rather than desyncing Go/nix toolchains.
@@ -117,8 +126,10 @@
 2. **Real-model smoke test** — `visionreviewd once` against a real llama-server;
    sanity-check review markdown + INDEX; tune caption-tuned prompts.
 3. **Point at real projects** — DiscordSync goldens first, then `discover`.
-4. **SystemNix lock commit** — bump is applied to the lock but sits uncommitted
-   in a tree with the user's WIP.
+4. ~~**SystemNix lock commit** — bump is applied to the lock but sits uncommitted
+   in a tree with the user's WIP.~~ done — committed; lock pins `dcd50a0`
+   (verified 2026-08-18, SystemNix working tree no longer carries flake.lock
+   changes)
 
 ---
 
@@ -174,21 +185,31 @@
 ## f) NEXT UP (priority order)
 
 1. User decisions from (g): tag deletion, v0.6.1 mismatch handling, Latest pointer.
-2. Commit the SystemNix lock bump (user's tree, user's WIP to reconcile).
-3. Enable visionreviewd on a host (doctor-gated), llama-server optional.
-4. Real-model smoke test: `visionreviewd once`, inspect markdown + INDEX, tune prompts.
-5. Point daemon at DiscordSync goldens; add projects via `discover`.
-6. Bump Go toolchain to 1.26.6 when nixpkgs ships it (5 stdlib vulns).
-7. Re-trigger pkg.go.dev fetch for v0.6.1; verify docs render.
+   ← still open — consolidated into ROADMAP open question 5 (2026-08-18);
+   tag deletion also in TODO_LIST
+2. ~~Commit the SystemNix lock bump (user's tree, user's WIP to reconcile).~~
+   done — committed (verified 2026-08-18)
+3. Enable visionreviewd on a host (doctor-gated), llama-server optional. ← still
+   open (TODO_LIST)
+4. Real-model smoke test: `visionreviewd once`, inspect markdown + INDEX, tune prompts. ← still open (TODO_LIST)
+5. Point daemon at DiscordSync goldens; add projects via `discover`. ← still open (TODO_LIST)
+6. Bump Go toolchain to 1.26.6 when nixpkgs ships it (5 stdlib vulns). ← still
+   open (TODO_LIST)
+7. ~~Re-trigger pkg.go.dev fetch for v0.6.1; verify docs render.~~ done —
+   v0.6.1 rendered (verified 2026-08-18)
 8. Reset `version` vars to `0.7.0-dev` at the start of the next cycle (currently
-   "0.6.1").
+   "0.6.1"). ← still open (TODO_LIST)
 9. Consider CI job that builds the SDK WITHOUT jsonv2 to lock in the
-   consumer-facing guarantee verified manually this session.
+   consumer-facing guarantee verified manually this session. ← still open
+   (TODO_LIST)
 10. Consider extracting vendorHash to `vendorHash.nix` (nix-checker suggestion).
+    ← still open (TODO_LIST)
 11. Address remaining BuildFlow warnings (go-licenses missing in devShell,
-    markdownlint MD013 line lengths in AGENTS.md, assets/ layout).
+    markdownlint MD013 line lengths in AGENTS.md, assets/ layout). ← still
+    open (TODO_LIST "Lint-noise policy decision")
 12. ROADMAP open questions (structured hooks payload, 0.x semver policy, erraudit
-    gate-vs-advisory) — product decisions, not code.
+    gate-vs-advisory) — product decisions, not code. ← still open (ROADMAP
+    questions 1–3, plus new question 5)
 
 ---
 
@@ -200,5 +221,6 @@
 2. **v0.6.1 content mismatch** — the published tag reports version "0.6.0" in
    its binaries and lacks its own CHANGELOG section. Cut a synced v0.6.2, or
    accept and move on (my lean: accept; nix builds inject the right version)?
-3. **GitHub "Latest" release** — keep marking everything prerelease (v0.2.0
-   holds the Latest badge), or promote v0.6.1 to a full release?
+3. ~~**GitHub "Latest" release** — keep marking everything prerelease (v0.2.0
+   holds the Latest badge), or promote v0.6.1 to a full release?~~ routed —
+   ROADMAP open question 5 (release presentation policy, added 2026-08-18)

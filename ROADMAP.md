@@ -12,12 +12,15 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Near-term direction
 
-The actionable near-term work is in [TODO_LIST.md](TODO_LIST.md): the **CI
-lint-config fix** (red since v0.5.0), **visionreviewd activation** (SystemNix
-input bump, first host, real-model bring-up), and the **tag anomaly**
-(destructive, needs user approval). All previous near-term work — preprocessing
-auto-wiring, retry reconciliation, catwalk CLI integration, cost tracking, the
-visionreviewd daemon itself — has shipped and moved to
+The actionable near-term work is in [TODO_LIST.md](TODO_LIST.md): **A2UI
+verification debt** (schema-conformance test, coverage/duplication gates,
+codec hardening — from the 2026-08-18 audit), **visionreviewd activation**
+(first host, real-model bring-up, real projects), and the **tag anomaly**
+(destructive, needs user approval). The CI lint-config fix shipped in
+v0.6.0/v0.6.1 (CI green since 2026-08-17) and the SystemNix lock bump is
+committed (pins `dcd50a0`, verified 2026-08-18). All earlier near-term work —
+preprocessing auto-wiring, retry reconciliation, catwalk CLI integration,
+cost tracking, the visionreviewd daemon itself — shipped and lives in
 [CHANGELOG.md](CHANGELOG.md).
 
 ## Mid-term ideas
@@ -40,6 +43,12 @@ visionreviewd daemon itself — has shipped and moved to
   pixel fidelity check; composes `Generate` with the review pipeline).
 - **Review results as A2UI** — project visionreviewd's INDEX/reviews into an
   interactive A2UI surface as an alternative to markdown.
+- **Strict catalog-aware validation** — embed the official `catalog.json`
+  (go:embed) and offer a `Validate` strict mode that checks component props
+  against the real catalog, instead of structural rules only; optionally
+  generate the prompt's `catalogSignatures` block from the same source.
+- **Surface snapshot fold** — fold a message sequence into in-memory surface
+  state (a mini renderer model) for tests and the reviewd projection.
 
 ### visionreviewd operations
 
@@ -50,6 +59,10 @@ visionreviewd daemon itself — has shipped and moved to
   follow), per-project overrides (model, timeout, interval).
 - **Review quality** — link archived blob images from comparison markdown,
   per-view comparison counts in INDEX, notify on score drops ≥ N.
+- **SystemNix hardening (after first activation)** — `ExecStartPre=
+  visionreviewd doctor`, onFailure/gatus alert wiring for both units (match
+  DiscordSync's pattern), btrfs snapshot subvolume, shared `ai-models` HF
+  cache for the llama unit (dedupe ~10 GB), GPU passthrough options.
 
 ### SDK (vision)
 
@@ -81,6 +94,11 @@ visionreviewd daemon itself — has shipped and moved to
 - **Quality surface** — BDD specs for catalog discovery and priced cost
   tracking; benchmarks for `FindModel`/`VisionModels()` across 800+ models;
   `examples/catalog` + `examples/cost-tracking` walkthroughs.
+- **CLI conveniences** — `-pricing` cost estimate, `-catalog-version`
+  freshness, cost summary after analysis, `--json` output for the listing
+  flags, fuzzy provider matching, `-validate-model`.
+- **Migration note** — document the jump from the pre-v0.5.0 five-provider
+  CLI to the catalog-driven one (aliases, env vars, model IDs).
 
 ## Long-term ideas
 
@@ -137,3 +155,10 @@ tasks. They are **not** TODO items until answered.
    checksum mismatches). Deleting both ghosts needs approval because remote
    tag deletion is destructive. Until then they stay documented, not acted
    on (see TODO_LIST "Release mechanics").
+5. **Release presentation policy** — every release so far is marked
+   prerelease, so v0.2.0 (July) still holds the GitHub "Latest" badge while
+   v0.6.1 is the real newest. The v0.6.1 tag also reports version "0.6.0"
+   internally (the version-vars commit landed after the tag; nix builds
+   inject the right version via ldflags). Decide: promote v0.6.1 to a full
+   release (and either cut a synced v0.6.2 or accept the mismatch), and
+   write down the push/tag cadence so it stops being re-asked every session.

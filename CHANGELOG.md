@@ -9,8 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - **A2UI sub package (`pkg/vision/a2ui`)** — Go support for the
-  [A2UI protocol](https://a2ui.org/) (v0.9.1), the only agent-side SDK in Go
-  and the only one driven by vision. `a2ui.Generate` turns screenshots into
+  [A2UI protocol](https://a2ui.org/) (v0.9.1) — to our knowledge the only
+  A2UI SDK in Go driven by vision (other Go A2UI libraries exist, but none
+  turn screenshots into surfaces). `a2ui.Generate` turns screenshots into
   complete, validated A2UI surfaces through any of the SDK's 800+ vision
   models (`vision.AnalyzeStructured[SurfaceSpec]` + a basic-catalog-grounded
   prompt). The package also stands alone: typed wire messages for all four
@@ -20,9 +21,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   (Text/Column/Row/Card/Button/Image/Divider/Icon), and `Bind`/`Literal`
   dynamic values. Ships with a BDD suite and `examples/a2ui`.
 
+### Changed
+
+- **Lint guard against json/v2 import drift** — depguard now denies
+  `encoding/json/v2` and `encoding/json/jsontext` imports with an explanatory
+  message. The go-auto-upgrade daemon has broken compilation four documented
+  times migrating to those paths (`jsontext.Encoder` has no `SetIndent`);
+  this repo deliberately imports only `encoding/json`, which transparently
+  supports both the default and `GOEXPERIMENT=jsonv2` regimes.
+
 ### Fixed
 
-- Nothing yet.
+- **Overclaimed uniqueness wording reworded** — README, CHANGELOG, and the
+  a2ui package doc said the messages "validate against the official v0.9.1
+  schemas" and that this is "the only agent-side SDK in Go"; neither claim
+  was machine-verified (the schema-conformance test is a tracked TODO).
+  Docs now claim the defensible: v0.9.1 message shapes implemented, only
+  Go A2UI SDK driven by vision.
+- **Living docs re-synced (docs-health audit)** — ROADMAP "Near-term
+  direction" still listed the CI lint-config fix as open (it shipped in
+  v0.6.0/v0.6.1); TODO_LIST had dropped routed items (DOMAIN_LANGUAGE
+  glossary, llama readiness gate, replay round-trip tests, json/v2 defense
+  layers) and gained the harvested 2026-08-18 audit queue; AGENTS.md now
+  documents the `archived/` snapshot convention and scopes the
+  art-dupl "0 clones" claim to pre-a2ui state.
 
 ## [0.6.1] - 2026-08-17
 

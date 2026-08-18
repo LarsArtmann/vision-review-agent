@@ -66,8 +66,9 @@ func main() {
 
 The [`pkg/vision/a2ui`](pkg/vision/a2ui) sub package speaks the
 [A2UI protocol](https://a2ui.org/) (v0.9.1): agents emit declarative component
-descriptions that clients render natively — no code execution. It is the only
-A2UI agent SDK in Go, and the only one driven by vision.
+descriptions that clients render natively — no code execution. To our
+knowledge it is the only A2UI SDK in Go driven by vision — other Go A2UI
+libraries exist, but none turn screenshots into surfaces.
 
 ```go
 agent, _ := vision.NewAgent(vision.Config{Model: model})

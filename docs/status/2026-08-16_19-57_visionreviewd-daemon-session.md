@@ -1,7 +1,9 @@
 # Status Report: visionreviewd Daemon — Session Snapshot
 
-> **ANNOTATED 2026-08-16 (docs-health):** every T2–T18 task below shipped
-> (see inline markers). Still open: real-model bring-up (#36) and DiscordSync
+> **ANNOTATED 2026-08-16 (docs-health), refreshed 2026-08-18:** every
+> T2–T18 task below shipped (see inline markers). The SystemNix lock bump
+> (#35) has since shipped too (lock pins `dcd50a0`, committed — verified
+> 2026-08-18). Still open: real-model bring-up (#36) and DiscordSync
 > baselines (#37) — tracked in `TODO_LIST.md`.
 
 **Date:** 2026-08-16 19:57
@@ -86,7 +88,7 @@ Nothing permanently broken. Friction hits (all resolved):
 32. ~~T16: SystemNix lazy wrapper + activation doc (input, lock, host enable)~~ done at `4c03af9` (SystemNix `8fc2b80c`) — host enable + lock bump still open (TODO_LIST)
 33. ~~T17: README/CHANGELOG/AGENTS/TODO_LIST/FEATURES updates~~ done at `5af6d22`
 34. ~~T18: full `go test -race ./...`, vet, golangci-lint, gofmt~~ done — all green at session close
-35. ~~Post-session: push repo → SystemNix lock bump → enable on host~~ repo pushed (remote master = `5da8022`); SystemNix lock bump + host enable still open (TODO_LIST)
+35. ~~Post-session: push repo → SystemNix lock bump → enable on host~~ repo pushed (remote master = `5da8022`); lock bump done — SystemNix lock pins `dcd50a0`, committed (verified 2026-08-18); host enable still open (TODO_LIST)
 36. Post-session: download model, run llama-server, real-model prompt tuning session ← still open (TODO_LIST)
 37. Post-session: DiscordSync baselines into default config; consider CI hook (gallery-shots → daemon ingest) ← still open (TODO_LIST)
 

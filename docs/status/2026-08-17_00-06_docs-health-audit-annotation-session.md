@@ -1,5 +1,13 @@
 # Status Report: Docs-Health Audit — August 2026 Snapshot Annotation
 
+> **ANNOTATED 2026-08-18 (docs-health refresh):** most of this report's
+> "next" queue shipped within 24h by the TODO-execution session (CI fixes,
+> code-quality items 17–24, SDK polish 28–31, releases 35–37 — see
+> `docs/status/2026-08-17_10-02`). Items dropped from the 08-17 TODO rebuild
+> (round-trip test #25, replay BDD #26, llama gate #27, #32–34) were
+> recovered into TODO_LIST on 2026-08-18; #13 (glossary) and #15
+> (pre-August reports) remain open.
+
 **Date:** 2026-08-17 00:06
 **Session scope:** Full docs-health AUDIT (BUILD + HARVEST + VERIFY + ANNOTATE)
 over every `**/2026-08-*` file, per explicit user instruction. Living docs
@@ -46,6 +54,8 @@ verified-fresh state. Based on this session's run and what I noticed during it
    The daemon introduced a whole bounded context (View, ViewKey,
    capture/review/compare events, blob store, pass, replay, doctor) and the
    T17 docs pass never touched the glossary. Now routed to TODO_LIST.
+   ← still open 2026-08-18 (re-verified: 0 daemon terms, 0 a2ui terms;
+   recovered as the TODO_LIST "Glossary sweep" item)
 3. **Markdown formatting was delegated to the BuildFlow hook** via the
    auto-git daemon's commits (`46ae0aa`, `9f60921` landed, so hooks passed) —
    I did not run prettier/markdownlint myself over every edited file before
@@ -56,16 +66,20 @@ verified-fresh state. Based on this session's run and what I noticed during it
 1. **Pre-August status reports (~30 files, 2026-04→07) not annotated or
    archived** — out of scope by instruction (`2026-08-*` only), but the same
    pass would likely archive a dozen of them.
-2. **The CI wrapcheck schema fix itself** — deliberately not done: it's a
-   code/config change, and this was a docs session. Routed as TODO_LIST #1.
-3. **Nix gates** (`nix run .#test`, `nix run .#lint`, `nix flake check`,
-   `nix build`) — skipped, justified by a docs-only diff; not exercised.
-4. **jsonv2 regime re-run** — same justification.
-5. **`archived/` directory convention not documented** — I created
+2. ~~**The CI wrapcheck schema fix itself** — deliberately not done: it's a
+   code/config change, and this was a docs session. Routed as TODO_LIST #1.~~
+   done at `aafab2d` (v0.6.0) — `extra-ignore-sigs` keys, config verify green
+3. ~~**Nix gates** (`nix run .#test`, `nix run .#lint`, `nix flake check`,
+   `nix build`) — skipped, justified by a docs-only diff; not exercised.~~
+   exercised since — full matrix green 2026-08-18 (`2026-08-18_13-21` report)
+4. ~~**jsonv2 regime re-run** — same justification.~~ done 2026-08-18 — green
+   in both regimes
+5. ~~**`archived/` directory convention not documented** — I created
    `docs/status/archived/` + `docs/planning/archived/` but no doc explains
-   the convention to future sessions.
+   the convention to future sessions.~~ done 2026-08-18 — AGENTS.md now has
+   a "Historical Docs" section
 6. **`docs/DOMAIN_LANGUAGE.md` visionreviewd glossary** — found missing (see
-   b.2), not fixed in this session.
+   b.2), not fixed in this session. ← still open (TODO_LIST "Glossary sweep")
 
 ## d) TOTALLY FUCKED UP (honest list)
 
@@ -118,18 +132,21 @@ verified-fresh state. Based on this session's run and what I noticed during it
 
 **CI (blocks everything visible):**
 
-1. Fix `.golangci.yaml` wrapcheck schema — remove/rename `ignoreSigs`,
+1. ~~Fix `.golangci.yaml` wrapcheck schema — remove/rename `ignoreSigs`,
    `ignore-type-assert-ok` (`.golangci.yaml:239,250`) so
-   `golangci-lint config verify` passes.
-2. Push fix; confirm green CI for the first time since 2026-08-12.
-3. CI job: `nix build .#visionreviewd .#default`.
-4. CI job: NixOS module eval (enabled + disabled variants).
-5. CI smoke check: run built `visionreviewd version` (guards silent-empty
-   builds).
+   `golangci-lint config verify` passes.~~ done at `aafab2d` (v0.6.0)
+2. ~~Push fix; confirm green CI for the first time since 2026-08-12.~~ done —
+   green since `1bc1523` (v0.6.1, 2026-08-17)
+3. ~~CI job: `nix build .#visionreviewd .#default`.~~ done — flake checks under
+   the `nix-flake-check` CI job (`aafab2d`)
+4. ~~CI job: NixOS module eval (enabled + disabled variants).~~ done — same
+5. ~~CI smoke check: run built `visionreviewd version` (guards silent-empty
+   builds).~~ done — `visionreviewd-version-smoke` check
 
 **visionreviewd activation:**
-6. Bump SystemNix `vision-review-agent` input (lock pins pre-module
-`de7c4c6`); confirm lazy wrapper imports the module.
+6. ~~Bump SystemNix `vision-review-agent` input (lock pins pre-module
+`de7c4c6`); confirm lazy wrapper imports the module.~~ done — lock pins
+`dcd50a0`, committed (verified 2026-08-18)
 7. Place `/etc/visionreviewd/config.json` on target host; enable service
 (+ optional llama-server, ~9–10 GB pull).
 8. Run `visionreviewd doctor` as the activation gate.
@@ -142,52 +159,73 @@ arrows across ≥2 real changes.
 **Docs debt found this session:**
 13. Add visionreviewd vocabulary to `docs/DOMAIN_LANGUAGE.md` (View, ViewKey,
 view.captured/reviewed/compared, blob store, pass, replay, doctor,
-reviewsDir).
-14. Document the `archived/` convention in AGENTS.md.
+reviewsDir). ← still open (TODO_LIST "Glossary sweep", 2026-08-18)
+14. ~~Document the `archived/` convention in AGENTS.md.~~ done 2026-08-18
+(AGENTS.md "Historical Docs" section)
 15. Annotate + archive the pre-August status reports (~30 files) with the
-same pass.
-16. Refresh `docs/DUPLICATION_POLICY.md` — pre-dates `internal/reviewd`
-(0 mentions); re-run art-dupl and record.
+same pass. ← still open (out of the 2026-08-1\* scope; next docs-health
+pass should take it)
+16. ~~Refresh `docs/DUPLICATION_POLICY.md` — pre-dates `internal/reviewd`
+(0 mentions); re-run art-dupl and record.~~ done at `60f1d6a` (v0.6.0)
 
 **Code quality (small, bounded):**
-17. doctor stderr injection (`commands.go:555` writes to `os.Stderr`,
-bypassing injected writer).
-18. Kill `doctorCheckExtra` magic constant (`commands.go:469`).
-19. INDEX "Updated" column: `ReviewedAt` vs `CapturedAt`
-(`pipeline.go:291`, `replay.go:235`).
-20. Guard `Pipeline.Pass` on cancelled context — explicit skip semantics.
-21. exhaustruct excludes for reviewd counter result types.
-22. codespell: `unparseable` ignore-rule or reword.
-23. flake meta: `homepage`/`platforms` on both packages; extract
-`vendorHash.nix`.
-24. Fix brittle `gemini-2.5-flash` test (`cmd/vision/main_test.go:229`).
-25. Round-trip test: `CompareManually` → wipe → `Replay`.
-26. BDD spec for replay behavior (currently table tests).
+17. ~~doctor stderr injection (`commands.go:555` writes to `os.Stderr`,
+bypassing injected writer).~~ done at `5a5f2fc` (v0.6.0)
+18. ~~Kill `doctorCheckExtra` magic constant (`commands.go:469`).~~ done
+(v0.6.0)
+19. ~~INDEX "Updated" column: `ReviewedAt` vs `CapturedAt`
+(`pipeline.go:291`, `replay.go:235`).~~ done at `60f1d6a` —
+`ViewState.UpdatedAt()`
+20. ~~Guard `Pipeline.Pass` on cancelled context — explicit skip semantics.~~
+done at `60f1d6a`
+21. ~~exhaustruct excludes for reviewd counter result types.~~ done (v0.6.0)
+22. ~~codespell: `unparseable` ignore-rule or reword.~~ done (v0.6.0) —
+reworded to "malformed"
+23. ~~flake meta: `homepage`/`platforms` on both packages; extract
+`vendorHash.nix`.~~ done at `aafab2d` — homepage/platforms; the
+`vendorHash.nix` extraction is back in TODO_LIST (2026-08-18)
+24. ~~Fix brittle `gemini-2.5-flash` test (`cmd/vision/main_test.go:229`).~~
+done at `60f1d6a`
+25. Round-trip test: `CompareManually` → wipe → `Replay`. ← still open
+(recovered to TODO_LIST 2026-08-18)
+26. BDD spec for replay behavior (currently table tests). ← still open
+(recovered to TODO_LIST 2026-08-18)
 27. llama unit readiness gate (ExecStartPost `/health`) so first pass
-doesn't race model load.
+doesn't race model load. ← still open (recovered to TODO_LIST 2026-08-18)
 
 **SDK/docs polish:**
-28. godoc example: `pkg/errors` (`errors.AsType[*ModelError]` +
-`IsRetryable()`).
-29. godoc example: `pkg/vision` (`errors.Is` + enriched sentinel message).
-30. `internal/cli` tests (`NewAgent` error path incl. `temperature=%.2f`,
-`RequireArgc`).
-31. Cross-link `docs/ERROR_DESIGN.md` from CHANGELOG.
-32. `examples/structured-stream` review vs unmarshal-error behavior.
-33. `consumeObjectStream` partial-malformed-object test.
-34. `.golangci.yaml` comments for G117/G101/depguard exclusions.
+28. ~~godoc example: `pkg/errors` (`errors.AsType[*ModelError]` +
+`IsRetryable()`).~~ done (v0.6.0)
+29. ~~godoc example: `pkg/vision` (`errors.Is` + enriched sentinel message).~~
+done (v0.6.0)
+30. ~~`internal/cli` tests (`NewAgent` error path incl. `temperature=%.2f`,
+`RequireArgc`).~~ done (v0.6.0)
+31. ~~Cross-link `docs/ERROR_DESIGN.md` from CHANGELOG.~~ done (v0.6.0)
+32. `examples/structured-stream` review vs unmarshal-error behavior. ← still
+open (recovered to TODO_LIST 2026-08-18)
+33. `consumeObjectStream` partial-malformed-object test. ← still open
+(recovered to TODO_LIST 2026-08-18)
+34. `.golangci.yaml` comments for G117/G101/depguard exclusions. ← still open
+(recovered to TODO_LIST 2026-08-18)
 
 **Release mechanics:**
-35. Delete ghost tags `v0.2.1` + `v0.3.0` (needs approval — destructive).
-36. Cut 0.6.0 after CI is green; CHANGELOG `[Unreleased]` is loaded.
-37. Consumer-side `go get …@v0.6.0` in a clean dir (skipped for
-v0.5.0/v0.5.1).
+35. Delete ghost tags `v0.2.1` + `v0.3.0` (needs approval — destructive). ←
+still open (TODO_LIST; `retract v0.3.0` shipped in v0.6.0 as the
+consumer-side remedy)
+36. ~~Cut 0.6.0 after CI is green; CHANGELOG `[Unreleased]` is loaded.~~ done —
+v0.6.0 + v0.6.1 released 2026-08-17
+37. ~~Consumer-side `go get …@v0.6.0` in a clean dir (skipped for
+v0.5.0/v0.5.1).~~ done for v0.6.1 (both jsonv2 regimes)
 
 **Product decisions (gate future work):**
-38. `erraudit`: CI gate or advisory → drives suppression config.
-39. Structured hooks payload: breaking `Hooks` change acceptable?
-40. Semver policy for 0.x.
-41. Decide push cadence policy in writing (it was asked 3× across reports).
+38. `erraudit`: CI gate or advisory → drives suppression config. ← still open
+(ROADMAP open question 3)
+39. Structured hooks payload: breaking `Hooks` change acceptable? ← still
+open (ROADMAP open question 1)
+40. Semver policy for 0.x. ← still open (ROADMAP open question 2)
+41. ~~Decide push cadence policy in writing (it was asked 3× across reports).~~
+routed 2026-08-18 — folded into ROADMAP open question 5 (release
+presentation policy)
 
 _(42–50 intentionally unused — the lists above are the real queue; padding
 would be noise.)_
@@ -207,12 +245,13 @@ would be noise.)_
    gate I need suppression config (`.erraudit.yaml`), if advisory the
    documented rationale stands and the question closes.
 
-3. **What is the next session's priority: (a) CI wrapcheck fix + 0.6.0
+3. ~~**What is the next session's priority: (a) CI wrapcheck fix + 0.6.0
    release, (b) visionreviewd activation (SystemNix bump → host enable →
    real model), or (c) the older-reports annotation pass?** My
    recommendation is (a) then (b) — nothing should release under a red CI,
    and activation unlocks the real-model feedback loop — but the ordering is
-   a product call.
+   a product call.~~ resolved — (a) happened (v0.6.0/v0.6.1, CI green);
+   (b) is in progress (lock bumped, host enable pending)
 
 ---
 

@@ -27,9 +27,10 @@
 //	wire, _ := a2ui.MarshalJSONL(result.Messages)
 //	os.Stdout.Write(wire)
 //
-// The generated messages validate against the official v0.9.1 schemas
+// The generated messages implement the v0.9.1 message shapes
 // (https://a2ui.org/specification/v0_9_1/); components come from the A2UI
-// basic catalog.
+// basic catalog. Machine-checking the output against the official JSON
+// schemas is a tracked TODO_LIST follow-up.
 package a2ui
 
 // VersionV09 is the v0.9 protocol version, accepted on input.

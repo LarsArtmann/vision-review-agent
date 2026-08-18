@@ -1,8 +1,9 @@
 # visionreviewd Status — T6–T10 Complete (Pipeline, CLI, Daemon)
 
-> **ANNOTATED 2026-08-16 (docs-health):** T11–T18 (section c) and queue items
-> 1–33, 36–37, 41 all shipped. Open remainders (#34-35, #38-40, #42) are
-> tracked in `TODO_LIST.md` / `ROADMAP.md`.
+> **ANNOTATED 2026-08-16 (docs-health), refreshed 2026-08-18:** T11–T18
+> (section c) and queue items 1–33, 36–37, 41 all shipped. Of the former
+> remainders, #35 (INDEX Updated), #39 (cancellation guard), and #42
+> (DUPLICATION_POLICY) shipped in `60f1d6a` (v0.6.0). Open: #34, #38, #40.
 
 **Date:** 2026-08-16 21:18
 **Session scope:** Fixed and finished T6, delivered T7–T10 of
@@ -123,14 +124,14 @@ T4 `681915e`+`47a4137`, T5 `b24561a`.
 32. ~~Decide + execute push policy (default: session end)~~ done — pushed; remote master = `5da8022`
 33. ~~Status report refresh after T11–T13~~ done at `5da8022`
 34. Consider `Interval()` accessor test / daemon options hardening ← still open (TODO_LIST)
-35. Consider per-view `ReviewedAt` in INDEX Updated column (currently CapturedAt) ← still open — `pipeline.go:291` / `replay.go:235` use `CapturedAt` (TODO_LIST)
+35. ~~Consider per-view `ReviewedAt` in INDEX Updated column (currently CapturedAt)~~ done at `60f1d6a` (v0.6.0) — `ViewState.UpdatedAt()` used by both pipeline and replay
 36. ~~Consider replay writing INDEX from folded state (may differ from pass-time INDEX)~~ done at `5cddff4` — `Replay` rewrites every project INDEX from folded state
 37. ~~Deduplicate PNG fixtures (scan_test/compare_test/BDD shotPNG copies)~~ done — single `shotPNG` helper in `helpers_test.go`
 38. Consider a `PassResult.String()` for CLI output ← still open (ROADMAP)
-39. Guard: `Pipeline.Pass` on cancelled ctx — verify skip semantics ← still open (TODO_LIST)
+39. ~~Guard: `Pipeline.Pass` on cancelled ctx — verify skip semantics~~ done at `60f1d6a` (v0.6.0) — explicit "skipped, pass context done" errors + two cancellation tests
 40. Consider blob GC (orphans after replay pruning) — document as future ← still open (ROADMAP)
 41. ~~Check `go.sum`/`go mod tidy` after all tasks~~ done — `go mod tidy -diff` clean (verified 2026-08-16)
-42. Update `docs/DUPLICATION_POLICY.md` if clone count changed ← still open (TODO_LIST)
+42. ~~Update `docs/DUPLICATION_POLICY.md` if clone count changed~~ done at `60f1d6a` (v0.6.0) — three actionable clones extracted, one intentional pair documented (a2ui-era rescan is a TODO_LIST item since 2026-08-18)
 
 ## g) QUESTIONS (cannot figure out ourselves)
 

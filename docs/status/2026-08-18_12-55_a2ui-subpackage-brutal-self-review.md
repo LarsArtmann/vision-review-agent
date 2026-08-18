@@ -1,5 +1,13 @@
 # Status Report: A2UI Sub Package — Brutal Self-Review
 
+> **ANNOTATED 2026-08-18 (docs-health, same day):** the nix half of the
+> verification matrix went green in the follow-up session
+> (`2026-08-18_13-21`: `golangci-lint run ./...` 0 issues, `config verify`
+> green, `nix build`, `nix flake check`). Both unverified doc claims were
+> fixed this pass (d.1 reworded to "message shapes", d.2 reworded to
+> "driven by vision"), and the open remainder is harvested into TODO_LIST
+> ("A2UI verification & hardening").
+
 **Date:** 2026-08-18 12:55
 **Session scope:** Design + implementation of `pkg/vision/a2ui` (A2UI protocol
 support, https://a2ui.org/, spec v0.9.1), from the "how could we smartly offer
@@ -77,14 +85,22 @@ has holes.
    `nix run .#test`, `nix run .#lint`, `nix build .`,
    `nix build .#visionreviewd`, `nix flake check`. The golangci-lint result
    above came from the system binary, not the flake-pinned one.
+   ← partially resolved same day: `nix build . .#visionreviewd` + `nix flake
+   check` green (`2026-08-18_13-21`); the flake's own `nix run .#test`/
+   `.#lint` apps remain unrun (TODO_LIST)
 2. **Full-repo lint** — linted only the new packages; the modified
    `.golangci.yaml` was never exercised against `./...` (additive changes,
    low risk, but unproven). `golangci-lint config verify` not run either.
+   ~~done same day~~ resolved — `golangci-lint run ./...` 0 issues and
+   `config verify` green (2026-08-18)
 3. **Docs health** — README/FEATURES/ROADMAP/CHANGELOG/AGENTS updated, but
    **TODO_LIST.md not touched** (no follow-up tasks pulled in, e.g. the
-   unverified-claims fixes below).
+   unverified-claims fixes below). ~~done 2026-08-18~~ resolved — TODO_LIST
+   "A2UI verification & hardening" section carries the harvest
 4. **Official-schema conformance** — schemas were _downloaded and read_ to
-   design the types, but never _executed against_ our output (see d).
+   design the types, but never _executed against_ our output (see d). ← still
+   open (TODO_LIST #1 — the doc claims were reworded to "message shapes"
+   meanwhile, so the claim no longer outruns the proof)
 5. **Component builders** — 9 of 19 basic-catalog kinds; the other 10
    (CheckBox, ChoicePicker, DateTimeInput, Slider, Tabs, TextField, List,
    Modal, AudioPlayer, Video) require manual `Component` construction.
@@ -107,15 +123,19 @@ has holes.
 
 ## d) TOTALLY FUCKED UP (honest ledger)
 
-1. **Shipped an unverified conformance claim.** Package doc + README +
+1. ~~**Shipped an unverified conformance claim.** Package doc + README +
    CHANGELOG say the generated messages "validate against the official v0.9.1
-   schemas". I never ran them through the official schemas — the claim rests
+   schemas".~~ claim reworded 2026-08-18 — docs now say "implement the v0.9.1
+   message shapes" with the machine conformance test tracked in TODO_LIST
+   (the underlying gap, c.9, remains open) I never ran them through the official schemas — the claim rests
    on me reading the schema files. This is exactly the
    verify-external-claims failure mode the repo has a skill for. Either
    machine-verify (c.9 above) or reword to "implement the v0.9.1 message
    shapes".
-2. **Shipped a probably-false uniqueness claim.** README/CHANGELOG say "the
-   only agent-side SDK in Go" / "the only A2UI agent SDK in Go". My own GitHub
+2. ~~**Shipped a probably-false uniqueness claim.** README/CHANGELOG say "the
+   only agent-side SDK in Go" / "the only A2UI agent SDK in Go".~~ reworded
+   2026-08-18 — README/CHANGELOG now claim "to our knowledge the only A2UI
+   SDK in Go driven by vision" (f.2 done) My own GitHub
    search surfaced `burka/a2ui-go` (3 stars), `tmc/a2ui`, `joestump/a2tea`,
    `alis-exchange/adk-a2ui-go`, ... I never inspected their contents. The
    defensible claim is "the only one driven by vision" — and even that
@@ -184,88 +204,121 @@ with `*json.RawMessage` or an explicit presence flag if we care.
 
 **Verify the claims (small, high impact):**
 
-1. Add an official-schema conformance test (`server_to_client.json` +
+1. ~~Add an official-schema conformance test (`server_to_client.json` +
    `common_types.json` via a draft-2020-12 validator; candidates:
    `santhosh-tekuri/jsonschema` or `kaptinlin/jsonschema` — already an
-   indirect dep through fantasy).
-2. Reword "only agent-side SDK in Go" in README/FEATURES/CHANGELOG to
+   indirect dep through fantasy).~~ → still open (TODO_LIST #1; doc claims
+   reworded meanwhile so nothing overclaims)
+2. ~~Reword "only agent-side SDK in Go" in README/FEATURES/CHANGELOG to
    something defensible ("the first Go agent-side SDK driven by vision"), or
-   actually audit the other Go repos and cite them.
+   actually audit the other Go repos and cite them.~~ done 2026-08-18 —
+   reworded to "to our knowledge the only A2UI SDK in Go driven by vision"
+   (README, CHANGELOG, package doc)
 3. Decide + document the `"value": null` semantics (presence flag or
-   documented limitation) in `UpdateDataModel`.
+   documented limitation) in `UpdateDataModel`. ← still open (TODO_LIST)
 4. Decide + document unknown-top-level-key handling in `UnmarshalMessage`
-   (reject like the schema does, or document the leniency).
+   (reject like the schema does, or document the leniency). ← still open
+   (TODO_LIST)
 
 **Finish the verification matrix:**
-5. `golangci-lint run ./...` with the new config (full repo).
-6. `golangci-lint config verify`.
-7. `nix run .#test`.
-8. `nix run .#lint`.
-9. `nix build .` and `nix build .#visionreviewd`.
-10. `nix flake check`.
-11. `go test -cover ./pkg/vision/a2ui/...` and record the number.
+5. ~~`golangci-lint run ./...` with the new config (full repo).~~ done —
+0 issues (2026-08-18)
+6. ~~`golangci-lint config verify`.~~ done — green (2026-08-18)
+7. `nix run .#test`. ← still open (TODO_LIST "flake's own gates")
+8. `nix run .#lint`. ← still open (TODO_LIST "flake's own gates")
+9. ~~`nix build .` and `nix build .#visionreviewd`.~~ done — green
+(2026-08-18, `2026-08-18_13-21`)
+10. ~~`nix flake check`.~~ done — all checks green (2026-08-18)
+11. `go test -cover ./pkg/vision/a2ui/...` and record the number. ← still
+open (TODO_LIST "flake's own gates")
 12. `art-dupl --type-aware -t 1` and update DUPLICATION_POLICY.md with the
 a2ui judgment calls (NewColumn/NewRow et al. = intentional similarity).
+← still open (TODO_LIST)
 
 **Harden:**
 13. Fuzz `UnmarshalMessage`, `UnmarshalJSONL`, `Component.UnmarshalJSON`,
-`ChildList.UnmarshalJSON` (Go native fuzzing, 5 seeds each).
-14. Reject nil `*CreateSurface` etc. inside typed slices defensively? (No —
-Validate already reports nil messages; skip unless fuzz finds paths.)
+`ChildList.UnmarshalJSON` (Go native fuzzing, 5 seeds each). ← still open
+(TODO_LIST)
+14. ~~Reject nil `*CreateSurface` etc. inside typed slices defensively? (No —
+Validate already reports nil messages; skip unless fuzz finds paths.)~~
+NOT-DO per own analysis
 15. Pin the prompt catalog: test asserting `catalogSignatures()` covers
-exactly the basic catalog kinds (19) so drift is loud.
-16. Assert `SchemaName == "SurfaceSpec"` in the BDD fake.
-17. Consider generating `catalogSignatures` from catalog.json at build time
-(go:generate) instead of hand transcription.
+exactly the basic catalog kinds (19) so drift is loud. ← still open (TODO_LIST,
+with the go:generate alternative folded in)
+16. Assert `SchemaName == "SurfaceSpec"` in the BDD fake. ← still open
+(TODO_LIST, folded into the pin item)
+17. ~~Consider generating `catalogSignatures` from catalog.json at build time
+(go:generate) instead of hand transcription.~~ routed — alternative inside
+the TODO_LIST pin item; full source-of-truth generation is ROADMAP
+("Strict catalog-aware validation")
 18. Narrow the exhaustruct exclusion back to the wire/message types;
-constructors get explicit field init or targeted nolint.
+constructors get explicit field init or targeted nolint. ← still open
+(TODO_LIST; also question g.2)
 19. Benchmarks: `BenchmarkMarshalJSONL`, `BenchmarkValidate`,
-`BenchmarkUnmarshalMessage`.
+`BenchmarkUnmarshalMessage`. ← still open (TODO_LIST)
 20. Add `Example_generate` / `Example_compile` / `Example_marshalJSONL`
-godoc examples (testableexamples linter will verify output).
+godoc examples (testableexamples linter will verify output). ← still open
+(TODO_LIST)
 
 **API completeness:**
 21. Builders for the remaining 10 catalog kinds (CheckBox, ChoicePicker,
 DateTimeInput, Slider, Tabs, TextField, List, Modal, AudioPlayer, Video).
+← still open (TODO_LIST)
 22. `GenerateOptions.Theme` passthrough to the createSurface message.
+← still open (TODO_LIST)
 23. `GenerateOptions.DataModel` seed merged with the model's data model.
+← still open (TODO_LIST)
 24. `Decompile(messages) → SurfaceSpec` to close the Compile asymmetry
-(enables edit-round-trips and diffing).
+(enables edit-round-trips and diffing). ← still open (TODO_LIST)
 25. `GenerateStream` on `AnalyzeStructuredStream[SurfaceSpec]` with partial
 `Compile` (ROADMAP item, needs design for progressive validation).
+← routed — ROADMAP "Streaming generation"
 26. Surface-snapshot helper: fold messages into an in-memory surface state
 (mini renderer model) — useful for tests and for reviewd projection.
+← routed — ROADMAP "Surface snapshot fold" (added 2026-08-18)
 27. `Validate` option for strict mode (unknown keys, catalog-aware prop
-checking against embedded catalog.json).
+checking against embedded catalog.json). ← routed — ROADMAP "Strict
+catalog-aware validation" (added 2026-08-18)
 28. Embed `catalog.json` (go:embed) for prop-level validation + prompt
-generation from the source of truth.
+generation from the source of truth. ← routed — same ROADMAP bullet
 
 **Integration / product:**
-29. `cmd/vision -a2ui mockup.png` flag printing JSONL.
+29. `cmd/vision -a2ui mockup.png` flag printing JSONL. ← still open
+(TODO_LIST)
 30. visionreviewd: `views/*.md` sibling projection as A2UI JSONL artifacts.
-31. A2A transport helper (send messages as A2A parts) — ROADMAP.
-32. SSE/WebSocket push helpers — ROADMAP.
+← routed — ROADMAP "Review results as A2UI"
+31. A2A transport helper (send messages as A2A parts) — ROADMAP. ✓ routed
+32. SSE/WebSocket push helpers — ROADMAP. ✓ routed
 33. Render-back loop: headless-render a surface, screenshot, vision-diff vs
 source image (composes Generate + review pipeline) — ROADMAP flagship.
+✓ routed
 
 **Spec future:**
 34. A2UI v1.0 (`actionResponse`, action IDs, theme→surfaceProperties) once
-it leaves candidate status — ROADMAP.
-35. Custom catalogs in GenerateOptions — ROADMAP.
+it leaves candidate status. ✓ routed — ROADMAP
+35. Custom catalogs in GenerateOptions. ✓ routed — ROADMAP
 
 **Docs/process debt:**
-36. Update TODO_LIST.md with items 1–12 above (docs-health harvest).
+36. ~~Update TODO_LIST.md with items 1–12 above (docs-health harvest).~~
+done 2026-08-18 — TODO_LIST "A2UI verification & hardening" carries the
+full harvest (1–41, not just 1–12)
 37. Add `docs/A2UI.md` deep-dive (format comparison table: wire vs inference
-format; lifecycle diagram; error taxonomy for the package).
+format; lifecycle diagram; error taxonomy for the package). ← still open
+(TODO_LIST)
 38. DOMAIN_LANGUAGE.md: add surface/catalog/adjacency-list/inference-format
-terms (docs/DOMAIN_LANGUAGE.md exists and was not touched).
-39. CHANGELOG: keep [Unreleased] entry but fix the overclaim wording when
-(2) lands.
-40. AGENTS.md: document the `"value": null` decision once made.
+terms (docs/DOMAIN_LANGUAGE.md exists and was not touched). ← still open
+(TODO_LIST "Glossary sweep", folded with the visionreviewd terms)
+39. ~~CHANGELOG: keep [Unreleased] entry but fix the overclaim wording when
+(2) lands.~~ done 2026-08-18 — [Unreleased] now carries a Fixed entry for
+the rewording
+40. AGENTS.md: document the `"value": null` decision once made. ← still
+open (follows TODO_LIST decide item)
 41. Consider a `pkg/vision/a2ui/README.md` pointing to the official docs
-(helps pkg.go.dev browsers).
+(helps pkg.go.dev browsers). ← still open (TODO_LIST)
 
-**Session-process improvements (for me):**
+**Session-process improvements (for me):** — 42–45 are lessons, not tasks
+(no verdict applies; they live on in this report and in how future sessions
+run).
 42. Run the repo's full verification matrix before declaring done, not the
 fast subset.
 43. Never write conformance/uniqueness claims into docs without a machine
@@ -289,18 +342,21 @@ programmatic triage.
 
 ## g) Questions (cannot be decided from the code)
 
-1. **Claim wording:** keep the bold "only A2UI agent SDK in Go" positioning
+1. ~~**Claim wording:** keep the bold "only A2UI agent SDK in Go" positioning
    in README/CHANGELOG, or reword to the defensible "first Go agent-side SDK
    driven by vision" until I've audited the other Go repos (burka/a2ui-go,
-   tmc/a2ui, a2tea)? (Fixing it is 10 minutes; the audit is ~30.)
+   tmc/a2ui, a2tea)? (Fixing it is 10 minutes; the audit is ~30.)~~ resolved
+   2026-08-18 — reworded to the defensible claim; audit the other repos only
+   if the stronger positioning is ever wanted back
 2. **exhaustruct policy:** is the whole-package exclusion acceptable for the
    a2ui wire types, or do you want the narrower per-type exclusion list
    (slightly noisier constructors, but future exhaustiveness bugs stay
-   visible)?
+   visible)? ← still open (TODO_LIST frames the decision)
 3. **Roadmap appetite:** should the next A2UI increment be _breadth_
    (CLI flag, reviewd projection, remaining builders) or _depth_
    (official-schema conformance test + streaming Generate)? The first ships
    demo value; the second hardens the conformance claim this review flagged.
+   ← still open (user)
 
 ---
 

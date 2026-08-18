@@ -1,5 +1,12 @@
 # Status Report — buildflow recovery: json/v2 guard + nix OOM retry
 
+> **ANNOTATED 2026-08-18 (docs-health, same day):** f.1 (self-contained
+> guard commit) done at `11d3490`; f.4/f.5 (CHANGELOG entry + TODO_LIST
+> harvest) done in this pass; f.18 (harvest the 12:55 audit) done too. The
+> remaining layers (CI grep test, pre-commit, flake-pinned lint verify, OOM
+> evidence) are in TODO_LIST ("json/v2 flapping defense" + "flake's own
+> gates").
+
 **Date:** 2026-08-18 13:21
 **Session scope:** Triage of the two pasted buildflow failures (`nix-build` killed, `go-auto-upgrade` broke compilation), plus the systemic fix for the recurring json/v2 migration flapping. This report covers ONLY this session's run and what was directly noticed. No new research beyond it.
 
@@ -89,15 +96,17 @@
 
 ## b) PARTIALLY DONE
 
-1. **Open item "repo-side mitigation for json/v2 flapping" (2026-08-02 report, item 1)** — lint layer done; CI grep-test and pre-commit hook layers not done; the daemon's own exclusion list (the true root cause) is external and untouched.
-2. **Guard portability** — verified under system golangci-lint v2.12.2 only; flake-pinned lint runner unverified.
+1. ~~**Open item "repo-side mitigation for json/v2 flapping" (2026-08-02 report, item 1)** — lint layer done; CI grep-test and pre-commit hook layers not done; the daemon's own exclusion list (the true root cause) is external and untouched.~~ lint layer shipped (`11d3490`); the other layers are TODO_LIST "json/v2 flapping defense"
+2. **Guard portability** — verified under system golangci-lint v2.12.2 only; flake-pinned lint runner unverified. ← still open (TODO_LIST "flake's own gates")
 
 ## c) NOT STARTED
 
-1. Hard evidence collection for the nix OOM kill (kernel log / `nix log`).
-2. Buildflow-side mitigation (`--max-time` / `--default-step-timeout` / nix `--max-jobs` / `-o cores` guardrails) — unknown whose knob this is (question 2).
-3. CHANGELOG entry + TODO_LIST harvest for this session's work.
-4. Regression test asserting the import ban (grep-style CI test, as suggested in `docs/status/2026-07-28` items 46/47 — 47 is now effectively done via depguard; 46 pre-commit is not).
+1. Hard evidence collection for the nix OOM kill (kernel log / `nix log`). ← still open (TODO_LIST "OOM evidence + buildflow policy")
+2. Buildflow-side mitigation (`--max-time` / `--default-step-timeout` / nix `--max-jobs` / `-o cores` guardrails) — unknown whose knob this is (question 2). ← still open (same TODO item)
+3. ~~CHANGELOG entry + TODO_LIST harvest for this session's work.~~ done
+   2026-08-18 — [Unreleased] Changed carries the lint-guard entry; TODO_LIST
+   carries the harvest
+4. ~~Regression test asserting the import ban (grep-style CI test, as suggested in `docs/status/2026-07-28` items 46/47 — 47 is now effectively done via depguard; 46 pre-commit is not).~~ → still open as the TODO_LIST "CI grep regression test" item (single-mechanism decision included)
 
 ## d) TOTALLY FUCKED UP!
 
@@ -119,42 +128,42 @@ Nothing in the repo is broken — but honestly filed here:
 
 **Close out this session (do first)**
 
-1. Commit the depguard guard + AGENTS.md update as one self-contained commit.
-2. Verify the guard fires under the flake-pinned linter (`nix run .#lint` with probe).
-3. Run `nix run .#test` to match the CI matrix exactly (cover profile included).
-4. Add CHANGELOG entry for the lint guard (repo hygiene, user-visible lint behavior changed).
-5. HARVEST this report's items 1–26 into `TODO_LIST.md` (docs-health) — user said wait, so pending instruction.
+1. ~~Commit the depguard guard + AGENTS.md update as one self-contained commit.~~ done at `11d3490`
+2. Verify the guard fires under the flake-pinned linter (`nix run .#lint` with probe). ← still open (TODO_LIST "flake's own gates")
+3. Run `nix run .#test` to match the CI matrix exactly (cover profile included). ← still open (TODO_LIST "flake's own gates")
+4. ~~Add CHANGELOG entry for the lint guard (repo hygiene, user-visible lint behavior changed).~~ done 2026-08-18 — [Unreleased] Changed
+5. ~~HARVEST this report's items 1–26 into `TODO_LIST.md` (docs-health) — user said wait, so pending instruction.~~ done 2026-08-18 — TODO_LIST "json/v2 flapping defense" + "Release mechanics"
 
 **Harden the json/v2 invariant**
-6. CI grep regression test: fail if any `.go` file imports `encoding/json/v2` or `jsontext` (mirrors depguard for non-lint paths).
-7. Pre-commit hook blocking the same imports (old item #46 from 2026-07-28 report).
-8. Optional Go test version: walk sources in-test so `go test ./...` surfaces the ban (decide vs. item 6 to avoid duplicate mechanisms).
-9. External (user): add `encoding/json` to go-auto-upgrade's exclusion list or disable its json rule — the actual root fix.
-10. Re-check the 2026-08-02 report's remaining open items once the guard layers land; mark resolved ones done (docs-health ANNOTATE).
+6. CI grep regression test: fail if any `.go` file imports `encoding/json/v2` or `jsontext` (mirrors depguard for non-lint paths). ← still open (TODO_LIST)
+7. Pre-commit hook blocking the same imports (old item #46 from 2026-07-28 report). ← still open (TODO_LIST — decide one mechanism with item 6)
+8. Optional Go test version: walk sources in-test so `go test ./...` surfaces the ban (decide vs. item 6 to avoid duplicate mechanisms). ← folded into the same TODO_LIST decision
+9. External (user): add `encoding/json` to go-auto-upgrade's exclusion list or disable its json rule — the actual root fix. ← still open (TODO_LIST "External root fix")
+10. Re-check the 2026-08-02 report's remaining open items once the guard layers land; mark resolved ones done (docs-health ANNOTATE). ← out of the 2026-08-1\* scope; the pre-August annotation pass (TODO of the 00-06 report) covers it
 
 **OOM / buildflow hardening**
-11. Pull kernel logs for the 08-18 kill window; classify OOM vs timeout definitively.
-12. Decide/ask whose knob: buildflow `--max-time` / `--default-step-timeout`, or nix `--max-jobs`/`-o cores` in the repo flake or CI.
-13. If OOM confirmed: cap concurrent nix jobs for this repo's CI profile; consider `preferLocalBuild`/lower parallelism for the two Go derivations.
-14. If timeout confirmed: raise step timeout for the go-modules derivation (it rebuilds on every `-dirty` tree change — see 17).
+11. Pull kernel logs for the 08-18 kill window; classify OOM vs timeout definitively. ← still open (TODO_LIST "OOM evidence + buildflow policy")
+12. Decide/ask whose knob: buildflow `--max-time` / `--default-step-timeout`, or nix `--max-jobs`/`-o cores` in the repo flake or CI. ← still open (same item)
+13. If OOM confirmed: cap concurrent nix jobs for this repo's CI profile; consider `preferLocalBuild`/lower parallelism for the two Go derivations. ← follows 11/12
+14. If timeout confirmed: raise step timeout for the go-modules derivation (it rebuilds on every `-dirty` tree change — see 17). ← follows 11/12
 
 **Reduce `-dirty` rebuild churn (noticed during the session)**
-15. Every auto-commit-daemon-staged change dirties the tree and rebuilds both derivations from scratch — consider committing more atomically (ties to e4).
-16. Investigate whether `vendorHash`-style module caching can skip the go-modules rebuild on source-only changes (it already does; the kill happened during source build — verify where the time/memory actually goes).
-17. Confirm which of the two derivations (go-modules vs main) the kill hit; the paste does not say.
+15. Every auto-commit-daemon-staged change dirties the tree and rebuilds both derivations from scratch — consider committing more atomically (ties to e4). ← routed — folded into the TODO_LIST buildflow-policy item
+16. Investigate whether `vendorHash`-style module caching can skip the go-modules rebuild on source-only changes (it already does; the kill happened during source build — verify where the time/memory actually goes). ← routed — same item
+17. Confirm which of the two derivations (go-modules vs main) the kill hit; the paste does not say. ← routed — same item (evidence gathering)
 
 **Docs / repo hygiene**
-18. Fold the committed-but-stale-ish `docs/status/2026-08-18_12-55` A2UI audit's open items into TODO_LIST (harvest, don't entomb).
-19. Annotate the 2026-08-02 report: item 1 (json/v2 mitigation) now lint-enforced.
-20. Consider a short `docs/BUILDFLOW.md` note: known-transient OOM retry policy + json/v2 guard explanation, so future sessions don't re-triage from scratch.
+18. ~~Fold the committed-but-stale-ish `docs/status/2026-08-18_12-55` A2UI audit's open items into TODO_LIST (harvest, don't entomb).~~ done 2026-08-18 — TODO_LIST "A2UI verification & hardening"
+19. Annotate the 2026-08-02 report: item 1 (json/v2 mitigation) now lint-enforced. ← out of the 2026-08-1\* scope (pre-August pass)
+20. Consider a short `docs/BUILDFLOW.md` note: known-transient OOM retry policy + json/v2 guard explanation, so future sessions don't re-triage from scratch. ← still open (TODO_LIST)
 
 **Beyond session scope but noticed (ROADMAP fuel, unverified)**
 21. **Go 1.26.6 toolchain bump** — the BuildFlow pre-commit's govulncheck reports 5 stdlib vulnerabilities in go1.26.5, all fixed in go1.26.6 (GO-2026-6218 net/url, GO-2026-6090 crypto/tls, GO-2026-6088 encoding/xml, GO-2026-5972 encoding/asn1, GO-2026-5026 net/http idna), with call traces into `LoadImageFromURLWithClient` and the streaming paths. Bump `go.mod` toolchain + flake Go once 1.26.6 is in nixpkgs; high-value, low-risk.
 22. A2UI v1.0 spec upgrade (actionResponse, surfaceProperties rename) — parked until v1.0 leaves candidate status (AGENTS.md ROADMAP item).
-23. A2UI follow-ups listed in the 12:55 audit report (read + harvest before acting).
-24. `version` var is still "0.6.0" from the 08-17 release; next cycle needs the `-dev` reset per AGENTS.md convention.
-25. `gochecknoglobals`/lint parity between system and flake golangci-lint versions — check flake pin matches 2.12.x expectations.
-26. Pre-existing lint noise seen in pre-commit output (not caused by this session, unfixed): markdownlint MD013 line-length findings across AGENTS.md (~93 findings), codespell findings in old status docs, `go-structure-linter` suggesting an `assets/` dir, nix-checker suggesting `vendorHash` extraction to `vendorHash.nix`. Decide policy: fix, configure, or ignore-by-design — don't leave them as ambient warning noise.
+23. ~~A2UI follow-ups listed in the 12:55 audit report (read + harvest before acting).~~ done 2026-08-18 (harvested + annotated)
+24. `version` var is still "0.6.0" from the 08-17 release; next cycle needs the `-dev` reset per AGENTS.md convention. ← still open (TODO_LIST) — note: `dcd50a0` since aligned the vars to "0.6.1"; only the `-dev` reset remains
+25. `gochecknoglobals`/lint parity between system and flake golangci-lint versions — check flake pin matches 2.12.x expectations. ← still open (TODO_LIST "flake's own gates")
+26. Pre-existing lint noise seen in pre-commit output (not caused by this session, unfixed): markdownlint MD013 line-length findings across AGENTS.md (~93 findings), codespell findings in old status docs, `go-structure-linter` suggesting an `assets/` dir, nix-checker suggesting `vendorHash` extraction to `vendorHash.nix`. Decide policy: fix, configure, or ignore-by-design — don't leave them as ambient warning noise. ← still open (TODO_LIST "Lint-noise policy decision" + "vendorHash.nix" item)
 
 (26 concrete items — everything else I could list would be invented rather than noticed; stopping at honest scope per the user's instruction.)
 
@@ -162,7 +171,7 @@ Nothing in the repo is broken — but honestly filed here:
 
 1. **go-auto-upgrade ownership:** the real fix is excluding `encoding/json` in the daemon's own config (external tool). Where does its config live / do you want to handle that, or should the repo-side layers (depguard + proposed CI test) be considered sufficient?
 2. **buildflow infra policy:** the nix kill happened under buildflow's `--max-time` / `--default-step-timeout` on infrastructure I can't inspect. Is that your local runner (where we should raise limits or cap nix jobs), or shared CI where memory policy isn't ours to set?
-3. **Staged/committed doc handling:** the auto-commit daemon already committed the 12:55 A2UI audit during this session (9817568). Do you want its open items harvested into TODO_LIST now, or does that wait for the next docs-health pass you direct?
+3. **Staged/committed doc handling:** the auto-commit daemon already committed the 12:55 A2UI audit during this session (9817568). Do you want its open items harvested into TODO_LIST now, or does that wait for the next docs-health pass you direct? ← resolved 2026-08-18 — this docs-health pass harvested both 08-18 reports
 
 ---
 

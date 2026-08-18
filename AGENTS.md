@@ -274,5 +274,15 @@ go build -o vision ./cmd/vision
 
 See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
 list of extraction helpers and duplication decisions. Current state:
-**0 clone groups** at `art-dupl --type-aware -t 1` (verified). Test files and
-interface-required signatures are below scan scope by design.
+**0 clone groups** at `art-dupl --type-aware -t 1` (verified 2026-08-17,
+before `pkg/vision/a2ui` landed; the a2ui builder scan is a tracked TODO_LIST
+item). Test files and interface-required signatures are below scan scope by
+design.
+
+## Historical Docs
+
+- `docs/status/` and `docs/planning/` hold point-in-time snapshots. A fully
+  executed snapshot moves to that directory's `archived/` subdirectory via
+  `git mv` (never plain `mv`), and only after a docs-health pass resolved
+  every item inline. Never rewrite a snapshot — annotate it
+  (`~~item~~ done at \`hash\``) so readers can tell open from done.

@@ -1,9 +1,13 @@
 # Status Report — visionreviewd T10→T18: replay, E2E, doctor, Nix, SystemNix
 
-> **ANNOTATED 2026-08-16 (docs-health):** item 1 (push repo) and item 2 (push
-> SystemNix) are done — both remotes match their local HEADs. The SystemNix
-> lock still pins `de7c4c6` (pre-module), so input bump + host activation
-> remain the gating open work — tracked in `TODO_LIST.md`.
+> **ANNOTATED 2026-08-16 (docs-health), refreshed 2026-08-18:** item 1
+> (push repo) and item 2 (push SystemNix) are done — both remotes match
+> their local HEADs. ~~The SystemNix lock still pins `de7c4c6` (pre-module)~~
+> — **resolved since**: the lock now pins `dcd50a0` and is committed
+> (verified 2026-08-18), so the lazy wrapper imports the real module. The
+> 0.6.0 release cut and the daemon CI surface also shipped (v0.6.0/v0.6.1,
+> CI green since 2026-08-17). Host activation remains the gating open work —
+> tracked in `TODO_LIST.md`.
 
 **Date:** 2026-08-16 22:50
 **Scope of this report:** the continuation session that picked up at T10's
@@ -103,9 +107,10 @@ SystemNix flake still evaluates with the wrapper imported.
 - **SystemNix integration** — committed locally only. ~~The locked
   `vision-review-agent` input points at GitHub `master`, which does NOT yet
   contain the module; the wrapper stays inert (by design) until this repo is
-  pushed.~~ repo pushed since (remote master = `5da8022`); the lock entry
+  pushed.~~ repo pushed since (remote master = `5da8022`); ~~the lock entry
   still pins `de7c4c6` (pre-module) so the wrapper remains inert until the
-  input is bumped. No host enables it yet; no `/etc/visionreviewd/config.json` exists.
+  input is bumped.~~ resolved 2026-08-17/18 — lock now pins `dcd50a0`
+  (committed). No host enables it yet; no `/etc/visionreviewd/config.json` exists.
 - **Replay coverage of manual compares** — the byte-identical test exercises
   the pipeline path (capture→compare→review). `CompareManually`-only streams
   are handled by replay (INDEX row inclusion is implemented and reasoned
@@ -127,10 +132,14 @@ SystemNix flake still evaluates with the wrapper imported.
 - **Host activation**: evo-x2 (or any host) enablement, config placement,
   llama-server bring-up, first real pass.
 - **DiscordSync goldens wiring** as the first real project.
-- **Release cut** — CHANGELOG `[Unreleased]` is loaded; no version bump, tag,
-  or release process run for 0.6.0.
-- **CI for the new surface** — no GitHub Actions job building
-  `.#visionreviewd` or eval-testing the NixOS module.
+- ~~**Release cut** — CHANGELOG `[Unreleased]` is loaded; no version bump, tag,
+  or release process run for 0.6.0.~~ done — v0.6.0 + v0.6.1 released
+  2026-08-17 (CI green on v0.6.1)
+- ~~**CI for the new surface** — no GitHub Actions job building
+  `.#visionreviewd` or eval-testing the NixOS module.~~ done at `aafab2d` /
+  v0.6.0 — flake checks (`visionreviewd` build, `visionreviewd-version-smoke`,
+  `nixos-module-enabled`/`-disabled`) run under the existing `nix-flake-check`
+  CI job
 - **Alerting/monitoring integration** (SystemNix onFailure/gatus wiring for
   the daemon and llama units) — present for peer services like DiscordSync,
   absent here.
@@ -211,8 +220,9 @@ SystemNix flake still evaluates with the wrapper imported.
 
 1. ~~Push this repo to `origin/master` (blocks everything below).~~ done — remote master = `5da8022`
 2. ~~Push SystemNix (or confirm its own sync flow commits it).~~ done — remote master = `8ffb2762`
-3. Bump SystemNix `vision-review-agent` input; confirm the lazy wrapper
-   starts importing the real module. ← still open — lock pins `de7c4c6` (TODO_LIST)
+3. ~~Bump SystemNix `vision-review-agent` input; confirm the lazy wrapper
+   starts importing the real module.~~ done — lock pins `dcd50a0`, committed
+   (verified 2026-08-18)
 4. Place `/etc/visionreviewd/config.json` on the target host (from
    `docs/visionreviewd-config.example.json` + `visionreviewd discover`).
 5. Enable `services.vision-review-agent` on the first host with
@@ -284,7 +294,7 @@ SystemNix flake still evaluates with the wrapper imported.
 
 **Release & hygiene:**
 
-44. Cut 0.6.0: finalize CHANGELOG `[Unreleased]`, tag, push, verify proxy.
+44. ~~Cut 0.6.0: finalize CHANGELOG `[Unreleased]`, tag, push, verify proxy.~~ done — v0.6.0 + v0.6.1 tagged/pushed/proxy-indexed 2026-08-17; consumer `go get` verified
 45. `nix flake check --all-systems` for aarch64 module eval.
 46. Fix or work around the broken editor buildcache mount (environment).
 47. Delete the `v0.2.1` ghost tag (pre-existing TODO; needs your approval). ← still open — **and note: `v0.3.0` also still exists on origin pointing at `d5dda4b`, despite the v0.4.0 release note claiming its deletion** (TODO_LIST)

@@ -1,9 +1,11 @@
 # Catwalk Integration — Bug Fix & Polish Session
 
-> **ANNOTATED 2026-08-16 (docs-health):** all 6 critical fixes held; v0.5.0
-> and v0.5.1 shipped the work (nix verification included). Open remainder:
-> brittle `gemini-2.5-flash` test (#1/new-1), examples, BDD, benchmarks,
-> `.golangci.yaml` comments — tracked in `TODO_LIST.md` / `ROADMAP.md`.
+> **ANNOTATED 2026-08-16 (docs-health), refreshed 2026-08-18:** all 6
+> critical fixes held; v0.5.0 and v0.5.1 shipped the work (nix verification
+> included). The brittle `gemini-2.5-flash` test (#1/new-1, d.1) has since
+> been fixed in `60f1d6a` (v0.6.0). Open remainder: examples, BDD,
+> benchmarks, `.golangci.yaml` comments — tracked in `TODO_LIST.md` /
+> `ROADMAP.md`.
 
 **Date:** 2026-08-12 17:12
 **Session scope:** Fix critical bugs and documentation gaps identified in the
@@ -100,7 +102,7 @@ from the previous report are still open.
 
 ## d) TOTALLY FUCKED UP
 
-### 1. Brittle test: hardcoded model ID `gemini-2.5-flash` ← still open — verified 2026-08-16 (`cmd/vision/main_test.go:229` still hardcodes it)
+### ~~1. Brittle test: hardcoded model ID `gemini-2.5-flash`~~ done at `60f1d6a` (v0.6.0) — the test now picks whatever model the catalog lists under the normalized provider instead of a hardcoded ID
 
 `TestFindModelInProviderWithGoogleAlias` matches on `gemini-2.5-flash` which
 is a specific model ID in the current catwalk embedded data. When catwalk
@@ -195,8 +197,8 @@ a release that hasn't happened.
 
 ### From This Session's Findings (NEW)
 
-1. **Fix brittle test** — Replace hardcoded `gemini-2.5-flash` in
-   `TestFindModelInProviderWithGoogleAlias` ← still open
+1. ~~**Fix brittle test** — Replace hardcoded `gemini-2.5-flash` in
+   `TestFindModelInProviderWithGoogleAlias`~~ done at `60f1d6a` (v0.6.0)
 2. ~~**Update AGENTS.md** — Add `buildCatalog()`, `syncTimeout`, regression test
    convention to Key Design Decisions~~ covered — AGENTS.md carries the catalog
    design decisions; internals stay out per content policy
