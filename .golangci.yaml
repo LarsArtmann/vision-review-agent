@@ -150,6 +150,16 @@ linters:
             - github.com/stretchr/testify
             - golang.org/x/sync
             - golang.org/x/image
+          # Deny wins over the $gostd allow entry above. The go-auto-upgrade
+          # daemon repeatedly migrates encoding/json -> encoding/json/v2 +
+          # jsontext, which breaks compilation (jsontext.Encoder has no
+          # SetIndent). See AGENTS.md "Dual json v1+v2 support - do NOT
+          # migrate imports".
+          deny:
+            - pkg: encoding/json/v2
+              desc: jsonv2 swaps encoding/json in place; v2 import paths are unsupported here (jsontext.Encoder has no SetIndent) - see AGENTS.md
+            - pkg: encoding/json/jsontext
+              desc: jsonv2 swaps encoding/json in place; jsontext import paths are unsupported here (Encoder has no SetIndent) - see AGENTS.md
     exhaustruct:
       exclude:
         - os/exec.Cmd
