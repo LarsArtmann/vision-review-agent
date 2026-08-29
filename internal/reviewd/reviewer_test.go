@@ -310,3 +310,47 @@ func TestReviewerModelAccessor(t *testing.T) {
 		t.Fatalf("Model() = %q, want some-model", reviewer.Model())
 	}
 }
+
+func TestReviewerUsesPersonaSystemPrompts(t *testing.T) {
+	t.Parallel()
+
+	model := newMockReviewModel("Score: 5/10")
+
+	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	if err != nil {
+		t.Fatalf("NewReviewer: %v", err)
+	}
+
+	viewKey := ViewKey{Page: "P", Theme: "dark", Viewport: "desktop"}
+
+	if _, err := reviewer.Review(t.Context(), viewKey, writeTestPNG(t, "P--dark--desktop")); err != nil {
+		t.Fatalf("Review: %v", err)
+	}
+
+	reviewText := promptText(model.lastPrompt())
+	if !strings.Contains(reviewText, "judge them like a senior product designer") {
+		t.Fatalf("review must run under the review system prompt:\n%s", reviewText)
+	}
+
+	if strings.Contains(reviewText, "comparing two versions of the same view") {
+		t.Fatalf("review must not run under the compare system prompt:\n%s", reviewText)
+	}
+
+	if _, err := reviewer.Compare(
+		t.Context(),
+		viewKey,
+		writeTestPNG(t, "cmp-before"),
+		writeTestPNG(t, "cmp-after"),
+	); err != nil {
+		t.Fatalf("Compare: %v", err)
+	}
+
+	compareText := promptText(model.lastPrompt())
+	if !strings.Contains(compareText, "comparing two versions of the same view") {
+		t.Fatalf("compare must run under the compare system prompt:\n%s", compareText)
+	}
+
+	if strings.Contains(compareText, "judge them like a senior product designer") {
+		t.Fatalf("compare must not run under the review system prompt:\n%s", compareText)
+	}
+}

@@ -61,7 +61,7 @@ internal/                Private implementation code
     compare.go           CompareManually (one-off BEFORE→AFTER)
     replay.go            Replay: rebuild reviews dir from journal; SummarizeEvents
     daemon.go            NewDaemon + Run loop (ticker, clean shutdown)
-    reviewer.go          Reviewer over vision.Agent (Review/Compare + score)
+    reviewer.go          Reviewer: two agents, one per persona (Review/Compare) + score
     provider.go          LanguageModel: openaicompat from config
     prompts.go           Review + compare prompt templates
     score.go             "Score: N/10" extraction
@@ -83,6 +83,8 @@ examples/                Working examples for each provider
 - **Per-view error isolation** — `Pipeline.Pass` collects per-view errors with `errors.Join` and continues; one broken view (or a failing model call) never blocks the others, and the INDEX still refreshes (showing `?`)
 - **Blob store exists because goldens are overwritten in place** — every new capture is copied to `<dataDir>/images/<sha256>.<ext>` so BEFORE images survive for A/B compares and replay
 - **Auto-compare fires only when the predecessor blob exists and the hash changed** — comparison failure logs a warning and review still proceeds
+- **Build caches may point at `/mnt/buildcache`** — some shells inherit `GOCACHE=/mnt/buildcache/go-build` and `GOMODCACHE=/mnt/buildcache/go-mod`, which fail with "no such device" outside that environment; override both (e.g. `GOCACHE=$(mktemp -d)` `GOMODCACHE=$HOME/go/pkg/mod`) and golangci-lint needs `GOLANGCI_LINT_CACHE` too
+- **Reviewer runs two agents, one per persona** — reviews and compares each get their own `vision.Agent` wired to their system prompt (`ReviewSystemPrompt` / `CompareSystemPrompt`); until 2026-08-29 a single agent silently ran compares under the review persona. `prompts_test.go` pins the prompt contract (markdown headings + order, `Score: N/10` final line) that `ExtractScore` parses, and the score regex consumes trailing bold markers so `StripScoreLines` leaves no `**` residue
 - **`Pipeline.Pass` fails fast on a cancelled context** — projects and views are skipped with explicit "skipped, pass context done" errors (wrapped `ctx.Err()`, so `errors.Is(err, context.Canceled)` matches); the INDEX refresh is skipped under a dead context instead of appending store-load noise
 - **OpenAI wire-format tags need `//nolint:tagliatelle`** — snake_case JSON tags mirror the external API and cannot be camelCased
 - **`GOEXPERIMENT=jsonv2` required in nix builds** — go-cqrs-lite imports `encoding/json/v2`, which the sandboxed Go toolchain excludes without the experiment; without it buildGoModule "succeeds" with an EMPTY output. Local dev sets it via `go env` (see `~/.config/go/env`)

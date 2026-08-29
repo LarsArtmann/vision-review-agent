@@ -8,8 +8,9 @@ import (
 
 // scoreLineRegex matches the score contract line, tolerating markdown bolding,
 // case differences, and stray whitespace: "Score: 7/10", "**Score: 7/10**",
-// "score: 7 / 10".
-var scoreLineRegex = regexp.MustCompile(`(?im)^\s*\**\s*score\s*\**\s*:\s*(\d{1,2})\s*/\s*10`)
+// "score: 7 / 10". Trailing bold markers are consumed too, so stripping the
+// line leaves no "**" residue.
+var scoreLineRegex = regexp.MustCompile(`(?im)^\s*\**\s*score\s*\**\s*:\s*(\d{1,2})\s*/\s*10\**`)
 
 // ExtractScore pulls the score out of a review markdown body. The LAST match
 // wins (the contract puts the score at the end; earlier mentions may quote the
