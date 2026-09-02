@@ -74,6 +74,7 @@ func openPipeline(ctx context.Context, config reviewed.Config) (*reviewed.Pipeli
 
 // runOnceCommand runs a single pass over all configured projects.
 func runOnceCommand(args []string, stdout, stderr io.Writer) int {
+	// art-dupl:accept command runners intentionally share the open-and-cleanup prologue; the defer must stay in this frame
 	config, pipeline, store, code, ok := openConfiguredPipeline("once", args, stderr)
 	if !ok {
 		return code
@@ -190,6 +191,7 @@ const compareArgCount = 2
 
 // runDaemonCommand runs the interval loop until SIGINT/SIGTERM.
 func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
+	// art-dupl:accept command runners intentionally share the open-and-cleanup prologue; the defer must stay in this frame
 	config, pipeline, store, code, ok := openConfiguredPipeline("run", args, stderr)
 	if !ok {
 		return code

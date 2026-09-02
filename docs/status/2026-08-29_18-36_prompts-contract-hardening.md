@@ -11,13 +11,13 @@ older work would need re-verification before being trusted.
 
 ## 0 · What this session actually did
 
-| # | Work | Outcome |
-|---|------|---------|
-| 1 | User-supplied URL `yukimura923/audit-o-tron` | Verified non-existent (404 repo AND 404 owner, GitHub search 0 hits). Refused to fabricate a comparison. |
+| # | Work                                                                                     | Outcome                                                                                                                                                                                                |
+| - | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 | User-supplied URL `yukimura923/audit-o-tron`                                             | Verified non-existent (404 repo AND 404 owner, GitHub search 0 hits). Refused to fabricate a comparison.                                                                                               |
 | 2 | `yifanfeng97/Hyper-Extract` research + comparison vs vision-review-agent & paperless-ngx | Real differentiators identified (hypergraphs, YAML template layer, incremental graph evolution); comparison table delivered; steal-ideas noted (MCP server, Obsidian export, template-driven prompts). |
-| 3 | `prompts.go` explained on request | Mapped all 6 pieces and their consumers. |
-| 4 | paperless-ngx AI updates research | v3.0.0 (2026-07-22) shipped built-in Paperless AI (suggestions, RAG chat, sqlite-vec, Ollama/OpenAI); v3.1.0 added workflow-action suggestions + selective remote OCR. No 2025 release had AI. |
-| 5 | **Main task: improve `prompts.go`** (READ→UNDERSTAND→RESEARCH→REFLECT→execute loop) | See sections 1–3. |
+| 3 | `prompts.go` explained on request                                                        | Mapped all 6 pieces and their consumers.                                                                                                                                                               |
+| 4 | paperless-ngx AI updates research                                                        | v3.0.0 (2026-07-22) shipped built-in Paperless AI (suggestions, RAG chat, sqlite-vec, Ollama/OpenAI); v3.1.0 added workflow-action suggestions + selective remote OCR. No 2025 release had AI.         |
+| 5 | **Main task: improve `prompts.go`** (READ→UNDERSTAND→RESEARCH→REFLECT→execute loop)      | See sections 1–3.                                                                                                                                                                                      |
 
 ---
 
@@ -151,58 +151,58 @@ Nothing catastrophic. Honest near-misses:
 Brainstorm list, sorted roughly by impact × effort; most of items 10+ are
 ROADMAP fuel, not commitments (HARVEST must apply routing rigor).
 
-| # | Item | Bucket |
-|---|------|--------|
-| 1 | Run `nix run .#lint` to settle config.go `nolint:recvcheck` + decide linter pin bump (`exhaustruct_v5`) | verify |
-| 2 | Complete verification matrix after session changes (`-race ./...` full, `go mod verify`, `tidy -diff`, `nix run .#test`, `nix build .#visionreviewd`, `nix flake check`) | verify |
-| 3 | CHANGELOG entry under 0.7.0-dev: compare persona fix + score-strip residue fix | docs |
-| 4 | HARVEST this report's (f) into `TODO_LIST.md` / `ROADMAP.md` | docs |
-| 5 | Commit session work (or confirm auto-daemon did, with a sane message) | housekeeping |
-| 6 | Spike: `AnalyzeStructured[ReviewResult]` for reviews (typed score/sections), keep markdown rendering as projection | refactor |
-| 7 | Model-answer deviation warning (log or INDEX hint when pinned sections are missing) | quality |
-| 8 | Wire `Config.Retry` in the daemon for retryable model failures (SDK supports it; daemon sets nothing) | robustness |
-| 9 | Record token usage per review/compare in events (fantasy `Usage` is available; events currently don't carry it) | feature |
-| 10 | Cost tracking in the daemon via `CostTracker` + surface cost in INDEX | feature |
-| 11 | Prompt eval harness: small golden screenshot set scored before/after prompt edits | quality |
-| 12 | Golden-file test pinning full prompt bytes (catch accidental wording drift beyond structure) | tests |
-| 13 | Fuzz `ExtractScore`/`StripScoreLines` (repo already has fuzz culture in a2ui) | tests |
-| 14 | Idempotence property test: `StripScoreLines` ∘ `ExtractScore` composition | tests |
-| 15 | Per-view-type prompt presets via config (YAML template layer) | ROADMAP |
-| 16 | MCP server exposing reviews/comparisons to agents (`he-mcp` pattern) | ROADMAP |
-| 17 | Obsidian vault export of the markdown projections | ROADMAP |
-| 18 | INDEX.md: last-error column / error kind when a review failed (today: bare `?`) | UX |
-| 19 | Doctor subcommand: model reachability + one dry-run review validating the contract | feature |
-| 20 | Include previous score + prior issues in compare prompt (context-aware reviews) | quality |
-| 21 | Theme/viewport-specific review guidance (dark-contrast, mobile-overflow) | quality |
-| 22 | Output-language option for reviews (paperless parity: respect-language) | ROADMAP |
-| 23 | Parallel per-view reviews with bounded semaphore — AFTER verifying `vision.Agent` concurrency safety | perf |
-| 24 | Document `ExtractScore` tolerance rules in docs (what strings parse, why) | docs |
-| 25 | Reviewer-as-interface (mirror the `PassRunner` pattern) for consumer substitution | refactor |
-| 26 | BDD specs for the prompts contract if it gains behavior (currently table tests suffice) | tests |
-| 27 | Dogfood `pkg/vision/a2ui`: render a review as an A2UI surface | ROADMAP |
-| 28 | Score-history sparkline in view files (events already hold the data) | feature |
-| 29 | Retry/backoff parity between auto-compare failure path and review path | robustness |
-| 30 | `visionreviewd once` test coverage for missing-predecessor-blob compare path | tests |
-| 31 | Check `DOMAIN_LANGUAGE.md` covers "persona", "score contract", "projection" terms | docs |
-| 32 | Escape/`sanitizeCell`-review: model markdown is injected raw into view files — document the trust model | docs |
-| 33 | Better hint in logs when score is missing (point at the contract line) | UX |
-| 34 | CI job: lint-version parity check between local dev and flake pin | ci |
-| 35 | Examples: end-to-end visionreviewd example project in `examples/` | docs |
-| 36 | Silence/justify the stale `wsl_v5` LSP diagnostic noise (tooling hygiene) | housekeeping |
-| 37 | Decide commit policy for agent sessions: manual vs trust-the-auto-daemon | policy |
-| 38 | `newAgent` label param: consider typed persona enum if a third persona ever appears | nit |
-| 39 | Config validation: friendly error when `PAPERLESS`-style AI env vars are half-set (openaicompat parity check) | UX |
-| 40 | INDEX refresh under dead context: covered — add regression note in AGENTS.md test section? verify first | verify |
-| 41 | Audit whether `Reviewer` should carry per-call timeout override (config.Timeout is global) | design |
-| 42 | Add `visionreviewd replay` fuzz/property test for journal↔markdown determinism beyond existing BDD | tests |
-| 43 | Compare file header: add score bullet + strip there too (today only view files strip; compare keeps the line by design — document why in DOMAIN_LANGUAGE if kept) | docs |
-| 44 | Prompt i18n of the fixed section headings (English-only contract today) | ROADMAP |
-| 45 |events payload: include model persona (review vs compare) explicitly | feature |
-| 46 | Housekeeping: `go mod verify` + `tidy -diff` as a pre-commit hook candidate | ci |
-| 47 | Investigate whether `GOEXPERIMENT=none` SDK job should also cover `internal/reviewd` fakeserver tests (currently daemon-excluded by design — confirm still correct) | verify |
-| 48 | Screenshot dedup: skip review when SHA unchanged AND score exists (config-gated) | feature |
-| 49 | README: one-line daemon quickstart pointing at the NixOS module | docs |
-| 50 | Schedule a docs-health VERIFY pass over AGENTS.md claims older than this session | docs |
+| #  | Item                                                                                                                                                                     | Bucket       |
+| -- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| 1  | Run `nix run .#lint` to settle config.go `nolint:recvcheck` + decide linter pin bump (`exhaustruct_v5`)                                                                  | verify       |
+| 2  | Complete verification matrix after session changes (`-race ./...` full, `go mod verify`, `tidy -diff`, `nix run .#test`, `nix build .#visionreviewd`, `nix flake check`) | verify       |
+| 3  | CHANGELOG entry under 0.7.0-dev: compare persona fix + score-strip residue fix                                                                                           | docs         |
+| 4  | HARVEST this report's (f) into `TODO_LIST.md` / `ROADMAP.md`                                                                                                             | docs         |
+| 5  | Commit session work (or confirm auto-daemon did, with a sane message)                                                                                                    | housekeeping |
+| 6  | Spike: `AnalyzeStructured[ReviewResult]` for reviews (typed score/sections), keep markdown rendering as projection                                                       | refactor     |
+| 7  | Model-answer deviation warning (log or INDEX hint when pinned sections are missing)                                                                                      | quality      |
+| 8  | Wire `Config.Retry` in the daemon for retryable model failures (SDK supports it; daemon sets nothing)                                                                    | robustness   |
+| 9  | Record token usage per review/compare in events (fantasy `Usage` is available; events currently don't carry it)                                                          | feature      |
+| 10 | Cost tracking in the daemon via `CostTracker` + surface cost in INDEX                                                                                                    | feature      |
+| 11 | Prompt eval harness: small golden screenshot set scored before/after prompt edits                                                                                        | quality      |
+| 12 | Golden-file test pinning full prompt bytes (catch accidental wording drift beyond structure)                                                                             | tests        |
+| 13 | Fuzz `ExtractScore`/`StripScoreLines` (repo already has fuzz culture in a2ui)                                                                                            | tests        |
+| 14 | Idempotence property test: `StripScoreLines` ∘ `ExtractScore` composition                                                                                                | tests        |
+| 15 | Per-view-type prompt presets via config (YAML template layer)                                                                                                            | ROADMAP      |
+| 16 | MCP server exposing reviews/comparisons to agents (`he-mcp` pattern)                                                                                                     | ROADMAP      |
+| 17 | Obsidian vault export of the markdown projections                                                                                                                        | ROADMAP      |
+| 18 | INDEX.md: last-error column / error kind when a review failed (today: bare `?`)                                                                                          | UX           |
+| 19 | Doctor subcommand: model reachability + one dry-run review validating the contract                                                                                       | feature      |
+| 20 | Include previous score + prior issues in compare prompt (context-aware reviews)                                                                                          | quality      |
+| 21 | Theme/viewport-specific review guidance (dark-contrast, mobile-overflow)                                                                                                 | quality      |
+| 22 | Output-language option for reviews (paperless parity: respect-language)                                                                                                  | ROADMAP      |
+| 23 | Parallel per-view reviews with bounded semaphore — AFTER verifying `vision.Agent` concurrency safety                                                                     | perf         |
+| 24 | Document `ExtractScore` tolerance rules in docs (what strings parse, why)                                                                                                | docs         |
+| 25 | Reviewer-as-interface (mirror the `PassRunner` pattern) for consumer substitution                                                                                        | refactor     |
+| 26 | BDD specs for the prompts contract if it gains behavior (currently table tests suffice)                                                                                  | tests        |
+| 27 | Dogfood `pkg/vision/a2ui`: render a review as an A2UI surface                                                                                                            | ROADMAP      |
+| 28 | Score-history sparkline in view files (events already hold the data)                                                                                                     | feature      |
+| 29 | Retry/backoff parity between auto-compare failure path and review path                                                                                                   | robustness   |
+| 30 | `visionreviewd once` test coverage for missing-predecessor-blob compare path                                                                                             | tests        |
+| 31 | Check `DOMAIN_LANGUAGE.md` covers "persona", "score contract", "projection" terms                                                                                        | docs         |
+| 32 | Escape/`sanitizeCell`-review: model markdown is injected raw into view files — document the trust model                                                                  | docs         |
+| 33 | Better hint in logs when score is missing (point at the contract line)                                                                                                   | UX           |
+| 34 | CI job: lint-version parity check between local dev and flake pin                                                                                                        | ci           |
+| 35 | Examples: end-to-end visionreviewd example project in `examples/`                                                                                                        | docs         |
+| 36 | Silence/justify the stale `wsl_v5` LSP diagnostic noise (tooling hygiene)                                                                                                | housekeeping |
+| 37 | Decide commit policy for agent sessions: manual vs trust-the-auto-daemon                                                                                                 | policy       |
+| 38 | `newAgent` label param: consider typed persona enum if a third persona ever appears                                                                                      | nit          |
+| 39 | Config validation: friendly error when `PAPERLESS`-style AI env vars are half-set (openaicompat parity check)                                                            | UX           |
+| 40 | INDEX refresh under dead context: covered — add regression note in AGENTS.md test section? verify first                                                                  | verify       |
+| 41 | Audit whether `Reviewer` should carry per-call timeout override (config.Timeout is global)                                                                               | design       |
+| 42 | Add `visionreviewd replay` fuzz/property test for journal↔markdown determinism beyond existing BDD                                                                       | tests        |
+| 43 | Compare file header: add score bullet + strip there too (today only view files strip; compare keeps the line by design — document why in DOMAIN_LANGUAGE if kept)        | docs         |
+| 44 | Prompt i18n of the fixed section headings (English-only contract today)                                                                                                  | ROADMAP      |
+| 45 | events payload: include model persona (review vs compare) explicitly                                                                                                     | feature      |
+| 46 | Housekeeping: `go mod verify` + `tidy -diff` as a pre-commit hook candidate                                                                                              | ci           |
+| 47 | Investigate whether `GOEXPERIMENT=none` SDK job should also cover `internal/reviewd` fakeserver tests (currently daemon-excluded by design — confirm still correct)      | verify       |
+| 48 | Screenshot dedup: skip review when SHA unchanged AND score exists (config-gated)                                                                                         | feature      |
+| 49 | README: one-line daemon quickstart pointing at the NixOS module                                                                                                          | docs         |
+| 50 | Schedule a docs-health VERIFY pass over AGENTS.md claims older than this session                                                                                         | docs         |
 
 ## g) Questions I can NOT figure out myself
 
@@ -224,7 +224,7 @@ ROADMAP fuel, not commitments (HARVEST must apply routing rigor).
 
 ---
 
-*Report generated 2026-08-29 18:36 CEST. Format note: user explicitly
+_Report generated 2026-08-29 18:36 CEST. Format note: user explicitly
 requested `.md` for this report, overriding the status-report skill's HTML
 default. Nothing committed by the agent (no explicit commit instruction);
-auto-commit daemon may have picked up changes.*
+auto-commit daemon may have picked up changes._
