@@ -520,15 +520,64 @@ type doctorCheck struct {
 }
 
 // doctorChecks runs every probe: writability of both directories, glob match
-// counts per project, and the model endpoint's model list.
+// counts per project, journal readability, and the model endpoint's model
+// list.
 func doctorChecks(ctx context.Context, config reviewed.Config) []doctorCheck {
 	checks := make([]doctorCheck, 0, len(config.Projects))
 	checks = append(checks, checkWritableDir("dataDir", config.DataDir))
 	checks = append(checks, checkWritableDir("reviewsDir", config.ReviewsDir))
 	checks = append(checks, checkProjectGlobs(config)...)
+	checks = append(checks, checkJournal(ctx, config))
 	checks = append(checks, checkModelEndpoint(ctx, config))
 
 	return checks
+}
+
+// doctorJournalLockWait bounds how long the journal probe waits for the
+// lock before assuming a running daemon holds it.
+const doctorJournalLockWait = 2 * time.Second
+
+// checkJournal reads the whole event journal and folds every stream, so a
+// format drift or corrupt row fails doctor with the offending event named.
+// A journal held by a running daemon is skipped, not failed; a missing one
+// is a fresh install.
+func checkJournal(ctx context.Context, config reviewed.Config) doctorCheck {
+	journal := reviewed.JournalPath(config.DataDir)
+
+	if _, err := os.Stat(journal); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return doctorCheck{name: "journal", ok: true, detail: "no journal yet (fresh dataDir)"}
+		}
+
+		return doctorCheck{name: "journal", ok: false, detail: fmt.Sprintf("stat %s: %v", journal, err)}
+	}
+
+	if reviewed.JournalLockHeld(journal, doctorJournalLockWait) {
+		return doctorCheck{name: "journal", ok: true, detail: "locked by another process (daemon running?) — deep read skipped"}
+	}
+
+	store, err := reviewed.OpenStore(journal, slog.Default())
+	if err != nil {
+		return doctorCheck{name: "journal", ok: false, detail: err.Error()}
+	}
+
+	defer func() {
+		if closeErr := store.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "visionreviewd doctor: close store: %v\n", closeErr)
+		}
+	}()
+
+	events, err := store.AllEvents(ctx)
+	if err != nil {
+		return doctorCheck{name: "journal", ok: false, detail: err.Error()}
+	}
+
+	count, err := reviewed.VerifyJournalEvents(events)
+	if err != nil {
+		return doctorCheck{name: "journal", ok: false, detail: err.Error()}
+	}
+
+	return doctorCheck{name: "journal", ok: true, detail: fmt.Sprintf("%d events read and folded", count)}
 }
 
 // checkWritableDir probes that dir exists (or can be created) and a file can

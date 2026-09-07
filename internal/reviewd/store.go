@@ -135,6 +135,49 @@ const DefaultBackupLockTimeout = 5 * time.Second
 // a read-only snapshot.
 const journalFilePermission = 0o600
 
+// JournalLockHeld reports whether the journal at path is held by a
+// read-write opener (typically a running daemon). It waits up to within for
+// the lock before giving up; a missing journal counts as unlocked.
+func JournalLockHeld(path string, within time.Duration) bool {
+	if _, err := os.Stat(path); err != nil {
+		return false
+	}
+
+	opts := &bolt.Options{ReadOnly: true, Timeout: within} //nolint:exhaustruct // zero opts intentional
+
+	db, err := bolt.Open(path, journalFilePermission, opts)
+	if err != nil {
+		return true
+	}
+
+	_ = db.Close()
+
+	return false
+}
+
+// VerifyJournalEvents folds every event of a journal dump from its initial
+// state, proving each row deserializes and each payload decodes. It returns
+// the event count; a corrupt row fails with its index, type, and stream.
+func VerifyJournalEvents(events []event.Event) (int, error) {
+	folds := make(map[id.StreamID]ViewState, len(events))
+
+	for i, evt := range events {
+		state, ok := folds[evt.StreamID()]
+		if !ok {
+			state = initialViewState()
+		}
+
+		next, err := ApplyViewState(state, evt)
+		if err != nil {
+			return i, fmt.Errorf("event %d (%s on %s): %w", i, evt.Type(), evt.StreamID(), err)
+		}
+
+		folds[evt.StreamID()] = next
+	}
+
+	return len(events), nil
+}
+
 // OpenStore opens (creating if needed) the event store at path.
 func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 	if err := ensureParentDir(path); err != nil {
