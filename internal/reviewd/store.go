@@ -119,8 +119,14 @@ func initialViewState() ViewState {
 
 // Store is the event-sourced view history on bbolt.
 type Store struct {
-	backend *cqrsbbolt.Backend
-	repo    *decider.Repository[ViewState]
+	backend     *cqrsbbolt.Backend
+	repo        *decider.Repository[ViewState]
+	journalPath string
+}
+
+// JournalFile returns the journal file this store was opened from.
+func (s *Store) JournalFile() string {
+	return s.journalPath
 }
 
 // JournalPath returns the event-store file inside dataDir.
@@ -204,7 +210,7 @@ func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 		return nil, fmt.Errorf("build view repository: %w", err)
 	}
 
-	return &Store{backend: backend, repo: repo}, nil
+	return &Store{backend: backend, repo: repo, journalPath: path}, nil
 }
 
 // OpenStore opens (creating if needed) the event store at path.

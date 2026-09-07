@@ -79,7 +79,9 @@ type replayStream struct {
 //
 // Per-event failures (a decode or write error) are collected and joined
 // after everything replayable was written, mirroring the pipeline's
-// error-tolerance. Streams that only ever saw a manual comparison also gain
+// error-tolerance; each names the journal file and event position so a
+// corrupt row can be located without re-deriving the whole fold. Streams
+// that only ever saw a manual comparison also gain
 // an INDEX row here, which a pass-time INDEX (built from the filesystem
 // scan) would not list; the journal is the source of truth.
 func Replay(ctx context.Context, store *Store, writer *Writer) (ReplayResult, error) {
@@ -94,21 +96,21 @@ func Replay(ctx context.Context, store *Store, writer *Writer) (ReplayResult, er
 
 	var errs []error
 
-	for _, evt := range events {
+	for i, evt := range events {
 		if string(evt.StreamType()) != StreamTypeView {
 			continue
 		}
 
 		stream, streamErr := replayStreamFor(streams, evt.StreamID().String())
 		if streamErr != nil {
-			errs = append(errs, streamErr)
+			errs = append(errs, fmt.Errorf("journal %s, event %d: %w", store.JournalFile(), i+1, streamErr))
 
 			continue
 		}
 
 		written, writeErr := replayEvent(writer, stream, evt)
 		if writeErr != nil {
-			errs = append(errs, writeErr)
+			errs = append(errs, fmt.Errorf("journal %s, event %d: %w", store.JournalFile(), i+1, writeErr))
 		}
 
 		result.Reviews += written.Reviews

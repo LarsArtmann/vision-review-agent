@@ -80,12 +80,15 @@ One short paragraph: is the AFTER version better overall, and why?
 func scoreRules(prompt *strings.Builder, ratesAfter bool) {
 	prompt.WriteString("Rules:\n")
 
-	contractLine := "- The FINAL line MUST be exactly \"" + scoreContractLine + "\" where N is an integer 0-10"
+	prompt.WriteString(`- The FINAL line MUST be exactly "`)
+	prompt.WriteString(scoreContractLine)
+	prompt.WriteString(`" where N is an integer 0-10`)
+
 	if ratesAfter {
-		contractLine += "\n  rating the AFTER (second) image."
+		prompt.WriteString("\n  rating the AFTER (second) image.")
 	}
 
-	prompt.WriteString(contractLine + ".\n")
+	prompt.WriteString(".\n")
 	prompt.WriteString("- Be concrete and reference what is actually visible. Do not invent elements.\n")
 	prompt.WriteString("- 10 means flawless and ready to ship, 0 means unusable. Use the full range.\n")
 }
