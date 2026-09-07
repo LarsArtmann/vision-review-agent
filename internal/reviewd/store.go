@@ -131,6 +131,10 @@ func JournalPath(dataDir string) string {
 // journal lock before reporting that the daemon is still running.
 const DefaultBackupLockTimeout = 5 * time.Second
 
+// journalFilePermission is the file mode used when opening the journal for
+// a read-only snapshot.
+const journalFilePermission = 0o600
+
 // OpenStore opens (creating if needed) the event store at path.
 func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 	if err := ensureParentDir(path); err != nil {
@@ -198,14 +202,16 @@ func (s *Store) Backup(_ context.Context, w io.Writer) error {
 // the daemon holds it while running — so back up with the daemon stopped.
 // The lock timeout bounds how long a held journal blocks the snapshot.
 func BackupJournalFile(path string, w io.Writer, lockTimeout time.Duration) error {
-	db, err := bolt.Open(path, 0o600, &bolt.Options{ReadOnly: true, Timeout: lockTimeout}) //nolint:exhaustruct
+	opts := &bolt.Options{ReadOnly: true, Timeout: lockTimeout} //nolint:exhaustruct // zero opts intentional
+
+	snapshotDB, err := bolt.Open(path, journalFilePermission, opts)
 	if err != nil {
 		return fmt.Errorf("open event store %s read-only: %w", path, err)
 	}
 
-	defer func() { _ = db.Close() }()
+	defer func() { _ = snapshotDB.Close() }()
 
-	err = db.View(func(tx *bolt.Tx) error {
+	err = snapshotDB.View(func(tx *bolt.Tx) error {
 		if _, err := tx.WriteTo(w); err != nil {
 			return fmt.Errorf("copy database pages: %w", err)
 		}
