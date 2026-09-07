@@ -80,8 +80,9 @@ func requireStoreStateEqual(t *testing.T, want, got *Store, project string, view
 
 	for i := range wantEvents {
 		if wantEvents[i].Type() != gotEvents[i].Type() || wantEvents[i].Version() != gotEvents[i].Version() {
-			t.Fatalf("event %d differs: %s v%d vs %s v%d",
-				i, gotEvents[i].Type(), gotEvents[i].Version().Int(), wantEvents[i].Type(), wantEvents[i].Version().Int())
+			t.Fatalf("event %d differs: got %s v%d, want %s v%d",
+				i, gotEvents[i].Type(), gotEvents[i].Version().Int(),
+				wantEvents[i].Type(), wantEvents[i].Version().Int())
 		}
 
 		if !bytes.Equal(event.PayloadReadOnly(wantEvents[i]), event.PayloadReadOnly(gotEvents[i])) {
@@ -195,6 +196,7 @@ func TestStoreBackupWhileSourceOpen(t *testing.T) {
 	seedBackupStore(t, source)
 
 	var snapshot bytes.Buffer
+
 	err = BackupJournalFile(journal, &snapshot, 100*time.Millisecond)
 	if err == nil {
 		t.Fatal("backup against a held journal should fail, not hang")

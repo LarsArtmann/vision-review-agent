@@ -294,7 +294,8 @@ func runBackupCommand(args []string, stdout, stderr io.Writer) int {
 	flagSet := newFlagSet("backup", stderr)
 
 	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
-	wait := flagSet.Duration("wait", reviewed.DefaultBackupLockTimeout, "how long to wait for the journal lock before giving up")
+	wait := flagSet.Duration("wait", reviewed.DefaultBackupLockTimeout,
+		"how long to wait for the journal lock before giving up")
 
 	if err := flagSet.Parse(args); err != nil {
 		return exitUsage
@@ -324,7 +325,7 @@ func runBackupCommand(args []string, stdout, stderr io.Writer) int {
 
 	defer file.Close()
 
-	counter := &countingWriter{w: file}
+	counter := &countingWriter{w: file, n: 0}
 
 	if err := reviewed.BackupJournalFile(reviewed.JournalPath(config.DataDir), counter, *wait); err != nil {
 		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
@@ -351,10 +352,14 @@ type countingWriter struct {
 }
 
 func (c *countingWriter) Write(p []byte) (int, error) {
-	n, err := c.w.Write(p)
-	c.n += int64(n)
+	written, err := c.w.Write(p)
+	c.n += int64(written)
 
-	return n, err
+	if err != nil {
+		return written, fmt.Errorf("write backup bytes: %w", err)
+	}
+
+	return written, nil
 }
 
 // filterEventSummaries keeps only the summaries matching every non-empty

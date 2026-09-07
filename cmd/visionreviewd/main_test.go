@@ -546,7 +546,9 @@ func TestRunBackupRestoresAndReplaysEqually(t *testing.T) {
 	restoredDataDir := t.TempDir()
 	reviewsRestored := t.TempDir()
 
-	if err := os.WriteFile(filepath.Join(restoredDataDir, "events.db"), snapshot, 0o600); err != nil {
+	restoredJournal := filepath.Join(restoredDataDir, "events.db")
+
+	if err := os.WriteFile(restoredJournal, snapshot, 0o600); err != nil { //nolint:gosec
 		t.Fatalf("restore backup into data dir: %v", err)
 	}
 
@@ -573,7 +575,8 @@ func TestRunBackupRestoresAndReplaysEqually(t *testing.T) {
 		}
 
 		if !bytes.Equal(original, restoredCopy) {
-			t.Fatalf("%s differs after backup/restore roundtrip:\noriginal:\n%s\nrestored:\n%s", name, original, restoredCopy)
+			t.Fatalf("%s differs after backup/restore roundtrip:\noriginal:\n%s\nrestored:\n%s",
+				name, original, restoredCopy)
 		}
 	}
 }
