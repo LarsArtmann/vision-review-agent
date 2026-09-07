@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	bolt "go.etcd.io/bbolt"
+
 	reviewed "github.com/larsartmann/vision-review-agent/internal/reviewd"
 )
 
@@ -279,6 +281,92 @@ func TestRunDoctorFailsOnUnreachableEndpointAndEmptyGlobs(t *testing.T) {
 
 	if !strings.Contains(out, "FAIL model endpoint") {
 		t.Fatalf("stdout should report endpoint failure:\n%s", out)
+	}
+}
+
+// TestRunDoctorJournalHealthySeeded proves the journal probe actually reads
+// and folds a seeded journal instead of only stat-ing the file.
+func TestRunDoctorJournalHealthySeeded(t *testing.T) {
+	t.Parallel()
+
+	dataDir := t.TempDir()
+
+	seedJournal(t, dataDir)
+
+	configPath := writeEventConfig(t, dataDir, t.TempDir())
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-config", configPath}, stdout, stderr)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d (stderr: %s)\n%s", code, exitOK, stderr, stdout)
+	}
+
+	if out := stdout.String(); !strings.Contains(out, "ok   journal: 2 events read and folded") {
+		t.Fatalf("stdout missing healthy journal check:\n%s", out)
+	}
+}
+
+// TestRunDoctorFailsOnCorruptJournal proves a garbage journal file fails
+// doctor with a clear message instead of passing silently.
+func TestRunDoctorFailsOnCorruptJournal(t *testing.T) {
+	t.Parallel()
+
+	dataDir := t.TempDir()
+
+	journal := filepath.Join(dataDir, "events.db")
+
+	if err := os.WriteFile(journal, []byte("this is not a bbolt database"), 0o600); err != nil { //nolint:gosec // per-test temp dir, no user input
+		t.Fatalf("write journal: %v", err)
+	}
+
+	configPath := writeEventConfig(t, dataDir, t.TempDir())
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-config", configPath}, stdout, stderr)
+	if code != exitFailed {
+		t.Fatalf("exit = %d, want %d\n%s", code, exitFailed, stdout)
+	}
+
+	if out := stdout.String(); !strings.Contains(out, "FAIL journal") {
+		t.Fatalf("stdout should report journal failure:\n%s", out)
+	}
+}
+
+// TestRunDoctorLockedJournalSkipsDeepRead proves a journal held by another
+// process (a running daemon) does not fail doctor; the deep read is skipped.
+func TestRunDoctorLockedJournalSkipsDeepRead(t *testing.T) {
+	t.Parallel()
+
+	dataDir := t.TempDir()
+
+	seedJournal(t, dataDir)
+
+	journal := filepath.Join(dataDir, "events.db")
+
+	held, err := bolt.Open(journal, 0o600, &bolt.Options{Timeout: time.Second}) //nolint:exhaustruct // zero opts intentional
+	if err != nil {
+		t.Fatalf("hold journal open: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if closeErr := held.Close(); closeErr != nil {
+			t.Fatalf("close held journal: %v", closeErr)
+		}
+	})
+
+	configPath := writeEventConfig(t, dataDir, t.TempDir())
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-config", configPath}, stdout, stderr)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d (stderr: %s)\n%s", code, exitOK, stderr, stdout)
+	}
+
+	if out := stdout.String(); !strings.Contains(out, "ok   journal: locked by another process") {
+		t.Fatalf("stdout should skip deep read on held journal:\n%s", out)
 	}
 }
 
