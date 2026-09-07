@@ -230,8 +230,9 @@ func TestRunDoctorAllChecksPass(t *testing.T) {
 		"ok   dataDir",
 		"ok   reviewsDir",
 		"ok   globs myapp: 1 screenshots match",
+		"ok   journal: no journal yet",
 		"ok   model endpoint: stub listed",
-		"4 checks, 0 failed",
+		"5 checks, 0 failed",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, out)
