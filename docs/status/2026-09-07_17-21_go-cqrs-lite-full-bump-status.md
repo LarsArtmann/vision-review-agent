@@ -93,9 +93,15 @@ Existing journals load unchanged.
    re-run cache-free (`-count=1`, `-race`): 9 pkgs ok, both json regimes green,
    `go mod verify` + `tidy -diff` clean, lint 0 issues, `nix build .` and
    `nix build .#visionreviewd` + `visionreviewd version` smoke at `8590dda`.
-2. **Journal compatibility — inspection, not automation.** The "old journals
+2. ~~**Journal compatibility — inspection, not automation.** The "old journals
    load unchanged" claim rests on manual source diffs. No golden-fixture test
-   pins the old wire format against future upstream changes.
+   pins the old wire format against future upstream changes.~~
+   **DONE 2026-09-07:** `internal/reviewd/golden_journal_test.go` + frozen
+   fixture `testdata/golden-journal.bbolt` (provenance in
+   `golden-journal.PROVENANCE.md`) pin fold, payload decode, raw CBOR
+   envelope key set/`schema_version`/`encoding`, payload JSON tags, and a
+   decode-path fuzz target (~1M execs clean). Fixture also proved a detail
+   inspection missed: every event row stamps `schema_version=1`.
 3. **Lint baseline — inferred, not measured.** Baseline covered build+test only.
    Post-bump I found 3 lint issues and classified 2 as bump-caused (provable:
    they reference the new deprecations) and 1 as pre-existing (solid inference:

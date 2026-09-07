@@ -482,7 +482,8 @@ func checkEnvelopeRow(t *testing.T, rowNumber int, value []byte) error {
 		t.Fatalf("row %d: envelope keys = %v, want %v", rowNumber, keys, goldenEnvelopeKeys)
 	}
 
-	if typ, _ := row["type"].(string); typ != EventViewCaptured && typ != EventViewReviewed && typ != EventViewCompared {
+	typ, _ := row["type"].(string)
+	if typ != EventViewCaptured && typ != EventViewReviewed && typ != EventViewCompared {
 		t.Fatalf("row %d: unexpected event type %q", rowNumber, typ)
 	}
 
@@ -550,7 +551,8 @@ func TestPayloadStructJSONTagsPinned(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, wantTags) {
-			t.Fatalf("%s json tags = %v, want %v (payload tags are the journal compatibility contract)", structName, got, wantTags)
+			t.Fatalf("%s json tags = %v, want %v (payload tags are the journal compat contract)",
+				structName, got, wantTags)
 		}
 	}
 }
