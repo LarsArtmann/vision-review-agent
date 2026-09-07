@@ -7,4 +7,4 @@
 #
 # Kept in its own file so dependency bumps touch exactly one line and the
 # diff of a bump is unambiguous in review.
-"sha256-kNLZZUTvkz8skF94i6UOgN9NK5ujfChHJCgfWlCqr6Y="
+"sha256-Ve9+fyWCKNACatT1by0LZh3NvDGsqhFtUPYfiB9HTKg="
