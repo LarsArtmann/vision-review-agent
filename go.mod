@@ -5,6 +5,7 @@ go 1.26.7
 require (
 	charm.land/catwalk v0.51.22
 	charm.land/fantasy v0.41.1
+	github.com/larsartmann/go-codec v0.2.0
 	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.5.0
 	github.com/larsartmann/go-cqrs-lite/event/v4 v4.9.0
 	github.com/larsartmann/go-cqrs-lite/id/v4 v4.5.0
@@ -13,6 +14,7 @@ require (
 	github.com/onsi/gomega v1.42.1
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/stretchr/testify v1.11.1
+	go.etcd.io/bbolt v1.5.0
 	golang.org/x/image v0.45.0
 	golang.org/x/sync v0.22.0
 )
@@ -65,7 +67,6 @@ require (
 	github.com/kaptinlin/jsonpointer v0.4.28 // indirect
 	github.com/kaptinlin/jsonschema v0.9.8 // indirect
 	github.com/larsartmann/go-branded-id v0.5.1 // indirect
-	github.com/larsartmann/go-codec v0.2.0 // indirect
 	github.com/larsartmann/go-cqrs-lite/command/v4 v4.8.1 // indirect
 	github.com/larsartmann/go-cqrs-lite/dispatcher/v4 v4.3.1 // indirect
 	github.com/larsartmann/go-cqrs-lite/kv/v4 v4.2.1 // indirect
@@ -88,7 +89,6 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.etcd.io/bbolt v1.5.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.70.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
