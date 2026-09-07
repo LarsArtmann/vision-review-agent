@@ -5,10 +5,10 @@ go 1.26.7
 require (
 	charm.land/catwalk v0.51.22
 	charm.land/fantasy v0.41.1
-	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.3.0
-	github.com/larsartmann/go-cqrs-lite/event/v4 v4.7.0
+	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.5.0
+	github.com/larsartmann/go-cqrs-lite/event/v4 v4.9.0
 	github.com/larsartmann/go-cqrs-lite/id/v4 v4.5.0
-	github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4 v4.0.0
+	github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4 v4.1.0
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
@@ -65,18 +65,18 @@ require (
 	github.com/kaptinlin/jsonpointer v0.4.28 // indirect
 	github.com/kaptinlin/jsonschema v0.9.8 // indirect
 	github.com/larsartmann/go-branded-id v0.5.1 // indirect
-	github.com/larsartmann/go-codec v0.1.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/codec/v4 v4.4.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/command/v4 v4.6.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/dispatcher/v4 v4.3.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/flightrecorder/v4 v4.0.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/kv/v4 v4.2.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/metadata/v4 v4.4.0 // indirect
+	github.com/larsartmann/go-codec v0.2.0 // indirect
+	github.com/larsartmann/go-cqrs-lite/command/v4 v4.8.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/dispatcher/v4 v4.3.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/kv/v4 v4.2.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/metadata/v4 v4.6.0 // indirect
 	github.com/larsartmann/go-cqrs-lite/otel/v4 v4.3.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/query/v4 v4.5.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/record/v4 v4.2.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/snapshot/v4 v4.3.0 // indirect
+	github.com/larsartmann/go-cqrs-lite/query/v4 v4.7.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/record/v4 v4.4.0 // indirect
+	github.com/larsartmann/go-cqrs-lite/snapshot/v4 v4.4.0 // indirect
+	github.com/larsartmann/go-cqrs-lite/storage/backuptest/v4 v4.1.0 // indirect
 	github.com/larsartmann/go-error-family v0.10.0 // indirect
+	github.com/larsartmann/go-flightrecorder v0.2.0 // indirect
 	github.com/maypok86/otter/v2 v2.3.0 // indirect
 	github.com/oklog/ulid/v2 v2.1.2 // indirect
 	github.com/openai/openai-go/v3 v3.50.0 // indirect
