@@ -60,8 +60,30 @@ keeps evaluating cleanly with the service simply absent.
    journalctl -u visionreviewd -f
    ```
 
-   The daemon's own health command doubles as a smoke test:
+   The daemon's own health command doubles as a smoke test (5 checks:
+   dataDir, reviewsDir, project globs, journal read-and-fold, model
+   endpoint) and exits nonzero when anything fails:
    `visionreviewd doctor -config /etc/visionreviewd/config.json`.
+
+## Backup the journal
+
+The bbolt journal (`<dataDir>/events.db`) is the source of truth; the
+markdown reviews are a projection `visionreviewd replay` can rebuild.
+Back up the journal, not the markdown:
+
+```bash
+sudo systemctl stop visionreviewd            # one writer handle: stop first
+sudo visionreviewd backup \
+  -config /etc/visionreviewd/config.json \
+  /var/backups/visionreviewd/events-$(date +%F).db
+sudo systemctl start visionreviewd
+```
+
+`backup` takes a consistent snapshot via one bbolt read transaction and
+fsyncs the output. `-wait 30s` extends the lock wait if the daemon was
+not stopped. Verify a backup by restoring it into a scratch `dataDir`
+and running `visionreviewd replay -config` against it — the projection
+must rebuild byte-identically (INDEX timestamps included).
 
 ## Reviews for humans and agents
 
