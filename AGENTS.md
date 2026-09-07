@@ -91,6 +91,12 @@ examples/                Working examples for each provider
 - **`GOEXPERIMENT=jsonv2` required in nix builds** — go-cqrs-lite imports `encoding/json/v2`, which the sandboxed Go toolchain excludes without the experiment; without it buildGoModule "succeeds" with an EMPTY output. Local dev sets it via `go env` (see `~/.config/go/env`)
 - **SystemNix wrapper is lazy** — `modules/nixos/services/visionreviewd.nix` guards the upstream import with `or null` + `mkIf`, so SystemNix evaluates at any input revision; activation steps live in `docs/visionreviewd-systemnix.md`
 - **Daemon surface has flake-check coverage** — `checks.visionreviewd` (build), `checks.visionreviewd-version-smoke` (runs the binary — catches the silent-empty-build class), and `checks.nixos-module-enabled`/`-disabled` (module eval both ways). Gotchas learned: `nixosSystem` lives on `inputs.nixpkgs.lib`, NOT `pkgs.lib` (removed there in newer nixpkgs); booleans in derivation environments serialize as `"1"`/`""`, never `"false"`; the llama unit's ExecStart is deliberately not forced (it would build llama-cpp just for an eval check)
+- **Journal safety chain is complete and pinned** — golden-journal fixture (`internal/reviewd/testdata/golden-journal.bbolt` + 5 pin tests + fuzz seed, `df4e7a2`) → `visionreviewd backup` (`d98d091`) → `doctor` full journal read-and-fold probe (`919e4fa`) → replay errors name journal path + event position (`050910f`). `JournalLockHeld` matches ONLY `bbolt.ErrTimeout` (import `go.etcd.io/bbolt/errors`; `bolt.ErrTimeout` is deprecated) — treating any open error as "held" once mislabeled a corrupt journal as locked. Upstream defects behind the raw-bbolt workarounds are filed as go-cqrs-lite #22 (ReadOnly open always fails) and #23 (missing serializableEvent golden test)
+- **First perf baseline on record (2026-09-07)** — `internal/reviewd/perf_test.go` benchmarks; numbers in `docs/status/2026-09-07_22-15_perf-baseline-m14.md`: replay ~21 ms/1k events, ~197 ms/10k; `AllEvents` 47.5 ms/10k; steady 100-view pass 2.9 ms (scan+fold is effectively free — model calls dominate). Upstream snapshot/WithBatchCommit declined with revisit triggers (`docs/DEPS.md` ADR)
+- **v5 pair-form guard test** — `internal/reviewd/v5_guard_test.go` walks package `.go` files for deprecated `repo.(Load|Execute)(` pair-form calls (positive-control verified). Codebase already fully on `LoadRef`/`ExecuteRef`; stale staticcheck SA1019 hits at `store.go:180/226` from the LSP are FALSE — trust the CLI. Migration tracking: ROADMAP "go-cqrs-lite v5 migration"
+- **Branch protection carries 10 required checks** — actionlint, build-and-test, lint, format-check, jsonv2-compat, no-jsonv2, nix-flake-check, vendorHash consistency, govulncheck, dep-drift; admin pushes bypass (expected "Bypassed rule violations")
+- **Stale-LSP diagnostics are routine — verify via CLI** — gopls/golangci_ls frequently report issues the CLI contradicts ( phantom typecheck errors in guard tests, SA1019 on migrated call sites, nolintlint on live directives). Rule: `golangci-lint run ./<pkg>/` + `go vet ./<pkg>/` are the truth; LSP restart only when BOTH disagree
+- **Run-artifacts policy** — throwaway benchmark/measurement output lives in `/tmp`; durable evidence must be transcribed into `docs/status/` with provenance (see the M14 baseline doc) — `/tmp` files are never cited
 
 ### SDK
 
@@ -125,7 +131,7 @@ examples/                Working examples for each provider
 - **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
 - **`isContentFilterRejection` uses specific signal phrases** — not bare words like "safety" (which matched benign messages); requires the rejection mechanism ("filter", "policy", "blocked", "removed") alongside the topic
 - **`CompressImage` no-ops when output wouldn't shrink** — returns the original image if re-encoding produces equal-or-larger bytes; contract is size reduction, not format normalization
-- **`version` is a `var` (not `const`)** — set to the released semver at cut time, reset to a `-dev` default when the next cycle opens (currently `"0.7.0-dev"`; v0.6.2 released 2026-08-18); `flake.nix` injects the real rev via `-ldflags "-X main.version=..."`
+- **`version` is a `var` (not `const`)** — set to the released semver at cut time, reset to a `-dev` default when the next cycle opens (currently `"0.8.0-dev"`; v0.7.0 released 2026-09-07, tagged + `--latest` + proxy-verified); `flake.nix` injects the real rev via `-ldflags "-X main.version=..."`. Version surface: exactly two vars (`cmd/vision/main.go`, `cmd/visionreviewd/main.go`), both injected by both flake `ldflags` entries — flip BOTH when cutting a release. Go toolchain: `go.mod` and the nixpkgs lock have been on 1.26.7 since `2934585` (nixpkgs ships it; the 2026-08-18 "nixpkgs has 1.26.5" probe note is obsolete)
 - **CLI parseFlags is testable** — `parseFlags(fs *flag.FlagSet, args []string) (*config, error)` takes a FlagSet and returns errors instead of calling `os.Exit`. `main()` passes `flag.CommandLine`; tests pass a fresh `flag.ContinueOnError` set with `io.Discard` output. Version/no-args decisions surface as `cfg.showVersion` / `cfg.args` so the caller acts on them.
 - **Retry tests must NOT set MaxRetries** — Vision-layer retry tests leave `MaxRetries` at 0 (default) and rely solely on `Config.Retry`. Setting `MaxRetries: 1` re-enables fantasy's HTTP-layer retry (~5s backoff per retryable mock call) and makes call counts non-deterministic. The full race suite is ~3.6s.
 - **Dual json v1+v2 support — do NOT migrate imports** — All code imports only `encoding/json` (the v1 path). This transparently supports BOTH regimes: default Go (v1 behavior) AND `GOEXPERIMENT=jsonv2` (v2 behavior), because the jsonv2 experiment swaps the _implementation_ of `encoding/json` while preserving the v1 API surface (`Marshal`, `Unmarshal`, `NewEncoder`, `SetIndent`, `Decoder`). The auto-upgrade daemon repeatedly tried to switch imports to `encoding/json/v2` and `encoding/json/jsontext` — those paths are NOT supported here: they require a `go.mod` replace directive AND have a different low-level API (`jsontext.Encoder` has no `SetIndent`), which broke compilation. CI runs two regime jobs: `jsonv2-compat` (`GOEXPERIMENT=jsonv2` over the whole module) and `no-jsonv2` (default regime over the SDK subset). Regime split (verified 2026-08-18): the SDK (`pkg/...`, `cmd/vision`, `internal/{catalog,cli,visionutil}`, `examples`) builds AND tests green under BOTH regimes — that is the consumer guarantee. The daemon (`internal/reviewd`, `cmd/visionreviewd`) requires jsonv2: its dependency go-cqrs-lite imports `encoding/json/v2`, which does not exist without the experiment; `GOEXPERIMENT=none go build ./...` fails there by design. **Enforced by `depguard`** (`.golangci.yaml` `rules.main.deny`): `encoding/json/v2` and `encoding/json/jsontext` are denied (deny wins over `$gostd`), so a migration attempt fails lint with an explanatory message instead of silently breaking compilation.
@@ -178,6 +184,11 @@ nix run .#test              # go test -race -v -coverprofile=coverage.out ./...
 nix run .#lint              # golangci-lint run ./...
 nix build .                 # Build the package
 nix build .#visionreviewd   # Build the daemon binary
+
+# Maintenance apps
+nix run .#dep-drift         # go.mod vs latest published versions (advisory)
+nix run .#update-vendor-hash  # repair a stale vendorHash.nix from a failed nix build
+nix run .#verify-bump       # pre-PR gate: build/vet/gofmt/lint/race/tidy-diff/mod verify
 ```
 
 ### Verification matrix
@@ -197,11 +208,17 @@ changes; CI mirrors these):
 
 Latest full-green run: 2026-09-07 at `8590dda` (post go-cqrs-lite bump) — all
 steps passed, `-count=1` everywhere; evidence annotated in
-`docs/status/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`.
+`docs/status/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`. A second
+full-green 9-step run (now incl. `go mod verify` + govulncheck at step 5/6)
+landed 2026-09-07 at `cecc399` (PR #1 merge + M8/M10/M16 state).
 
 Dependency hygiene: `nix run .#dep-drift` (or `scripts/check-deps.sh`)
 compares direct go.mod requirements against the latest published versions —
-advisory output, exit 1 on drift. CI runs `govulncheck` on every push and
+advisory output, exit 1 on drift. `nix run .#update-vendor-hash`
+(`scripts/update-vendor-hash.sh`) harvests the `got:` hash from a failed
+`nix build`, rewrites `vendorHash.nix`, and verifies the rebuild — no-op when
+already correct. `nix run .#verify-bump` (`scripts/verify-bump.sh`) is the
+minimal gate for dependency-bump PRs. CI runs `govulncheck` on every push and
 `Scheduled Security` (`.github/workflows/scheduled-security.yml`, weekly)
 re-scans an unchanged tree so newly published CVEs still surface. Baseline
 2026-09-07: 0 reachable vulnerabilities; `golang.org/x/crypto` bumped to
@@ -251,7 +268,7 @@ errors pointing at a sibling module.
 - `charm.land/fantasy/providers/openrouter` — OpenRouter provider (multi-model)
 - `charm.land/fantasy/providers/openaicompat` — OpenAI-compatible endpoint provider (llama-server) used by the daemon
 - `charm.land/catwalk` — Model catalog (40+ providers, 800+ vision models, pricing, capabilities)
-- `github.com/larsartmann/go-cqrs-lite` — Event store, decider repository, bbolt backend (daemon event sourcing)
+- `github.com/larsartmann/go-cqrs-lite` — Event store, decider repository, bbolt backend (daemon event sourcing). Journal wire contract, codec notes, upstream capability ADR (Batch/snapshot/query/metadata decisions with measured evidence), and re-blessing procedure: [`docs/DEPS.md`](docs/DEPS.md)
 
 ## Type Model
 
