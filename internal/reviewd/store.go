@@ -15,6 +15,7 @@ import (
 	"github.com/larsartmann/go-cqrs-lite/id/v4"
 	cqrsbbolt "github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4"
 	bolt "go.etcd.io/bbolt"
+	bbolterrors "go.etcd.io/bbolt/errors"
 )
 
 // StreamTypeView is the single stream type visionreviewd records: one View
@@ -137,7 +138,9 @@ const journalFilePermission = 0o600
 
 // JournalLockHeld reports whether the journal at path is held by a
 // read-write opener (typically a running daemon). It waits up to within for
-// the lock before giving up; a missing journal counts as unlocked.
+// the lock before giving up; a missing journal counts as unlocked. A journal
+// that is broken (unreadable meta pages) also counts as unlocked, so callers
+// surface the real open error instead of blaming a phantom lock holder.
 func JournalLockHeld(path string, within time.Duration) bool {
 	if _, err := os.Stat(path); err != nil {
 		return false
@@ -147,7 +150,7 @@ func JournalLockHeld(path string, within time.Duration) bool {
 
 	db, err := bolt.Open(path, journalFilePermission, opts)
 	if err != nil {
-		return true
+		return errors.Is(err, bbolterrors.ErrTimeout)
 	}
 
 	_ = db.Close()

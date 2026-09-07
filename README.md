@@ -174,7 +174,9 @@ can be wiped and rebuilt byte-identically with `replay`.
 # Suggest a config from an existing screenshots tree
 ./visionreviewd discover ~/projects | tee ~/.config/visionreviewd/config.json
 
-# Check config, dirs, globs, and the model endpoint
+# Check config, dirs, globs, the event journal, and the model endpoint.
+# The journal is fully read and folded, so corrupt rows fail with the
+# offending event named; a journal held by a running daemon is skipped.
 ./visionreviewd doctor
 
 # Run one pass now

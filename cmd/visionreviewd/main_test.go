@@ -13,9 +13,8 @@ import (
 	"testing"
 	"time"
 
-	bolt "go.etcd.io/bbolt"
-
 	reviewed "github.com/larsartmann/vision-review-agent/internal/reviewd"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestRunNoArgsPrintsUsageAndExitsUsage(t *testing.T) {
@@ -293,7 +292,7 @@ func TestRunDoctorJournalHealthySeeded(t *testing.T) {
 
 	seedJournal(t, dataDir)
 
-	configPath := writeEventConfig(t, dataDir, t.TempDir())
+	configPath := doctorTestConfig(t, dataDir)
 
 	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 
@@ -316,11 +315,14 @@ func TestRunDoctorFailsOnCorruptJournal(t *testing.T) {
 
 	journal := filepath.Join(dataDir, "events.db")
 
-	if err := os.WriteFile(journal, []byte("this is not a bbolt database"), 0o600); err != nil { //nolint:gosec // per-test temp dir, no user input
+	const notADB = "this is not a bbolt database"
+
+	err := os.WriteFile(journal, []byte(notADB), 0o600)
+	if err != nil {
 		t.Fatalf("write journal: %v", err)
 	}
 
-	configPath := writeEventConfig(t, dataDir, t.TempDir())
+	configPath := doctorTestConfig(t, dataDir)
 
 	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 
@@ -329,8 +331,14 @@ func TestRunDoctorFailsOnCorruptJournal(t *testing.T) {
 		t.Fatalf("exit = %d, want %d\n%s", code, exitFailed, stdout)
 	}
 
-	if out := stdout.String(); !strings.Contains(out, "FAIL journal") {
+	out := stdout.String()
+
+	if !strings.Contains(out, "FAIL journal") {
 		t.Fatalf("stdout should report journal failure:\n%s", out)
+	}
+
+	if strings.Contains(out, "locked by another process") {
+		t.Fatalf("corrupt journal must not be reported as locked:\n%s", out)
 	}
 }
 
@@ -345,7 +353,11 @@ func TestRunDoctorLockedJournalSkipsDeepRead(t *testing.T) {
 
 	journal := filepath.Join(dataDir, "events.db")
 
-	held, err := bolt.Open(journal, 0o600, &bolt.Options{Timeout: time.Second}) //nolint:exhaustruct // zero opts intentional
+	held, err := bolt.Open(
+		journal,
+		0o600,
+		&bolt.Options{Timeout: time.Second},
+	)
 	if err != nil {
 		t.Fatalf("hold journal open: %v", err)
 	}
@@ -356,7 +368,7 @@ func TestRunDoctorLockedJournalSkipsDeepRead(t *testing.T) {
 		}
 	})
 
-	configPath := writeEventConfig(t, dataDir, t.TempDir())
+	configPath := doctorTestConfig(t, dataDir)
 
 	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 
@@ -365,9 +377,48 @@ func TestRunDoctorLockedJournalSkipsDeepRead(t *testing.T) {
 		t.Fatalf("exit = %d, want %d (stderr: %s)\n%s", code, exitOK, stderr, stdout)
 	}
 
-	if out := stdout.String(); !strings.Contains(out, "ok   journal: locked by another process") {
+	if out := stdout.String(); !strings.Contains(out, "ok   journal: locked by a running daemon") {
 		t.Fatalf("stdout should skip deep read on held journal:\n%s", out)
 	}
+}
+
+// doctorTestConfig writes a doctor config whose glob matches a screenshot
+// and whose model endpoint is a live stub, so only the check under test can
+// decide the run's outcome.
+func doctorTestConfig(t *testing.T, dataDir string) string {
+	t.Helper()
+
+	modelsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[{"id":"stub"}]}`)
+	}))
+	t.Cleanup(modelsServer.Close)
+
+	shotsDir := filepath.Join(t.TempDir(), "shots")
+
+	if err := os.MkdirAll(shotsDir, 0o750); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(shotsDir, "Home--dark--desktop.png"), []byte("png"), 0o600); err != nil {
+		t.Fatalf("write shot: %v", err)
+	}
+
+	config := fmt.Sprintf(
+		`{"model":"stub","baseUrl":%q,"dataDir":%q,"reviewsDir":%q,"projects":{"myapp":[%q]}}`,
+		modelsServer.URL+"/v1",
+		dataDir,
+		filepath.Join(t.TempDir(), "reviews"),
+		filepath.Join(shotsDir, "*.png"),
+	)
+
+	configPath := filepath.Join(t.TempDir(), "config.json")
+
+	if err := os.WriteFile(configPath, []byte(config), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	return configPath
 }
 
 func TestRunDoctorFailsWhenModelNotListed(t *testing.T) {

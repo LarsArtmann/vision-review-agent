@@ -534,6 +534,9 @@ func doctorChecks(ctx context.Context, config reviewed.Config) []doctorCheck {
 	return checks
 }
 
+// doctorJournalName labels the journal check in doctor output.
+const doctorJournalName = "journal"
+
 // doctorJournalLockWait bounds how long the journal probe waits for the
 // lock before assuming a running daemon holds it.
 const doctorJournalLockWait = 2 * time.Second
@@ -547,19 +550,19 @@ func checkJournal(ctx context.Context, config reviewed.Config) doctorCheck {
 
 	if _, err := os.Stat(journal); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return doctorCheck{name: "journal", ok: true, detail: "no journal yet (fresh dataDir)"}
+			return doctorCheck{name: doctorJournalName, ok: true, detail: "no journal yet (fresh dataDir)"}
 		}
 
-		return doctorCheck{name: "journal", ok: false, detail: fmt.Sprintf("stat %s: %v", journal, err)}
+		return doctorCheck{name: doctorJournalName, ok: false, detail: fmt.Sprintf("stat %s: %v", journal, err)}
 	}
 
 	if reviewed.JournalLockHeld(journal, doctorJournalLockWait) {
-		return doctorCheck{name: "journal", ok: true, detail: "locked by another process (daemon running?) — deep read skipped"}
+		return doctorCheck{name: doctorJournalName, ok: true, detail: "locked by a running daemon — deep read skipped"}
 	}
 
 	store, err := reviewed.OpenStore(journal, slog.Default())
 	if err != nil {
-		return doctorCheck{name: "journal", ok: false, detail: err.Error()}
+		return doctorCheck{name: doctorJournalName, ok: false, detail: err.Error()}
 	}
 
 	defer func() {
@@ -570,15 +573,15 @@ func checkJournal(ctx context.Context, config reviewed.Config) doctorCheck {
 
 	events, err := store.AllEvents(ctx)
 	if err != nil {
-		return doctorCheck{name: "journal", ok: false, detail: err.Error()}
+		return doctorCheck{name: doctorJournalName, ok: false, detail: err.Error()}
 	}
 
 	count, err := reviewed.VerifyJournalEvents(events)
 	if err != nil {
-		return doctorCheck{name: "journal", ok: false, detail: err.Error()}
+		return doctorCheck{name: doctorJournalName, ok: false, detail: err.Error()}
 	}
 
-	return doctorCheck{name: "journal", ok: true, detail: fmt.Sprintf("%d events read and folded", count)}
+	return doctorCheck{name: doctorJournalName, ok: true, detail: fmt.Sprintf("%d events read and folded", count)}
 }
 
 // checkWritableDir probes that dir exists (or can be created) and a file can
