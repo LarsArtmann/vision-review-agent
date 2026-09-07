@@ -42,6 +42,11 @@ jobs:
           go mod tidy
           git diff --exit-code go.mod go.sum
 
+      # Catches a tampered or stale go.sum against the checksum database;
+      # tidiness alone would not.
+      - name: Verify module checksums
+        run: go mod verify
+
       - name: Build
         run: go build ./...
 
@@ -159,6 +164,29 @@ jobs:
 
       - name: nix flake check
         run: nix --extra-experimental-features 'nix-command flakes' flake check
+
+  vendor-hash:
+    # go.sum changes shift the nix vendorHash; a stale vendorHash.nix
+    # otherwise only surfaces inside nix-flake-check as an opaque hash
+    # mismatch. Build the daemon derivation directly so the failure is
+    # early and the fix (nix run .#update-vendor-hash) is in the message.
+    name: vendorHash consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Build visionreviewd (vendorHash.nix must match go.sum)
+        run: |
+          if ! nix --extra-experimental-features 'nix-command flakes' build .#visionreviewd --no-link; then
+            echo "::error::vendorHash.nix is stale for the current go.mod/go.sum."
+            echo "::error::Run 'nix run .#update-vendor-hash' locally and commit the result."
+            exit 1
+          fi
 
   actionlint:
     runs-on: ubuntu-latest
