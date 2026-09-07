@@ -319,10 +319,12 @@ go build -o vision ./cmd/vision
 
 See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
 list of extraction helpers and duplication decisions. Current state:
-**0 clone groups** at `art-dupl --type-aware -t 1` (verified 2026-08-17,
-before `pkg/vision/a2ui` landed; the a2ui builder scan is a tracked TODO_LIST
-item). Test files and interface-required signatures are below scan scope by
-design.
+**0 actionable clone groups** at `art-dupl --type-aware -t 1 pkg cmd internal`
+(re-verified 2026-09-07, after `pkg/vision/a2ui` landed: 41 groups detected
+in a2ui, all non-actionable/suppressed; the one actionable pair — repeated
+analysis error-exit blocks in `cmd/vision/main.go` — extracted into
+`failAnalysis`). Test files and interface-required signatures are below scan
+scope by design.
 
 ## Historical Docs
 

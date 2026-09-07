@@ -345,8 +345,7 @@ func runA2UI(
 
 	result, err := a2ui.Generate(ctx, agent, a2ui.GenerateOptions{Task: cfg.prompt}, images...)
 	if err != nil {
-		printAnalysisError(stderr, err, false)
-		os.Exit(1)
+		failAnalysis(stderr, err)
 	}
 
 	encoded, err := a2ui.MarshalJSONL(result.Messages)
@@ -372,8 +371,7 @@ func runStructured(
 
 	result, err := vision.AnalyzeStructured[uiReview](ctx, agent, cfg.prompt, images...)
 	if err != nil {
-		printAnalysisError(stderr, err, false)
-		os.Exit(1)
+		failAnalysis(stderr, err)
 	}
 
 	enc := json.NewEncoder(stdout)
@@ -398,6 +396,13 @@ type uiIssue struct {
 	Severity    string `description:"Severity: critical, major, minor, or info" json:"severity"`
 	Component   string `description:"Which component has the issue"             json:"component"`
 	Description string `description:"Detailed description of the issue"         json:"description"`
+}
+
+// failAnalysis reports a failed analysis and exits; the CLI has nothing
+// useful to continue with.
+func failAnalysis(w io.Writer, err error) {
+	printAnalysisError(w, err, false)
+	os.Exit(1)
 }
 
 // printAnalysisError prints a user-friendly error message with actionable
