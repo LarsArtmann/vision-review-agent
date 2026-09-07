@@ -169,3 +169,37 @@ jobs:
         uses: docker://rhysd/actionlint:latest
         with:
           args: -color
+
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+
+      - name: Scan for reachable vulnerabilities
+        # Symbol-level scan: fails only when OUR code reaches a vulnerable
+        # symbol. Module-level findings against unfixed advisories do not
+        # fail the build (triage them in the status report).
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  dep-drift:
+    name: dep-drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+
+      # Advisory, not gating: drift is expected between bumps. This makes
+      # staleness visible on every push instead of failing the build.
+      - name: Report dependency drift
+        run: |
+          bash scripts/check-deps.sh || echo "::warning::Dependency drift detected (advisory, see log above)"

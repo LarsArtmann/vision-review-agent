@@ -159,6 +159,16 @@
               };
               meta.description = "Run golangci-lint over the whole module";
             };
+
+            dep-drift = {
+              type = "app";
+              program = pkgs.writeShellApplication {
+                name = "check-deps";
+                runtimeInputs = [ pkgs.go_1_26 ];
+                text = builtins.readFile ./scripts/check-deps.sh;
+              };
+              meta.description = "Compare direct go.mod requirements against latest published versions";
+            };
           };
 
           devShells = {

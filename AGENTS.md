@@ -190,13 +190,24 @@ changes; CI mirrors these):
 3. `GOEXPERIMENT=jsonv2 go build ./... && ... go vet ./... && ... go test ./...`
 4. `GOEXPERIMENT=none go build ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/... ./examples/...` plus vet/test of the same set (SDK-only; the daemon needs jsonv2 — mirrors the `no-jsonv2` CI job)
 5. `go mod verify`; `go mod tidy -diff` must be empty
-6. `nix run .#test` / `nix run .#lint`
-7. `nix build .` and `nix build .#visionreviewd`
-8. `nix flake check`
+6. `govulncheck ./...` (symbol-level scan; module-level findings against unfixed advisories are triaged, not gates)
+7. `nix run .#test` / `nix run .#lint`
+8. `nix build .` and `nix build .#visionreviewd`
+9. `nix flake check`
 
 Latest full-green run: 2026-09-07 at `8590dda` (post go-cqrs-lite bump) — all
-8 steps passed, `-count=1` everywhere; evidence annotated in
+steps passed, `-count=1` everywhere; evidence annotated in
 `docs/status/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`.
+
+Dependency hygiene: `nix run .#dep-drift` (or `scripts/check-deps.sh`)
+compares direct go.mod requirements against the latest published versions —
+advisory output, exit 1 on drift. CI runs `govulncheck` on every push and
+`Scheduled Security` (`.github/workflows/scheduled-security.yml`, weekly)
+re-scans an unchanged tree so newly published CVEs still surface. Baseline
+2026-09-07: 0 reachable vulnerabilities; `golang.org/x/crypto` bumped to
+v0.56.0 clearing the two ssh-DoS module advisories (GO-2026-6355/6354);
+GO-2026-5932 (openpgp unmaintained) remains as an unfixed module-level
+advisory our code never calls.
 
 ### Lint version pin (root cause of the 2026-09-07 red-lint landing)
 
