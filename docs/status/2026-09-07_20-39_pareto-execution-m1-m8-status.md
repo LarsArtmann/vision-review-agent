@@ -114,7 +114,7 @@ format wins and this file is Markdown. One-off override, not a new default.
 6. **M22 — json/v2 external fix: friction is now documented twice (AGENTS
    govulncheck env note) but the go-auto-upgrade exclusion draft and
    proposal do not exist.**
-7. **M23 — Replay error context: the *spirit* landed in the doctor probe
+7. **M23 — Replay error context: the _spirit_ landed in the doctor probe
    (`VerifyJournalEvents` names event index, type, and stream), but the
    Replay paths themselves still wrap `DecodePayloadAuto` errors without
    stream/journal context.**
@@ -180,7 +180,7 @@ format wins and this file is Markdown. One-off override, not a new default.
    was never validated before implementation started.
 4. **v0.7.0 shipped before M7/M8 exist** — per plan order that is correct
    (gates were M1+M2), but it means the GitHub Release notes advertise
-   journal-format pinning while the *operational* journal tools (backup,
+   journal-format pinning while the _operational_ journal tools (backup,
    doctor probe) land only in 0.8.0. Acceptable tradeoff, worth knowing.
 5. **Session bookkeeping error:** I flipped M16 to "completed" in the todo
    list while 2 of its 4 subtasks were still open. Self-caught during this
@@ -334,4 +334,4 @@ Priority-ordered; the top of the list is urgent, the tail is ROADMAP fuel.
 
 ---
 
-*Point-in-time snapshot. Annotate, never rewrite (docs-health ANNOTATE).*
+_Point-in-time snapshot. Annotate, never rewrite (docs-health ANNOTATE)._

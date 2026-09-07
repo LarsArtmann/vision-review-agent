@@ -35,15 +35,15 @@ Existing journals load unchanged.
 
 ### Stat Cards
 
-| Metric                        | Value                                        |
-| ----------------------------- | -------------------------------------------- |
-| Sub-modules bumped            | 11 upgraded + 1 added + 2 replaced upstream  |
-| Tests (full race suite)       | 9 pkgs ok, 0 fail, 0 races (×2 runs)         |
-| reviewd event-sourcing specs  | 73 PASS, 0 FAIL/SKIP                         |
-| Lint issues after session     | 0 (started post-bump at 3)                   |
+| Metric                        | Value                                                                                                                                                                                                             |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sub-modules bumped            | 11 upgraded + 1 added + 2 replaced upstream                                                                                                                                                                       |
+| Tests (full race suite)       | 9 pkgs ok, 0 fail, 0 races (×2 runs)                                                                                                                                                                              |
+| reviewd event-sourcing specs  | 73 PASS, 0 FAIL/SKIP                                                                                                                                                                                              |
+| Lint issues after session     | 0 (started post-bump at 3)                                                                                                                                                                                        |
 | Canonical verification matrix | ~~7 of 8 steps run (`nix flake check` skipped)~~ 8/8 on 2026-09-07: `nix flake check` all checks passed, `-count=1` + `-race` sweeps green, both json regimes green, lint 0 issues, nix builds + version smoke ok |
-| Commits by auto-daemon        | 3 (`2c196fa`, `166b5c8`, `91ca0d2`)          |
-| Journal format breaks         | 0 (proven by wire-struct diff)               |
+| Commits by auto-daemon        | 3 (`2c196fa`, `166b5c8`, `91ca0d2`)                                                                                                                                                                               |
+| Journal format breaks         | 0 (proven by wire-struct diff)                                                                                                                                                                                    |
 
 ---
 
