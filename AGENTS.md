@@ -198,6 +198,21 @@ Latest full-green run: 2026-09-07 at `8590dda` (post go-cqrs-lite bump) — all
 8 steps passed, `-count=1` everywhere; evidence annotated in
 `docs/status/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`.
 
+### Lint version pin (root cause of the 2026-09-07 red-lint landing)
+
+CI and local MUST run the **same golangci-lint version** (currently
+`v2.13.2`, pinned in both the `golangci-lint-action` input and the
+config-verify `go install` of `.github/workflows/ci.yml`). Lint findings
+differ between minor versions: the daemon's `UnmarshalJSON`-pointer /
+`MarshalJSON`-value receiver pattern is flagged by `recvcheck` ≤ v2.12.2
+and correctly accepted by v2.13.2 — a commit that removed the now-stale
+`//nolint` based on the local linter went red in CI for a week of
+pushes. When upgrading the local binary, bump the CI pin **in the same
+commit**. `lint` is also a required status check on `master` branch
+protection (all 7 CI contexts are), so dependabot PRs can no longer
+merge red; direct pushes stay open by design for the auto-commit daemon
+— the version pin is the guard that keeps them green.
+
 ### GOWORK
 
 This repo has **no `go.work`** — it is a single module. `go build`/`go test`
