@@ -108,17 +108,15 @@ func TestStoreBackupRestoresIntoWorkingStore(t *testing.T) {
 		t.Fatalf("open restored store: %v", err)
 	}
 
-	t.Cleanup(func() {
-		if err := restored.Close(); err != nil {
-			t.Fatalf("close restored store: %v", err)
-		}
-	})
-
 	requireStoreStateEqual(t, source, restored, "proj", viewKey)
 
 	_, version, err := restored.LoadView(t.Context(), "proj", viewKey)
 	if err != nil {
 		t.Fatalf("load restored: %v", err)
+	}
+
+	if err := restored.Close(); err != nil {
+		t.Fatalf("close restored store: %v", err)
 	}
 
 	if version != 2 {
