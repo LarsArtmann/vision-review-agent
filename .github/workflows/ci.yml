@@ -79,15 +79,18 @@ jobs:
 
       - name: Verify golangci-lint config
         run: |
-          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
           golangci-lint config verify
 
       - name: golangci-lint
         # v7 is required for golangci-lint v2 (v6 resolved "latest" to a
         # stale v1.64.8 binary built with go1.24, unable to target go 1.26).
+        # The version MUST match the local golangci-lint (pinned, never
+        # @latest): lint findings differ between minor versions, and a
+        # mismatch is how red-lint commits slip through one side unseen.
         uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7.0.1
         with:
-          version: v2.12.2
+          version: v2.13.2
           args: --timeout 5m
 
   format-check:
