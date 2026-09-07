@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.7.0] - 2026-09-07
+
+### Added
+
+- **Journal format regression protection** — a frozen golden journal
+  (`internal/reviewd/testdata/golden-journal.bbolt`, provenance and
+  regeneration recipe alongside it) pins the on-disk event-store format:
+  dependency bumps that would change how existing visionreviewd journals
+  read now fail tests instead of corrupting user data. Covers the ViewState
+  fold, payload decode, the raw CBOR wire envelope, payload JSON tags, and
+  a fuzz target over the decode path.
+
+### Changed
+
+- **go-cqrs-lite bumped across all 14 consumed sub-modules** (decider
+  v4.5.0, event v4.9.0, storage/bbolt v4.1.0, command v4.8.1, ...) and the
+  daemon migrated to the `LoadRef`/`ExecuteRef` stream-ref APIs that
+  survive the upcoming v5. Journal readability across the bump is
+  machine-pinned (see Added).
+- **golangci-lint config rework, Go toolchain 1.26.7, `GOEXPERIMENT=jsonv2`
+  pinned** — builds that include the daemon (and its event store) require
+  the encoding/json/v2 experiment; the SDK subset still builds under both
+  regimes.
+
+### Fixed
+
+- **`visionreviewd compare` ran under the review persona** — comparisons
+  now run under their own persona agent with the compare system prompt;
+  the prompt contract (headings, order, final `Score: N/10` line) is
+  pinned by tests so score extraction stays reliable.
+
 ## [Unreleased]
 
 ### Added
