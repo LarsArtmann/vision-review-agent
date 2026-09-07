@@ -169,6 +169,29 @@
               };
               meta.description = "Compare direct go.mod requirements against latest published versions";
             };
+
+            update-vendor-hash = {
+              type = "app";
+              program = pkgs.writeShellApplication {
+                name = "update-vendor-hash";
+                runtimeInputs = [ pkgs.nix ];
+                text = builtins.readFile ./scripts/update-vendor-hash.sh;
+              };
+              meta.description = "Repair vendorHash.nix after a go.mod/go.sum change, then verify the rebuild";
+            };
+
+            verify-bump = {
+              type = "app";
+              program = pkgs.writeShellApplication {
+                name = "verify-bump";
+                runtimeInputs = [
+                  pkgs.go_1_26
+                  pkgs.golangci-lint
+                ];
+                text = builtins.readFile ./scripts/verify-bump.sh;
+              };
+              meta.description = "Run the local dependency-bump gate (build, vet, fmt, lint, race tests, mod hygiene)";
+            };
           };
 
           devShells = {
