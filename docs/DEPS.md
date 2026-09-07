@@ -133,11 +133,15 @@ a second state to keep consistent. The journal + fold IS the read model.
 
 ### snapshot/v4 — DECLINED (revisit trigger recorded)
 
-Snapshots shorten stream replay. At current scale replay of a full
-journal is milliseconds (see M14 baseline, `docs/status/` follow-up) and
-streams are short. Revisit if the perf baseline shows replay cost
-becoming user-visible (rough trigger: >100 ms full-journal replay or
-streams routinely exceeding ~10k events).
+Snapshots shorten stream replay. Measured baseline (2026-09-07,
+`internal/reviewd/perf_test.go`, numbers in
+`docs/status/2026-09-07_22-15_perf-baseline-m14.md`): full-journal
+replay of 10k events costs ~200 ms and stays off the hot path — replay
+runs on demand (`visionreviewd replay`, doctor), never per pass or per
+tick. A snapshot would add a second state to keep consistent for a
+~200 ms one-off saving. Revisit only when journal scale approaches
+~1M events (extrapolating linearly: ~20 s replay) or replay moves onto
+the per-pass hot path.
 
 ### metadata/v4 — DECLINED
 
