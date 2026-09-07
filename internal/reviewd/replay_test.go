@@ -1,6 +1,7 @@
 package reviewed
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -171,6 +172,57 @@ func TestReplayEmptyJournalWritesNothing(t *testing.T) {
 
 	if len(entries) != 0 {
 		t.Fatalf("replay of empty journal wrote %d entries, want 0", len(entries))
+	}
+}
+
+// TestReplayErrorsNameJournalAndEventPosition proves a per-event replay
+// failure says which journal file and which event position to look at.
+func TestReplayErrorsNameJournalAndEventPosition(t *testing.T) {
+	t.Parallel()
+
+	dataDir := t.TempDir()
+	reviewsDir := t.TempDir()
+
+	journal := filepath.Join(dataDir, "events.db")
+
+	store, err := OpenStore(journal, slog.Default())
+	if err != nil {
+		t.Fatalf("OpenStore: %v", err)
+	}
+
+	defer func() {
+		if closeErr := store.Close(); closeErr != nil {
+			t.Fatalf("close store: %v", closeErr)
+		}
+	}()
+
+	viewKey, err := ParseViewKey("Home--dark--desktop")
+	if err != nil {
+		t.Fatalf("ParseViewKey: %v", err)
+	}
+
+	// A review with no preceding capture fails the replay fold.
+	if err := store.RecordReview(t.Context(), "myapp", viewKey, Reviewed{
+		SHA256:     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		Model:      "stub",
+		Markdown:   "orphan review",
+		Score:      5,
+		ReviewedAt: time.Date(2026, 9, 7, 12, 0, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("RecordReview: %v", err)
+	}
+
+	_, replayErr := Replay(t.Context(), store, NewWriter(reviewsDir))
+	if replayErr == nil {
+		t.Fatal("replay of an orphan review should fail")
+	}
+
+	if !errors.Is(replayErr, ErrReviewWithoutCapture) {
+		t.Fatalf("error should wrap ErrReviewWithoutCapture: %v", replayErr)
+	}
+
+	if !strings.Contains(replayErr.Error(), "journal "+journal+", event 1:") {
+		t.Fatalf("error should name the journal and event position: %v", replayErr)
 	}
 }
 
