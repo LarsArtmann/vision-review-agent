@@ -367,10 +367,11 @@ func TestGoldenJournalPayloadsDecode(t *testing.T) {
 
 // goldenEnvelopeKeys is the exact JSON-tag key set of the upstream
 // serializableEvent CBOR envelope as written by storage/bbolt v4.0.0 and
-// v4.1.0, including the schema_version every event stamps.
+// v4.1.0, including the schema_version every event stamps. Kept sorted; the
+// test sorts decoded keys the same way before comparing.
 var goldenEnvelopeKeys = []string{
-	"id", "type", "aggregate_id", "aggregate_type",
-	"version", "schema_version", "payload", "occurred_at", "metadata", "encoding",
+	"aggregate_id", "aggregate_type", "encoding", "id", "metadata",
+	"occurred_at", "payload", "schema_version", "type", "version",
 }
 
 // TestGoldenJournalEnvelopeContract decodes the raw bbolt rows behind the
