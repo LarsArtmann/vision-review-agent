@@ -287,19 +287,21 @@ func runEventsCommand(args []string, stdout, stderr io.Writer) int {
 const eventsTimeFormat = "2006-01-02 15:04:05"
 
 // runBackupCommand writes a consistent snapshot of the event journal to the
-// output path. The source opens read-only, so it works while a daemon pass
-// is writing; restore is simply pointing the daemon (or replay) at the file.
+// output path. bbolt permits exactly one read-write handle and the daemon
+// holds it, so run this while the daemon is stopped (e.g. between passes or
+// via `systemctl stop`). The snapshot never mutates the source journal.
 func runBackupCommand(args []string, stdout, stderr io.Writer) int {
 	flagSet := newFlagSet("backup", stderr)
 
 	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
+	wait := flagSet.Duration("wait", reviewed.DefaultBackupLockTimeout, "how long to wait for the journal lock before giving up")
 
 	if err := flagSet.Parse(args); err != nil {
 		return exitUsage
 	}
 
 	if flagSet.NArg() != 1 {
-		fmt.Fprintln(stderr, "usage: visionreviewd backup [-config PATH] OUT")
+		fmt.Fprintln(stderr, "usage: visionreviewd backup [-config PATH] [-wait DURATION] OUT")
 
 		return exitUsage
 	}
@@ -313,19 +315,6 @@ func runBackupCommand(args []string, stdout, stderr io.Writer) int {
 		return exitFailed
 	}
 
-	store, err := reviewed.OpenStoreReadOnly(reviewed.JournalPath(config.DataDir), slog.Default())
-	if err != nil {
-		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
-
-		return exitFailed
-	}
-
-	defer func() {
-		if closeErr := store.Close(); closeErr != nil {
-			fmt.Fprintf(stderr, "visionreviewd backup: close store: %v\n", closeErr)
-		}
-	}()
-
 	file, err := os.Create(out)
 	if err != nil {
 		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
@@ -337,7 +326,7 @@ func runBackupCommand(args []string, stdout, stderr io.Writer) int {
 
 	counter := &countingWriter{w: file}
 
-	if err := store.Backup(context.Background(), counter); err != nil {
+	if err := reviewed.BackupJournalFile(reviewed.JournalPath(config.DataDir), counter, *wait); err != nil {
 		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
 
 		return exitFailed

@@ -161,9 +161,10 @@ func openAndRecord(t *testing.T, path string, captured Captured, viewKey ViewKey
 	return nil
 }
 
-// TestStoreBackupWhileSourceOpen proves backup works against a journal that
-// a live writer has open: the read-only opener does not fight the writer
-// lock (opening it read-write in a second process would fail).
+// TestStoreBackupWhileSourceOpen proves the raw read-only snapshot path
+// reports a held journal quickly (bounded lock timeout) instead of hanging
+// or silently snapshotting nothing: bbolt allows exactly one read-write
+// handle and the daemon holds it, so the daemon must be stopped first.
 func TestStoreBackupWhileSourceOpen(t *testing.T) {
 	t.Parallel()
 
@@ -183,39 +184,59 @@ func TestStoreBackupWhileSourceOpen(t *testing.T) {
 
 	seedBackupStore(t, source)
 
-	reader, err := OpenStoreReadOnly(journal, quietLogger())
-	if err != nil {
-		t.Fatalf("open read-only while source open: %v", err)
-	}
-
-	t.Cleanup(func() {
-		if err := reader.Close(); err != nil {
-			t.Fatalf("close reader: %v", err)
-		}
-	})
-
 	var snapshot bytes.Buffer
-	if err := reader.Backup(t.Context(), &snapshot); err != nil {
-		t.Fatalf("backup via read-only store: %v", err)
+	err = BackupJournalFile(journal, &snapshot, 100*time.Millisecond)
+	if err == nil {
+		t.Fatal("backup against a held journal should fail, not hang")
 	}
 
-	if snapshot.Len() == 0 {
-		t.Fatal("backup is empty")
+	if snapshot.Len() != 0 {
+		t.Fatal("failed backup must not write partial output")
 	}
 }
 
-// TestOpenStoreReadOnlyRequiresExistingFile proves the read-only opener
-// refuses to create a journal (the caller gets a clear error, not an empty
-// store that would back up nothing).
-func TestOpenStoreReadOnlyRequiresExistingFile(t *testing.T) {
+// TestBackupJournalFileSnapshotsRestorableStore proves the command-path
+// snapshot (read-only raw bbolt handle) restores into a working store.
+func TestBackupJournalFileSnapshotsRestorableStore(t *testing.T) {
 	t.Parallel()
 
-	missing := filepath.Join(t.TempDir(), "does-not-exist.db")
+	dir := t.TempDir()
+	journal := filepath.Join(dir, "events.db")
 
-	store, err := OpenStoreReadOnly(missing, quietLogger())
-	if err == nil {
-		_ = store.Close()
-		t.Fatal("read-only open of a missing journal should fail")
+	source, err := OpenStore(journal, quietLogger())
+	if err != nil {
+		t.Fatalf("open source: %v", err)
+	}
+
+	viewKey := seedBackupStore(t, source)
+
+	if err := source.Close(); err != nil {
+		t.Fatalf("close source before backup: %v", err)
+	}
+
+	var snapshot bytes.Buffer
+	if err := BackupJournalFile(journal, &snapshot, time.Second); err != nil {
+		t.Fatalf("backup: %v", err)
+	}
+
+	backupPath := filepath.Join(dir, "backup.db")
+	if err := os.WriteFile(backupPath, snapshot.Bytes(), 0o600); err != nil {
+		t.Fatalf("write backup: %v", err)
+	}
+
+	restored, err := OpenStore(backupPath, quietLogger())
+	if err != nil {
+		t.Fatalf("open restored store: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := restored.Close(); err != nil {
+			t.Fatalf("close restored store: %v", err)
+		}
+	})
+
+	if _, version, err := restored.LoadView(t.Context(), "proj", viewKey); err != nil || version != 2 {
+		t.Fatalf("restored fold: version=%d err=%v, want version 2, nil", version, err)
 	}
 }
 

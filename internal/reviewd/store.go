@@ -127,6 +127,10 @@ func JournalPath(dataDir string) string {
 	return filepath.Join(dataDir, "events.db")
 }
 
+// DefaultBackupLockTimeout bounds how long the backup command waits for the
+// journal lock before reporting that the daemon is still running.
+const DefaultBackupLockTimeout = 5 * time.Second
+
 // OpenStore opens (creating if needed) the event store at path.
 func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 	if err := ensureParentDir(path); err != nil {
@@ -153,34 +157,12 @@ func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 	return &Store{backend: backend, repo: repo}, nil
 }
 
-// OpenStoreReadOnly opens an existing event store without taking the writer
-// lock. Backup and inspection commands use it so they can run while a live
-// daemon holds the journal; bbolt serves concurrent readers. The file must
-// already exist — a read-only open cannot create it.
-func OpenStoreReadOnly(path string, logger *slog.Logger) (*Store, error) {
-	if _, err := os.Stat(path); err != nil {
-		return nil, fmt.Errorf("event store %s: %w", path, err)
-	}
-
-	backend, err := cqrsbbolt.OpenWith(path, &bolt.Options{ReadOnly: true}, logger)
-	if err != nil {
-		return nil, fmt.Errorf("open event store %s read-only: %w", path, err)
-	}
-
-	repo, err := decider.NewRepository(backend.EventStore(), nil, decider.Decider[ViewState]{
-		Initial: initialViewState(),
-		Apply:   ApplyViewState,
-	})
-	if err != nil {
-		if closeErr := backend.Close(); closeErr != nil {
-			return nil, errors.Join(fmt.Errorf("build view repository: %w", err), closeErr)
-		}
-
-		return nil, fmt.Errorf("build view repository: %w", err)
-	}
-
-	return &Store{backend: backend, repo: repo}, nil
-}
+// OpenStore opens (creating if needed) the event store at path.
+//
+// There is deliberately no read-only variant on Store: upstream's OpenWith
+// unconditionally creates buckets, which a read-only bbolt database
+// rejects. BackupJournalFile opens the journal read-only with raw bbolt
+// instead.
 
 // Close releases the underlying bbolt database.
 func (s *Store) Close() error {
@@ -192,11 +174,38 @@ func (s *Store) Close() error {
 }
 
 // Backup writes a consistent snapshot of the whole event store to w using a
-// bbolt read transaction (tx.WriteTo). It is safe to run against a journal a
-// live daemon is writing to, and the output is byte-for-byte openable with
-// OpenStore. Run it before dependency upgrades that touch the journal layer.
+// bbolt read transaction (tx.WriteTo). The output is byte-for-byte openable
+// with OpenStore. Run it before dependency upgrades that touch the journal
+// layer.
 func (s *Store) Backup(_ context.Context, w io.Writer) error {
 	err := s.backend.DB().View(func(tx *bolt.Tx) error {
+		if _, err := tx.WriteTo(w); err != nil {
+			return fmt.Errorf("copy database pages: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("backup event store: %w", err)
+	}
+
+	return nil
+}
+
+// BackupJournalFile snapshots the journal at path into w inside a single
+// bbolt read transaction, via a read-only handle that never writes and
+// never creates the file. bbolt allows exactly ONE read-write handle, and
+// the daemon holds it while running — so back up with the daemon stopped.
+// The lock timeout bounds how long a held journal blocks the snapshot.
+func BackupJournalFile(path string, w io.Writer, lockTimeout time.Duration) error {
+	db, err := bolt.Open(path, 0o600, &bolt.Options{ReadOnly: true, Timeout: lockTimeout})
+	if err != nil {
+		return fmt.Errorf("open event store %s read-only: %w", path, err)
+	}
+
+	defer db.Close()
+
+	err = db.View(func(tx *bolt.Tx) error {
 		if _, err := tx.WriteTo(w); err != nil {
 			return fmt.Errorf("copy database pages: %w", err)
 		}
