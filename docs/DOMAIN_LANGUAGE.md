@@ -139,7 +139,9 @@ Actions the system performs:
 | **Pass**       | One scan-review-write cycle over every configured project: scan → skip-seen → blob → compare → review → write           | `Pipeline.Pass`, daemon ticker             |
 | **Blob store** | Content-addressed image archive (`<dataDir>/images/<sha256>.<ext>`) keeping BEFORE images alive for compares and replay | `BlobStore`                                |
 | **Replay**     | Rebuild the whole markdown projection (views/, comparisons/, INDEX.md) byte-identically from the event journal          | `Replay`                                   |
-| **Doctor**     | Preflight check: config paths, glob matches, model endpoint reachability                                                | `visionreviewd doctor`                     |
+| **Journal**    | The bbolt event store (`<dataDir>/events.db`): the source of truth; markdown is a rebuildable projection                  | `Store`, `JournalPath`                     |
+| **Backup**     | Consistent journal snapshot via one bbolt read transaction; daemon must be stopped (one writer handle)                    | `Store.Backup`, `visionreviewd backup`     |
+| **Doctor**     | Preflight check: config paths, glob matches, journal read-and-fold, model endpoint reachability                          | `visionreviewd doctor`                     |
 | **Discover**   | Walk a project for known golden patterns and emit a suggested config                                                    | `visionreviewd discover`                   |
 | **INDEX**      | Per-project markdown table of every view with score + trend                                                             | `RenderIndex`                              |
 
