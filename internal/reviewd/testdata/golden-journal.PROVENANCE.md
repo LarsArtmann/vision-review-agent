@@ -32,9 +32,10 @@ Tests assert the bytes never change; the fingerprint here is for humans.
   - `go-cqrs-lite/storage/bbolt/v4` v4.1.0
   - `go-cqrs-lite/id/v4` v4.5.0
 - Wire format at creation: CBOR envelope of `serializableEvent`
-  (`id`, `type`, `aggregate_id`, `aggregate_type`, `version`, `payload`,
-  `occurred_at`, `metadata`, `encoding`), payload encoding stamped `cbor`
-  (event `DefaultCodec`), bucket `cqrs_events`.
+  (`id`, `type`, `aggregate_id`, `aggregate_type`, `version`,
+  `schema_version`=1, `payload`, `occurred_at`, `metadata`, `encoding`),
+  payload encoding stamped `cbor` (event `DefaultCodec`), bucket
+  `cqrs_events`.
 
 ## Regenerating
 

@@ -367,11 +367,10 @@ func TestGoldenJournalPayloadsDecode(t *testing.T) {
 
 // goldenEnvelopeKeys is the exact JSON-tag key set of the upstream
 // serializableEvent CBOR envelope as written by storage/bbolt v4.0.0 and
-// v4.1.0. schema_version is omitted when zero, which is how the fixture's
-// events were written.
+// v4.1.0, including the schema_version every event stamps.
 var goldenEnvelopeKeys = []string{
 	"id", "type", "aggregate_id", "aggregate_type",
-	"version", "payload", "occurred_at", "metadata", "encoding",
+	"version", "schema_version", "payload", "occurred_at", "metadata", "encoding",
 }
 
 // TestGoldenJournalEnvelopeContract decodes the raw bbolt rows behind the
@@ -426,6 +425,9 @@ func TestGoldenJournalEnvelopeContract(t *testing.T) {
 			}
 			if enc, _ := row["encoding"].(string); enc != string(codec.EncodingCBOR) {
 				t.Fatalf("row %d: payload encoding = %q, want %q", rowCount, enc, codec.EncodingCBOR)
+			}
+			if schemaVersion, _ := row["schema_version"].(uint64); schemaVersion != 1 {
+				t.Fatalf("row %d: schema_version = %v, want 1", rowCount, row["schema_version"])
 			}
 
 			return nil
