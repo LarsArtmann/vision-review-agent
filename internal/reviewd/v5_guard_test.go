@@ -1,6 +1,7 @@
 package reviewed
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -36,11 +37,12 @@ func TestNoV5RemovedPairFormAPIs(t *testing.T) {
 
 		data, readErr := os.ReadFile(path) //nolint:gosec // repo-relative path from WalkDir
 		if readErr != nil {
-			return readErr
+			return fmt.Errorf("read %s: %w", path, readErr)
 		}
 
-		if loc := pairForm.Find(data); loc != nil {
-			t.Errorf("%s: pair-form API call removed in go-cqrs-lite v5 (use LoadRef/ExecuteRef): %s", path, data[loc[0]:loc[1]])
+		if loc := pairForm.FindIndex(data); loc != nil {
+			t.Errorf("%s: pair-form API call removed in go-cqrs-lite v5 (use LoadRef/ExecuteRef): %s",
+				path, data[loc[0]:loc[1]])
 		}
 
 		return nil
