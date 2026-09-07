@@ -181,6 +181,40 @@ func copyGoldenFixture(t *testing.T) string {
 	return dst
 }
 
+// requireViewStateEqual compares a folded ViewState against the expectation.
+// Times compare by instant (not zone): the CBOR roundtrip returns times in a
+// different time.Location representation of the same instant.
+func requireViewStateEqual(t *testing.T, got, want ViewState) {
+	t.Helper()
+
+	if got.SHA256 != want.SHA256 || got.BlobPath != want.BlobPath ||
+		got.Captures != want.Captures || got.ReviewedSHA != want.ReviewedSHA ||
+		got.LastScore != want.LastScore || got.PrevScore != want.PrevScore ||
+		got.Reviews != want.Reviews || got.Comparisons != want.Comparisons ||
+		!got.CapturedAt.Equal(want.CapturedAt) {
+		t.Fatalf("ViewState =\n%+v\nwant\n%+v", got, want)
+	}
+
+	requireReviewedEqual(t, got.LastReview, want.LastReview)
+}
+
+func requireReviewedEqual(t *testing.T, got, want *Reviewed) {
+	t.Helper()
+
+	if (got == nil) != (want == nil) {
+		t.Fatalf("review = %+v, want %+v", got, want)
+	}
+	if got == nil {
+		return
+	}
+
+	if got.SHA256 != want.SHA256 || got.Model != want.Model ||
+		got.Markdown != want.Markdown || got.Score != want.Score ||
+		!got.ReviewedAt.Equal(want.ReviewedAt) {
+		t.Fatalf("review = %+v, want %+v", *got, *want)
+	}
+}
+
 // TestGoldenJournalFixtureLoads proves journals written by the pre-bump
 // dependency set still load and fold into the exact expected ViewState on
 // the current dependency set. This is the automated replacement for the
@@ -213,9 +247,7 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 		Reviews:     2,
 		Comparisons: 1,
 	}
-	if state != want1 {
-		t.Fatalf("stream 1 fold =\n%+v\nwant\n%+v", state, want1)
-	}
+	requireViewStateEqual(t, state, want1)
 	if version != 5 {
 		t.Fatalf("stream 1 version = %d, want 5", version)
 	}
@@ -243,9 +275,7 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 		Reviews:     1,
 		Comparisons: 0,
 	}
-	if state != want2 {
-		t.Fatalf("stream 2 fold =\n%+v\nwant\n%+v", state, want2)
-	}
+	requireViewStateEqual(t, state, want2)
 	if version != 2 {
 		t.Fatalf("stream 2 version = %d, want 2", version)
 	}
@@ -303,7 +333,8 @@ func TestGoldenJournalPayloadsDecode(t *testing.T) {
 			if i == 2 {
 				want = goldenCaptured2
 			}
-			if got != want || !got.CapturedAt.Equal(want.CapturedAt) {
+			if got.SourcePath != want.SourcePath || got.BlobPath != want.BlobPath ||
+				got.SHA256 != want.SHA256 || !got.CapturedAt.Equal(want.CapturedAt) {
 				t.Fatalf("event %d captured = %+v, want %+v", i, got, want)
 			}
 		case EventViewReviewed:
@@ -315,16 +346,18 @@ func TestGoldenJournalPayloadsDecode(t *testing.T) {
 			if i == 4 {
 				want = goldenReview2
 			}
-			if got != want || !got.ReviewedAt.Equal(want.ReviewedAt) {
-				t.Fatalf("event %d reviewed = %+v, want %+v", i, got, want)
-			}
+			requireReviewedEqual(t, &got, &want)
 		case EventViewCompared:
 			got, err := event.DecodePayloadAuto[Compared](evt)
 			if err != nil {
 				t.Fatalf("event %d: decode compared: %v", i, err)
 			}
-			if got != goldenCompared || !got.ComparedAt.Equal(goldenCompared.ComparedAt) {
-				t.Fatalf("event %d compared = %+v, want %+v", i, got, goldenCompared)
+			want := goldenCompared
+			if got.BeforeSHA256 != want.BeforeSHA256 || got.BeforeBlobPath != want.BeforeBlobPath ||
+				got.AfterSHA256 != want.AfterSHA256 || got.AfterBlobPath != want.AfterBlobPath ||
+				got.Model != want.Model || got.Markdown != want.Markdown ||
+				!got.ComparedAt.Equal(want.ComparedAt) {
+				t.Fatalf("event %d compared = %+v, want %+v", i, got, want)
 			}
 		default:
 			t.Fatalf("event %d: unexpected type %s", i, evt.Type())
