@@ -39,15 +39,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
-
-### Changed
-
-- Nothing yet.
+- **`visionreviewd backup OUT`** — consistent journal snapshots via a single
+  bbolt read transaction. Stop the daemon first (bbolt allows one writer
+  handle); `-wait` bounds how long the command waits for the lock before
+  failing. Restore by copying the snapshot back into a data dir; an E2E test
+  proves replay of a restored journal is byte-identical to the original.
+- **`visionreviewd doctor` journal probe** — doctor now fully reads the event
+  journal and folds every stream, so format drift or a broken row fails
+  doctor naming the offending event index, type, and stream. A journal held
+  by a running daemon is skipped, a missing one reported as a fresh dataDir.
 
 ### Fixed
 
-- Nothing yet.
+- **Corrupt journals are no longer mislabeled as locked** — the journal lock
+  probe treated every open error as "held by another process"; it now
+  reports held only for a genuine lock timeout, so a broken journal fails
+  with its real cause.
 
 ## [0.6.2] - 2026-08-18
 
