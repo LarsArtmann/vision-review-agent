@@ -14,9 +14,9 @@ terms in code, docs, and conversations.
 cmd/vision/              CLI tool
   main.go                Catalog-driven provider construction, listing flags, analysis
   listing.go             printProviders, printVisionModels, printProviderInfo, suggestModel
-cmd/visionreviewd/       UI review daemon CLI (7 subcommands + version)
+cmd/visionreviewd/       UI review daemon CLI (8 subcommands + version)
   main.go                Dispatch, usage, exit codes (0 ok / 1 failed / 2 usage)
-  commands.go            run/once/discover/compare/events/replay/doctor bodies
+  commands.go            run/once/discover/compare/events/backup/replay/doctor bodies
 pkg/                     Public library code
   vision/                Core SDK package
     vision.go            Agent, Config, Analyze, AnalyzeStream, AnalyzeConversation
@@ -241,7 +241,7 @@ errors pointing at a sibling module.
 - `mock_test.go` — Shared test helpers and mock model (supports retry sequences via `generateErrs`; object-injection field priority: `generateObjectErr` > `generateObjectResponse` > default, `streamObjectErr` > `streamObjectFunc` > default)
 - `cmd/vision/main_test.go` — CLI tests (advice mapping, config building, provider error paths)
 - `internal/reviewd/fakeserver_test.go` — E2E specs running the real openaicompat provider against a fake OpenAI-compatible httptest server
-- `cmd/visionreviewd/main_test.go` — Daemon CLI tests (dispatch, usage errors, events/replay/doctor with seeded stores)
+- `cmd/visionreviewd/main_test.go` — Daemon CLI tests (dispatch, usage errors, events/backup/replay/doctor with seeded stores)
 - `pkg/vision/a2ui` — table tests for wire roundtrip/validate/compile/prompt live in package `a2ui`; `a2ui_suite_test.go` + `generate_bdd_test.go` + `mock_test.go` are a black-box Ginkgo suite (package `a2ui_test`) with a fake `fantasy.LanguageModel` covering Generate behavior (defaults, broken-spec rejection, classified errors, prompt contents)
 
 ## Dependencies

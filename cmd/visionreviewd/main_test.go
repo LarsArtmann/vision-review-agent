@@ -501,3 +501,79 @@ func TestRunReplayRebuildsReviewsDir(t *testing.T) {
 		t.Fatalf("replay must write INDEX.md: %v", err)
 	}
 }
+
+// TestRunBackupRestoresAndReplaysEqually drives the backup subcommand
+// end-to-end: seed a journal, back it up through the CLI, restore the
+// snapshot as a new data dir, and prove Replay rebuilds byte-identical
+// markdown from the original and the restored journal.
+func TestRunBackupRestoresAndReplaysEqually(t *testing.T) {
+	t.Parallel()
+
+	dataDir := t.TempDir()
+	reviewsOriginal := t.TempDir()
+
+	seedJournal(t, dataDir)
+
+	configPath := writeEventConfig(t, dataDir, reviewsOriginal)
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	if code := run([]string{"replay", "-config", configPath}, stdout, stderr); code != exitOK {
+		t.Fatalf("original replay exit = %d (stderr: %s)", code, stderr)
+	}
+
+	backupPath := filepath.Join(t.TempDir(), "backup.db")
+
+	stdout, stderr = &bytes.Buffer{}, &bytes.Buffer{}
+
+	if code := run([]string{"backup", "-config", configPath, backupPath}, stdout, stderr); code != exitOK {
+		t.Fatalf("backup exit = %d (stderr: %s)", code, stderr)
+	}
+
+	if !strings.Contains(stdout.String(), "backup written:") {
+		t.Fatalf("backup stdout missing summary:\n%s", stdout)
+	}
+
+	snapshot, err := os.ReadFile(backupPath)
+	if err != nil {
+		t.Fatalf("read backup: %v", err)
+	}
+
+	if len(snapshot) == 0 {
+		t.Fatal("backup file is empty")
+	}
+
+	restoredDataDir := t.TempDir()
+	reviewsRestored := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(restoredDataDir, "events.db"), snapshot, 0o600); err != nil {
+		t.Fatalf("restore backup into data dir: %v", err)
+	}
+
+	restoredConfigPath := writeEventConfig(t, restoredDataDir, reviewsRestored)
+
+	stdout, stderr = &bytes.Buffer{}, &bytes.Buffer{}
+
+	if code := run([]string{"replay", "-config", restoredConfigPath}, stdout, stderr); code != exitOK {
+		t.Fatalf("restored replay exit = %d (stderr: %s)", code, stderr)
+	}
+
+	for _, name := range []string{
+		filepath.Join("myapp", "views", "Home--dark--desktop.md"),
+		filepath.Join("myapp", "INDEX.md"),
+	} {
+		original, err := os.ReadFile(filepath.Join(reviewsOriginal, name))
+		if err != nil {
+			t.Fatalf("read original %s: %v", name, err)
+		}
+
+		restoredCopy, err := os.ReadFile(filepath.Join(reviewsRestored, name))
+		if err != nil {
+			t.Fatalf("read restored %s: %v", name, err)
+		}
+
+		if !bytes.Equal(original, restoredCopy) {
+			t.Fatalf("%s differs after backup/restore roundtrip:\noriginal:\n%s\nrestored:\n%s", name, original, restoredCopy)
+		}
+	}
+}

@@ -186,6 +186,10 @@ can be wiped and rebuilt byte-identically with `replay`.
 # Browse the journal and rebuild reviews from it
 ./visionreviewd events -type view.reviewed
 ./visionreviewd replay
+
+# Snapshot the event journal (stop the daemon first: bbolt allows one
+# writer handle; restore by copying the snapshot back into a data dir)
+./visionreviewd backup ~/backups/events-$(date +%F).db
 ```
 
 Reviews land under `reviewsDir` as `<project>/views/<Page--theme--viewport>.md`,

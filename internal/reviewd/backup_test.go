@@ -29,7 +29,13 @@ func seedBackupStore(t *testing.T, store *Store) ViewKey {
 		t.Fatalf("record capture: %v", err)
 	}
 
-	reviewedPayload := Reviewed{SHA256: "sha-before", Model: "m", Markdown: "## Review\n\n**Score: 7/10**", Score: 7, ReviewedAt: testStamp.Add(time.Minute)}
+	reviewedPayload := Reviewed{
+		SHA256:     "sha-before",
+		Model:      "m",
+		Markdown:   "## Review\n\n**Score: 7/10**",
+		Score:      7,
+		ReviewedAt: testStamp.Add(time.Minute),
+	}
 	if err := store.RecordReview(ctx, "proj", viewKey, reviewedPayload); err != nil {
 		t.Fatalf("record review: %v", err)
 	}
@@ -143,7 +149,11 @@ func openAndRecord(t *testing.T, path string, captured Captured, viewKey ViewKey
 		t.Fatalf("reopen restored store: %v", err)
 	}
 
-	defer store.Close()
+	defer func() {
+		if err := store.Close(); err != nil {
+			t.Errorf("close restored store: %v", err)
+		}
+	}()
 
 	if err := store.RecordCapture(t.Context(), "proj", viewKey, captured); err != nil {
 		return err
