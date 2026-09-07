@@ -41,7 +41,7 @@ Existing journals load unchanged.
 | Tests (full race suite)       | 9 pkgs ok, 0 fail, 0 races (×2 runs)         |
 | reviewd event-sourcing specs  | 73 PASS, 0 FAIL/SKIP                         |
 | Lint issues after session     | 0 (started post-bump at 3)                   |
-| Canonical verification matrix | 7 of 8 steps run (`nix flake check` skipped) |
+| Canonical verification matrix | ~~7 of 8 steps run (`nix flake check` skipped)~~ 8/8 on 2026-09-07: `nix flake check` all checks passed, `-count=1` + `-race` sweeps green, both json regimes green, lint 0 issues, nix builds + version smoke ok |
 | Commits by auto-daemon        | 3 (`2c196fa`, `166b5c8`, `91ca0d2`)          |
 | Journal format breaks         | 0 (proven by wire-struct diff)               |
 
@@ -86,8 +86,13 @@ Existing journals load unchanged.
 
 ## b) PARTIALLY DONE
 
-1. **Canonical verification matrix — 7/8.** Skipped `nix flake check` (module
-   eval checks for the NixOS module). Cheap to run; not run for time.
+1. ~~**Canonical verification matrix — 7/8.** Skipped `nix flake check` (module
+   eval checks for the NixOS module). Cheap to run; not run for time.~~
+   **DONE 2026-09-07:** matrix closed 8/8 — `nix flake check` "all checks passed"
+   (7 checks incl. nixos-module-enabled/disabled + version smoke), full sweep
+   re-run cache-free (`-count=1`, `-race`): 9 pkgs ok, both json regimes green,
+   `go mod verify` + `tidy -diff` clean, lint 0 issues, `nix build .` and
+   `nix build .#visionreviewd` + `visionreviewd version` smoke at `8590dda`.
 2. **Journal compatibility — inspection, not automation.** The "old journals
    load unchanged" claim rests on manual source diffs. No golden-fixture test
    pins the old wire format against future upstream changes.

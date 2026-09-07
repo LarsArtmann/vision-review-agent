@@ -194,6 +194,10 @@ changes; CI mirrors these):
 7. `nix build .` and `nix build .#visionreviewd`
 8. `nix flake check`
 
+Latest full-green run: 2026-09-07 at `8590dda` (post go-cqrs-lite bump) — all
+8 steps passed, `-count=1` everywhere; evidence annotated in
+`docs/status/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`.
+
 ### GOWORK
 
 This repo has **no `go.work`** — it is a single module. `go build`/`go test`
