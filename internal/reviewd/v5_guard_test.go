@@ -1,3 +1,4 @@
+package reviewed
 
 import (
 	"os"
@@ -39,7 +40,7 @@ func TestNoV5RemovedPairFormAPIs(t *testing.T) {
 		}
 
 		if loc := pairForm.Find(data); loc != nil {
-			t.Errorf("%s: pair-form API call removed in go-cqrs-lite v5 (use LoadRef/ExecuteRef): %s", path, data[loc[0]:min(loc[1], len(data))])
+			t.Errorf("%s: pair-form API call removed in go-cqrs-lite v5 (use LoadRef/ExecuteRef): %s", path, data[loc[0]:loc[1]])
 		}
 
 		return nil
