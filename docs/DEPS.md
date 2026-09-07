@@ -106,10 +106,10 @@ nothing." The daemon is definitionally single-writer, and the single
 bbolt handle serializes writers anyway. Measured (single goroutine,
 2000 256-byte puts, local disk):
 
-| mode        | per-op   | total     |
-| ----------- | -------- | --------- |
-| `db.Update` | 9.9 µs   | 19.8 ms   |
-| `db.Batch`  | 10 241 µs | 20.5 s   |
+| mode        | per-op    | total   |
+| ----------- | --------- | ------- |
+| `db.Update` | 9.9 µs    | 19.8 ms |
+| `db.Batch`  | 10 241 µs | 20.5 s  |
 
 `db.Batch` pays a ~1000× penalty with no batch-mates to group with.
 Adopting this would have been a silent 1000× write-path regression.
