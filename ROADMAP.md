@@ -14,19 +14,43 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 The actionable near-term work is in [TODO_LIST.md](TODO_LIST.md):
 **visionreviewd activation** (first host, real-model bring-up, real
-projects), the **DiscordSync 216-view watch**, and user-gated follow-ups
-from the 2026-09-07 post-bump execution (json/v2 external fix, Go
-1.26.6 toolchain when nixpkgs ships it). v0.7.0 shipped the journal-format
-golden-fixture pin, the go-cqrs-lite v4.9-era bump, and CI hardening:
-golangci-lint is version-pinned and all 9 CI checks are required on PR
-merges (the red-lint landing of 2026-09-07 was root-caused to linter
-version drift — see AGENTS.md). The SystemNix lock bump is committed (pins
+projects), the **DiscordSync 220-view watch** (cadence proposal ready),
+and user-decision items from the 2026-09-07 post-bump execution
+(json/v2 external exclusion, llama token-budget eval). v0.7.0 shipped
+the journal-format golden-fixture pin, the go-cqrs-lite v4.9-era bump,
+and CI hardening: golangci-lint is version-pinned and all 10 CI checks
+are required on PR merges (the red-lint landing of 2026-09-07 was
+root-caused to linter version drift — see AGENTS.md). The Go 1.26.x
+toolchain item resolved 2026-09-07: nixpkgs ships 1.26.7 and the repo
+has been pinned to it since `2934585` (the five stdlib CVEs from the
+August probe are moot). The SystemNix lock bump is committed (pins
 `dcd50a0`, verified 2026-08-18). All earlier near-term work —
-preprocessing auto-wiring, retry reconciliation, catwalk CLI integration,
-cost tracking, the visionreviewd daemon itself — shipped and lives in
-[CHANGELOG.md](CHANGELOG.md).
+preprocessing auto-wiring, retry reconciliation, catwalk CLI
+integration, cost tracking, the visionreviewd daemon itself — shipped
+and lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## Mid-term ideas
+
+### go-cqrs-lite v5 migration (visionreviewd)
+
+- **Track and migrate to v5 pair-form removal** — upstream is removing
+  `Repository.Load`/`Execute` (pair-form) in favor of
+  `LoadRef`/`ExecuteRef` + `id.NewStreamRef` (deprecation notices
+  already live; SA1019 fires on stale tooling). The codebase is already
+  fully migrated (`internal/reviewd/store.go` uses the Ref forms), and
+  `internal/reviewd/v5_guard_test.go` (`TestNoV5RemovedPairFormAPIs`)
+  greps the package for pair-form calls with a positive control, so a
+  regression fails CI before upstream's breaking release lands. When
+  v5 ships: bump the submodules, delete nothing else, re-run the
+  journal-compat golden suite (`internal/reviewd/testdata/`), and
+  re-verify the wire contract in `docs/DEPS.md`.
+- **Performance envelope on record** — first daemon perf baseline
+  measured 2026-09-07 (`internal/reviewd/perf_test.go`, numbers in
+  `docs/status/2026-09-07_22-15_perf-baseline-m14.md`): full-journal
+  replay ~200 ms at 10k events; steady 100-view pass ~3 ms local.
+  Revisit upstream snapshot/query read models only if journals
+  approach ~1M events or replay moves onto the per-pass hot path
+  (decision + spike numbers: `docs/DEPS.md` ADR section).
 
 ### A2UI (`pkg/vision/a2ui`)
 

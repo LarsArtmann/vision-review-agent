@@ -145,14 +145,21 @@ as go-cqrs-lite events on bbolt.
 - **Daemon loop** — immediate pass + ticker, logged-and-continue per-pass
   failures, clean SIGINT/SIGTERM shutdown (`internal/reviewd/daemon.go`)
 - **7 subcommands** — run, once, discover, compare, events, replay, doctor,
-  version (`cmd/visionreviewd`)
+  version (`cmd/visionreviewd`); plus `backup` for journal snapshots
 - **Replay** — rebuild the whole reviews directory byte-identically from the
   event journal (`internal/reviewd/replay.go`); INDEX stamps derive from row
-  timestamps, not wall clock, so pass and replay agree
+  timestamps, not wall clock, so pass and replay agree; per-event failures
+  name the journal path and event position
+- **Journal backup** — `visionreviewd backup [-wait] OUT` takes a consistent
+  snapshot via a single bbolt read transaction and fsyncs the output;
+  restore-then-replay is proven byte-identical by test
 - **events command** — journal listing with `-project/-view/-type/-last`
   filters carrying hashes and scores
-- **doctor** — config, dir writability, glob match counts, and
-  `{baseUrl}/models` model-listing check; exit code reflects failures
+- **doctor** — 5 checks: config, dataDir/reviewsDir writability, per-project
+  glob match counts, full journal read-and-fold (format drift or a broken row
+  fails naming the offending event; a daemon-held journal is skipped), and
+  `{baseUrl}/models` reachability; exit code reflects failures
+  (`cmd/visionreviewd/commands.go`)
 - **E2E confidence** — Review and Compare verified through the real
   openaicompat provider against a fake OpenAI-compatible httptest server,
   including image-part counts and score parsing (`internal/reviewd/fakeserver_test.go`)
