@@ -15,6 +15,10 @@ jobs:
   govulncheck:
     name: govulncheck (weekly)
     runs-on: ubuntu-latest
+    env:
+      # go-cqrs-lite imports encoding/json/v2; package loading (which
+      # govulncheck needs for reachability) fails without the experiment.
+      GOEXPERIMENT: jsonv2
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
