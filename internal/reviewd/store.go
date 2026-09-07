@@ -177,7 +177,7 @@ func (s *Store) LoadView(ctx context.Context, project string, viewKey ViewKey) (
 		return ViewState{}, 0, err
 	}
 
-	state, version, err := s.repo.Load(ctx, streamID, streamType)
+	state, version, err := s.repo.LoadRef(ctx, id.NewStreamRef(streamType, streamID))
 	if err != nil {
 		return ViewState{}, 0, fmt.Errorf("load view %s: %w", streamID, err)
 	}
@@ -223,9 +223,13 @@ func (s *Store) record(
 		return err
 	}
 
-	err = s.repo.Execute(ctx, streamID, streamType, func(_ ViewState, version event.Version) ([]event.Event, error) {
-		return event.Single(event.Type(eventType), streamID, streamType, version.Increment(), payload)
-	})
+	err = s.repo.ExecuteRef(
+		ctx,
+		id.NewStreamRef(streamType, streamID),
+		func(_ ViewState, version event.Version) ([]event.Event, error) {
+			return event.Single(event.Type(eventType), streamID, streamType, version.Increment(), payload)
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("record %s on %s: %w", eventType, streamID, err)
 	}
