@@ -51,7 +51,7 @@ func openPipeline(ctx context.Context, config reviewed.Config) (*reviewed.Pipeli
 		return nil, nil, fmt.Errorf("build reviewer: %w", err)
 	}
 
-	store, err := reviewed.OpenStore(filepath.Join(config.DataDir, "events.db"), slog.Default())
+	store, err := reviewed.OpenStore(reviewed.JournalPath(config.DataDir), slog.Default())
 	if err != nil {
 		return nil, nil, fmt.Errorf("open event store: %w", err)
 	}
@@ -243,7 +243,7 @@ func runEventsCommand(args []string, stdout, stderr io.Writer) int {
 		return exitFailed
 	}
 
-	store, err := reviewed.OpenStore(filepath.Join(config.DataDir, "events.db"), slog.Default())
+	store, err := reviewed.OpenStore(reviewed.JournalPath(config.DataDir), slog.Default())
 	if err != nil {
 		fmt.Fprintf(stderr, "visionreviewd events: %v\n", err)
 
@@ -286,6 +286,88 @@ func runEventsCommand(args []string, stdout, stderr io.Writer) int {
 // eventsTimeFormat stamps event lines in the events command output.
 const eventsTimeFormat = "2006-01-02 15:04:05"
 
+// runBackupCommand writes a consistent snapshot of the event journal to the
+// output path. The source opens read-only, so it works while a daemon pass
+// is writing; restore is simply pointing the daemon (or replay) at the file.
+func runBackupCommand(args []string, stdout, stderr io.Writer) int {
+	flagSet := newFlagSet("backup", stderr)
+
+	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
+
+	if err := flagSet.Parse(args); err != nil {
+		return exitUsage
+	}
+
+	if flagSet.NArg() != 1 {
+		fmt.Fprintln(stderr, "usage: visionreviewd backup [-config PATH] OUT")
+
+		return exitUsage
+	}
+
+	out := flagSet.Arg(0)
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
+
+		return exitFailed
+	}
+
+	store, err := reviewed.OpenStoreReadOnly(reviewed.JournalPath(config.DataDir), slog.Default())
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
+
+		return exitFailed
+	}
+
+	defer func() {
+		if closeErr := store.Close(); closeErr != nil {
+			fmt.Fprintf(stderr, "visionreviewd backup: close store: %v\n", closeErr)
+		}
+	}()
+
+	file, err := os.Create(out)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
+
+		return exitFailed
+	}
+
+	defer file.Close()
+
+	counter := &countingWriter{w: file}
+
+	if err := store.Backup(context.Background(), counter); err != nil {
+		fmt.Fprintf(stderr, "visionreviewd backup: %v\n", err)
+
+		return exitFailed
+	}
+
+	if err := file.Sync(); err != nil {
+		fmt.Fprintf(stderr, "visionreviewd backup: fsync: %v\n", err)
+
+		return exitFailed
+	}
+
+	fmt.Fprintf(stdout, "backup written: %s (%d bytes)\n", out, counter.n)
+
+	return exitOK
+}
+
+// countingWriter counts the bytes written through it so the backup command
+// can report the snapshot size.
+type countingWriter struct {
+	w io.Writer
+	n int64
+}
+
+func (c *countingWriter) Write(p []byte) (int, error) {
+	n, err := c.w.Write(p)
+	c.n += int64(n)
+
+	return n, err
+}
+
 // filterEventSummaries keeps only the summaries matching every non-empty
 // filter.
 func filterEventSummaries(
@@ -322,7 +404,7 @@ func runReplayCommand(args []string, stdout, stderr io.Writer) int {
 		return code
 	}
 
-	store, err := reviewed.OpenStore(filepath.Join(config.DataDir, "events.db"), slog.Default())
+	store, err := reviewed.OpenStore(reviewed.JournalPath(config.DataDir), slog.Default())
 	if err != nil {
 		fmt.Fprintf(stderr, "visionreviewd replay: %v\n", err)
 

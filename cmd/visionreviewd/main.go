@@ -7,6 +7,7 @@
 //	visionreviewd discover  ROOT                            # suggest config JSON
 //	visionreviewd compare   [-config PATH] -project P A B   # manual A/B compare
 //	visionreviewd events    [-config PATH]                  # print event journal
+//	visionreviewd backup    [-config PATH] OUT              # consistent journal snapshot
 //	visionreviewd replay    [-config PATH]                  # rebuild reviews dir
 //	visionreviewd doctor    [-config PATH]                  # health checks
 //	visionreviewd version                                   # print version
@@ -37,6 +38,7 @@ const (
 	cmdDiscover = "discover"
 	cmdCompare  = "compare"
 	cmdEvents   = "events"
+	cmdBackup   = "backup"
 	cmdReplay   = "replay"
 	cmdDoctor   = "doctor"
 	cmdVersion  = "version"
@@ -69,6 +71,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runCompareCommand(rest, stdout, stderr)
 	case cmdEvents:
 		return runEventsCommand(rest, stdout, stderr)
+	case cmdBackup:
+		return runBackupCommand(rest, stdout, stderr)
 	case cmdReplay:
 		return runReplayCommand(rest, stdout, stderr)
 	case cmdDoctor:
@@ -99,6 +103,7 @@ Commands:
   discover  Walk a directory tree and print a suggested config JSON
   compare   Manually compare a BEFORE and AFTER screenshot of one view
   events    Print the recorded event journal
+  backup    Write a consistent snapshot of the event journal to OUT
   replay    Rebuild the reviews directory from the event journal
   doctor    Check config, directories, globs, and the model endpoint
   version   Print the version

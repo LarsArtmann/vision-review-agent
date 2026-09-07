@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/larsartmann/go-cqrs-lite/event/v4"
 	"github.com/larsartmann/go-cqrs-lite/id/v4"
 	cqrsbbolt "github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4"
+	bolt "go.etcd.io/bbolt"
 )
 
 // StreamTypeView is the single stream type visionreviewd records: one View
@@ -120,6 +122,11 @@ type Store struct {
 	repo    *decider.Repository[ViewState]
 }
 
+// JournalPath returns the event-store file inside dataDir.
+func JournalPath(dataDir string) string {
+	return filepath.Join(dataDir, "events.db")
+}
+
 // OpenStore opens (creating if needed) the event store at path.
 func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 	if err := ensureParentDir(path); err != nil {
@@ -146,10 +153,58 @@ func OpenStore(path string, logger *slog.Logger) (*Store, error) {
 	return &Store{backend: backend, repo: repo}, nil
 }
 
+// OpenStoreReadOnly opens an existing event store without taking the writer
+// lock. Backup and inspection commands use it so they can run while a live
+// daemon holds the journal; bbolt serves concurrent readers. The file must
+// already exist — a read-only open cannot create it.
+func OpenStoreReadOnly(path string, logger *slog.Logger) (*Store, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, fmt.Errorf("event store %s: %w", path, err)
+	}
+
+	backend, err := cqrsbbolt.OpenWith(path, &bolt.Options{ReadOnly: true}, logger)
+	if err != nil {
+		return nil, fmt.Errorf("open event store %s read-only: %w", path, err)
+	}
+
+	repo, err := decider.NewRepository(backend.EventStore(), nil, decider.Decider[ViewState]{
+		Initial: initialViewState(),
+		Apply:   ApplyViewState,
+	})
+	if err != nil {
+		if closeErr := backend.Close(); closeErr != nil {
+			return nil, errors.Join(fmt.Errorf("build view repository: %w", err), closeErr)
+		}
+
+		return nil, fmt.Errorf("build view repository: %w", err)
+	}
+
+	return &Store{backend: backend, repo: repo}, nil
+}
+
 // Close releases the underlying bbolt database.
 func (s *Store) Close() error {
 	if err := s.backend.Close(); err != nil {
 		return fmt.Errorf("close event store: %w", err)
+	}
+
+	return nil
+}
+
+// Backup writes a consistent snapshot of the whole event store to w using a
+// bbolt read transaction (tx.WriteTo). It is safe to run against a journal a
+// live daemon is writing to, and the output is byte-for-byte openable with
+// OpenStore. Run it before dependency upgrades that touch the journal layer.
+func (s *Store) Backup(_ context.Context, w io.Writer) error {
+	err := s.backend.DB().View(func(tx *bolt.Tx) error {
+		if _, err := tx.WriteTo(w); err != nil {
+			return fmt.Errorf("copy database pages: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("backup event store: %w", err)
 	}
 
 	return nil
