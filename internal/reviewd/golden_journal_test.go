@@ -91,6 +91,7 @@ var (
 
 func sha256Hex(data []byte) string {
 	sum := sha256.Sum256(data)
+
 	return hex.EncodeToString(sum[:])
 }
 
@@ -102,17 +103,19 @@ func quietLogger() *slog.Logger {
 // unless REVIEWD_GENERATE_GOLDEN_JOURNAL=1 so normal runs never rewrite the
 // committed bytes. After regenerating, update the size and SHA-256 in
 // testdata/golden-journal.PROVENANCE.md.
+//
+//nolint:paralleltest // writes the shared fixture file; parallel runs would race on it
 func TestGenerateGoldenJournal(t *testing.T) {
 	if os.Getenv("REVIEWD_GENERATE_GOLDEN_JOURNAL") == "" {
 		t.Skip("set REVIEWD_GENERATE_GOLDEN_JOURNAL=1 to regenerate the golden journal fixture")
 	}
 
 	dbPath := filepath.Join(t.TempDir(), "events.bbolt")
+
 	store, err := OpenStore(dbPath, quietLogger())
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
-	defer store.Close()
 
 	ctx := t.Context()
 	steps := []struct {
@@ -127,6 +130,7 @@ func TestGenerateGoldenJournal(t *testing.T) {
 		{"capture 3", func() error { return store.RecordCapture(ctx, goldenProject2, goldenView2, goldenCaptured3) }},
 		{"review 3", func() error { return store.RecordReview(ctx, goldenProject2, goldenView2, goldenReview3) }},
 	}
+
 	for _, step := range steps {
 		if err := step.exec(); err != nil {
 			t.Fatalf("%s: %v", step.name, err)
@@ -137,15 +141,18 @@ func TestGenerateGoldenJournal(t *testing.T) {
 		t.Fatalf("close store before copy: %v", err)
 	}
 
-	out := filepath.Join("testdata", goldenFixtureName)
-	if err := os.MkdirAll("testdata", 0o755); err != nil {
+	if err := os.MkdirAll("testdata", 0o750); err != nil {
 		t.Fatalf("create testdata dir: %v", err)
 	}
+
 	data, err := os.ReadFile(dbPath)
 	if err != nil {
 		t.Fatalf("read generated journal: %v", err)
 	}
-	if err := os.WriteFile(out, data, 0o644); err != nil {
+
+	out := "testdata/" + goldenFixtureName
+
+	if err := os.WriteFile(out, data, 0o644); err != nil { //nolint:gosec // constant fixture path, no user input
 		t.Fatalf("write fixture: %v", err)
 	}
 
@@ -157,14 +164,16 @@ func TestGenerateGoldenJournal(t *testing.T) {
 func copyGoldenFixture(t *testing.T) string {
 	t.Helper()
 
-	src := filepath.Join("testdata", goldenFixtureName)
+	src := "testdata/" + goldenFixtureName
+
 	data, err := os.ReadFile(src)
 	if err != nil {
 		t.Fatalf("read golden fixture: %v", err)
 	}
 
 	dst := filepath.Join(t.TempDir(), goldenFixtureName)
-	if err := os.WriteFile(dst, data, 0o644); err != nil {
+
+	if err := os.WriteFile(dst, data, 0o644); err != nil { //nolint:gosec // per-test temp dir, no user input
 		t.Fatalf("copy golden fixture: %v", err)
 	}
 
@@ -173,6 +182,7 @@ func copyGoldenFixture(t *testing.T) string {
 		if err != nil {
 			t.Fatalf("re-read golden fixture: %v", err)
 		}
+
 		if sha256Hex(after) != sha256Hex(data) {
 			t.Fatal("golden fixture bytes changed during test; tests must never write to it")
 		}
@@ -204,6 +214,7 @@ func requireReviewedEqual(t *testing.T, got, want *Reviewed) {
 	if (got == nil) != (want == nil) {
 		t.Fatalf("review = %+v, want %+v", got, want)
 	}
+
 	if got == nil {
 		return
 	}
@@ -215,6 +226,24 @@ func requireReviewedEqual(t *testing.T, got, want *Reviewed) {
 	}
 }
 
+// openGoldenStore opens a read-only copy of the golden fixture as a Store.
+func openGoldenStore(t *testing.T) *Store {
+	t.Helper()
+
+	store, err := OpenStore(copyGoldenFixture(t), quietLogger())
+	if err != nil {
+		t.Fatalf("open golden journal: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := store.Close(); err != nil {
+			t.Fatalf("close golden journal store: %v", err)
+		}
+	})
+
+	return store
+}
+
 // TestGoldenJournalFixtureLoads proves journals written by the pre-bump
 // dependency set still load and fold into the exact expected ViewState on
 // the current dependency set. This is the automated replacement for the
@@ -222,12 +251,7 @@ func requireReviewedEqual(t *testing.T, got, want *Reviewed) {
 func TestGoldenJournalFixtureLoads(t *testing.T) {
 	t.Parallel()
 
-	store, err := OpenStore(copyGoldenFixture(t), quietLogger())
-	if err != nil {
-		t.Fatalf("open golden journal: %v", err)
-	}
-	defer store.Close()
-
+	store := openGoldenStore(t)
 	ctx := t.Context()
 
 	state, version, err := store.LoadView(ctx, goldenProject1, goldenView1)
@@ -247,13 +271,17 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 		Reviews:     2,
 		Comparisons: 1,
 	}
+
 	requireViewStateEqual(t, state, want1)
+
 	if version != 5 {
 		t.Fatalf("stream 1 version = %d, want 5", version)
 	}
+
 	if state.NeedsReview() {
 		t.Fatal("fully reviewed stream should not need review")
 	}
+
 	if !state.UpdatedAt().Equal(goldenReview2.ReviewedAt) {
 		t.Fatalf("UpdatedAt = %v, want review time %v", state.UpdatedAt(), goldenReview2.ReviewedAt)
 	}
@@ -275,7 +303,9 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 		Reviews:     1,
 		Comparisons: 0,
 	}
+
 	requireViewStateEqual(t, state, want2)
+
 	if version != 2 {
 		t.Fatalf("stream 2 version = %d, want 2", version)
 	}
@@ -284,15 +314,22 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stream 1 events: %v", err)
 	}
-	wantTypes := []event.Type{EventViewCaptured, EventViewReviewed, EventViewCaptured, EventViewCompared, EventViewReviewed}
+
+	wantTypes := []event.Type{
+		EventViewCaptured, EventViewReviewed, EventViewCaptured,
+		EventViewCompared, EventViewReviewed,
+	}
+
 	if len(stream1Events) != len(wantTypes) {
 		t.Fatalf("stream 1 has %d events, want %d", len(stream1Events), len(wantTypes))
 	}
+
 	for i, evt := range stream1Events {
 		if evt.Type() != wantTypes[i] {
 			t.Fatalf("stream 1 event %d = %s, want %s", i, evt.Type(), wantTypes[i])
 		}
-		if int(evt.Version().Int()) != i+1 {
+
+		if evt.Version().Int() != i+1 {
 			t.Fatalf("stream 1 event %d version = %d, want %d", i, evt.Version().Int(), i+1)
 		}
 	}
@@ -301,6 +338,7 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read all events: %v", err)
 	}
+
 	if len(all) != 7 {
 		t.Fatalf("journal has %d events across streams, want 7", len(all))
 	}
@@ -311,11 +349,7 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 func TestGoldenJournalPayloadsDecode(t *testing.T) {
 	t.Parallel()
 
-	store, err := OpenStore(copyGoldenFixture(t), quietLogger())
-	if err != nil {
-		t.Fatalf("open golden journal: %v", err)
-	}
-	defer store.Close()
+	store := openGoldenStore(t)
 
 	events, err := store.ViewEvents(t.Context(), goldenProject1, goldenView1)
 	if err != nil {
@@ -329,10 +363,12 @@ func TestGoldenJournalPayloadsDecode(t *testing.T) {
 			if err != nil {
 				t.Fatalf("event %d: decode captured: %v", i, err)
 			}
+
 			want := goldenCaptured1
 			if i == 2 {
 				want = goldenCaptured2
 			}
+
 			if got.SourcePath != want.SourcePath || got.BlobPath != want.BlobPath ||
 				got.SHA256 != want.SHA256 || !got.CapturedAt.Equal(want.CapturedAt) {
 				t.Fatalf("event %d captured = %+v, want %+v", i, got, want)
@@ -342,16 +378,19 @@ func TestGoldenJournalPayloadsDecode(t *testing.T) {
 			if err != nil {
 				t.Fatalf("event %d: decode reviewed: %v", i, err)
 			}
+
 			want := goldenReview1
 			if i == 4 {
 				want = goldenReview2
 			}
+
 			requireReviewedEqual(t, &got, &want)
 		case EventViewCompared:
 			got, err := event.DecodePayloadAuto[Compared](evt)
 			if err != nil {
 				t.Fatalf("event %d: decode compared: %v", i, err)
 			}
+
 			want := goldenCompared
 			if got.BeforeSHA256 != want.BeforeSHA256 || got.BeforeBlobPath != want.BeforeBlobPath ||
 				got.AfterSHA256 != want.AfterSHA256 || got.AfterBlobPath != want.AfterBlobPath ||
@@ -368,7 +407,7 @@ func TestGoldenJournalPayloadsDecode(t *testing.T) {
 // goldenEnvelopeKeys is the exact JSON-tag key set of the upstream
 // serializableEvent CBOR envelope as written by storage/bbolt v4.0.0 and
 // v4.1.0, including the schema_version every event stamps. Kept sorted; the
-// test sorts decoded keys the same way before comparing.
+// check sorts decoded keys the same way before comparing.
 var goldenEnvelopeKeys = []string{
 	"aggregate_id", "aggregate_type", "encoding", "id", "metadata",
 	"occurred_at", "payload", "schema_version", "type", "version",
@@ -381,14 +420,20 @@ var goldenEnvelopeKeys = []string{
 func TestGoldenJournalEnvelopeContract(t *testing.T) {
 	t.Parallel()
 
-	db, err := bolt.Open(copyGoldenFixture(t), 0o444, &bolt.Options{ReadOnly: true})
+	fixtureDB, err := bolt.Open(copyGoldenFixture(t), 0o444, &bolt.Options{ReadOnly: true})
 	if err != nil {
 		t.Fatalf("open fixture read-only: %v", err)
 	}
-	defer db.Close()
+
+	t.Cleanup(func() {
+		if err := fixtureDB.Close(); err != nil {
+			t.Fatalf("close fixture db: %v", err)
+		}
+	})
 
 	var rowCount int
-	err = db.View(func(tx *bolt.Tx) error {
+
+	err = fixtureDB.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("cqrs_events"))
 		if bucket == nil {
 			t.Fatal("fixture has no cqrs_events bucket")
@@ -398,40 +443,10 @@ func TestGoldenJournalEnvelopeContract(t *testing.T) {
 			if value == nil {
 				return nil
 			}
+
 			rowCount++
 
-			if !isCBORFirstByte(value) {
-				t.Fatalf("row %d: envelope is not CBOR (first byte %#x)", rowCount, value[0])
-			}
-
-			var row map[string]any
-			if err := codec.CBORDecMode().Unmarshal(value, &row); err != nil {
-				return fmt.Errorf("decode row %d: %w", rowCount, err)
-			}
-
-			keys := make([]string, 0, len(row))
-			for key := range row {
-				keys = append(keys, key)
-			}
-			slices.Sort(keys)
-			if !slices.Equal(keys, goldenEnvelopeKeys) {
-				t.Fatalf("row %d: envelope keys = %v, want %v", rowCount, keys, goldenEnvelopeKeys)
-			}
-
-			if typ, _ := row["type"].(string); typ != EventViewCaptured && typ != EventViewReviewed && typ != EventViewCompared {
-				t.Fatalf("row %d: unexpected event type %q", rowCount, typ)
-			}
-			if aggType, _ := row["aggregate_type"].(string); aggType != StreamTypeView {
-				t.Fatalf("row %d: aggregate_type = %q, want %q", rowCount, aggType, StreamTypeView)
-			}
-			if enc, _ := row["encoding"].(string); enc != string(codec.EncodingCBOR) {
-				t.Fatalf("row %d: payload encoding = %q, want %q", rowCount, enc, codec.EncodingCBOR)
-			}
-			if schemaVersion, _ := row["schema_version"].(uint64); schemaVersion != 1 {
-				t.Fatalf("row %d: schema_version = %v, want 1", rowCount, row["schema_version"])
-			}
-
-			return nil
+			return checkEnvelopeRow(t, rowCount, value)
 		})
 	})
 	if err != nil {
@@ -441,6 +456,49 @@ func TestGoldenJournalEnvelopeContract(t *testing.T) {
 	if rowCount != 7 {
 		t.Fatalf("fixture has %d event rows, want 7", rowCount)
 	}
+}
+
+func checkEnvelopeRow(t *testing.T, rowNumber int, value []byte) error {
+	t.Helper()
+
+	if !isCBORFirstByte(value) {
+		t.Fatalf("row %d: envelope is not CBOR (first byte %#x)", rowNumber, value[0])
+	}
+
+	var row map[string]any
+
+	if err := codec.CBORDecMode().Unmarshal(value, &row); err != nil {
+		return fmt.Errorf("decode row %d: %w", rowNumber, err)
+	}
+
+	keys := make([]string, 0, len(row))
+	for key := range row {
+		keys = append(keys, key)
+	}
+
+	slices.Sort(keys)
+
+	if !slices.Equal(keys, goldenEnvelopeKeys) {
+		t.Fatalf("row %d: envelope keys = %v, want %v", rowNumber, keys, goldenEnvelopeKeys)
+	}
+
+	if typ, _ := row["type"].(string); typ != EventViewCaptured && typ != EventViewReviewed && typ != EventViewCompared {
+		t.Fatalf("row %d: unexpected event type %q", rowNumber, typ)
+	}
+
+	if aggType, _ := row["aggregate_type"].(string); aggType != StreamTypeView {
+		t.Fatalf("row %d: aggregate_type = %q, want %q", rowNumber, aggType, StreamTypeView)
+	}
+
+	if enc, _ := row["encoding"].(string); enc != string(codec.EncodingCBOR) {
+		t.Fatalf("row %d: payload encoding = %q, want %q", rowNumber, enc, codec.EncodingCBOR)
+	}
+
+	if schemaVersion, _ := row["schema_version"].(uint64); schemaVersion != 1 {
+		t.Fatalf("row %d: schema_version = %v, want 1", rowNumber, row["schema_version"])
+	}
+
+	return nil
 }
 
 func isCBORFirstByte(data []byte) bool {
@@ -481,6 +539,7 @@ func TestPayloadStructJSONTagsPinned(t *testing.T) {
 
 	for structName, wantTags := range want {
 		var got map[string]string
+
 		switch structName {
 		case "Captured":
 			got = jsonTagsOf[Captured]()
@@ -489,6 +548,7 @@ func TestPayloadStructJSONTagsPinned(t *testing.T) {
 		case "Compared":
 			got = jsonTagsOf[Compared]()
 		}
+
 		if !reflect.DeepEqual(got, wantTags) {
 			t.Fatalf("%s json tags = %v, want %v (payload tags are the journal compatibility contract)", structName, got, wantTags)
 		}
@@ -497,9 +557,10 @@ func TestPayloadStructJSONTagsPinned(t *testing.T) {
 
 func jsonTagsOf[T any]() map[string]string {
 	typ := reflect.TypeFor[T]()
+
 	tags := make(map[string]string, typ.NumField())
-	for i := range typ.NumField() {
-		field := typ.Field(i)
+
+	for field := range typ.Fields() {
 		tags[field.Name] = field.Tag.Get("json")
 	}
 
