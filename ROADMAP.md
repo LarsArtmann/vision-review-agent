@@ -12,13 +12,16 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ## Near-term direction
 
-The actionable near-term work is in [TODO_LIST.md](TODO_LIST.md): **A2UI
-verification debt** (schema-conformance test, coverage/duplication gates,
-codec hardening — from the 2026-08-18 audit), **visionreviewd activation**
-(first host, real-model bring-up, real projects), and the **tag anomaly**
-(destructive, needs user approval). The CI lint-config fix shipped in
-v0.6.0/v0.6.1 (CI green since 2026-08-17) and the SystemNix lock bump is
-committed (pins `dcd50a0`, verified 2026-08-18). All earlier near-term work —
+The actionable near-term work is in [TODO_LIST.md](TODO_LIST.md):
+**visionreviewd activation** (first host, real-model bring-up, real
+projects), the **DiscordSync 216-view watch**, and user-gated follow-ups
+from the 2026-09-07 post-bump execution (json/v2 external fix, Go
+1.26.6 toolchain when nixpkgs ships it). v0.7.0 shipped the journal-format
+golden-fixture pin, the go-cqrs-lite v4.9-era bump, and CI hardening:
+golangci-lint is version-pinned and all 9 CI checks are required on PR
+merges (the red-lint landing of 2026-09-07 was root-caused to linter
+version drift — see AGENTS.md). The SystemNix lock bump is committed (pins
+`dcd50a0`, verified 2026-08-18). All earlier near-term work —
 preprocessing auto-wiring, retry reconciliation, catwalk CLI integration,
 cost tracking, the visionreviewd daemon itself — shipped and lives in
 [CHANGELOG.md](CHANGELOG.md).
@@ -162,3 +165,8 @@ tasks. They are **not** TODO items until answered.
    inject the right version via ldflags). Decide: promote v0.6.1 to a full
    release (and either cut a synced v0.6.2 or accept the mismatch), and
    write down the push/tag cadence so it stops being re-asked every session.
+   **Update 2026-09-07:** v0.7.0 is tagged, `--latest` on GitHub, proxy-
+   verified, and internally consistent (version vars flipped before the
+   tag). The cadence question remains open: it gates whether the go-cqrs-lite
+   sibling repo's unreleased master should be released and re-bumped now or
+   wait for a consumer-driven trigger (see AGENTS.md bump entry).
