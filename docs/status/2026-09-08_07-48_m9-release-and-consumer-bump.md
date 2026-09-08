@@ -193,6 +193,7 @@ see b.1) · go-cqrs-lite `44102f31f` (concurrent agent still landing work).
 ## f) NEXT 50 (ordered, actionable)
 
 **Finish M9 (today):**
+
 1. Commit `vendorHash.nix` (correct hash), push, watch CI — all 10 checks
    green at the bump commit.
 2. Re-run matrix steps 8–9 (`nix build .`, `nix build .#visionreviewd`,
@@ -211,59 +212,59 @@ see b.1) · go-cqrs-lite `44102f31f` (concurrent agent still landing work).
 
 **User-gated (prepared, waiting):**
 8. Commit `.go-auto-upgrade.json` `{"exclude":["jsonv1tov2"]}` (user OK
-   needed — external-tool contract).
+needed — external-tool contract).
 9. DiscordSync 220-view watch: durable config + chosen cadence (user call).
 10. llama `--image-min-tokens 1024` A/B per the TODO_LIST eval plan (llama
-    restart).
+restart).
 11. SystemNix activation on evo-x2 (sudo; doctor-gated; backup ritual now
-    documented).
+documented).
 
 **Upstream follow-ups:**
 12. Re-probe go-cqrs-lite master: is `storage/v4` (the parent facade) due a
-    release too? (consumer doesn't import it; skip unless needed).
+release too? (consumer doesn't import it; skip unless needed).
 13. go-cqrs-lite #21 (watermill CorrelationID drop) — unrelated to us, but
-    the fix pattern from #22 applies; consider contributing.
+the fix pattern from #22 applies; consider contributing.
 14. Re-examine `otter`/`x/mod`/`x/tools` bumps the tidy wave pulled in —
-    confirm no behavior change in reviewd (covered by matrix, done).
+confirm no behavior change in reviewd (covered by matrix, done).
 15. File the phantom `go list -m -versions` behavior upstream/notes (after
-    root-cause).
+root-cause).
 16. Root-cause the workspace graph fetch (or document as known).
 17. Investigate the `verify` doc assertion failure in go-cqrs-lite.
 18. Consider upstreaming the read-only-open test pattern to
-    `storage/backuptest` RunFullLifecycle suite.
+`storage/backuptest` RunFullLifecycle suite.
 19. Evaluate `commandtest.RunStoreSuite` again IF reviewd ever implements a
-    raw command.Store (recorded as N/A today).
+raw command.Store (recorded as N/A today).
 20. Watch snapshot v5-wire: when upstream completes the migration, re-run our
-    golden-journal suite against the new snapshot tags.
+golden-journal suite against the new snapshot tags.
 
 **Docs/knowledge:**
 21. AGENTS.md: record the M9 release sequence as the canonical cross-repo
-    recipe (or a docs/release-multi-module.md).
+recipe (or a docs/release-multi-module.md).
 22. DEPS.md: note bbolt v4.2.0's ReadOnly support → `JournalLockHeld`/
-    backup code could switch from raw-bbolt to upstream `OpenWith` someday
-    (evaluation note).
+backup code could switch from raw-bbolt to upstream `OpenWith` someday
+(evaluation note).
 23. AGENTS.md: correct the "9 CI checks" historical references (now 10).
 24. TODO_LIST: remove the resolved "go-cqrs-lite release cadence" item (M9
-    done modulo residue).
+done modulo residue).
 25. ROADMAP open question #5: fully annotate (release cadence answered by
-    the M9 execution itself).
+the M9 execution itself).
 26. Features/docs: mention `--image-min-tokens` eval plan location from
-    README? (probably not — internal ops).
+README? (probably not — internal ops).
 27. Sync AGENTS.md "OpenWith ReadOnly defect" references → now fixed
-    upstream (time-bomb comments in store.go).
+upstream (time-bomb comments in store.go).
 28. Add the phantom-version-list gotcha to AGENTS.md gotchas.
 29. Add "workspace graph fetches unpublished pins" gotcha to AGENTS.md.
 30. Consider a `docs/status/` index (the directory is getting long).
 
 **Hygiene:**
 31. Prune `/tmp` scratch (jcopy, relverify, visionreviewd binaries) — or
-    accept, they're throwaway by policy.
+accept, they're throwaway by policy.
 32. `golangci-lint` exhaustruct deprecation warning (v2.13 → exhaustruct_v5)
-    — migrate config when convenient.
+— migrate config when convenient.
 33. `/mnt/buildcache` is 100% full — needs an owner decision (prune? expand?
-    it's shared infra).
+it's shared infra).
 34. `~/.config/go/env` jsonv2 pin: confirm it's still the mechanism after
-    toolchain bumps.
+toolchain bumps.
 35. Consider GOMODCACHE eviction policy for the home-dir cache (it will grow).
 
 **Backlog (from earlier plans, still open):**
@@ -274,7 +275,7 @@ see b.1) · go-cqrs-lite `44102f31f` (concurrent agent still landing work).
 40. dependabot alert #2 (gRPC OOM, no upstream fix) — re-check periodically.
 41. Structured hooks payload breaking-change question (ROADMAP Q1).
 42. Semver-for-0.x callout policy (partially answered today: full releases;
-    the CHANGELOG `### Breaking` convention still open).
+the CHANGELOG `### Breaking` convention still open).
 43. erraudit gate-vs-advisory (ROADMAP Q3).
 44. a2ui v1.0 candidate tracking (upstream status).
 45. a2ui art-dupl scan TODO (tracked item from earlier).
@@ -282,9 +283,9 @@ see b.1) · go-cqrs-lite `44102f31f` (concurrent agent still landing work).
 47. SIGHUP config reload / daemon ergonomics (ROADMAP).
 48. SystemNix hardening items (doctor ExecStartPre, alerts) after activation.
 49. Example of the full-watch config under `docs/activation/` once cadence is
-    chosen.
+chosen.
 50. Celebrate: the journal safety chain (M2/M7/M8/M23 + upstream #22/#23) is
-    now verified at both ends — golden pins AND live-data diff.
+now verified at both ends — golden pins AND live-data diff.
 
 ## g) QUESTIONS I CANNOT ANSWER MYSELF
 

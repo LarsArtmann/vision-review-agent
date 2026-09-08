@@ -30,10 +30,9 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
       — `discover /home/lars/projects/DiscordSync` already emits the full
       glob; measured 2026-09-07: **220 PNGs** in
       `internal/web/testdata/visual/`. Durable config entry:
-      ```json
+      `json
       "projects": { "discordsync":
-        ["/home/lars/projects/DiscordSync/internal/web/testdata/visual/*.png"] }
-      ```
+        ["/home/lars/projects/DiscordSync/internal/web/testdata/visual/*.png"] }`
       Duration estimate from the measured baseline
       (`docs/status/2026-09-07_22-15_perf-baseline-m14.md`): local scan+fold
       is ~6 ms for 220 views (PassSteady 2.9 ms per 100); the model dominates
@@ -50,18 +49,18 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
       llama-server logs the upstream Qwen-VL grounding warning. Plan (do NOT
       run against the live unit until a restart is scheduled):
       1. Pick 3 dense goldens (message-list views from the DiscordSync
-         corpus).
+      corpus).
       2. Baseline: current unit, `visionreviewd once` into a scratch
-         `dataDir`; record per-view score + review markdown.
+      `dataDir`; record per-view score + review markdown.
       3. Variant: `systemctl edit llama-vision-server` with
-         `ExecStart=` override adding `--image-min-tokens 1024` (the module's
-         ExecStart in `nixos/visionreviewd.nix:123` is hardcoded; use a
-         transient override for the A/B, promote to a module option only if
-         the eval wins), restart, repeat step 2 into a second scratch dir.
+      `ExecStart=` override adding `--image-min-tokens 1024` (the module's
+      ExecStart in `nixos/visionreviewd.nix:123` is hardcoded; use a
+      transient override for the A/B, promote to a module option only if
+      the eval wins), restart, repeat step 2 into a second scratch dir.
       4. Compare: score deltas, review specificity, and (if exercising a2ui)
-         compiled-surface component counts + validation failures. Adopt the
-         flag permanently only on a clear fidelity win at acceptable
-         throughput cost; otherwise close with the measurement recorded.
+      compiled-surface component counts + validation failures. Adopt the
+      flag permanently only on a clear fidelity win at acceptable
+      throughput cost; otherwise close with the measurement recorded.
 
 ## json/v2 flapping defense (user decision)
 
@@ -95,7 +94,7 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 - [ ] **Bump-PR body template (reusable)** — for future dependency-bump PRs
       (next up: fantasy v0.41.1→v0.43.1, catwalk, testify/gomega minors —
       `nix run .#dep-drift` list):
-      ```markdown
+      ``markdown
       ## Summary
       - Bump <dep> <from> → <to> (<why: CVE / feature / drift>)
       ## Verification
@@ -103,8 +102,7 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
       - [ ] `nix build .#visionreviewd` (vendorHash in sync — if stale:
             `nix run .#update-vendor-hash`)
       - [ ] GOEXPERIMENT=jsonv2 full suite + no-jsonv2 SDK subset
-      - [ ] govulncheck 0 reachable
-      ```
+      - [ ] govulncheck 0 reachable``
 - [ ] **0.x `--latest` / prerelease policy** (ROADMAP open question #5) —
       decide how releases are presented on GitHub (v0.7.0 currently holds
       `--latest` correctly).

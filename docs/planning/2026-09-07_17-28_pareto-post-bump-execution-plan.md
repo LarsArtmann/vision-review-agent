@@ -127,8 +127,8 @@ still open.
 All 55 raw inputs (50 session items + 5 TODO_LIST items) are mapped. Sorted by
 impact / effort / customer value. Skills to load per task noted where mandatory.
 
-| ID  | Task (30–100 min)                                                                                                                                                    | Tier | Impact   | Effort | Customer value         | Covers status-report #           | Covers TODO_LIST     |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------- | ------ | ---------------------- | -------------------------------- | -------------------- |
+| ID | Task (30–100 min) | Tier | Impact | Effort | Customer value | Covers status-report # | Covers TODO_LIST |
+| -- | ----------------- | ---- | ------ | ------ | -------------- | ---------------------- | ---------------- |
 
 > **Execution status (annotated 2026-09-07, docs-health ANNOTATE pass).**
 > M1–M8, M10–M18, M23 done; M13 filed as go-cqrs-lite #22/#23 (CHANGELOG ask
@@ -139,55 +139,55 @@ impact / effort / customer value. Skills to load per task noted where mandatory.
 > answer (ROADMAP open question #5)**. Session ledger:
 > `docs/status/2026-09-07_20-39_pareto-execution-m1-m8-status.md`.
 
-| M1  | ~~Close verification matrix: `nix flake check`, `-count=1` full sweep, record 8/8 evidence~~ done at `556065b` (8/8 at `8590dda`)                                        | 1%   | High     | Low    | Med                    | #1, #17                          | —                    |
-| M2  | ~~Golden-journal fixture regression test + wire-tag pin test + fuzz seed~~ done at `df4e7a2`                                                                             | 1%   | High     | Med    | **High** (data safety) | #2, #14, #33, #37, #29           | —                    |
-| M3  | ~~Release v0.7.0 end-to-end (`go-release` skill: CHANGELOG, matrix, tag, proxy verify, version reset)~~ done (tag `v0.7.0`; `5d12801`, cycle open `f0ff43c`)             | 1%   | **High** | Med    | **High**               | #6, #18                          | —                    |
-| M4  | ~~Lint-gate: root-cause `2934585` red landing, make lint a required check~~ done at `c8e5e4b`+`5182cba`                                                                  | 4%   | High     | Low    | Med                    | #3                               | —                    |
-| M5  | ~~HARVEST (`docs-health`): route plan items to TODO_LIST/ROADMAP, reconcile a2ui-art-dupl split brain, record Q1–Q3~~ done — split brain closed `c137687`; routing at this annotation | 4%   | Med      | Low    | Med                    | #5, #20, #26                     | —                    |
-| M6  | ~~govulncheck baseline + matrix/CI integration + dep-freshness script/flake app~~ done at `17d805f`+`ddcf1ba`                                                            | 4%   | High     | Med    | Med                    | #7, #24, #25                     | —                    |
-| M7  | ~~`visionreviewd backup` subcommand on bbolt backup lifecycle, tested + documented~~ done at `d98d091`+`a1c95dc`                                                         | 4%   | Med      | Med    | **High**               | #9                               | —                    |
-| M8  | ~~`doctor` journal-readability probe with current lib version~~ done at `2b4393e`+`919e4fa` (+ lock-probe fix `200a12f`→`cecc399`)                                        | 20%  | Med      | Low    | Med                    | #10, #45                         | —                    |
-| M9  | Release go-cqrs-lite master, re-bump consumer, re-audit wire diffs (`go-release` + `go-ecosystem-upgrade` skills) — **OPEN, user-gated (cadence, ROADMAP Q5)**           | 20%  | High     | High   | Med                    | #4                               | —                    |
-| M10 | ~~`update-vendor-hash` flake app + persisted verify-bump script (validated on known case)~~ done at `d9e0da3`+`7e90797`                                                  | 20%  | Med      | Low    | Low                    | #12, #13                         | —                    |
-| M11 | ~~Docs: DEPS/wire-contract doc, AGENTS.md baseline-lint rule, DOMAIN_LANGUAGE check, schema_version note, verify pass on new claims~~ done at `c2e34f9`                   | 20%  | Med      | Low    | Low                    | #11, #31, #32, #34, #40          | —                    |
-| M12 | ~~v5 migration tracking in ROADMAP + grep-guard test against deprecated pair-form APIs~~ done — guard `e2d076f`; ROADMAP entry this sweep                                 | 20%  | Med      | Low    | Med                    | #21, #38, #41                    | —                    |
-| M13 | ~~Upstream asks: serializableEvent contract-test issue + per-module CHANGELOG request (`verify-before-filing` skill first)~~ done — filed go-cqrs-lite #22+#23; CHANGELOG ask dropped (main CHANGELOG tracks submodule releases) | 20%  | Med      | Low    | Low                    | #22, #23                         | —                    |
-| M14 | ~~Perf evidence: pass/replay benchmark + 10k-event journal load test~~ done — bench `6acf70e`, baseline doc `6b6af2a`, DEPS reconcile `91ec1c2`                          | 20%  | Med      | Med    | Med                    | #27, #28                         | —                    |
-| M15 | ~~Upstream capability evaluation: WithBatchCommit spike, journal_middleware, query/snapshot/metadata APIs~~ done at `c2e34f9` (ADR incl. measured Batch spike)            | 20%  | Low      | Med    | Med                    | #15, #30, #39                    | —                    |
-| M16 | ~~CI alignment: no-jsonv2 dir list, jsonv2 -race job, tidy/verify jobs, go.sum↔vendorHash consistency job~~ done at `62ec25b` (+ branch protection 10 checks)             | 20%  | Med      | Low    | Med                    | #16, #35, #36, #47               | —                    |
-| M17 | ~~Go 1.26.6 toolchain re-probe; if nixpkgs ships it: go.mod + flake bump + full matrix (5 stdlib CVEs)~~ resolved 2026-09-07 — nixpkgs ships 1.26.7, repo pinned since `2934585` | 20%  | **High** | Low    | **High** (security)    | —                                | Toolchain bump       |
-| M18 | ~~Fix `internal/reviewd/prompts.go:88` WriteString concat (gopls finding)~~ done at `6fb0022`                                                                            | rest | Low      | Low    | Low                    | #19                              | —                    |
-| M19 | ~~DiscordSync 216-view watch: durable config + interval proposal, present for cadence call~~ PREP done (220 views measured; proposal in TODO_LIST) — cadence is user call | rest | Med      | Low    | **High**               | —                                | DiscordSync watch    |
-| M20 | ~~llama `--image-min-tokens 1024` evaluation on dense screenshots, recommend or decline~~ PREP done (eval plan in TODO_LIST) — needs user llama-server restart            | rest | Med      | Med    | Med                    | —                                | llama tokens         |
-| M21 | ~~SystemNix activation dry-run: docs currency check, doctor against template config, handoff checklist~~ done at `7373eac` — host activation user-gated                   | rest | Med      | Low    | Med                    | —                                | SystemNix activation |
-| M22 | ~~json/v2 external root fix: inspect go-auto-upgrade rule format, draft exclusion, propose upstream~~ PREP done — root fix `.go-auto-upgrade.json`; proposal in TODO_LIST | rest | Med      | Low    | Med                    | —                                | json/v2 root fix     |
-| M23 | ~~Replay error messages name the offending journal path/stream on DecodePayloadAuto failure~~ done at `050910f`+`6fb0022`                                                 | rest | Low      | Low    | Low                    | #49                              | —                    |
-| M24 | ~~Session hygiene bundle: durable artifact location, LSP-restart habit, version-surface audit, commandtest helpers eval, examples re-check note, bump-PR body template~~ done — AGENTS.md hygiene section + TODO_LIST template | rest | Low      | Med    | Low                    | #8, #42, #43, #44, #46, #48, #50 | —                    |
+| M1 | ~~Close verification matrix: `nix flake check`, `-count=1` full sweep, record 8/8 evidence~~ done at `556065b` (8/8 at `8590dda`) | 1% | High | Low | Med | #1, #17 | — |
+| M2 | ~~Golden-journal fixture regression test + wire-tag pin test + fuzz seed~~ done at `df4e7a2` | 1% | High | Med | **High** (data safety) | #2, #14, #33, #37, #29 | — |
+| M3 | ~~Release v0.7.0 end-to-end (`go-release` skill: CHANGELOG, matrix, tag, proxy verify, version reset)~~ done (tag `v0.7.0`; `5d12801`, cycle open `f0ff43c`) | 1% | **High** | Med | **High** | #6, #18 | — |
+| M4 | ~~Lint-gate: root-cause `2934585` red landing, make lint a required check~~ done at `c8e5e4b`+`5182cba` | 4% | High | Low | Med | #3 | — |
+| M5 | ~~HARVEST (`docs-health`): route plan items to TODO_LIST/ROADMAP, reconcile a2ui-art-dupl split brain, record Q1–Q3~~ done — split brain closed `c137687`; routing at this annotation | 4% | Med | Low | Med | #5, #20, #26 | — |
+| M6 | ~~govulncheck baseline + matrix/CI integration + dep-freshness script/flake app~~ done at `17d805f`+`ddcf1ba` | 4% | High | Med | Med | #7, #24, #25 | — |
+| M7 | ~~`visionreviewd backup` subcommand on bbolt backup lifecycle, tested + documented~~ done at `d98d091`+`a1c95dc` | 4% | Med | Med | **High** | #9 | — |
+| M8 | ~~`doctor` journal-readability probe with current lib version~~ done at `2b4393e`+`919e4fa` (+ lock-probe fix `200a12f`→`cecc399`) | 20% | Med | Low | Med | #10, #45 | — |
+| M9 | Release go-cqrs-lite master, re-bump consumer, re-audit wire diffs (`go-release` + `go-ecosystem-upgrade` skills) — **OPEN, user-gated (cadence, ROADMAP Q5)** | 20% | High | High | Med | #4 | — |
+| M10 | ~~`update-vendor-hash` flake app + persisted verify-bump script (validated on known case)~~ done at `d9e0da3`+`7e90797` | 20% | Med | Low | Low | #12, #13 | — |
+| M11 | ~~Docs: DEPS/wire-contract doc, AGENTS.md baseline-lint rule, DOMAIN_LANGUAGE check, schema_version note, verify pass on new claims~~ done at `c2e34f9` | 20% | Med | Low | Low | #11, #31, #32, #34, #40 | — |
+| M12 | ~~v5 migration tracking in ROADMAP + grep-guard test against deprecated pair-form APIs~~ done — guard `e2d076f`; ROADMAP entry this sweep | 20% | Med | Low | Med | #21, #38, #41 | — |
+| M13 | ~~Upstream asks: serializableEvent contract-test issue + per-module CHANGELOG request (`verify-before-filing` skill first)~~ done — filed go-cqrs-lite #22+#23; CHANGELOG ask dropped (main CHANGELOG tracks submodule releases) | 20% | Med | Low | Low | #22, #23 | — |
+| M14 | ~~Perf evidence: pass/replay benchmark + 10k-event journal load test~~ done — bench `6acf70e`, baseline doc `6b6af2a`, DEPS reconcile `91ec1c2` | 20% | Med | Med | Med | #27, #28 | — |
+| M15 | ~~Upstream capability evaluation: WithBatchCommit spike, journal_middleware, query/snapshot/metadata APIs~~ done at `c2e34f9` (ADR incl. measured Batch spike) | 20% | Low | Med | Med | #15, #30, #39 | — |
+| M16 | ~~CI alignment: no-jsonv2 dir list, jsonv2 -race job, tidy/verify jobs, go.sum↔vendorHash consistency job~~ done at `62ec25b` (+ branch protection 10 checks) | 20% | Med | Low | Med | #16, #35, #36, #47 | — |
+| M17 | ~~Go 1.26.6 toolchain re-probe; if nixpkgs ships it: go.mod + flake bump + full matrix (5 stdlib CVEs)~~ resolved 2026-09-07 — nixpkgs ships 1.26.7, repo pinned since `2934585` | 20% | **High** | Low | **High** (security) | — | Toolchain bump |
+| M18 | ~~Fix `internal/reviewd/prompts.go:88` WriteString concat (gopls finding)~~ done at `6fb0022` | rest | Low | Low | Low | #19 | — |
+| M19 | ~~DiscordSync 216-view watch: durable config + interval proposal, present for cadence call~~ PREP done (220 views measured; proposal in TODO_LIST) — cadence is user call | rest | Med | Low | **High** | — | DiscordSync watch |
+| M20 | ~~llama `--image-min-tokens 1024` evaluation on dense screenshots, recommend or decline~~ PREP done (eval plan in TODO_LIST) — needs user llama-server restart | rest | Med | Med | Med | — | llama tokens |
+| M21 | ~~SystemNix activation dry-run: docs currency check, doctor against template config, handoff checklist~~ done at `7373eac` — host activation user-gated | rest | Med | Low | Med | — | SystemNix activation |
+| M22 | ~~json/v2 external root fix: inspect go-auto-upgrade rule format, draft exclusion, propose upstream~~ PREP done — root fix `.go-auto-upgrade.json`; proposal in TODO_LIST | rest | Med | Low | Med | — | json/v2 root fix |
+| M23 | ~~Replay error messages name the offending journal path/stream on DecodePayloadAuto failure~~ done at `050910f`+`6fb0022` | rest | Low | Low | Low | #49 | — |
+| M24 | ~~Session hygiene bundle: durable artifact location, LSP-restart habit, version-surface audit, commandtest helpers eval, examples re-check note, bump-PR body template~~ done — AGENTS.md hygiene section + TODO_LIST template | rest | Low | Med | Low | #8, #42, #43, #44, #46, #48, #50 | — |
 
-| M1  | done at `556065b` — matrix 8/8 at `8590dda` | 1%   | High     | Low    | Med                    | #1, #17                          | —                    |
-| M2  | done at `df4e7a2` | 1%   | High     | Med    | **High** (data safety) | #2, #14, #33, #37, #29           | —                    |
-| M3  | done — tag `v0.7.0`, `5d12801`/`f0ff43c` | 1%   | **High** | Med    | **High**               | #6, #18                          | —                    |
-| M4  | done at `c8e5e4b`+`5182cba` | 4%   | High     | Low    | Med                    | #3                               | —                    |
-| M5  | done at this annotation + TODO_LIST/ROADMAP/AGENTS/FEATURES routing | 4%   | Med      | Low    | Med                    | #5, #20, #26                     | —                    |
-| M6  | done at `17d805f`+`ddcf1ba` | 4%   | High     | Med    | Med                    | #7, #24, #25                     | —                    |
-| M7  | done at `d98d091`+`a1c95dc` | 4%   | Med      | Med    | **High**               | #9                               | —                    |
-| M8  | done at `2b4393e`+`919e4fa` (+ lock-probe fix `200a12f`→`cecc399`) | 20%  | Med      | Low    | Med                    | #10, #45                         | —                    |
-| M9  | OPEN — user-gated (cadence) | 20%  | High     | High   | Med                    | #4                               | —                    |
-| M10 | done at `d9e0da3`+`7e90797` (AGENTS apps note in F10.5 sweep) | 20%  | Med      | Low    | Low                    | #12, #13                         | —                    |
-| M11 | done at `c2e34f9` | 20%  | Med      | Low    | Low                    | #11, #31, #32, #34, #40          | —                    |
-| M12 | done — guard `e2d076f`; ROADMAP v5 entry in sweep | 20%  | Med      | Low    | Med                    | #21, #38, #41                    | —                    |
-| M13 | done — filed go-cqrs-lite #22 (ReadOnly defect) + #23 (envelope golden); CHANGELOG ask dropped as low-value | 20%  | Med      | Low    | Low                    | #22, #23                         | —                    |
-| M14 | done — bench `6acf70e`, baseline `6b6af2a`, DEPS reconcile `91ec1c2` | 20%  | Med      | Med    | Med                    | #27, #28                         | —                    |
-| M15 | done at `c2e34f9` (ADR incl. measured Batch spike) | 20%  | Low      | Med    | Med                    | #15, #30, #39                    | —                    |
-| M16 | done at `62ec25b` (+ branch protection 10 checks) | 20%  | Med      | Low    | Med                    | #16, #35, #36, #47               | —                    |
-| M17 | done 2026-09-07 — nixpkgs ships 1.26.7, repo already pinned (`2934585`); 5 stdlib CVEs moot | 20%  | **High** | Low    | **High** (security)    | —                                | Toolchain bump       |
-| M18 | done at `6fb0022` | rest | Low      | Low    | Low                    | #19                              | —                    |
-| M19 | PREP done — proposal in TODO_LIST (220 views measured); cadence is user call | rest | Med      | Low    | **High**               | —                                | DiscordSync watch    |
-| M20 | PREP done — eval plan in TODO_LIST; needs user llama-server restart | rest | Med      | Med    | Med                    | —                                | llama tokens         |
-| M21 | done at `7373eac` (backup ritual + doctor dry-run on example config); host activation user-gated | rest | Med      | Low    | Med                    | —                                | SystemNix activation |
-| M22 | PREP done — root fix identified (`.go-auto-upgrade.json` exclude `jsonv1tov2`); proposal in TODO_LIST | rest | Med      | Low    | Med                    | —                                | json/v2 root fix     |
-| M23 | done at `050910f`+`6fb0022` | rest | Low      | Low    | Low                    | #49                              | —                    |
-| M24 | done — notes routed to AGENTS.md hygiene section + TODO_LIST (bump-PR template) | rest | Low      | Med    | Low                    | #8, #42, #43, #44, #46, #48, #50 | —                    |
+| M1 | done at `556065b` — matrix 8/8 at `8590dda` | 1% | High | Low | Med | #1, #17 | — |
+| M2 | done at `df4e7a2` | 1% | High | Med | **High** (data safety) | #2, #14, #33, #37, #29 | — |
+| M3 | done — tag `v0.7.0`, `5d12801`/`f0ff43c` | 1% | **High** | Med | **High** | #6, #18 | — |
+| M4 | done at `c8e5e4b`+`5182cba` | 4% | High | Low | Med | #3 | — |
+| M5 | done at this annotation + TODO_LIST/ROADMAP/AGENTS/FEATURES routing | 4% | Med | Low | Med | #5, #20, #26 | — |
+| M6 | done at `17d805f`+`ddcf1ba` | 4% | High | Med | Med | #7, #24, #25 | — |
+| M7 | done at `d98d091`+`a1c95dc` | 4% | Med | Med | **High** | #9 | — |
+| M8 | done at `2b4393e`+`919e4fa` (+ lock-probe fix `200a12f`→`cecc399`) | 20% | Med | Low | Med | #10, #45 | — |
+| M9 | OPEN — user-gated (cadence) | 20% | High | High | Med | #4 | — |
+| M10 | done at `d9e0da3`+`7e90797` (AGENTS apps note in F10.5 sweep) | 20% | Med | Low | Low | #12, #13 | — |
+| M11 | done at `c2e34f9` | 20% | Med | Low | Low | #11, #31, #32, #34, #40 | — |
+| M12 | done — guard `e2d076f`; ROADMAP v5 entry in sweep | 20% | Med | Low | Med | #21, #38, #41 | — |
+| M13 | done — filed go-cqrs-lite #22 (ReadOnly defect) + #23 (envelope golden); CHANGELOG ask dropped as low-value | 20% | Med | Low | Low | #22, #23 | — |
+| M14 | done — bench `6acf70e`, baseline `6b6af2a`, DEPS reconcile `91ec1c2` | 20% | Med | Med | Med | #27, #28 | — |
+| M15 | done at `c2e34f9` (ADR incl. measured Batch spike) | 20% | Low | Med | Med | #15, #30, #39 | — |
+| M16 | done at `62ec25b` (+ branch protection 10 checks) | 20% | Med | Low | Med | #16, #35, #36, #47 | — |
+| M17 | done 2026-09-07 — nixpkgs ships 1.26.7, repo already pinned (`2934585`); 5 stdlib CVEs moot | 20% | **High** | Low | **High** (security) | — | Toolchain bump |
+| M18 | done at `6fb0022` | rest | Low | Low | Low | #19 | — |
+| M19 | PREP done — proposal in TODO_LIST (220 views measured); cadence is user call | rest | Med | Low | **High** | — | DiscordSync watch |
+| M20 | PREP done — eval plan in TODO_LIST; needs user llama-server restart | rest | Med | Med | Med | — | llama tokens |
+| M21 | done at `7373eac` (backup ritual + doctor dry-run on example config); host activation user-gated | rest | Med | Low | Med | — | SystemNix activation |
+| M22 | PREP done — root fix identified (`.go-auto-upgrade.json` exclude `jsonv1tov2`); proposal in TODO_LIST | rest | Med | Low | Med | — | json/v2 root fix |
+| M23 | done at `050910f`+`6fb0022` | rest | Low | Low | Low | #49 | — |
+| M24 | done — notes routed to AGENTS.md hygiene section + TODO_LIST (bump-PR template) | rest | Low | Med | Low | #8, #42, #43, #44, #46, #48, #50 | — |
 
 ## Step 3 — Detailed Breakdown (fine granularity, ≤ 12 min each)
 
