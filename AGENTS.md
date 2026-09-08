@@ -210,7 +210,9 @@ Latest full-green run: 2026-09-07 at `8590dda` (post go-cqrs-lite bump) — all
 steps passed, `-count=1` everywhere; evidence annotated in
 `docs/status/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`. A second
 full-green 9-step run (now incl. `go mod verify` + govulncheck at step 5/6)
-landed 2026-09-07 at `cecc399` (PR #1 merge + M8/M10/M16 state).
+landed 2026-09-07 at `cecc399` (PR #1 merge + M8/M10/M16 state), and a third at
+`4d495b6` (post docs sweep; local caches moved off `/mnt/buildcache` after it
+hit 100% — see GOWORK section for the override).
 
 Dependency hygiene: `nix run .#dep-drift` (or `scripts/check-deps.sh`)
 compares direct go.mod requirements against the latest published versions —
