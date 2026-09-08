@@ -47,7 +47,6 @@ require (
 	github.com/charmbracelet/x/etag v0.2.0 // indirect
 	github.com/charmbracelet/x/exp/slice v0.0.0-20260811151704-00c6608f106b // indirect
 	github.com/charmbracelet/x/exp/strings v0.1.0 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.3 // indirect
 	github.com/go-json-experiment/json v0.0.0-20260623181947-01eb4420fa68 // indirect
@@ -75,14 +74,12 @@ require (
 	github.com/larsartmann/go-cqrs-lite/query/v4 v4.8.0 // indirect
 	github.com/larsartmann/go-cqrs-lite/record/v4 v4.5.0 // indirect
 	github.com/larsartmann/go-cqrs-lite/snapshot/v4 v4.5.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/storage/backuptest/v4 v4.2.0 // indirect
 	github.com/larsartmann/go-error-family v0.10.0 // indirect
 	github.com/larsartmann/go-flightrecorder v0.2.0 // indirect
 	github.com/maypok86/otter/v2 v2.3.0 // indirect
 	github.com/oklog/ulid/v2 v2.1.2 // indirect
 	github.com/openai/openai-go/v3 v3.50.0 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/standard-webhooks/standard-webhooks/libraries v0.0.1 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
@@ -113,7 +110,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260810153831-ec0a7760b754 // indirect
 	google.golang.org/grpc v1.83.1 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 retract v0.3.0 // duplicate tag: points at the same commit as v0.2.1 (d5dda4b); prefer v0.5.1+
