@@ -191,6 +191,10 @@ tasks. They are **not** TODO items until answered.
    write down the push/tag cadence so it stops being re-asked every session.
    **Update 2026-09-07:** v0.7.0 is tagged, `--latest` on GitHub, proxy-
    verified, and internally consistent (version vars flipped before the
-   tag). The cadence question remains open: it gates whether the go-cqrs-lite
-   sibling repo's unreleased master should be released and re-bumped now or
-   wait for a consumer-driven trigger (see AGENTS.md bump entry).
+   tag). **Decided 2026-09-07 (user):** 0.x releases ship as full GitHub
+   releases claiming `--latest` (the v0.7.0 pattern is the policy), and the
+   go-cqrs-lite sibling releases AFTER its filed defects (#22, #23) are
+   fixed — then this repo re-bumps (M9 sequence is unblocked). Deployment
+   direction confirmed: visionreviewd targets a real host with real
+   projects (DiscordSync 220-view watch is real upcoming work, not
+   local-only).
