@@ -2,7 +2,8 @@ package a2ui
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"slices"
@@ -246,7 +247,7 @@ func (m *UpdateDataModel) UnmarshalJSON(data []byte) error {
 	m.Path = payload.Path
 	m.Value = payload.Value
 
-	var fields map[string]json.RawMessage
+	var fields map[string]jsontext.Value
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return fmt.Errorf("%w: decode updateDataModel fields: %w", ErrMalformedMessage, err)
 	}
@@ -339,7 +340,7 @@ func UnmarshalMessage(data []byte) (Message, error) {
 		return nil, fmt.Errorf("%w: decode envelope: %w", ErrMalformedMessage, err)
 	}
 
-	var fields map[string]json.RawMessage
+	var fields map[string]jsontext.Value
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return nil, fmt.Errorf("%w: decode fields: %w", ErrMalformedMessage, err)
 	}
@@ -376,7 +377,7 @@ func UnmarshalMessage(data []byte) (Message, error) {
 }
 
 // decodeKind decodes one message payload and stamps the envelope version.
-func decodeKind(kind string, payload json.RawMessage, version string) (Message, error) {
+func decodeKind(kind string, payload jsontext.Value, version string) (Message, error) {
 	var (
 		msg Message
 		err error

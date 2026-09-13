@@ -1,7 +1,8 @@
 package reviewed
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io/fs"
 	"os"
@@ -251,7 +252,7 @@ func SuggestedConfigJSON(suggestions []SuggestedProject) (string, error) {
 		projects[suggestion.Name] = suggestion.Globs
 	}
 
-	encoded, err := json.MarshalIndent(projects, "", "  ")
+	encoded, err := json.Marshal(projects, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "))
 	if err != nil {
 		return "", fmt.Errorf("encode suggested projects: %w", err)
 	}

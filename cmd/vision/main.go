@@ -11,7 +11,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"flag"
 	"fmt"
@@ -19,6 +19,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"encoding/json/jsontext"
 
 	"charm.land/fantasy"
 	"charm.land/fantasy/providers/openaicompat"
@@ -374,10 +376,9 @@ func runStructured(
 		failAnalysis(stderr, err)
 	}
 
-	enc := json.NewEncoder(stdout)
-	enc.SetIndent("", "  ")
+	enc := jsontext.NewEncoder(stdout, jsontext.WithIndent("  "))
 
-	if err := enc.Encode(result.Object); err != nil {
+	if err := json.MarshalEncode(enc, result.Object); err != nil {
 		fmt.Fprintln(stderr, "Error encoding JSON:", err)
 	}
 }
@@ -498,10 +499,9 @@ func printJSON(w io.Writer, result *vision.AnalyzeResult) {
 			TotalTokens:  result.Usage.TotalTokens,
 		},
 	}
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
+	enc := jsontext.NewEncoder(w, jsontext.WithIndent("  "))
 
-	if err := enc.Encode(output); err != nil {
+	if err := json.MarshalEncode(enc, output); err != nil {
 		fmt.Fprintln(os.Stderr, "Error encoding JSON:", err)
 	}
 }

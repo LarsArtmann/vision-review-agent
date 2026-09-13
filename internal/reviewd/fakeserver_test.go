@@ -2,7 +2,8 @@ package reviewed
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -27,8 +28,8 @@ type fakeContentPart struct {
 
 // fakeChatMessage is one message of an OpenAI chat request.
 type fakeChatMessage struct {
-	Role    string          `json:"role"`
-	Content json.RawMessage `json:"content"`
+	Role    string         `json:"role"`
+	Content jsontext.Value `json:"content"`
 }
 
 // fakeChatRequest is the subset of the OpenAI chat request the fake server
@@ -117,7 +118,7 @@ func startFakeModelServer(t *testing.T, markdown string) (*httptest.Server, *fak
 
 		var request fakeChatRequest
 
-		if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+		if err := json.UnmarshalRead(req.Body, &request); err != nil {
 			http.Error(w, "decode request: "+err.Error(), http.StatusBadRequest)
 
 			return
@@ -141,7 +142,7 @@ func startFakeModelServer(t *testing.T, markdown string) (*httptest.Server, *fak
 
 		w.Header().Set("Content-Type", "application/json")
 
-		if err := json.NewEncoder(w).Encode(completion); err != nil {
+		if err := json.MarshalWrite(w, completion); err != nil {
 			http.Error(w, "encode response: "+err.Error(), http.StatusInternalServerError)
 		}
 	}))
