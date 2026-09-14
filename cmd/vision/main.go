@@ -11,6 +11,7 @@ package main
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"errors"
 	"flag"
@@ -19,8 +20,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"encoding/json/jsontext"
 
 	"charm.land/fantasy"
 	"charm.land/fantasy/providers/openaicompat"
@@ -385,18 +384,18 @@ func runStructured(
 
 // uiReview is the built-in structured schema emitted by the -structured flag.
 type uiReview struct {
-	Layout      string    `description:"Brief description of the overall layout" json:"layout"`
-	Components  []string  `description:"List of UI components identified"        json:"components"`
-	Issues      []uiIssue `description:"List of issues found"                    json:"issues"`
-	Score       int       `description:"Overall UX score from 1-10"              json:"score"`
-	Suggestions []string  `description:"Actionable improvement suggestions"      json:"suggestions"`
+	Layout      string    `json:"layout"      description:"Brief description of the overall layout"`
+	Components  []string  `json:"components"  description:"List of UI components identified"`
+	Issues      []uiIssue `json:"issues"      description:"List of issues found"`
+	Score       int       `json:"score"       description:"Overall UX score from 1-10"`
+	Suggestions []string  `json:"suggestions" description:"Actionable improvement suggestions"`
 }
 
 // uiIssue represents a single UI issue in a structured review.
 type uiIssue struct {
-	Severity    string `description:"Severity: critical, major, minor, or info" json:"severity"`
-	Component   string `description:"Which component has the issue"             json:"component"`
-	Description string `description:"Detailed description of the issue"         json:"description"`
+	Severity    string `json:"severity"    description:"Severity: critical, major, minor, or info"`
+	Component   string `json:"component"   description:"Which component has the issue"`
+	Description string `json:"description" description:"Detailed description of the issue"`
 }
 
 // failAnalysis reports a failed analysis and exits; the CLI has nothing

@@ -152,7 +152,7 @@ func TestGenerateGoldenJournal(t *testing.T) {
 
 	out := "testdata/" + goldenFixtureName
 
-	if err := os.WriteFile(out, data, 0o644); err != nil { //nolint:gosec // constant fixture path, no user input
+	if err := os.WriteFile(out, data, 0o644); err != nil {
 		t.Fatalf("write fixture: %v", err)
 	}
 
@@ -173,7 +173,7 @@ func copyGoldenFixture(t *testing.T) string {
 
 	dst := filepath.Join(t.TempDir(), goldenFixtureName)
 
-	if err := os.WriteFile(dst, data, 0o644); err != nil { //nolint:gosec // per-test temp dir, no user input
+	if err := os.WriteFile(dst, data, 0o644); err != nil {
 		t.Fatalf("copy golden fixture: %v", err)
 	}
 

@@ -84,7 +84,6 @@ func TestRequireArgcExitsWithUsageWhenShort(t *testing.T) {
 		return
 	}
 
-	//nolint:gosec // re-exec of the test binary itself is the canonical subprocess-test pattern
 	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=TestRequireArgcExitsWithUsageWhenShort")
 
 	cmd.Env = append(os.Environ(), "GO_TEST_REQUIRE_ARGC_CHILD=1")

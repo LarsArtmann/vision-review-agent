@@ -35,7 +35,7 @@ func TestNoV5RemovedPairFormAPIs(t *testing.T) {
 			return nil
 		}
 
-		data, readErr := os.ReadFile(path) //nolint:gosec // repo-relative path from WalkDir
+		data, readErr := os.ReadFile(path)
 		if readErr != nil {
 			return fmt.Errorf("read %s: %w", path, readErr)
 		}

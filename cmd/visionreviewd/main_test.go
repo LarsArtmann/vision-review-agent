@@ -688,7 +688,7 @@ func TestRunBackupRestoresAndReplaysEqually(t *testing.T) {
 
 	restoredJournal := filepath.Join(restoredDataDir, "events.db")
 
-	err = os.WriteFile(restoredJournal, snapshot, 0o600) //nolint:gosec // per-test temp dir, no user input
+	err = os.WriteFile(restoredJournal, snapshot, 0o600)
 	if err != nil {
 		t.Fatalf("restore backup into data dir: %v", err)
 	}
