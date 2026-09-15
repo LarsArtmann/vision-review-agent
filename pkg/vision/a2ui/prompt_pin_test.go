@@ -1,13 +1,12 @@
 package a2ui
 
 import (
+	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
-
-	"encoding/json/jsontext"
 
 	"github.com/stretchr/testify/require"
 )

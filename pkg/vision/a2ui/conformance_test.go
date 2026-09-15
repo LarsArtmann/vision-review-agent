@@ -2,14 +2,13 @@ package a2ui
 
 import (
 	"bytes"
+	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"encoding/json/jsontext"
 
 	jschema "github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/stretchr/testify/require"
