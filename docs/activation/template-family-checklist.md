@@ -42,6 +42,12 @@ new or edited site in the family._
 
 - [ ] Screenshots shot with `lazyImageLoadingEnabled=false` (blank-card
       contamination class).
+- [ ] **Dark-mode capture will actually show a dark page**: the site must
+      respond to `prefers-color-scheme` (Astro family: explicit light+dark
+      palettes; Docusaurus: `respectPrefersColorScheme: true` — that exact
+      key; `respectColorScheme` does not exist and schema-fails) or be
+      dark-by-design with a manual toggle only (cmdguard class — say so in
+      the AGENTS.md, or the dark pass just re-shoots the light theme).
 - [ ] og/social assets referenced with absolute URLs built from `siteUrl`.
 - [ ] pnpm ≥ 11 sites: build-script approvals in `pnpm-workspace.yaml`
       (`allowBuilds: esbuild: true`), NOT `package.json pnpm.*` (ignored by

@@ -85,8 +85,14 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
 - [ ] **auditlog site canonical-URL audit** — decide whether
       go-workflow-auditlog gets the same canonical/sitemap treatment as the
       other 16.
-- [ ] **learnings: one manual CI run** — confirm Actions green after the
-      canonical retarget (workflow exists, hasn't been proven since).
+- [ ] **learnings: CI decision (Lars)** — the only workflow
+      (`ci.yml`, Go 1.21 "CI/CD Pipeline") is `disabled_manually` in
+      Actions (checked 2026-09-20; that's why `gh run list` shows only
+      Dependabot). A "manual CI run" is impossible without re-enabling an
+      owner-disabled workflow. Also: it tests the Go extractor + docker
+      publish, NOT the website — the site has no CI, deploys are local
+      firebase. Options: leave disabled, re-enable + prove green, or
+      delete the stale workflow.
 - [ ] **Dark-mode coverage gaps** — cmdguard is dark-first with a manual
       toggle (no `prefers-color-scheme` media query): system-dark users get
       the default (fine), but system-light users also get dark; consider a
