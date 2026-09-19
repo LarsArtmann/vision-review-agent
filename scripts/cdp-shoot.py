@@ -260,48 +260,60 @@ def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=(), skip_
                         },
                     )
                 for label, page_url in pages:
-                    cdp.cmd("Page.navigate", {"url": page_url})
-                    loaded = False
-                    deadline = time.time() + 45
-                    while time.time() < deadline and not loaded:
-                        msg = cdp.ws.recv()
-                        if msg.get("method") == "Page.loadEventFired":
-                            loaded = True
-                    time.sleep(SETTLE_SECONDS)
-                    ready = cdp.cmd(
-                        "Runtime.evaluate",
-                        {
-                            "expression": "document.readyState",
-                            "returnByValue": True,
-                        },
-                    )
-                    if ready.get("result", {}).get("value") != "complete":
-                        time.sleep(3)
-                    height = cdp.cmd(
-                        "Runtime.evaluate",
-                        {
-                            "expression":
-                                "Math.max(document.documentElement.scrollHeight,"
-                                " document.body ? document.body.scrollHeight : 0)",
-                            "returnByValue": True,
-                        },
-                    )["result"]["value"]
-                    height = max(int(height or 0), vp["height"])
-                    shot = cdp.cmd(
-                        "Page.captureScreenshot",
-                        {
-                            "format": "png",
-                            "captureBeyondViewport": True,
-                            "clip": {
-                                "x": 0,
-                                "y": 0,
-                                "width": vp["width"],
-                                "height": height,
-                                "scale": 1,
-                            },
-                        },
-                        timeout=120,
-                    )
+                    for attempt in (1, 2):
+                        try:
+                            cdp.cmd("Page.navigate", {"url": page_url})
+                            loaded = False
+                            deadline = time.time() + 45
+                            while time.time() < deadline and not loaded:
+                                msg = cdp.ws.recv()
+                                if msg.get("method") == "Page.loadEventFired":
+                                    loaded = True
+                            time.sleep(SETTLE_SECONDS)
+                            ready = cdp.cmd(
+                                "Runtime.evaluate",
+                                {
+                                    "expression": "document.readyState",
+                                    "returnByValue": True,
+                                },
+                            )
+                            if ready.get("result", {}).get("value") != "complete":
+                                time.sleep(3)
+                            height = cdp.cmd(
+                                "Runtime.evaluate",
+                                {
+                                    "expression":
+                                        "Math.max(document.documentElement.scrollHeight,"
+                                        " document.body ? document.body.scrollHeight : 0)",
+                                    "returnByValue": True,
+                                },
+                            )["result"]["value"]
+                            height = max(int(height or 0), vp["height"])
+                            shot = cdp.cmd(
+                                "Page.captureScreenshot",
+                                {
+                                    "format": "png",
+                                    "captureBeyondViewport": True,
+                                    "clip": {
+                                        "x": 0,
+                                        "y": 0,
+                                        "width": vp["width"],
+                                        "height": height,
+                                        "scale": 1,
+                                    },
+                                },
+                                timeout=120,
+                            )
+                            break
+                        except TimeoutError as e:
+                            # one retry: a hung capture must not fail the
+                            # whole site; a second timeout bubbles up
+                            if attempt == 2:
+                                raise
+                            print(
+                                f"  retry {project}/{label}--{mode}--{vp_name}"
+                                f" (attempt {attempt} timed out: {e})"
+                            )
                     data = base64.b64decode(shot["data"])
                     outdir = os.path.join(OUT, project)
                     os.makedirs(outdir, exist_ok=True)
