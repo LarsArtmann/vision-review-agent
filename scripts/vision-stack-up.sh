@@ -6,11 +6,13 @@
 #   ~10 min on this machine; see docs/activation/site-fleet-ops.md §1.3)
 # - wait up to TIMEOUT for health, then report
 #
-# Usage: scripts/vision-stack-up.sh [--port 8390] [--wait 120]
+# Usage: scripts/vision-stack-up.sh [--port 8390] [--wait 900]
+# Default wait is 900 s: the 8B model cold-reloads from the degraded /data NVMe
+# in ~13 min (measured 2026-09-19); 120 s aborted the first monthly cycle.
 set -u
 
 PORT=8390
-WAIT=120
+WAIT=900
 MODEL_SNAP="${VISION_MODEL_SNAP:-/data/ai/cache/huggingface/hub/models--GitMyLo--nsfwcaption-qwen3-vl-8b-v3-gguf/snapshots/eb52b76411f34ea197558ec03eb15b2814d1b0c2}"
 LLAMA_SERVER="${VISION_LLAMA_SERVER:-llama-server}"
 
@@ -54,6 +56,7 @@ if ! command -v "$LLAMA_SERVER" >/dev/null 2>&1; then
 fi
 
 echo "starting $LLAMA_SERVER on :$PORT (direct paths)"
+start=$(date +%s)
 nohup "$LLAMA_SERVER" -m "$MODEL" --mmproj "$MMPROJ" \
   --host 127.0.0.1 --port "$PORT" \
   >"/tmp/vision-stack-$PORT.log" 2>&1 &
@@ -67,4 +70,4 @@ until healthy; do
   }
   sleep 2
 done
-echo "vision stack healthy on :$PORT"
+echo "vision stack healthy on :$PORT (reload took $(( $(date +%s) - start ))s)"

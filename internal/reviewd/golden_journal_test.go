@@ -519,6 +519,7 @@ func TestPayloadStructJSONTagsPinned(t *testing.T) {
 			"BlobPath":   "blobPath",
 			"SHA256":     "sha256",
 			"CapturedAt": "capturedAt",
+			"SourceURL":  "sourceURL,omitempty", // added 2026-09-19, optional website-capture origin; absent in pre-sourceURL journals
 		},
 		"Reviewed": {
 			"SHA256":     "sha256",
