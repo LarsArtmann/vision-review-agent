@@ -58,21 +58,18 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
 
 ## Website fleet — quality polish
 
-- [ ] **Custom-404 audit per site** — fetch `/nonexistent-<rand>` on all 17;
-      flag sites serving 200 soft-404s or Firebase default pages.
-- [ ] **favicon / manifest / theme-color audit** — all 17; fix gaps family-wide.
-- [ ] **Demo poster → webp + explicit dimensions** — video posters currently
-      png without width/height attrs (CLS).
-- [ ] **DiscordSync journal prune decision** — bbolt event-store retention +
-      replay check after a prune.
-- [ ] **Template-family divergence report → ADR** — 10 near-identical
-      `LandingLayout.astro` files made every a11y/og fix a ×10 edit. Produce
-      the divergence report, decide extract-package vs sync-script
-      (ADR), prototype one shared component. No extraction before the ADR.
+- [ ] **Template-family token convergence** — `family-a11y-guard.sh`
+      reports 68 INFO findings: solid `bg-accent` CTAs in ~9 repos that
+      lack the `--color-on-accent` token scheme. Not verified violations
+      (they pass contrast today), but the convergence backlog tracked by
+      ADR 0001; adopt the token family-wide next sweep.
+- [ ] **Template-family divergence report → ADR** — DONE 2026-09-19:
+      `docs/activation/template-family-divergence.md` +
+      `docs/adr/0001-template-family-sync-over-extract.md` + prototype
+      `scripts/family-a11y-guard.sh`. Remaining: use the guard in the next
+      family sweep and wire it as a CI check in one pilot repo.
 - [ ] **Hero-copy staleness pass** — per-site counts ("123 components") and
       version claims drift; verify each against the repo state.
-- [ ] **learnings: real og:image** — currently the Docusaurus default social
-      card; make a proper 1200×630.
 - [ ] **learnings: docs-subpage heading-order cleanups** — home page fixed;
       docs subpages still have heading-order violations.
 - [ ] **templ-components cmd/site vet gate** — pre-existing: site go.mod
@@ -90,6 +87,11 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
       other 16.
 - [ ] **learnings: one manual CI run** — confirm Actions green after the
       canonical retarget (workflow exists, hasn't been proven since).
+- [ ] **Dark-mode coverage gaps** — cmdguard is dark-first with a manual
+      toggle (no `prefers-color-scheme` media query): system-dark users get
+      the default (fine), but system-light users also get dark; consider a
+      media-query default. learnings now respects `prefersColorScheme`.
+      Remaining views are captured; triage lives with the monthly cycle.
 
 ## Blocked on Lars (console / DNS / sudo / decisions)
 
