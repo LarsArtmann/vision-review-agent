@@ -217,6 +217,39 @@ var _ = Describe("Pipeline Pass", func() {
 			Expect(index).To(ContainSubstring("?"))
 		})
 	})
+
+	Context("when the view's review failed in a previous pass", func() {
+		BeforeEach(func() {
+			Expect(writeShotPNG(filepath.Join(shotsDir, viewKeyStr+".png"))).To(Succeed())
+
+			model.setGenerateErr(errors.New("transient model outage"))
+			_, err := pipeline.Pass(context.Background(), newProjects())
+			Expect(err).To(HaveOccurred())
+
+			model.setGenerateErr(nil)
+		})
+
+		It("re-reviews the view on the next pass instead of skipping it", func(ctx SpecContext) {
+			result, err := pipeline.Pass(ctx, newProjects())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(reviewed.PassResult{
+				Projects: 1,
+				Views:    1,
+				Captured: 1,
+				Skipped:  0,
+				Reviewed: 1,
+				Compared: 0,
+			}))
+
+			Expect(model.calls()).To(Equal(2))
+
+			state, _, loadErr := store.LoadView(ctx, project, homeViewKey())
+			Expect(loadErr).NotTo(HaveOccurred())
+			Expect(state.Reviews).To(Equal(1))
+			Expect(state.LastScore).To(Equal(8))
+			Expect(state.NeedsReview()).To(BeFalse())
+		})
+	})
 })
 
 // homeViewKey is the static view key every spec fixture uses.
