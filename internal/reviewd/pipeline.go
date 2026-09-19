@@ -167,7 +167,11 @@ func (p *Pipeline) passProject(ctx context.Context, project string, captures []C
 			continue
 		}
 
-		if state.Captures > 0 && state.SHA256 == capture.SHA256 {
+		// Skip only when THIS capture was already reviewed: keying on the
+		// capture hash alone would permanently skip a view whose review
+		// failed once (transient model outage), since ReviewedSHA still
+		// points at the previous capture.
+		if state.Captures > 0 && state.SHA256 == capture.SHA256 && !state.NeedsReview() {
 			result.Skipped++
 
 			continue
