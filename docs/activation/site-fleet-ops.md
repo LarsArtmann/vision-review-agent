@@ -145,8 +145,9 @@ systemctl --user daemon-reload
 
 ### 2.4 Fleet header/link audit (2026-09-20, `scripts/fleet-audit.py`)
 
-One-pass audit (canonical/CSP/hreflang/favicon) over all 17 home pages;
-results JSON in `/tmp/vra/fleet_audit2.json` (rerun: `python3 scripts/fleet-audit.py`).
+One-pass audit (canonical/CSP/hreflang/favicon) over all 17 home pages
+(rerun: `python3 scripts/fleet-audit.py`; findings transcribed in the
+table below per the run-artifacts policy).
 Companion audits: `scripts/fleet-404-audit.py` (custom-404 integrity) and
 `scripts/hero-copy-audit.py` (hero metric claims vs live GitHub stars) —
 the 2026-09-20 runs found zero problems on both (all hardcoded star

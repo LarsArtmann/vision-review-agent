@@ -58,11 +58,7 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
 
 ## Website fleet — quality polish
 
-- [ ] **Template-family token convergence** — `family-a11y-guard.sh`
-      reports 68 INFO findings: solid `bg-accent` CTAs in ~9 repos that
-      lack the `--color-on-accent` token scheme. Not verified violations
-      (they pass contrast today), but the convergence backlog tracked by
-      ADR 0001; adopt the token family-wide next sweep.
+- [ ] **Template-family token convergence — SOURCE DONE 2026-09-20, deploys pending.** All 9 INFO repos now define `--color-on-accent` (per-theme values CONTRAST-MEASURED per repo — go-error-family uses white/white because its dark accent is violet-600; go-atomic-write uses dark-ink/dark-ink on emerald; the rest dark-ink-dark/white-light) and their solid `bg-accent` CTAs use `text-on-accent`. `family-a11y-guard.sh` now reports **0 FAIL / 0 INFO** family-wide (was 68 INFO). REMAINING: `pnpm build` + firebase deploy for the 9 sites (deferred — the box was load 30-88 all night; never build parallel to model inference), then an axe re-run to confirm contrast live.
 - [ ] **Template-family divergence report → ADR** — DONE 2026-09-19:
       `docs/activation/template-family-divergence.md` +
       `docs/adr/0001-template-family-sync-over-extract.md` + prototype
