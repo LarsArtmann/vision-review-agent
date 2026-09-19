@@ -23,9 +23,16 @@ while [ $# -gt 0 ]; do
 done
 
 healthy() {
-  printf 'GET /health HTTP/1.1\r\nHost: 127.0.0.1:%s\r\nConnection: close\r\n\r\n' "$PORT" |
-    timeout 10 openssl s_client -quiet -connect "127.0.0.1:$PORT" 2>/dev/null |
-    grep -q ' 200 '
+  python3 - "$PORT" <<'PYEOF'
+import http.client, sys
+try:
+    c = http.client.HTTPConnection("127.0.0.1", int(sys.argv[1]), timeout=5)
+    c.request("GET", "/health")
+    r = c.getresponse()
+    sys.exit(0 if r.status == 200 else 1)
+except Exception:
+    sys.exit(1)
+PYEOF
 }
 
 if healthy; then
