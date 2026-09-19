@@ -23,12 +23,9 @@ while [ $# -gt 0 ]; do
 done
 
 healthy() {
-  [ "$(openssl s_client -quiet -connect 127.0.0.1:$PORT 2>/dev/null <<'EOF' | head -1 | grep -c ' 200 '
-GET /health HTTP/1.1
-Host: 127.0.0.1
-
-EOF
-)" -ge 1 ]
+  printf 'GET /health HTTP/1.1\r\nHost: 127.0.0.1:%s\r\nConnection: close\r\n\r\n' "$PORT" |
+    timeout 10 openssl s_client -quiet -connect "127.0.0.1:$PORT" 2>/dev/null |
+    grep -q ' 200 '
 }
 
 if healthy; then
