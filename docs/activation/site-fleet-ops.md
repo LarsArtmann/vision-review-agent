@@ -142,3 +142,32 @@ re-create it:
 ln -sf ../site-monitor.timer ~/.config/systemd/user/timers.target.wants/site-monitor.timer
 systemctl --user daemon-reload
 ```
+
+### 2.4 Fleet header/link audit (2026-09-20, `scripts/fleet-audit.py`)
+
+One-pass audit (canonical/CSP/hreflang/favicon) over all 17 home pages;
+results JSON in `/tmp/vra/fleet_audit2.json` (rerun: `python3 scripts/fleet-audit.py`).
+
+| Item | Result | Action |
+| --- | --- | --- |
+| Canonical (#12) | 15/17 ok incl. go-workflow-auditlog (parity done); **cmdguard + typespec-asyncapi point at their KNOWN-broken `.lars.software` domains** | none — same root cause as §1.1/§1.2 console attach; repointing the Astro `site` would flip the mismatch when the custom domains go live |
+| CSP (#11) | 16 sites: no CSP; templcomponents: enforced, fully coherent (`manifest-src 'self'`, hashed script-src, `img-src 'self' data:`); no report-only CSPs exist fleet-wide | closed — the og/meta additions (learnings) are crawler-facing and CSP-invisible |
+| hreflang (#39) | 16 single-locale sites: none (correct); learnings: `en` + `x-default` (correct for en-only Docusaurus) | closed as no-op |
+| Favicon ICO fallback (#40) | 17/17 declare SVG icon + webmanifest; only atomicwrite + gogenfilter serve `/favicon.ico` (200), 15 return 404; no `apple-touch-icon` anywhere | accepted gap — Safari-only cosmetic; not worth 15 rebuilds |
+
+### 2.5 Review-pass load characteristics (measured 2026-09-20 00:20–00:45)
+
+Under the external GPU contention (ollama qwen2.5vl:3b, load 40–52):
+
+- text-only 1-token canary: 0.1–0.2 s; small-image (221 KB, 5364 px) vision
+  request: **18.3 s TTFB** — the stack works, prefill is just slow.
+- tall full-page subpage views (4–10 k px) exceed the 12-min per-view wall
+  with `timeout awaiting response headers`; a pass under load ≥ ~15 lands
+  ~nothing while burning 12 min per attempt (observed: 3 timeouts / 0
+  landings in 31 min).
+
+Consequence: `scripts/review-fleet.sh` now pre-flights with a load guard
+(default 10), a canary latency check (default 45 s), and a binary-freshness
+gate; for manual passes use `/tmp/vra/wait-and-review.sh` (waits for
+load < 15, then runs `visionreviewd once` once). The NeedsReview retry fix
+makes killing/restarting a pass free.
