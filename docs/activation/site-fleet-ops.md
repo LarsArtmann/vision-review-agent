@@ -89,7 +89,11 @@ copy the pool over, or (b) selectively migrate the actively-used models
 
 Given the measured speeds, **loading models from /data is the bottleneck of
 every local ML workload** (an 8 GB Q8 GGUF takes ~25 min to read cold from
-/data vs ~2 s from `/`).
+/data vs ~2 s from `/`). Field-measured 2026-09-19: a full llama-server
+reload of the VL 8B Q8 + mmproj took **~13 min** — this is why
+`scripts/vision-stack-up.sh` defaults to a 900 s health wait (the original
+120 s default aborted the first monthly fleet-review cycle while the model
+was still loading).
 
 Selective migration of the pipeline-critical model (do this even before the
 SMART verdict — it only reads ~9G at ~8 MB/s once, ~20 min):

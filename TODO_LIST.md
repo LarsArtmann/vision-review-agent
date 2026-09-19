@@ -10,6 +10,103 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ---
 
+## Website fleet — monitoring & re-review (2026-09-19 sweep residue)
+
+Harvested from the 2026-09-19 fleet follow-up execution
+(`emeet-pixyd/docs/planning/2026-09-19_15-33_website-vision-review-followup-pareto-plan.md`,
+status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-execution.md`).
+
+- [ ] **KNOWN_BROKEN escalation timer** — `site-monitor.sh` tracks
+      cmdguard.lars.software / typespec-asyncapi.lars.software as KNOWN
+      (no alert, ever). Escalate (alert) once an entry has been KNOWN for
+      > 7 days so "known" cannot mean "forever".
+- [ ] **Off-machine monitor vantage** — site-monitor runs on the box whose
+      /data disk is failing and alerts via notify-send (desktop-only). Add
+      one external check (uptime push or second host) so fleet-down is
+      visible when this machine is down.
+- [ ] **home-manager module for both timers** — `site-monitor.timer` +
+      `fleet-review.timer` are installed as user symlinks in
+      `timers.target.wants/`; a home-manager/systemd unit definition makes
+      the install canonical and wipe-proof.
+- [ ] **`site-monitor.sh --json` consumer** — the flag exists; wire a
+      waybar/status widget to it.
+- [ ] **Score-trend digest in fleet-review log** — after each cycle, append
+      INDEX deltas vs the previous cycle (the data is in the reviews dir;
+      review-fleet.sh currently prints per-project scores only).
+- [ ] **Commit `family-redeploy.sh`** — the /tmp rebuild+redeploy loop went
+      14/16 first-try on the family fixes; promote it into `scripts/` with
+      the coverage-diff guard from the a11y sweep lesson.
+
+## Website fleet — review depth (Wave 4 tails)
+
+- [ ] **Full-page captures** — shoot script uses viewport-only shots; add
+      CDP `captureBeyondViewport` mode, re-capture, re-review (models score
+      above-the-fold only today).
+- [ ] **Dark-mode capture pass** — chromium `prefers-color-scheme=dark`
+      emulation for all 17 homes; triage sites that break in dark mode.
+- [ ] **Docs-subpage capture + review** — enumerate each site's
+      docs/getting-started pages, capture, review; the a11y audit covered
+      home pages only.
+- [ ] **Score calibration (needs idle GPU or patience on CPU)** — 3 views ×
+      3 samples variance; qwen2.5vl:3b vs 8B on the same views; an
+      artifact-suspicion prompt variant; then decide model+prompt and
+      document. GPU is currently occupied by an ollama qwen2.5vl:3b (not
+      ours); do NOT kill it — ownership unknown.
+- [ ] **GPU benchmark llama-cpp-rocm vs CPU** — rocm build exists at
+      `/tmp/vra/llama-rocm`; needs a free-GPU window. CPU baseline
+      ~30 s/view is on record.
+
+## Website fleet — quality polish
+
+- [ ] **Custom-404 audit per site** — fetch `/nonexistent-<rand>` on all 17;
+      flag sites serving 200 soft-404s or Firebase default pages.
+- [ ] **favicon / manifest / theme-color audit** — all 17; fix gaps family-wide.
+- [ ] **Demo poster → webp + explicit dimensions** — video posters currently
+      png without width/height attrs (CLS).
+- [ ] **DiscordSync journal prune decision** — bbolt event-store retention +
+      replay check after a prune.
+- [ ] **Template-family divergence report → ADR** — 10 near-identical
+      `LandingLayout.astro` files made every a11y/og fix a ×10 edit. Produce
+      the divergence report, decide extract-package vs sync-script
+      (ADR), prototype one shared component. No extraction before the ADR.
+- [ ] **Hero-copy staleness pass** — per-site counts ("123 components") and
+      version claims drift; verify each against the repo state.
+- [ ] **learnings: real og:image** — currently the Docusaurus default social
+      card; make a proper 1200×630.
+- [ ] **learnings: docs-subpage heading-order cleanups** — home page fixed;
+      docs subpages still have heading-order violations.
+- [ ] **templ-components cmd/site vet gate** — pre-existing: site go.mod
+      pins 1.26 but code uses go1.27-only jsonv2 API. Decide bump vs guard
+      (not caused by the a11y sweep).
+- [ ] **emeet-pixyd online-state screenshots** — TODO #129 in that repo;
+      blocked on PIXY hardware being wired.
+- [ ] **typespec-asyncapi `website/video/` cleanup** — unused capture
+      artifacts committed in the repo.
+- [ ] **CSP re-check after og/meta changes** — the report-only CSPs should
+      not trip on the new og:image/meta tags; verify no violations were
+      observed post-deploy.
+- [ ] **auditlog site canonical-URL audit** — decide whether
+      go-workflow-auditlog gets the same canonical/sitemap treatment as the
+      other 16.
+- [ ] **learnings: one manual CI run** — confirm Actions green after the
+      canonical retarget (workflow exists, hasn't been proven since).
+
+## Blocked on Lars (console / DNS / sudo / decisions)
+
+- [ ] cmdguard.lars.software: attach domain in Firebase console (site works
+      at cmdguard.web.app; steps in `docs/activation/site-fleet-ops.md` §1).
+- [ ] typespec-asyncapi.lars.software: Namecheap CNAME →
+      typespec-asyncapi.web.app, then attach (steps in same doc).
+- [ ] `sudo smartctl -a /dev/nvme1n1` → /data verdict; then decide
+      replace-vs-selective-migration (VL model ≈ 9 GB → root NVMe would cut
+      the 13-min cold reload to seconds).
+- [ ] Identify the owner of the running ollama qwen2.5vl:3b GPU workload
+      (36+ min at 100%); keep-or-delete decision (ROADMAP seed).
+- [ ] Push policy for local commits (vision-review-agent, learnings, fleet
+      sites — all currently local-only).
+
+---
+
 ## visionreviewd activation (next steps)
 
 - [ ] **Enable on a host via SystemNix (user action, needs sudo)** — the
