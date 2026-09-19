@@ -364,6 +364,7 @@ def main():
         stderr=subprocess.DEVNULL,
     )
     fail = 0
+    total_shots = 0
     try:
         wait_devtools()
         for proj, url in SITES:
@@ -372,9 +373,18 @@ def main():
             print(f"=== {proj} ({url})")
             try:
                 sp = tuple(SUBPAGES.get(proj, ())) if subpages else ()
-                for name, size, doc_h in shoot(
+                expected = ((0 if skip_home_flag else 1) + len(sp)) * len(modes) * len(viewports)
+                results = shoot(
                     proj, url, modes, viewports, user_data_dir, sp, skip_home_flag
-                ):
+                )
+                total_shots += len(results)
+                if len(results) != expected:
+                    print(
+                        f"  INVENTORY-FAIL {proj}: captured {len(results)} shots,"
+                        f" expected {expected} (pages x modes x viewports)"
+                    )
+                    fail += 1
+                for name, size, doc_h in results:
                     if size < 8000:
                         print(f"  VERIFY-FAIL {proj}/{name}: only {size}B")
                         fail += 1
@@ -389,7 +399,7 @@ def main():
             proc.kill()
         signal.signal(signal.SIGALRM, signal.SIG_DFL)
         subprocess.run(["rm", "-rf", user_data_dir], check=False)
-    print(f"DONE: {fail} failures")
+    print(f"DONE: {total_shots} shots, {fail} failures")
     return 1 if fail else 0
 
 
