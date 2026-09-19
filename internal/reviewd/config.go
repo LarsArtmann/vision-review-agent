@@ -39,12 +39,11 @@ type Config struct {
 	DataDir    string              `json:"dataDir"`
 	ReviewsDir string              `json:"reviewsDir"`
 	Projects   map[string][]string `json:"projects"`
-	SourceURLs map[string]string   `json:"sourceURLs,omitempty"`
 
 	// SourceURLs optionally maps a project name to the page its
 	// screenshots were taken from (website captures). Rendered in review
 	// markdown so every review points back at the live page.
-	SourceURLs map[string]string   `json:"sourceURLs,omitempty"`
+	SourceURLs map[string]string `json:"sourceURLs,omitempty"`
 }
 
 // configJSON is the wire shape of Config: durations as human strings.
