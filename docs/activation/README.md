@@ -51,5 +51,29 @@ visionreviewd once -config ~/.config/visionreviewd/websites.json
 Keep capture and review serialized — never overlap a shoot with a running
 `once` pass.
 
+### `sourceURLs` — page provenance in reviews
+
+The fleet config maps each project to the live URL its screenshots came from
+(`Config.SourceURLs`, added 2026-09-19). When set, each capture event records
+`sourceURL` and the review markdown renders it as a provenance line right
+under the heading:
+
+```json
+{
+  "sourceURLs": {
+    "gogenfilter": "https://gogenfilter.lars.software"
+  }
+}
+```
+
+Rendered per view in `reviews/<project>/<view>.md`:
+
+```markdown
+- **Page:** <https://gogenfilter.lars.software>
+```
+
+Omit the field (or a single project from it) and reviews render exactly as
+before — the feature degrades by omission.
+
 For host-level (NixOS/SystemNix) enablement see
-[`visionreviewd-systemnix.md`](visionreviewd-systemnix.md).
+[`../visionreviewd-systemnix.md`](../visionreviewd-systemnix.md).
