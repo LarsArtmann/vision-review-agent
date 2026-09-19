@@ -20,6 +20,7 @@ set -u
 
 WARN_DAYS=21
 TIMEOUT=15
+KNOWN_ESCALATE_DAYS=7
 STATE_DIR="${XTEST_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/site-monitor}"
 mkdir -p "$STATE_DIR"
 LOG="$STATE_DIR/log"
@@ -139,6 +140,25 @@ for t in "${TARGETS[@]}"; do
     KNOWN) known_count=$((known_count+1)) ;;
     FAIL) unexpected_fail=$((unexpected_fail+1)) ;;
   esac
+
+  # KNOWN-broken escalation: a domain pending a console/DNS action must not
+  # rot silently — re-alert (critical) every KNOWN_ESCALATE_DAYS while it
+  # stays KNOWN.
+  since_f="$STATE_DIR/$host.known-since"
+  esc_f="$STATE_DIR/$host.last-escalation"
+  if [ "$state" = "KNOWN" ]; then
+    [ -f "$since_f" ] || printf '%s' "$(date +%s)" > "$since_f"
+    since=$(cat "$since_f")
+    age_days=$(( ($(date +%s) - since) / 86400 ))
+    today=$(date +%F)
+    if [ "$age_days" -ge "$KNOWN_ESCALATE_DAYS" ] && [ "$(cat "$esc_f" 2>/dev/null)" != "$today" ]; then
+      printf '%s' "$today" > "$esc_f"
+      notify "site-monitor: $host still broken" "known-broken for ${age_days}d - console/DNS action still pending" critical
+      echo "$now_iso ESCALATION $host known-broken ${age_days}d" >> "$LOG"
+    fi
+  else
+    rm -f "$since_f" "$esc_f"
+  fi
 
   prev=$(prev_state "$host")
   if [ "$prev" != "$state" ]; then
