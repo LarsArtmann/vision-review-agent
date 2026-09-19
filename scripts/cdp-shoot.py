@@ -17,6 +17,7 @@ Usage:
   scripts/cdp-shoot.py --viewport desktop    # desktop only
   scripts/cdp-shoot.py --mode dark           # dark pass only
   scripts/cdp-shoot.py --subpages            # also capture the getting-started pages
+  scripts/cdp-shoot.py --subpages --skip-home gogenfilter  # subpages only, subset
   scripts/cdp-shoot.py gogenfilter learnings # subset
 """
 import base64
@@ -213,9 +214,9 @@ def page_label(url_path):
     return "".join(p[:1].upper() + p[1:] for p in parts)[:60]
 
 
-def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=()):
+def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=(), skip_home=False):
     results = []
-    pages = [("Home", url)]
+    pages = [] if skip_home else [("Home", url)]
     for sp in subpage_paths:
         full = url.rstrip("/") + "/" + sp.lstrip("/")
         pages.append((page_label(sp), full))
@@ -322,7 +323,7 @@ def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=()):
 def main():
     args = sys.argv[1:]
     modes, viewports, filt = ["light", "dark"], ["desktop", "mobile"], []
-    subpages = False
+    subpages = skip_home_flag = False
     while args:
         a = args.pop(0)
         if a == "--mode":
@@ -331,6 +332,8 @@ def main():
             viewports = args.pop(0).split(",")
         elif a == "--subpages":
             subpages = True
+        elif a == "--skip-home":
+            skip_home_flag = True
         elif a.startswith("--"):
             print(f"unknown flag {a}", file=sys.stderr)
             return 2
@@ -366,7 +369,9 @@ def main():
             print(f"=== {proj} ({url})")
             try:
                 sp = tuple(SUBPAGES.get(proj, ())) if subpages else ()
-                for name, size, doc_h in shoot(proj, url, modes, viewports, user_data_dir, sp):
+                for name, size, doc_h in shoot(
+                    proj, url, modes, viewports, user_data_dir, sp, skip_home_flag
+                ):
                     if size < 8000:
                         print(f"  VERIFY-FAIL {proj}/{name}: only {size}B")
                         fail += 1
