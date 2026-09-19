@@ -1,0 +1,27 @@
+{
+  "model": "GitMylo/nsfwcaption-qwen3-vl-8b-v3-gguf:Q8_0",
+  "baseUrl": "http://127.0.0.1:8390/v1",
+  "dataDir": "~/.local/share/vision-review-agent",
+  "reviewsDir": "~/.local/share/vision-review-agent/reviews",
+  "interval": "10m",
+  "timeout": "5m",
+  "projects": {
+    "art-dupl":         ["~/.local/share/vision-review-agent/screenshots/art-dupl/*.png"],
+    "cleanwizard":      ["~/.local/share/vision-review-agent/screenshots/cleanwizard/*.png"],
+    "cmdguard":         ["~/.local/share/vision-review-agent/screenshots/cmdguard/*.png"],
+    "dynamicmarkdown":  ["~/.local/share/vision-review-agent/screenshots/dynamicmarkdown/*.png"],
+    "emeet-pixyd":      ["~/.local/share/vision-review-agent/screenshots/emeet-pixyd/*.png"],
+    "atomicwrite":      ["~/.local/share/vision-review-agent/screenshots/atomicwrite/*.png"],
+    "branded-id":       ["~/.local/share/vision-review-agent/screenshots/branded-id/*.png"],
+    "errorfamily":      ["~/.local/share/vision-review-agent/screenshots/errorfamily/*.png"],
+    "filewatcher":      ["~/.local/share/vision-review-agent/screenshots/filewatcher/*.png"],
+    "go-output":        ["~/.local/share/vision-review-agent/screenshots/go-output/*.png"],
+    "go-workflow-auditlog": ["~/.local/share/vision-review-agent/screenshots/go-workflow-auditlog/*.png"],
+    "gogenfilter":      ["~/.local/share/vision-review-agent/screenshots/gogenfilter/*.png"],
+    "md-go-validator":  ["~/.local/share/vision-review-agent/screenshots/md-go-validator/*.png"],
+    "do-auditlog":      ["~/.local/share/vision-review-agent/screenshots/do-auditlog/*.png"],
+    "typespec-asyncapi": ["~/.local/share/vision-review-agent/screenshots/typespec-asyncapi/*.png"],
+    "templcomponents":  ["~/.local/share/vision-review-agent/screenshots/templcomponents/*.png"],
+    "learnings":        ["~/.local/share/vision-review-agent/screenshots/learnings/*.png"]
+  }
+}
