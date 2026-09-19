@@ -27,11 +27,15 @@ echo "$stamp === fleet review start" >> "$LOG"
   exit 1
 }
 
-# 2. capture
-if ! "$SCRIPT_DIR/shoot-sites.sh" >> "$LOG" 2>&1; then
-  echo "$stamp shoot verify FAILED - reviews NOT run (bad captures must not be reviewed)" >> "$LOG"
-  notify "fleet-review: capture verification failed" "reviews skipped, see $LOG" critical
-  exit 1
+# 2. capture (CDP full-page light+dark; supersedes the tall-viewport
+#    shoot-sites.sh, which is kept as a fallback for CDP breakage)
+if ! "$SCRIPT_DIR/cdp-shoot.py" >> "$LOG" 2>&1; then
+  echo "$stamp CDP capture failed - retrying with shoot-sites.sh" >> "$LOG"
+  if ! "$SCRIPT_DIR/shoot-sites.sh" >> "$LOG" 2>&1; then
+    echo "$stamp shoot verify FAILED - reviews NOT run (bad captures must not be reviewed)" >> "$LOG"
+    notify "fleet-review: capture verification failed" "reviews skipped, see $LOG" critical
+    exit 1
+  fi
 fi
 
 # 3. review
