@@ -147,6 +147,10 @@ systemctl --user daemon-reload
 
 One-pass audit (canonical/CSP/hreflang/favicon) over all 17 home pages;
 results JSON in `/tmp/vra/fleet_audit2.json` (rerun: `python3 scripts/fleet-audit.py`).
+Companion audits: `scripts/fleet-404-audit.py` (custom-404 integrity) and
+`scripts/hero-copy-audit.py` (hero metric claims vs live GitHub stars) —
+the 2026-09-20 runs found zero problems on both (all hardcoded star
+counts match the repos; no soft-404s, canonical/CSP clean per the table).
 
 | Item | Result | Action |
 | --- | --- | --- |
@@ -168,6 +172,20 @@ Under the external GPU contention (ollama qwen2.5vl:3b, load 40–52):
 
 Consequence: `scripts/review-fleet.sh` now pre-flights with a load guard
 (default 10), a canary latency check (default 45 s), and a binary-freshness
-gate; for manual passes use `/tmp/vra/wait-and-review.sh` (waits for
-load < 15, then runs `visionreviewd once` once). The NeedsReview retry fix
-makes killing/restarting a pass free.
+gate; for manual passes use `/tmp/vra/wait-and-review2.sh` (polls every
+5 min; runs `visionreviewd once` once load < 20 AND a small-image vision
+probe completes within 60 s — gates on the thing that actually fails,
+vision prefill). The NeedsReview retry fix makes killing/restarting a pass
+free.
+
+### 2.6 llama-server can die mid-fleet (2026-09-20 01:07 incident)
+
+`llama-server` (pid 2030545, healthy since before 00:00) was found DEAD at
+01:07 (connection refused; /data mounted, memory fine — no cause
+determined; log was overwritten by restart). Cold restart via the §2.2
+direct-path invocation: **~5.5 min to healthy** from the degraded /data.
+Health went 200 → refused between 00:48 and 01:07 while unattended — a
+monthly timer pass started in that window would have burned 12-minute
+timeouts. The `review-fleet.sh` canary (ABORT branch) and the waiter probe
+both catch this class now. Restart recipe (unchanged): the README
+invocation + health poll; log to a file, never a pipe.

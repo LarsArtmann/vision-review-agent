@@ -24,6 +24,14 @@ notify() {
   return 0
 }
 
+# average of a "7/10 8/10 ..." score list, in tenths (bash has no floats)
+avg10() {
+  local sum=0 n=0 s
+  for s in $1; do sum=$((sum + ${s%%/*})); n=$((n + 1)); done
+  [ "$n" -eq 0 ] && { echo 0; return; }
+  echo $((sum * 10 / n))
+}
+
 stamp=$(date -Is)
 echo "$stamp === fleet review start" >> "$LOG"
 
@@ -106,6 +114,7 @@ fi
 # 4. summary
 echo "$stamp === scores" >> "$LOG"
 summary=""
+declare -a score_lines
 for d in "$HOME"/.local/share/vision-review-agent/reviews/*/; do
   p=$(basename "$d")
   [ "$p" = "discordsync" ] && continue
@@ -113,8 +122,29 @@ for d in "$HOME"/.local/share/vision-review-agent/reviews/*/; do
   [ -f "$f" ] || continue
   scores=$(grep -oE '\| [0-9]+/10 \|' "$f" | grep -oE '\b[0-9]+/10' | paste -sd' ')
   echo "$p: $scores" >> "$LOG"
+  score_lines+=("$p: $scores")
   summary="$summary$p $scores\n"
 done
+
+# trend digest: compare per-site averages against the previous cycle
+# (|delta| >= 0.2 avg is reported; inside that is capture noise)
+PREV_SCORES="$STATE_DIR/fleet-scores.prev"
+if [ -f "$PREV_SCORES" ]; then
+  for line in "${score_lines[@]}"; do
+    site="${line%%:*}"
+    newscores="${line#*: }"
+    oldscores=$(grep -m1 "^$site:" "$PREV_SCORES" | cut -d' ' -f2-)
+    [ -z "$oldscores" ] && continue
+    navg=$(avg10 "$newscores")
+    oavg=$(avg10 "$oldscores")
+    delta=$((navg - oavg))
+    if [ "$delta" -le -2 ] || [ "$delta" -ge 2 ]; then
+      echo "$stamp TREND $site avg $((oavg / 10)).$((oavg % 10)) -> $((navg / 10)).$((navg % 10))" >> "$LOG"
+    fi
+  done
+fi
+printf '%s\n' "${score_lines[@]}" > "$PREV_SCORES"
+
 echo "$stamp === cycle took $((SECONDS - START_TS))s (canary ${canary_out}s)" >> "$LOG"
 notify "fleet-review complete" "scores in $LOG"
 echo "fleet review complete: $LOG"
