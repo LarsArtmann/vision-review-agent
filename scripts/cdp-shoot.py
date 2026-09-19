@@ -13,9 +13,10 @@ Output naming (feeds the visionreviewd glob):
   <project>/Home--<mode>--<viewport>.png   mode: light|dark
 
 Usage:
-  scripts/cdp-shoot.py                       # all sites, desktop+mobile, light+dark
+  scripts/cdp-shoot.py                       # all sites, home, desktop+mobile, light+dark
   scripts/cdp-shoot.py --viewport desktop    # desktop only
   scripts/cdp-shoot.py --mode dark           # dark pass only
+  scripts/cdp-shoot.py --subpages            # also capture the getting-started pages
   scripts/cdp-shoot.py gogenfilter learnings # subset
 """
 import base64
@@ -65,6 +66,27 @@ SITES = [
 VIEWPORTS = {
     "desktop": {"width": 1440, "height": 900, "mobile": False},
     "mobile": {"width": 412, "height": 915, "mobile": True},
+}
+
+# key docs subpages (getting-started pages where they exist; cmdguard and
+# typespec-asyncapi are single-page sites — their sitemaps point at the
+# KNOWN-broken custom domains, and src/pages holds only index.astro)
+SUBPAGES = {
+    "art-dupl": ["getting-started/installation/", "getting-started/quick-start/"],
+    "cleanwizard": ["getting-started/installation/", "getting-started/quick-start/"],
+    "dynamicmarkdown": ["getting-started/installation/", "getting-started/quick-start/"],
+    "emeet-pixyd": ["getting-started/installation/", "getting-started/quick-start/"],
+    "atomicwrite": ["getting-started/installation/", "getting-started/quick-start/"],
+    "branded-id": ["getting-started/installation/", "getting-started/quick-start/"],
+    "errorfamily": ["getting-started/installation/", "getting-started/quick-start/"],
+    "filewatcher": ["getting-started/installation/", "getting-started/quick-start/"],
+    "go-output": ["getting-started/installation/", "getting-started/quick-start/"],
+    "go-workflow-auditlog": ["getting-started/installation/", "getting-started/quick-start/"],
+    "gogenfilter": ["getting-started/installation/", "getting-started/quick-start/"],
+    "md-go-validator": ["getting-started/installation/", "getting-started/quick-start/"],
+    "do-auditlog": ["getting-started/installation/", "getting-started/quick-start/"],
+    "templcomponents": ["getting-started/installation", "getting-started/quick-start"],
+    "learnings": ["docs/getting-started/installation", "docs/getting-started/configuration"],
 }
 
 
@@ -185,8 +207,18 @@ def wait_devtools(deadline=30):
     raise TimeoutError("devtools endpoint never came up")
 
 
-def shoot(project, url, modes, viewports, user_data_dir):
+def page_label(url_path):
+    """docs/getting-started/installation/ -> GettingStartedInstallation"""
+    parts = [p for p in url_path.split("/") if p]
+    return "".join(p[:1].upper() + p[1:] for p in parts)[:60]
+
+
+def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=()):
     results = []
+    pages = [("Home", url)]
+    for sp in subpage_paths:
+        full = url.rstrip("/") + "/" + sp.lstrip("/")
+        pages.append((page_label(sp), full))
     for vp_name in viewports:
         vp = VIEWPORTS[vp_name]
         target = http_json(f"/json/new?about:blank", method="PUT")
@@ -223,7 +255,8 @@ def shoot(project, url, modes, viewports, user_data_dir):
                             ]
                         },
                     )
-                cdp.cmd("Page.navigate", {"url": url})
+                for label, page_url in pages:
+                    cdp.cmd("Page.navigate", {"url": page_url})
                 loaded = False
                 deadline = time.time() + 45
                 while time.time() < deadline and not loaded:
@@ -268,7 +301,7 @@ def shoot(project, url, modes, viewports, user_data_dir):
                 data = base64.b64decode(shot["data"])
                 outdir = os.path.join(OUT, project)
                 os.makedirs(outdir, exist_ok=True)
-                name = f"Home--{mode}--{vp_name}.png"
+                name = f"{label}--{mode}--{vp_name}.png"
                 path = os.path.join(outdir, name)
                 with open(path, "wb") as f:
                     f.write(data)
@@ -289,12 +322,15 @@ def shoot(project, url, modes, viewports, user_data_dir):
 def main():
     args = sys.argv[1:]
     modes, viewports, filt = ["light", "dark"], ["desktop", "mobile"], []
+    subpages = False
     while args:
         a = args.pop(0)
         if a == "--mode":
             modes = args.pop(0).split(",")
         elif a == "--viewport":
             viewports = args.pop(0).split(",")
+        elif a == "--subpages":
+            subpages = True
         elif a.startswith("--"):
             print(f"unknown flag {a}", file=sys.stderr)
             return 2
@@ -329,7 +365,8 @@ def main():
                 continue
             print(f"=== {proj} ({url})")
             try:
-                for name, size, doc_h in shoot(proj, url, modes, viewports, user_data_dir):
+                sp = tuple(SUBPAGES.get(proj, ())) if subpages else ()
+                for name, size, doc_h in shoot(proj, url, modes, viewports, user_data_dir, sp):
                     if size < 8000:
                         print(f"  VERIFY-FAIL {proj}/{name}: only {size}B")
                         fail += 1
