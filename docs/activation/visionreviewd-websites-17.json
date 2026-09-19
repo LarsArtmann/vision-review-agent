@@ -4,7 +4,7 @@
   "dataDir": "~/.local/share/vision-review-agent",
   "reviewsDir": "~/.local/share/vision-review-agent/reviews",
   "interval": "10m",
-  "timeout": "5m",
+  "timeout": "12m",
   "sourceURLs": {
     "art-dupl":            "https://art-dupl.lars.software",
     "cleanwizard":         "https://cleanwizard.lars.software",
