@@ -220,6 +220,9 @@ def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=(), skip_
     for sp in subpage_paths:
         full = url.rstrip("/") + "/" + sp.lstrip("/")
         pages.append((page_label(sp), full))
+    if not pages:
+        print(f"  skip {project}: no pages selected (single-page site?)")
+        return results
     for vp_name in viewports:
         vp = VIEWPORTS[vp_name]
         target = http_json(f"/json/new?about:blank", method="PUT")
