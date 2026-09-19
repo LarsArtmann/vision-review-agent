@@ -47,6 +47,10 @@ type Pipeline struct {
 	blobs    *BlobStore
 	writer   *Writer
 	logger   *slog.Logger
+
+	// sourceURLs optionally maps project names to the page their captures
+	// came from; see Config.SourceURLs.
+	sourceURLs map[string]string
 }
 
 // NewPipeline wires a pass runner. All review dependencies must be non-nil; a
@@ -79,6 +83,14 @@ func NewPipeline(
 	}
 
 	return &Pipeline{reviewer: reviewer, store: store, blobs: blobs, writer: writer, logger: logger}, nil
+}
+
+// WithSourceURLs records per-project capture source pages (website
+// captures); they flow into view.captured events and the review markdown.
+func (p *Pipeline) WithSourceURLs(urls map[string]string) *Pipeline {
+	p.sourceURLs = urls
+
+	return p
 }
 
 // Pass scans every project and processes each changed view once. Per-view
@@ -161,7 +173,7 @@ func (p *Pipeline) passProject(ctx context.Context, project string, captures []C
 			continue
 		}
 
-		captured, err := p.ingest(ctx, project, capture)
+		captured, err := p.ingest(ctx, project, capture, p.sourceURLs[project])
 		if err != nil {
 			errs = append(errs, err)
 
@@ -203,7 +215,7 @@ func (p *Pipeline) passProject(ctx context.Context, project string, captures []C
 
 // ingest archives the capture's file in the blob store and records the
 // view.captured event, using the hash the blob store actually stored.
-func (p *Pipeline) ingest(ctx context.Context, project string, capture Capture) (Captured, error) {
+func (p *Pipeline) ingest(ctx context.Context, project string, capture Capture, sourceURL string) (Captured, error) {
 	sha, blobPath, err := p.blobs.Store(capture.Path)
 	if err != nil {
 		return Captured{}, fmt.Errorf("view %s: store blob: %w", capture.ViewKey, err)
@@ -214,6 +226,7 @@ func (p *Pipeline) ingest(ctx context.Context, project string, capture Capture) 
 		BlobPath:   blobPath,
 		SHA256:     sha,
 		CapturedAt: capture.ModifiedAt.UTC(),
+		SourceURL:  sourceURL,
 	}
 
 	if err := p.store.RecordCapture(ctx, project, capture.ViewKey, captured); err != nil {

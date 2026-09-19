@@ -41,6 +41,9 @@ func RenderViewReview(project string, viewKey ViewKey, capture Captured, review 
 	capturedAt := capture.CapturedAt.UTC().Format(timeFormat)
 	fmt.Fprintf(&doc, "- **Capture:** `%s` (%s)\n", ShortSHA(review.SHA256), capturedAt)
 	fmt.Fprintf(&doc, "- **Source:** `%s`\n", capture.SourcePath)
+	if capture.SourceURL != "" {
+		fmt.Fprintf(&doc, "- **Page:** <%s>\n", capture.SourceURL)
+	}
 	doc.WriteString("- **Comparisons:** [comparisons/](comparisons/)\n")
 
 	doc.WriteString("\n## Model review\n\n")

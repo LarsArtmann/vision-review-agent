@@ -21,6 +21,10 @@ type Captured struct {
 	BlobPath   string    `json:"blobPath"`
 	SHA256     string    `json:"sha256"`
 	CapturedAt time.Time `json:"capturedAt"`
+
+	// SourceURL is the page the screenshot was taken from, when the project
+	// declares one in config (website captures). Empty for file-only projects.
+	SourceURL string `json:"sourceURL,omitempty"`
 }
 
 // Reviewed is the payload of view.reviewed: the model reviewed the capture

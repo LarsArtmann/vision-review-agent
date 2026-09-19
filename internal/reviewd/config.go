@@ -39,6 +39,12 @@ type Config struct {
 	DataDir    string              `json:"dataDir"`
 	ReviewsDir string              `json:"reviewsDir"`
 	Projects   map[string][]string `json:"projects"`
+	SourceURLs map[string]string   `json:"sourceURLs,omitempty"`
+
+	// SourceURLs optionally maps a project name to the page its
+	// screenshots were taken from (website captures). Rendered in review
+	// markdown so every review points back at the live page.
+	SourceURLs map[string]string   `json:"sourceURLs,omitempty"`
 }
 
 // configJSON is the wire shape of Config: durations as human strings.
@@ -51,6 +57,7 @@ type configJSON struct {
 	DataDir    string              `json:"dataDir"`
 	ReviewsDir string              `json:"reviewsDir"`
 	Projects   map[string][]string `json:"projects"`
+	SourceURLs map[string]string   `json:"sourceURLs,omitempty"`
 }
 
 // DefaultConfig returns the daemon defaults: the caption-tuned vision model,
@@ -82,6 +89,7 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		DataDir:    c.DataDir,
 		ReviewsDir: c.ReviewsDir,
 		Projects:   c.Projects,
+		SourceURLs: c.SourceURLs,
 	}
 
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -110,6 +118,10 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		c.Projects = raw.Projects
 	}
 
+	if raw.SourceURLs != nil {
+		c.SourceURLs = raw.SourceURLs
+	}
+
 	return nil
 }
 
@@ -124,6 +136,7 @@ func (c Config) MarshalJSON() ([]byte, error) {
 		DataDir:    c.DataDir,
 		ReviewsDir: c.ReviewsDir,
 		Projects:   c.Projects,
+		SourceURLs: c.SourceURLs,
 	}
 
 	encoded, err := json.Marshal(raw)

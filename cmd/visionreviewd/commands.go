@@ -70,6 +70,10 @@ func openPipeline(ctx context.Context, config reviewed.Config) (*reviewed.Pipeli
 		return nil, nil, fmt.Errorf("build pipeline: %w", err)
 	}
 
+	if len(config.SourceURLs) > 0 {
+		pipeline = pipeline.WithSourceURLs(config.SourceURLs)
+	}
+
 	return pipeline, store, nil
 }
 
