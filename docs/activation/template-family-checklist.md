@@ -43,6 +43,9 @@ new or edited site in the family._
 - [ ] Screenshots shot with `lazyImageLoadingEnabled=false` (blank-card
       contamination class).
 - [ ] og/social assets referenced with absolute URLs built from `siteUrl`.
+- [ ] pnpm ≥ 11 sites: build-script approvals in `pnpm-workspace.yaml`
+      (`allowBuilds: esbuild: true`), NOT `package.json pnpm.*` (ignored by
+      pnpm v11; missing entry = `astro build` fails on missing esbuild).
 
 ## Known non-goals
 
