@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # review-fleet.sh — full monthly review cycle for the 17-site fleet:
+#   0. pre-flight: load guard, binary freshness, canary review latency
 #   1. ensure the VL model server is healthy (vision-stack-up.sh)
-#   2. re-capture all home pages with verify gates (shoot-sites.sh)
+#   2. re-capture all home pages with verify gates (cdp-shoot.py, which
+#      now asserts its own shot inventory)
 #   3. run the review pass (visionreviewd once; skip-seen keeps it incremental)
 #   4. print + log the score table; desktop notification on completion/failure
 #
@@ -11,14 +13,70 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/site-monitor"
 mkdir -p "$STATE_DIR"
 LOG="$STATE_DIR/fleet-review.log"
+BIN="$HOME/projects/vision-review-agent/visionreviewd"
+CFG="$HOME/.config/visionreviewd/websites.json"
+MAX_LOAD="${FLEET_MAX_LOAD:-10}"
+CANARY_LIMIT="${FLEET_CANARY_SECS:-45}"
+START_TS=$SECONDS
 
 notify() {
-  command -v notify-send >/dev/null 2>&1 && notify-send -a fleet-review "$1" "$2" 2>/dev/null
+  command -v notify-send >/dev/null 2>&1 && notify-send -a fleet-review "$1" "$2" ${3:-normal} 2>/dev/null
   return 0
 }
 
 stamp=$(date -Is)
 echo "$stamp === fleet review start" >> "$LOG"
+
+# 0a. load guard: an overloaded box turns every review into a 12-minute
+#     timeout grind; defer instead of burning the window.
+load1=$(cut -d' ' -f1 /proc/loadavg)
+if awk -v l="$load1" -v m="$MAX_LOAD" 'BEGIN{exit !(l>m)}'; then
+  echo "$stamp DEFERRED: load $load1 > $MAX_LOAD" >> "$LOG"
+  notify "fleet-review deferred" "load $load1 > $MAX_LOAD; rerun later"
+  exit 1
+fi
+
+# 0b. binary freshness: a stale visionreviewd silently lacks the newest
+#     pipeline fixes (one full session ran on a months-old build).
+if [ ! -x "$BIN" ]; then
+  echo "$stamp ABORT: visionreviewd binary missing at $BIN" >> "$LOG"
+  notify "fleet-review aborted" "binary missing, see $LOG" critical
+  exit 1
+fi
+if [ -n "$(find "$HOME/projects/vision-review-agent" -name '*.go' ! -name '*_test.go' -newer "$BIN" -print -quit)" ]; then
+  echo "$stamp ABORT: visionreviewd binary older than sources - rebuild first" >> "$LOG"
+  notify "fleet-review aborted" "stale binary, rebuild + rerun" critical
+  exit 1
+fi
+
+# 0c. canary: one 1-token completion measures queue latency; if the server
+#     cannot even start responding, the pass would burn 12-minute timeouts.
+canary_out=$(python3 - "$CANARY_LIMIT" <<'PYEOF'
+import http.client, json, sys, time
+limit = float(sys.argv[1])
+try:
+    c = http.client.HTTPConnection("127.0.0.1", 8390, timeout=limit)
+    body = json.dumps({"model": "canary", "messages": [{"role": "user", "content": "hi"}], "max_tokens": 1})
+    t0 = time.time()
+    c.request("POST", "/v1/chat/completions", body, {"Content-Type": "application/json"})
+    r = c.getresponse()
+    r.read()
+    print(f"{time.time() - t0:.1f}")
+except Exception as e:
+    print(f"FAIL {type(e).__name__}: {e}")
+PYEOF
+)
+if [[ "$canary_out" == FAIL* ]]; then
+  echo "$stamp ABORT: canary request failed: $canary_out" >> "$LOG"
+  notify "fleet-review aborted" "canary failed: $canary_out" critical
+  exit 1
+fi
+if awk -v c="$canary_out" -v m="$CANARY_LIMIT" 'BEGIN{exit !(c>m)}'; then
+  echo "$stamp DEFERRED: canary ${canary_out}s > ${CANARY_LIMIT}s (server saturated)" >> "$LOG"
+  notify "fleet-review deferred" "canary ${canary_out}s > ${CANARY_LIMIT}s"
+  exit 1
+fi
+echo "canary ok: ${canary_out}s" >> "$LOG"
 
 # 1. model server
 "$SCRIPT_DIR/vision-stack-up.sh" >> "$LOG" 2>&1 || {
@@ -39,8 +97,7 @@ if ! "$SCRIPT_DIR/cdp-shoot.py" >> "$LOG" 2>&1; then
 fi
 
 # 3. review
-if ! "$HOME/projects/vision-review-agent/visionreviewd" once \
-     -config "$HOME/.config/visionreviewd/websites.json" >> "$LOG" 2>&1; then
+if ! "$BIN" once -config "$CFG" >> "$LOG" 2>&1; then
   echo "$stamp review pass FAILED" >> "$LOG"
   notify "fleet-review: review pass failed" "see $LOG" critical
   exit 1
@@ -58,5 +115,6 @@ for d in "$HOME"/.local/share/vision-review-agent/reviews/*/; do
   echo "$p: $scores" >> "$LOG"
   summary="$summary$p $scores\n"
 done
+echo "$stamp === cycle took $((SECONDS - START_TS))s (canary ${canary_out}s)" >> "$LOG"
 notify "fleet-review complete" "scores in $LOG"
 echo "fleet review complete: $LOG"
