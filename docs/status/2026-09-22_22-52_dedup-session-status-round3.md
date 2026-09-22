@@ -2,7 +2,7 @@
 
 - **Written:** 2026-09-22 22:52 CEST
 - **Scope of this round:** user-pasted `art-dupl --sort total-tokens -t 2 --type-aware` output (4 clone groups) + "review!" instruction.
-- **Lineage:** supersedes the *current-state* sections of
+- **Lineage:** supersedes the _current-state_ sections of
   [`2026-09-22_22-38_dedup-session-status-round2.md`](2026-09-22_22-38_dedup-session-status-round2.md);
   rounds 1–2 history is not repeated here. Self-contained for the dedup thread; the pre-existing a2ui/lint/toolchain findings carry over as tickets.
 - **Open questions:** the 3 questions from round 2 remain unanswered; restated in §g.
@@ -11,13 +11,13 @@
 
 ## Round-3 verdict table (what the user asked for)
 
-| `-t 2` group | Verdict | Action taken |
-| --- | --- | --- |
-| `GenerateOptions.applyDefaults` (generate.go:114) + `Compile` (surface.go:69) zero-checks | **Harmful semantic clone** — the SAME domain rule ("empty surface/catalog ID → `defaultSurfaceID` / `DefaultCatalogID`") maintained in two types | **Extracted `defaultIDs(surfaceID, catalogID string) (string, string)`** into surface.go:64; both call sites are now one-liners. This REVERSES the round-2 accept verdict — one rule in two places is not "intentional similarity". The round-2 rationale ("values already single-sourced constants") was wrong: the *rule*, not the values, was duplicated |
-| `Generate` spec-fallback (generate.go:78-84) | Not flagged, left untouched | Deliberate: different rule (caller-override fallback to `opts.SurfaceID`/`opts.CatalogID`), not part of the clone |
-| component/image/preprocess 5-line `if err != nil` tails | Accept (unmarked) | Universal Go error-wrap idiom; three unrelated operations (child-list JSON encode, base64 decode, image.Decode), three packages |
-| config.go + store.go error-wrap tails | Accept (unmarked) | Same idiom; config JSON encode vs bbolt journal read |
-| commands.go `newConfigFlagSet("compare"/"events", stderr)` call lines | Accept (unmarked) | The clone *is* the round-1 extracted helper's call site (same class as `NewAgentFromArgs`); per-command flag registrations stay local on purpose |
+| `-t 2` group                                                                              | Verdict                                                                                                                                          | Action taken                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GenerateOptions.applyDefaults` (generate.go:114) + `Compile` (surface.go:69) zero-checks | **Harmful semantic clone** — the SAME domain rule ("empty surface/catalog ID → `defaultSurfaceID` / `DefaultCatalogID`") maintained in two types | **Extracted `defaultIDs(surfaceID, catalogID string) (string, string)`** into surface.go:64; both call sites are now one-liners. This REVERSES the round-2 accept verdict — one rule in two places is not "intentional similarity". The round-2 rationale ("values already single-sourced constants") was wrong: the _rule_, not the values, was duplicated |
+| `Generate` spec-fallback (generate.go:78-84)                                              | Not flagged, left untouched                                                                                                                      | Deliberate: different rule (caller-override fallback to `opts.SurfaceID`/`opts.CatalogID`), not part of the clone                                                                                                                                                                                                                                           |
+| component/image/preprocess 5-line `if err != nil` tails                                   | Accept (unmarked)                                                                                                                                | Universal Go error-wrap idiom; three unrelated operations (child-list JSON encode, base64 decode, image.Decode), three packages                                                                                                                                                                                                                             |
+| config.go + store.go error-wrap tails                                                     | Accept (unmarked)                                                                                                                                | Same idiom; config JSON encode vs bbolt journal read                                                                                                                                                                                                                                                                                                        |
+| commands.go `newConfigFlagSet("compare"/"events", stderr)` call lines                     | Accept (unmarked)                                                                                                                                | The clone _is_ the round-1 extracted helper's call site (same class as `NewAgentFromArgs`); per-command flag registrations stay local on purpose                                                                                                                                                                                                            |
 
 **Post-pass scan ladder (empirical, this round):** `-t 3` → **0 groups** · `-t 2` → **3 groups** (all idiom) · `-t 1` → **4 groups** (the 3 + NArg-usage ×2).
 
@@ -43,7 +43,7 @@
 
 1. Run the full ladder (`-t 1`, `-t 2`, `-t 3`) FIRST, then judge, then edit docs once, from evidence.
 2. Added the `defaultIDs` table test in the same edit as the extraction.
-3. Challenged the round-2 accept verdict *before* the user's prompt surfaced the group again — the "review!" was the third time this pair was looked at; the first two passes accepted it wrongly.
+3. Challenged the round-2 accept verdict _before_ the user's prompt surfaced the group again — the "review!" was the third time this pair was looked at; the first two passes accepted it wrongly.
 
 ### What could I still improve (going forward)?
 
@@ -54,7 +54,7 @@
 
 ### Direct answers to the remaining self-review questions
 
-- **Did I lie to you?** No. But I *repeated unverified numbers* (round-2's "7 groups") into this round's first doc edit — that is lie-adjacent and was corrected to 4 within the round.
+- **Did I lie to you?** No. But I _repeated unverified numbers_ (round-2's "7 groups") into this round's first doc edit — that is lie-adjacent and was corrected to 4 within the round.
 - **Ghost systems?** None found. `defaultIDs` is wired into both consumers; nothing was created without a caller.
 - **Split brains?** Three, all small: (1) DUPLICATION_POLICY.md vs AGENTS.md duplicate the group counts by hand — synced now, will drift again; (2) a2ui has TWO adjacent ID-defaulting rules (constant-fallback in `defaultIDs` vs caller-override in `Generate`) — legitimately distinct, but the relationship is only documented in this report and the policy table, not at the `Generate` site; (3) `GenerateOptions.SurfaceID`'s doc comment hardcodes `defaults to "main"` instead of naming `defaultSurfaceID`.
 - **Scope creep?** Avoided. The pre-existing a2ui failures, the uncommitted `.golangci.yaml`, and the flake gap were all ticketed, not touched.
@@ -94,23 +94,24 @@
 1. **Master is red and has been for days.** `pkg/vision/a2ui`: `ExampleCompile` (nondeterministic map-key order under native `encoding/json/v2` — 5 runs → 4 orderings) and `TestMessageWireShape/createSurface{,_with_theme}` (`omitempty` ignored on `SendDataModel bool`). Proven not caused by this session; still unfixed; every fresh clone of master fails `go test ./pkg/vision/a2ui/`.
 2. **An uncommitted `.golangci.yaml` change with unknown ownership** (adds wsl_v5 / exhaustruct_v5 / gocognit / tagliatelle rules) is sitting in the tree, producing 11 findings. Nobody has claimed it, and CI's pinned v2.13.2 has not been checked against it. An anonymous config driving required CI gates is a process hole.
 3. **The documented dev environment contradicts the build.** Every command this session needed the explicit 1.27.1-store-path prefix; the flake — the project's declared source of reproducibility — ships a toolchain that cannot build the module it defines.
-4. **Docs encoded scanner output that was never re-verified** (group counts, NArg ×3). The source-of-truth doc lied by staleness twice in one day. Both fixed this round; the *mechanism* (hand transcription) is still in place.
+4. **Docs encoded scanner output that was never re-verified** (group counts, NArg ×3). The source-of-truth doc lied by staleness twice in one day. Both fixed this round; the _mechanism_ (hand transcription) is still in place.
 5. **This round's own blunder:** a wrong count ("6 clone groups") written into the policy doc before empirical verification — caught and corrected within the round, but it happened exactly the way the last round's lesson said not to.
 
 ## e) WHAT WE SHOULD IMPROVE
 
 1. **Verify, then write.** Doc edits that state scanner/tool/test facts must be preceded by the command that produces those facts in the same round — counts from a previous round are not evidence.
 2. **Machine-check hand-maintained truth.** The accepted-groups table (counts + marker presence) should be validated by a script or test, not memory.
-3. **Fix root causes the same day they get a workaround paragraph.** The AGENTS.md toolchain-recipe paragraph should be deleted by *fixing the flake*, not maintained forever.
+3. **Fix root causes the same day they get a workaround paragraph.** The AGENTS.md toolchain-recipe paragraph should be deleted by _fixing the flake_, not maintained forever.
 4. **Second-pass verdicts on accepted clones.** Round 2 accepted the ID-fallback pair; round 3's extraction proved acceptance wrong. Any group accepted with a "values are shared" rationale deserves one re-read before being encoded as permanent.
 5. **Close red master before refactor rounds.** Deduping while the package under edit has known-broken tests means every verification run ends in a known-failure diff — workable, but it blurs the signal for exactly the packages most worth protecting.
 6. **Harvest within the same session.** Two (f) lists now exist outside TODO_LIST; each unharvested report multiplies the next session's triage cost.
 
 ## f) Up to 50 things we should get done next
 
-*Brainstorm, not commitment list (per status-report guidance). Ordered roughly by impact; first block is the highest-impact core.*
+_Brainstorm, not commitment list (per status-report guidance). Ordered roughly by impact; first block is the highest-impact core._
 
 **Wire-regression cluster (unblocks green master):**
+
 1. Answer §g question (c) — byte-stable vs semantically-equal wire output; everything below keys off it.
 2. Sorted/deterministic key emission in `Component.MarshalJSON` (the `map[string]any` props site).
 3. Same for `UpdateDataModel.MarshalJSON`'s data-model map.
@@ -180,10 +181,10 @@
 2. **The uncommitted `.golangci.yaml`** (wsl_v5 / exhaustruct_v5 / gocognit / tagliatelle): is this yours/intentional? Should I fix the 11 findings under those rules, or revert the config? And if keep: was the CI lint agreement ever checked?
 3. **a2ui wire output contract:** must wire output be byte-stable (deterministic key order → sort keys in marshal, re-pin goldens), or is semantically-equal output sufficient (then `ExampleCompile`'s expectation is over-strict and should be relaxed instead)?
 
-*(Same 3 questions as round 2 — re-asked because each gates a distinct block in §f.)*
+_(Same 3 questions as round 2 — re-asked because each gates a distinct block in §f.)_
 
 ---
 
 **Immediate next step when work resumes:** docs-health HARVEST over items 38–39, gated on your answers to §g.
 
-*Waiting for instructions.*
+_Waiting for instructions._

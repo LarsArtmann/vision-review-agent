@@ -7,6 +7,7 @@ follow-up round (21:58 → 22:38 CEST). Point-in-time snapshot; annotate,
 never rewrite.
 
 **Session thread so far:**
+
 1. `deduplicate!` — art-dupl `-t 1 --type-aware`, 10 clone groups → judged,
    3+1 harmful eliminated, 7 accepted (round 1, ~21:00–21:58).
 2. Round-1 status report written (`...21-58_dedup-session-status.md`).
@@ -18,26 +19,26 @@ never rewrite.
 
 ## a) FULLY DONE
 
-| # | Item | Evidence |
-| - | ---- | -------- |
-| 1 | Round-1 dedup (all of it; see 21:58 report §a): 3 harmful groups eliminated via stdlib/`decodePayload`/`buildPrompt`, plus `newConfigFlagSet`, `slices.SortFunc` modernization; docs updated | Round-1 report; `docs/DUPLICATION_POLICY.md` |
-| 2 | Round-1 status report written at user-requested `.md` (skill's HTML default overridden by explicit user instruction — flagged in file footer) | `docs/status/2026-09-22_21-58_dedup-session-status.md` |
-| 3 | **Round 2 — fantasy evidence gathered before final verdict:** read `charm.land/fantasy@v0.45.0/agent.go` — `AgentCall` (:164) and `AgentStreamCall` (:273) are flat, non-embedded, non-convertible duplicate structs; Go generics have no field constraints → the 6-line pointer copy is the API boundary, all merge paths (reflection / wrapper interfaces / tuple assignment / codegen) evaluated and rejected on type-safety or net-code grounds | Module-cache transcript in session; rationale now in policy doc |
-| 4 | **Round 2 — verdicts encoded at the sites** with `// art-dupl:accept` markers (the codebase's existing convention, commands.go:199): vision.go both builders, examples/a2ui + examples/structured mains | `pkg/vision/vision.go` (both `build*Call`), both example `main.go`s |
-| 5 | **Round 2 — scanner verified empirically:** `art-dupl -t 3` → **0 clone groups**; `-t 1` → 5 (down from 7; remaining 5 are pure Go-idiom noise: unrelated `if err != nil` pairs ×2, two-line defaulting pair, `newConfigFlagSet` call lines, `NArg` usage checks) | Session scan transcripts |
-| 6 | Round 2 — build/gofmt/tests still green after markers: `go build ./...`, `gofmt -l` clean, `pkg/vision` race suite ok | Session transcript |
-| 7 | Policy doc updated with round-2 evidence: fantasy agent.go line refs in the accepted-groups table, marker locations, and the `-t 3` empty-scan state | `docs/DUPLICATION_POLICY.md` § Accepted clone groups |
-| 8 | Pre-existing master breakage root-caused, blamed correctly via clean-worktree run at committed HEAD, ticketed (from round 1, still standing) | `TODO_LIST.md` § a2ui Go 1.27 regression |
+| # | Item                                                                                                                                                                                                                                                                                                                                                                                                                                                | Evidence                                                            |
+| - | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1 | Round-1 dedup (all of it; see 21:58 report §a): 3 harmful groups eliminated via stdlib/`decodePayload`/`buildPrompt`, plus `newConfigFlagSet`, `slices.SortFunc` modernization; docs updated                                                                                                                                                                                                                                                        | Round-1 report; `docs/DUPLICATION_POLICY.md`                        |
+| 2 | Round-1 status report written at user-requested `.md` (skill's HTML default overridden by explicit user instruction — flagged in file footer)                                                                                                                                                                                                                                                                                                       | `docs/status/2026-09-22_21-58_dedup-session-status.md`              |
+| 3 | **Round 2 — fantasy evidence gathered before final verdict:** read `charm.land/fantasy@v0.45.0/agent.go` — `AgentCall` (:164) and `AgentStreamCall` (:273) are flat, non-embedded, non-convertible duplicate structs; Go generics have no field constraints → the 6-line pointer copy is the API boundary, all merge paths (reflection / wrapper interfaces / tuple assignment / codegen) evaluated and rejected on type-safety or net-code grounds | Module-cache transcript in session; rationale now in policy doc     |
+| 4 | **Round 2 — verdicts encoded at the sites** with `// art-dupl:accept` markers (the codebase's existing convention, commands.go:199): vision.go both builders, examples/a2ui + examples/structured mains                                                                                                                                                                                                                                             | `pkg/vision/vision.go` (both `build*Call`), both example `main.go`s |
+| 5 | **Round 2 — scanner verified empirically:** `art-dupl -t 3` → **0 clone groups**; `-t 1` → 5 (down from 7; remaining 5 are pure Go-idiom noise: unrelated `if err != nil` pairs ×2, two-line defaulting pair, `newConfigFlagSet` call lines, `NArg` usage checks)                                                                                                                                                                                   | Session scan transcripts                                            |
+| 6 | Round 2 — build/gofmt/tests still green after markers: `go build ./...`, `gofmt -l` clean, `pkg/vision` race suite ok                                                                                                                                                                                                                                                                                                                               | Session transcript                                                  |
+| 7 | Policy doc updated with round-2 evidence: fantasy agent.go line refs in the accepted-groups table, marker locations, and the `-t 3` empty-scan state                                                                                                                                                                                                                                                                                                | `docs/DUPLICATION_POLICY.md` § Accepted clone groups                |
+| 8 | Pre-existing master breakage root-caused, blamed correctly via clean-worktree run at committed HEAD, ticketed (from round 1, still standing)                                                                                                                                                                                                                                                                                                        | `TODO_LIST.md` § a2ui Go 1.27 regression                            |
 
 ## b) PARTIALLY DONE
 
-| # | Item | Done | Missing |
-| - | ---- | ---- | ------- |
-| 1 | Verification matrix for session changes | build/vet/gofmt/race/lint (pinned v2.13.2) on touched packages, default regime | No `GOEXPERIMENT=jsonv2` / `GOEXPERIMENT=none` regime runs over the touched SDK packages, no `go mod verify`/`tidy -diff`, no `nix run .#test/.#lint`, no `nix build`, no `nix flake check` |
-| 2 | Duplication policy end-state | `-t 3` empty; every remaining `-t 1` group documented with rationale | The 5 remaining `-t 1` groups carry rationale only in the policy doc, no in-place markers (deliberate — marking Go idioms is scanner-appeasement; revisit if you disagree) |
-| 3 | a2ui Go 1.27 regression triage | Root cause + mechanism + blame isolated; 3 tickets filed | The actual fixes (deterministic marshal, `omitempty`→`omitzero`, re-pinned wants) not started; upstream issue not filed |
-| 4 | Toolchain-state assessment | go.mod 1.27.1 vs devShell 1.26.7 confirmed + workaround documented in AGENTS.md; 4 nix store paths for go-1.27.1 (one arm64) | flake/CI pin ownership and the uncommitted `.golangci.yaml` change not investigated (out of session scope) |
-| 5 | Answers to round-1 report's 3 questions (g) | Asked | **Not answered** — re-asked below (g) |
+| # | Item                                        | Done                                                                                                                         | Missing                                                                                                                                                                                     |
+| - | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | Verification matrix for session changes     | build/vet/gofmt/race/lint (pinned v2.13.2) on touched packages, default regime                                               | No `GOEXPERIMENT=jsonv2` / `GOEXPERIMENT=none` regime runs over the touched SDK packages, no `go mod verify`/`tidy -diff`, no `nix run .#test/.#lint`, no `nix build`, no `nix flake check` |
+| 2 | Duplication policy end-state                | `-t 3` empty; every remaining `-t 1` group documented with rationale                                                         | The 5 remaining `-t 1` groups carry rationale only in the policy doc, no in-place markers (deliberate — marking Go idioms is scanner-appeasement; revisit if you disagree)                  |
+| 3 | a2ui Go 1.27 regression triage              | Root cause + mechanism + blame isolated; 3 tickets filed                                                                     | The actual fixes (deterministic marshal, `omitempty`→`omitzero`, re-pinned wants) not started; upstream issue not filed                                                                     |
+| 4 | Toolchain-state assessment                  | go.mod 1.27.1 vs devShell 1.26.7 confirmed + workaround documented in AGENTS.md; 4 nix store paths for go-1.27.1 (one arm64) | flake/CI pin ownership and the uncommitted `.golangci.yaml` change not investigated (out of session scope)                                                                                  |
+| 5 | Answers to round-1 report's 3 questions (g) | Asked                                                                                                                        | **Not answered** — re-asked below (g)                                                                                                                                                       |
 
 ## c) NOT STARTED (all found by this session, zero work done)
 
@@ -54,7 +55,7 @@ never rewrite.
 
 ## d) TOTALLY FUCKED UP
 
-Nothing this session shipped is broken. The repo state this session *found* (unchanged since round 1, all pre-existing, proven at committed HEAD):
+Nothing this session shipped is broken. The repo state this session _found_ (unchanged since round 1, all pre-existing, proven at committed HEAD):
 
 1. **a2ui wire output nondeterministic on Go 1.27** (5 runs → 4 orderings) — worst-class for a protocol emitter; 2 tests fail (`ExampleCompile`, `TestMessageWireShape/createSurface{,_with_theme}`).
 2. **`omitempty` ignored on scalars** under native `encoding/json/v2` → `"sendDataModel":false` leaks into every createSurface message.
@@ -67,7 +68,7 @@ Nothing this session shipped is broken. The repo state this session *found* (unc
 2. **Empty `$GO` → shell `test` builtin trap** (round 1): forgot `GO=` in some commands; `go test` became `test`, mvdan/sh errored "not a valid test operator"; I first misdiagnosed it as a Go 1.27 `-run` syntax change and spent a Sourcegraph search before seeing the empty expansion. ~4 wasted round trips.
 3. **`tail -15` eyeballing** (round 1): declared "only ExampleCompile fails" from a truncated view; `TestMessageWireShape` subtests surfaced two runs later. Always grep the full verdict list.
 4. **Ambiguous worktree experiment** (round 1): HEAD-worktree check raced the auto-commit daemon; "HEAD" was a moving target between runs. Should have pinned the hash and listed which files HEAD already contained.
-5. **Round 2: first marker edit failed** — old_string appeared in both identical builders and I passed `replace_all` implicitly false. I *knew* the block was duplicated (that was the finding); should have anticipated non-uniqueness. Fixed immediately with `replace_all: true` (which was the desired outcome anyway).
+5. **Round 2: first marker edit failed** — old_string appeared in both identical builders and I passed `replace_all` implicitly false. I _knew_ the block was duplicated (that was the finding); should have anticipated non-uniqueness. Fixed immediately with `replace_all: true` (which was the desired outcome anyway).
 6. **Minor:** bad `PIPESTATUS` echo reported "LINT EXIT: 0" while the real exit was 1 (round 1); a multiedit anchor ate a blank line in the policy doc (round 1, caught and fixed).
 
 ## e) WHAT WE SHOULD IMPROVE
@@ -142,4 +143,4 @@ Nothing this session shipped is broken. The repo state this session *found* (unc
 
 ---
 
-*Round-2 report per status-report skill; `.md` at explicit user request (skill default HTML). Not committed (harness forbids unsolicited commits; auto-commit daemon picks it up).*
+_Round-2 report per status-report skill; `.md` at explicit user request (skill default HTML). Not committed (harness forbids unsolicited commits; auto-commit daemon picks it up)._

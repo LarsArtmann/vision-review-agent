@@ -1,6 +1,6 @@
 module github.com/larsartmann/vision-review-agent
 
-go 1.27.1
+go 1.27
 
 require (
 	charm.land/catwalk v0.51.22

@@ -10,6 +10,7 @@ handoff. No unrelated research, per instruction.
 ## Self-Critique (asked directly: forgotten / better / improve)
 
 **What did I forget?**
+
 1. **AGENTS.md now lies about the devShell go version.** My `go_1_26 →
    go_1_27` flake sweep fixed the builds but invalidated this repo's AGENTS.md
    gotcha ("the nix devShell still exposes go 1.26.7, so plain `go build`
@@ -43,6 +44,7 @@ handoff. No unrelated research, per instruction.
    feature-table row; my return added a CHANGELOG entry but no FEATURES row.
 
 **What is stupid that we do anyway?**
+
 - The site list is copy-maintained in three places (above) — comment-enforced
   consistency, the weakest possible mechanism.
 - `visionreviewd doctor` treats a 503 "model loading" endpoint as a hard FAIL
@@ -54,6 +56,7 @@ handoff. No unrelated research, per instruction.
   were never executed. Build proof ≠ app proof.
 
 **What could I have done better?**
+
 - Run the one-view E2E pre-gate (cost: ~2 min; would have retired risks 3, 5
   and proven the alias/completion path).
 - Generated the SystemNix site list from `vision-review-agent-src` JSON
@@ -66,6 +69,7 @@ handoff. No unrelated research, per instruction.
   properly.
 
 **What could I still improve?**
+
 - Verify the `.#test`/`.#lint` apps after the toolchain sweep.
 - Post-deploy: record first-pass wall time + CPU burst as a perf baseline
   (repo doctrine: durable evidence in docs/status).
@@ -176,7 +180,7 @@ That is the honest gap.
 
 Nothing. No data at risk, no broken deploy path, no reverted work. The worst
 findings are the split-brain copies and two unverified claims (sections above)
-— both cheap to fix. The one *deploy-ordering landmine* (current lock pins
+— both cheap to fix. The one _deploy-ordering landmine_ (current lock pins
 `c8ca4b5`, which predates the go fix → its build FAILS) is loudly documented
 in the CHANGELOG and TODO_LIST and resolves at step 2 of the handoff.
 
@@ -198,8 +202,8 @@ in the CHANGELOG and TODO_LIST and resolves at step 2 of the handoff.
 
 ## f) Up to 50 things to get done next
 
-*(1-8 = the activation tail; 9-20 = high-value follow-ups; 21+ = ROADMAP
-fuel. Not commitments — harvest input.)*
+_(1-8 = the activation tail; 9-20 = high-value follow-ups; 21+ = ROADMAP
+fuel. Not commitments — harvest input.)_
 
 1. Push both repos (user; auto-commits included).
 2. `nix flake lock --update-input vision-review-agent` in SystemNix —

@@ -150,17 +150,17 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
       NOT `llamaServer.enable` — that stays false on this host; fresh journal
       under `/var/lib/visionreviewd`). Remaining (owner, needs sudo/push):
       1. push this repo (flake now builds again: `buildGoModule` overrides
-         `go = pkgs.go_1_27` — the 1.27.1 go.mod floor had broken all nix
-         builds), 2. in SystemNix: `nix flake lock --update-input
+      `go = pkgs.go_1_27` — the 1.27.1 go.mod floor had broken all nix
+      builds), 2. in SystemNix: `nix flake lock --update-input
          vision-review-agent` (mandatory — the current lock predates the go
-         fix and its build fails), 3. `nix run .#deploy`, 4. verify:
-         `systemctl status visionreviewd`, `sudo visionreviewd doctor -config
+      fix and its build fails), 3. `nix run .#deploy`, 4. verify:
+      `systemctl status visionreviewd`, `sudo visionreviewd doctor -config
          /etc/visionreviewd/config.json` (pre-deploy gate was 20/21 green —
-         the model-id check flips green once the new `--alias
+      the model-id check flips green once the new `--alias
          nsfwcaption-qwen3-vl-8b-v3` on llama-vlm-cap deploys), then watch
-         `journalctl -u visionreviewd -f` and the first pass land under
-         `/var/lib/visionreviewd/reviews`. Journal backup ritual:
-         [`docs/visionreviewd-systemnix.md`](docs/visionreviewd-systemnix.md).
+      `journalctl -u visionreviewd -f` and the first pass land under
+      `/var/lib/visionreviewd/reviews`. Journal backup ritual:
+      [`docs/visionreviewd-systemnix.md`](docs/visionreviewd-systemnix.md).
 
 ## DiscordSync full watch (user decision: cadence)
 

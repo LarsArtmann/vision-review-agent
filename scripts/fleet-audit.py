@@ -52,7 +52,9 @@ def fetch(url, method="GET"):
 def meta_links(html):
     return re.findall(
         r'<link\b[^>]*rel="([^"]*)"[^>]*href="([^"]*)"[^>]*>', html, re.IGNORECASE
-    ) + re.findall(r'<link\b[^>]*href="([^"]*)"[^>]*rel="([^"]*)"[^>]*>', html, re.IGNORECASE)
+    ) + re.findall(
+        r'<link\b[^>]*href="([^"]*)"[^>]*rel="([^"]*)"[^>]*>', html, re.IGNORECASE
+    )
 
 
 def audit(name, base):
