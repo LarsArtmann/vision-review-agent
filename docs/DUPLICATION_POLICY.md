@@ -7,13 +7,18 @@ decisions in this repo.
 ## Current State
 
 **Verified with `art-dupl --sort total-tokens -t 1 --type-aware` over the whole
-repo (v0.6.x, 2026-09-22): 7 clone groups, all accepted with rationale below.**
-The 2026-09-22 pass eliminated 3 harmful groups: the four hand-rolled
+repo (v0.6.x, 2026-09-22): 6 clone groups, all accepted with rationale below.**
+The 2026-09-22 pass eliminated 4 harmful groups: the four hand-rolled
 sorted-map-keys helpers (replaced by stdlib `slices.Sorted(maps.Keys(m))`,
 plus `slices.SortFunc` for the struct sort), the 4-site payload-decode error
 contract in `pkg/vision/a2ui/messages.go` (extracted into `decodePayload`),
-and the two prompt-assembly skeletons in `internal/reviewd/prompts.go`
-(extracted into `buildPrompt` + instruction constants).
+the two prompt-assembly skeletons in `internal/reviewd/prompts.go`
+(extracted into `buildPrompt` + instruction constants), and — found by the
+follow-up `-t 2` pass (4 groups → 3, all idiom-only) — the duplicated
+surface/catalog-ID fallback rule in `GenerateOptions.applyDefaults` and
+`Compile` (extracted into `defaultIDs`, reversing the earlier accept verdict:
+one domain rule in two places is a semantic clone, not intentional
+similarity).
 
 Earlier: `art-dupl --type-aware -t 1` (v0.6.1, 2026-08-17) over
 `internal/reviewd` + `cmd/visionreviewd`: 0 actionable groups (254 raw, 223
@@ -47,6 +52,7 @@ irreducible and never appear in the scan.
 | `openConfiguredPipeline` / `closeStore`             | `cmd/visionreviewd/commands.go` | Configured pipeline + store opening and the deferred close-error report shared by `once` and `run`                                                                                                                          |
 | `ReviewsDirPermission` / `ReviewsFilePermission`    | `internal/reviewd/writer.go`    | Exported once, used by both the Writer and the doctor probes, so the probe modes can never drift from the write modes                                                                                                       |
 | `decodePayload`                                     | `pkg/vision/a2ui/messages.go`   | Single source for the `ErrMalformedMessage` + `decode <kind> payload` contract shared by all four message-kind `UnmarshalJSON` methods                                                                                      |
+| `defaultIDs`                                        | `pkg/vision/a2ui/surface.go`    | The one fallback rule for empty surface/catalog IDs (→ `defaultSurfaceID` / `DefaultCatalogID`), used by `Compile` and `GenerateOptions.applyDefaults`                                                                       |
 | `buildPrompt` + `reviewInstructions`/`compareInstructions` | `internal/reviewd/prompts.go` | Shared prompt assembly (view context → instructions → `scoreRules`); the per-persona sections live as pinned string constants                                                                                          |
 | `newConfigFlagSet`                                  | `cmd/visionreviewd/commands.go` | Flag set carrying the `-config` flag every daemon command shares, so its default and description are defined in exactly one place                                                                                          |
 | `slices.Sorted(maps.Keys(m))` (stdlib, not a helper) | call sites in `discover.go`/`pipeline.go`/`replay.go` | Replaced the four per-map sorted-keys helpers; Go 1.23+ makes them redundant |
@@ -86,17 +92,19 @@ Go's type system:
 
 ## Accepted clone groups (2026-09-22 full-repo pass)
 
-The 7 groups `art-dupl -t 1 --type-aware` reported are all deliberate; at
+The 6 groups `art-dupl -t 1 --type-aware` reported are all deliberate; at
 **`-t 3` the scan is empty (0 groups, 2026-09-22)** after the two judgment
-groups above were marked `// art-dupl:accept` in place:
+groups above were marked `// art-dupl:accept` in place, and the same day's
+`-t 2` pass (4 groups) had its one non-idiom group — the surface/catalog-ID
+fallback pair — extracted into `defaultIDs`, leaving these 3 idiom groups
+plus the 3 `-t 1`-only groups below:
 
 | Group | Why it stays |
 | ----- | ------------ |
 | `vision.go` `params := optionalParams()` + 6 field copies in `buildAgentCall` / `buildAgentStreamCall` | Three DISTINCT `fantasy` call types share field names but no interface (`AgentCall` agent.go:164 and `AgentStreamCall` agent.go:273 are flat, unembeddable, non-convertible); Go cannot copy same-named fields across unrelated struct types without reflection. The source (`optionalModelParams`) is already single-sourced. Marked `// art-dupl:accept` at both sites. |
-| `component.go` / `image.go` / `preprocess.go` 5-line `if err != nil` blocks | Unrelated domains (child-list JSON encode, base64 decode, image decode) behind a universal Go idiom — scan noise at `-t 1`. |
+| `component.go` / `image.go` / `preprocess.go` 5-line `if err != nil` blocks | Unrelated domains (child-list JSON encode, base64 decode, image decode) behind a universal Go idiom — scan noise at `-t 1` and `-t 2`. |
 | `examples/a2ui` + `examples/structured` `cli.NewAgentFromArgs(2, "...")` + `LoadImageArg` + status line | The abstractions already exist (`NewAgentFromArgs`, `LoadImageArg`); the residue is the bootstrap idiom that makes each example a complete, copy-pasteable teaching program. Marked `// art-dupl:accept` at both sites. |
 | `config.go` + `store.go` error-wrap blocks | Unrelated operations (config JSON encode vs journal read); idiomatic wrap per site. |
-| `generate.go` `applyDefaults` + `surface.go` `Compile` zero-checks | Two different types (`GenerateOptions` vs `SurfaceSpec`); the default VALUES (`defaultSurfaceID`, `DefaultCatalogID`) are already single-sourced constants. |
 | `commands.go` `newConfigFlagSet("compare"/"events", stderr)` call lines | The clone is the shared-helper call itself (same class as `NewAgentFromArgs`); the per-command flags deliberately stay local. |
 | `commands.go` `if flagSet.NArg() != 1 { usage; return exitUsage }` ×3 | Usage lines are per-command data; a `requireArgCount` helper would force callers through a code-return dance that is longer than the original (same precedent as the `once`/`run` prologue). |
 

@@ -341,13 +341,15 @@ go build -o vision ./cmd/vision
 
 See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
 list of extraction helpers and duplication decisions. Current state:
-**7 clone groups, all accepted with rationale** at
+**6 clone groups, all accepted with rationale** at
 `art-dupl --sort total-tokens -t 1 --type-aware` over the whole repo
-(re-verified 2026-09-22; the 2026-09-07 pass had 0 actionable after
-extracting `failAnalysis`). The 2026-09-22 pass removed the last 3 harmful
-groups: per-map sorted-keys helpers (→ stdlib `slices.Sorted(maps.Keys(m))`),
-the a2ui payload-decode error contract (→ `decodePayload`), and the daemon
-prompt skeletons (→ `buildPrompt`) — plus `newConfigFlagSet` for the `-config`
+(re-verified 2026-09-22; `-t 2` reports 3, `-t 3` reports 0). The
+2026-09-22 pass removed 4 harmful groups: per-map sorted-keys helpers
+(→ stdlib `slices.Sorted(maps.Keys(m))`), the a2ui payload-decode error
+contract (→ `decodePayload`), the daemon prompt skeletons (→ `buildPrompt`),
+and — from the follow-up `-t 2` pass — the duplicated surface/catalog-ID
+fallback rule (→ `defaultIDs`, shared by `Compile` and
+`GenerateOptions.applyDefaults`) — plus `newConfigFlagSet` for the `-config`
 flag shared by every daemon command. Test files and interface-required
 signatures are below scan scope by design.
 
