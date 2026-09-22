@@ -7,7 +7,7 @@ decisions in this repo.
 ## Current State
 
 **Verified with `art-dupl --sort total-tokens -t 1 --type-aware` over the whole
-repo (v0.6.x, 2026-09-22): 6 clone groups, all accepted with rationale below.**
+repo (v0.6.x, 2026-09-22): 4 clone groups, all accepted with rationale below.**
 The 2026-09-22 pass eliminated 4 harmful groups: the four hand-rolled
 sorted-map-keys helpers (replaced by stdlib `slices.Sorted(maps.Keys(m))`,
 plus `slices.SortFunc` for the struct sort), the 4-site payload-decode error
@@ -92,12 +92,12 @@ Go's type system:
 
 ## Accepted clone groups (2026-09-22 full-repo pass)
 
-The 6 groups `art-dupl -t 1 --type-aware` reported are all deliberate; at
+The 4 groups `art-dupl -t 1 --type-aware` reported are all deliberate; at
 **`-t 3` the scan is empty (0 groups, 2026-09-22)** after the two judgment
 groups above were marked `// art-dupl:accept` in place, and the same day's
 `-t 2` pass (4 groups) had its one non-idiom group — the surface/catalog-ID
-fallback pair — extracted into `defaultIDs`, leaving these 3 idiom groups
-plus the 3 `-t 1`-only groups below:
+fallback pair — extracted into `defaultIDs`, leaving the 3 idiom groups
+shared with `-t 2` plus the `-t 1`-only NArg group below:
 
 | Group | Why it stays |
 | ----- | ------------ |
@@ -106,7 +106,7 @@ plus the 3 `-t 1`-only groups below:
 | `examples/a2ui` + `examples/structured` `cli.NewAgentFromArgs(2, "...")` + `LoadImageArg` + status line | The abstractions already exist (`NewAgentFromArgs`, `LoadImageArg`); the residue is the bootstrap idiom that makes each example a complete, copy-pasteable teaching program. Marked `// art-dupl:accept` at both sites. |
 | `config.go` + `store.go` error-wrap blocks | Unrelated operations (config JSON encode vs journal read); idiomatic wrap per site. |
 | `commands.go` `newConfigFlagSet("compare"/"events", stderr)` call lines | The clone is the shared-helper call itself (same class as `NewAgentFromArgs`); the per-command flags deliberately stay local. |
-| `commands.go` `if flagSet.NArg() != 1 { usage; return exitUsage }` ×3 | Usage lines are per-command data; a `requireArgCount` helper would force callers through a code-return dance that is longer than the original (same precedent as the `once`/`run` prologue). |
+| `commands.go` `if flagSet.NArg() != 1 { usage; return exitUsage }` ×2 | Usage lines are per-command data; a `requireArgCount` helper would force callers through a code-return dance that is longer than the original (the third site uses named `compareArgCount`, so only two group). |
 
 ## pkg/vision/a2ui (scanned 2026-08-18, post-builders)
 

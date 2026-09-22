@@ -341,7 +341,7 @@ go build -o vision ./cmd/vision
 
 See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
 list of extraction helpers and duplication decisions. Current state:
-**6 clone groups, all accepted with rationale** at
+**4 clone groups, all accepted with rationale** at
 `art-dupl --sort total-tokens -t 1 --type-aware` over the whole repo
 (re-verified 2026-09-22; `-t 2` reports 3, `-t 3` reports 0). The
 2026-09-22 pass removed 4 harmful groups: per-map sorted-keys helpers
