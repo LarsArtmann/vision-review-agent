@@ -141,17 +141,26 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
 
 ## visionreviewd activation (next steps)
 
-- [ ] **Enable on a host via SystemNix (user action, needs sudo)** — the
-      SystemNix lock pins `dcd50a0` (committed, verified 2026-08-18). Import
-      `nixosModules.visionreviewd`, set
-      `configFile = "/etc/visionreviewd/config.json"` (template:
-      `docs/visionreviewd-config.example.json`, worked example:
-      `docs/activation/`), optionally `llamaServer.enable = true` (first start
-      waits out the model load via the `/health` readiness probe). Steps:
-      [`docs/visionreviewd-systemnix.md`](docs/visionreviewd-systemnix.md)
-      (now includes the journal backup ritual). Gate with `visionreviewd
-      doctor` — verified 2026-09-07 against the example config: 5 checks,
-      actionable per-check output, exit 1 on failure.
+- [ ] **Finish the evo-x2 SystemNix enablement (user action: push + deploy)** —
+      SystemNix wiring is DONE (2026-09-22 session, commits `c2010e92` +
+      `6349307e` there): input re-added and locked (`c8ca4b5`), wrapper module
+      `modules/nixos/services/visionreviewd.nix` imports the upstream module
+      directly, evo-x2 enables the service with `/etc/visionreviewd/config.json`
+      generated from a 17-site list (baseUrl = llama-vlm's captioner :8128,
+      NOT `llamaServer.enable` — that stays false on this host; fresh journal
+      under `/var/lib/visionreviewd`). Remaining (owner, needs sudo/push):
+      1. push this repo (flake now builds again: `buildGoModule` overrides
+         `go = pkgs.go_1_27` — the 1.27.1 go.mod floor had broken all nix
+         builds), 2. in SystemNix: `nix flake lock --update-input
+         vision-review-agent` (mandatory — the current lock predates the go
+         fix and its build fails), 3. `nix run .#deploy`, 4. verify:
+         `systemctl status visionreviewd`, `sudo visionreviewd doctor -config
+         /etc/visionreviewd/config.json` (pre-deploy gate was 20/21 green —
+         the model-id check flips green once the new `--alias
+         nsfwcaption-qwen3-vl-8b-v3` on llama-vlm-cap deploys), then watch
+         `journalctl -u visionreviewd -f` and the first pass land under
+         `/var/lib/visionreviewd/reviews`. Journal backup ritual:
+         [`docs/visionreviewd-systemnix.md`](docs/visionreviewd-systemnix.md).
 
 ## DiscordSync full watch (user decision: cadence)
 

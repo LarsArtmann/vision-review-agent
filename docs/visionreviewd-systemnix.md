@@ -65,6 +65,37 @@ keeps evaluating cleanly with the service simply absent.
    endpoint) and exits nonzero when anything fails:
    `visionreviewd doctor -config /etc/visionreviewd/config.json`.
 
+## Activated on evo-x2 (2026-09-22) — what actually shipped
+
+The first real enablement deviates from the generic steps above, in ways
+other hosts may want to copy:
+
+- **`llamaServer.enable = false`** — evo-x2 already serves the caption model
+  through SystemNix's `llama-vlm-cap` socket-activated instance
+  (`http://127.0.0.1:8128/v1`, CPU-only, idle-unloads after 2 h). An always-on
+  llama unit would pin ~10 GB of RAM around the clock and re-enter the
+  llama.cpp/ROCm wedge history on that host. The `visionreviewd-llama` port
+  (8390) stays registered in SystemNix for hosts that do want the bundled
+  unit.
+- **Config file is generated, not hand-placed** — `environment.etc.
+  "visionreviewd/config.json"` is built from a single site list (sourceURLs
+  and per-site screenshot globs derive from the same attrset), so the config
+  has no `~` entries the DynamicUser daemon could mis-expand: globs are
+  absolute under `/home/<user>/.local/share/vision-review-agent/screenshots/`.
+  It holds no secrets (loopback, keyless llama), which is what makes
+  `environment.etc` acceptable.
+- **Stable model id** — llama-server reports the model path as the
+  `/v1/models` id unless `--alias` is passed; the daemon's `model` field and
+  the `doctor` model check want a stable id, so the captioner instance runs
+  with `--alias nsfwcaption-qwen3-vl-8b-v3`.
+- **Fresh journal** — `dataDir`/`reviewsDir` point into the service
+  StateDirectory (`/var/lib/visionreviewd/{data,reviews}`), deliberately NOT
+  at the user-space `~/.local/share/vision-review-agent` journal the manual
+  fleet passes still own.
+- **Upstream flake builds again** — `buildGoModule` overrides
+  `go = pkgs.go_1_27`; the go.mod `>= 1.27.1` floor had broken every nix
+  build of this repo (packages and the test/lint apps alike).
+
 ## Backup the journal
 
 The bbolt journal (`<dataDir>/events.db`) is the source of truth; the
