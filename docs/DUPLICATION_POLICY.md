@@ -20,6 +20,15 @@ surface/catalog-ID fallback rule in `GenerateOptions.applyDefaults` and
 one domain rule in two places is a semantic clone, not intentional
 similarity).
 
+**Re-baselined under art-dupl v0.7.0 (2026-09-22, same day):** the system
+tool upgraded from v0.6.x mid-day (semantic mode; output now splits into
+shown / non-actionable / filtered-suppressed instead of listing every
+group). Under v0.7.0 `--sort total-tokens -t 2 --type-aware` reports
+**5 shown groups — all reviewed and accepted** (idiom-level; rows marked
+"v0.7" in the table below), and `-t 3` reports **0 shown** (the tool itself
+classifies everything non-actionable). The v0.6.x counts above are kept as
+the historical record of the extraction passes.
+
 Earlier: `art-dupl --type-aware -t 1` (v0.6.1, 2026-08-17) over
 `internal/reviewd` + `cmd/visionreviewd`: 0 actionable groups (254 raw, 223
 non-actionable, 30 suppressed); the single actionable pair after the
@@ -106,7 +115,11 @@ shared with `-t 2` plus the `-t 1`-only NArg group below:
 | `examples/a2ui` + `examples/structured` `cli.NewAgentFromArgs(2, "...")` + `LoadImageArg` + status line | The abstractions already exist (`NewAgentFromArgs`, `LoadImageArg`); the residue is the bootstrap idiom that makes each example a complete, copy-pasteable teaching program. Marked `// art-dupl:accept` at both sites.                                                                                                                                                   |
 | `config.go` + `store.go` error-wrap blocks                                                              | Unrelated operations (config JSON encode vs journal read); idiomatic wrap per site.                                                                                                                                                                                                                                                                                       |
 | `commands.go` `newConfigFlagSet("compare"/"events", stderr)` call lines                                 | The clone is the shared-helper call itself (same class as `NewAgentFromArgs`); the per-command flags deliberately stay local.                                                                                                                                                                                                                                             |
-| `commands.go` `if flagSet.NArg() != 1 { usage; return exitUsage }` ×2                                   | Usage lines are per-command data; a `requireArgCount` helper would force callers through a code-return dance that is longer than the original (the third site uses named `compareArgCount`, so only two group).                                                                                                                                                           |
+| `commands.go` `if flagSet.NArg() != 1 { usage; return exitUsage }` ×2 | Usage lines are per-command data; a `requireArgCount` helper would force callers through a code-return dance that is longer than the original (the third site uses named `compareArgCount`, so only two group). |
+| `messages.go` `if err := decodePayload(...); err != nil { return err }` ×4 (v0.7 top group) | The error contract is single-sourced inside `decodePayload`; the call sites are the universal Go error-check idiom — the extraction that removed the old 4-site clone created this smaller, intentional one. |
+| `discover.go` `isScreenshotDirBase` / `isWalkSkipDir` / `isScreenshotExtension` switch predicates (v0.7) | Three distinct domain predicates sharing Go's switch-default shape; each body is different domain data (same class as table-driven rows). |
+| `cmd/vision/main.go` / `pkg/vision/a2ui/decompile.go` accumulate-in-loop `append` (v0.7) | Unrelated element types (images vs specs) behind Go's loop-accumulate idiom. |
+| `cmd/visionreviewd/main.go` `printUsage(stderr)` + `exitUsage` ×2 (v0.7) | Usage dispatch guards; same accepted class as the NArg row above. |
 
 ## pkg/vision/a2ui (scanned 2026-08-18, post-builders)
 
