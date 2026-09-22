@@ -134,7 +134,7 @@ examples/                Working examples for each provider
 - **LoadImageFromURL validates magic bytes** — Rejects non-image HTTP bodies via `ValidateImage`
 - **`isContentFilterRejection` uses specific signal phrases** — not bare words like "safety" (which matched benign messages); requires the rejection mechanism ("filter", "policy", "blocked", "removed") alongside the topic
 - **`CompressImage` no-ops when output wouldn't shrink** — returns the original image if re-encoding produces equal-or-larger bytes; contract is size reduction, not format normalization
-- **`version` is a `var` (not `const`)** — set to the released semver at cut time, reset to a `-dev` default when the next cycle opens (currently `"0.8.0-dev"`; v0.7.0 released 2026-09-07, tagged + `--latest` + proxy-verified); `flake.nix` injects the real rev via `-ldflags "-X main.version=..."`. Version surface: exactly two vars (`cmd/vision/main.go`, `cmd/visionreviewd/main.go`), both injected by both flake `ldflags` entries — flip BOTH when cutting a release. Go toolchain: `go.mod` and the nixpkgs lock have been on 1.26.7 since `2934585` (nixpkgs ships it; the 2026-08-18 "nixpkgs has 1.26.5" probe note is obsolete)
+- **`version` is a `var` (not `const`)** — set to the released semver at cut time, reset to a `-dev` default when the next cycle opens (currently `"0.8.0-dev"`; v0.7.0 released 2026-09-07, tagged + `--latest` + proxy-verified); `flake.nix` injects the real rev via `-ldflags "-X main.version=..."`. Version surface: exactly two vars (`cmd/vision/main.go`, `cmd/visionreviewd/main.go`), both injected by both flake `ldflags` entries — flip BOTH when cutting a release. Go toolchain: `go.mod` requires **1.27.1** (bumped after 2026-09-07; the "on 1.26.7 since `2934585`" note is obsolete). GOTCHA: the nix devShell still exposes go 1.26.7 (`nix develop -c go version`), so plain `go build` outside the flake fails with "go.mod requires go >= 1.27.1"; use the nix-store binary directly (`/nix/store/*-go-1.27.1/bin/go`, pick the linux/amd64 one — several store paths exist) and point golangci-lint at it via PATH. Also: with an empty `$GO` in a shell command, `go test ...` degrades to the shell `test` builtin and fails with mvdan/sh "not a valid test operator" errors — not a Go failure
 - **CLI parseFlags is testable** — `parseFlags(fs *flag.FlagSet, args []string) (*config, error)` takes a FlagSet and returns errors instead of calling `os.Exit`. `main()` passes `flag.CommandLine`; tests pass a fresh `flag.ContinueOnError` set with `io.Discard` output. Version/no-args decisions surface as `cfg.showVersion` / `cfg.args` so the caller acts on them.
 - **Retry tests must NOT set MaxRetries** — Vision-layer retry tests leave `MaxRetries` at 0 (default) and rely solely on `Config.Retry`. Setting `MaxRetries: 1` re-enables fantasy's HTTP-layer retry (~5s backoff per retryable mock call) and makes call counts non-deterministic. The full race suite is ~3.6s.
 - **Dual json v1+v2 support — do NOT migrate imports** — All code imports only `encoding/json` (the v1 path). This transparently supports BOTH regimes: default Go (v1 behavior) AND `GOEXPERIMENT=jsonv2` (v2 behavior), because the jsonv2 experiment swaps the _implementation_ of `encoding/json` while preserving the v1 API surface (`Marshal`, `Unmarshal`, `NewEncoder`, `SetIndent`, `Decoder`). The auto-upgrade daemon repeatedly tried to switch imports to `encoding/json/v2` and `encoding/json/jsontext` — those paths are NOT supported here: they require a `go.mod` replace directive AND have a different low-level API (`jsontext.Encoder` has no `SetIndent`), which broke compilation. CI runs two regime jobs: `jsonv2-compat` (`GOEXPERIMENT=jsonv2` over the whole module) and `no-jsonv2` (default regime over the SDK subset). Regime split (verified 2026-08-18): the SDK (`pkg/...`, `cmd/vision`, `internal/{catalog,cli,visionutil}`, `examples`) builds AND tests green under BOTH regimes — that is the consumer guarantee. The daemon (`internal/reviewd`, `cmd/visionreviewd`) requires jsonv2: its dependency go-cqrs-lite imports `encoding/json/v2`, which does not exist without the experiment; `GOEXPERIMENT=none go build ./...` fails there by design. **Enforced by `depguard`** (`.golangci.yaml` `rules.main.deny`): `encoding/json/v2` and `encoding/json/jsontext` are denied (deny wins over `$gostd`), so a migration attempt fails lint with an explanatory message instead of silently breaking compilation.
@@ -341,12 +341,15 @@ go build -o vision ./cmd/vision
 
 See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
 list of extraction helpers and duplication decisions. Current state:
-**0 actionable clone groups** at `art-dupl --type-aware -t 1 pkg cmd internal`
-(re-verified 2026-09-07, after `pkg/vision/a2ui` landed: 41 groups detected
-in a2ui, all non-actionable/suppressed; the one actionable pair — repeated
-analysis error-exit blocks in `cmd/vision/main.go` — extracted into
-`failAnalysis`). Test files and interface-required signatures are below scan
-scope by design.
+**7 clone groups, all accepted with rationale** at
+`art-dupl --sort total-tokens -t 1 --type-aware` over the whole repo
+(re-verified 2026-09-22; the 2026-09-07 pass had 0 actionable after
+extracting `failAnalysis`). The 2026-09-22 pass removed the last 3 harmful
+groups: per-map sorted-keys helpers (→ stdlib `slices.Sorted(maps.Keys(m))`),
+the a2ui payload-decode error contract (→ `decodePayload`), and the daemon
+prompt skeletons (→ `buildPrompt`) — plus `newConfigFlagSet` for the `-config`
+flag shared by every daemon command. Test files and interface-required
+signatures are below scan scope by design.
 
 ## Historical Docs
 

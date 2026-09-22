@@ -6,12 +6,20 @@ decisions in this repo.
 
 ## Current State
 
-**Verified with `art-dupl --type-aware -t 1` (v0.6.1, 2026-08-17): 0 actionable
-clone groups.** The scan now covers `internal/reviewd` and
-`cmd/visionreviewd` (added with the daemon). Raw findings: 254 groups total,
-of which 223 are non-actionable and 30 suppressed by filters; the single
-actionable pair after the extractions below is the 6-line `once`/`run`
-prologue (see "Patterns Below Scan Scope").
+**Verified with `art-dupl --sort total-tokens -t 1 --type-aware` over the whole
+repo (v0.6.x, 2026-09-22): 7 clone groups, all accepted with rationale below.**
+The 2026-09-22 pass eliminated 3 harmful groups: the four hand-rolled
+sorted-map-keys helpers (replaced by stdlib `slices.Sorted(maps.Keys(m))`,
+plus `slices.SortFunc` for the struct sort), the 4-site payload-decode error
+contract in `pkg/vision/a2ui/messages.go` (extracted into `decodePayload`),
+and the two prompt-assembly skeletons in `internal/reviewd/prompts.go`
+(extracted into `buildPrompt` + instruction constants).
+
+Earlier: `art-dupl --type-aware -t 1` (v0.6.1, 2026-08-17) over
+`internal/reviewd` + `cmd/visionreviewd`: 0 actionable groups (254 raw, 223
+non-actionable, 30 suppressed); the single actionable pair after the
+extractions below was the 6-line `once`/`run` prologue (see "Patterns Below
+Scan Scope").
 
 Test files (`*_test.go`, `*_bdd_test.go`) are auto-excluded by art-dupl;
 interface-required signatures and table-driven test rows are inherently
@@ -38,6 +46,10 @@ irreducible and never appear in the scan.
 | `parseConfigFlag`                                   | `cmd/visionreviewd/commands.go` | Shared `-config` flag parse + config load for all four config-taking daemon commands (once/run/replay/doctor)                                                                                                               |
 | `openConfiguredPipeline` / `closeStore`             | `cmd/visionreviewd/commands.go` | Configured pipeline + store opening and the deferred close-error report shared by `once` and `run`                                                                                                                          |
 | `ReviewsDirPermission` / `ReviewsFilePermission`    | `internal/reviewd/writer.go`    | Exported once, used by both the Writer and the doctor probes, so the probe modes can never drift from the write modes                                                                                                       |
+| `decodePayload`                                     | `pkg/vision/a2ui/messages.go`   | Single source for the `ErrMalformedMessage` + `decode <kind> payload` contract shared by all four message-kind `UnmarshalJSON` methods                                                                                      |
+| `buildPrompt` + `reviewInstructions`/`compareInstructions` | `internal/reviewd/prompts.go` | Shared prompt assembly (view context → instructions → `scoreRules`); the per-persona sections live as pinned string constants                                                                                          |
+| `newConfigFlagSet`                                  | `cmd/visionreviewd/commands.go` | Flag set carrying the `-config` flag every daemon command shares, so its default and description are defined in exactly one place                                                                                          |
+| `slices.Sorted(maps.Keys(m))` (stdlib, not a helper) | call sites in `discover.go`/`pipeline.go`/`replay.go` | Replaced the four per-map sorted-keys helpers; Go 1.23+ makes them redundant |
 
 ### CLI helpers (`internal/cli/`)
 
@@ -71,6 +83,20 @@ Go's type system:
 | Mock model method signatures (`Generate`, `Stream`, `GenerateObject`, `StreamObject`)             | Required by `fantasy.LanguageModel` interface                                                                                                          |
 | `type testReview struct{...}` in `internal/visionutil/helpers_test.go`                            | Cross-package test fixture; cannot be shared without a third test-helper package                                                                       |
 | `once`/`run` command prologue (6 lines: `openConfiguredPipeline` + `if !ok` + `defer closeStore`) | Two commands genuinely perform the same opening; a closure-passing abstraction would hide control flow for zero duplication gain (accepted 2026-08-17) |
+
+## Accepted clone groups (2026-09-22 full-repo pass)
+
+The 7 groups `art-dupl -t 1 --type-aware` still reports are all deliberate:
+
+| Group | Why it stays |
+| ----- | ------------ |
+| `vision.go` `params := optionalParams()` + 6 field copies in `buildAgentCall` / `buildAgentStreamCall` (and the same shape in `buildObjectCall`) | Three DISTINCT `fantasy` call types share field names but no interface; Go cannot copy same-named fields across unrelated struct types without reflection. The source (`optionalModelParams`) is already single-sourced, so a new parameter lands in the params struct once and in N dumb assignment blocks. |
+| `component.go` / `image.go` / `preprocess.go` 5-line `if err != nil` blocks | Unrelated domains (child-list JSON encode, base64 decode, image decode) behind a universal Go idiom — scan noise at `-t 1`. |
+| `examples/a2ui` + `examples/structured` `cli.NewAgentFromArgs(2, "...")` | The clone IS the shared bootstrap helper; the examples differ by prompt and schema on purpose. |
+| `config.go` + `store.go` error-wrap blocks | Unrelated operations (config JSON encode vs journal read); idiomatic wrap per site. |
+| `generate.go` `applyDefaults` + `surface.go` `Compile` zero-checks | Two different types (`GenerateOptions` vs `SurfaceSpec`); the default VALUES (`defaultSurfaceID`, `DefaultCatalogID`) are already single-sourced constants. |
+| `commands.go` `newConfigFlagSet("compare"/"events", stderr)` call lines | The clone is the shared-helper call itself (same class as `NewAgentFromArgs`); the per-command flags deliberately stay local. |
+| `commands.go` `if flagSet.NArg() != 1 { usage; return exitUsage }` ×3 | Usage lines are per-command data; a `requireArgCount` helper would force callers through a code-return dance that is longer than the original (same precedent as the `once`/`run` prologue). |
 
 ## pkg/vision/a2ui (scanned 2026-08-18, post-builders)
 

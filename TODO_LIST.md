@@ -10,6 +10,34 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ---
 
+## pkg/vision/a2ui — Go 1.27 `encoding/json/v2` wire regression (found 2026-09-22)
+
+`go.mod` moved to Go 1.27.1, where `encoding/json/v2` exists natively (no
+GOEXPERIMENT) with different defaults than the 1.26 experiment. Two a2ui tests
+now fail on master (verified at committed HEAD in a clean worktree, so no
+local-change blame):
+
+- [ ] **Restore deterministic wire output** — `Component.MarshalJSON` and
+      `UpdateDataModel.MarshalJSON` marshal `map[string]any`; under 1.27 the
+      key order is nondeterministic (5 runs → 4 orderings). Protocol output
+      must be byte-stable: emit map keys sorted (ordered encoding path), then
+      re-pin `ExampleCompile`'s `// Output:` block.
+- [ ] **`omitempty` ignored on scalars** — `CreateSurface.MarshalJSON` emits
+      `"sendDataModel":false` despite `json:"sendDataModel,omitempty"`, which
+      breaks `TestMessageWireShape/createSurface{,_with_theme}`. Switch the
+      a2ui marshal tags to `omitzero` (honored by v1 and v2) or gate the field
+      in code, and confirm `theme,omitempty` behaves identically.
+- [ ] **Lint fallout of the new `.golangci.yaml` rules (uncommitted change)** —
+      `wsl_v5` ×3 (markdown.go, pipeline_bdd_test.go), `gocognit` ×1
+      (golden_journal_test.go), `tagliatelle` ×3 on `sourceURLs`/`sourceURL`
+      wire tags (config.go, events.go — URL is not a "word", add the
+      documented `//nolint:tagliatelle` with the openaicompat precedent), and
+      `exhaustruct_v5` ×4 (Pipeline/Captured missing recently added SourceURL
+      fields — populate or nolint; bbolt.Options literals ×2 are deliberate
+      zero-value opens).
+
+---
+
 ## Website fleet — monitoring & re-review (2026-09-19 sweep residue)
 
 Harvested from the 2026-09-19 fleet follow-up execution
