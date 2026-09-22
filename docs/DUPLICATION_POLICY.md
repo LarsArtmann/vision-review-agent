@@ -86,13 +86,15 @@ Go's type system:
 
 ## Accepted clone groups (2026-09-22 full-repo pass)
 
-The 7 groups `art-dupl -t 1 --type-aware` still reports are all deliberate:
+The 7 groups `art-dupl -t 1 --type-aware` reported are all deliberate; at
+**`-t 3` the scan is empty (0 groups, 2026-09-22)** after the two judgment
+groups above were marked `// art-dupl:accept` in place:
 
 | Group | Why it stays |
 | ----- | ------------ |
-| `vision.go` `params := optionalParams()` + 6 field copies in `buildAgentCall` / `buildAgentStreamCall` (and the same shape in `buildObjectCall`) | Three DISTINCT `fantasy` call types share field names but no interface; Go cannot copy same-named fields across unrelated struct types without reflection. The source (`optionalModelParams`) is already single-sourced, so a new parameter lands in the params struct once and in N dumb assignment blocks. |
+| `vision.go` `params := optionalParams()` + 6 field copies in `buildAgentCall` / `buildAgentStreamCall` | Three DISTINCT `fantasy` call types share field names but no interface (`AgentCall` agent.go:164 and `AgentStreamCall` agent.go:273 are flat, unembeddable, non-convertible); Go cannot copy same-named fields across unrelated struct types without reflection. The source (`optionalModelParams`) is already single-sourced. Marked `// art-dupl:accept` at both sites. |
 | `component.go` / `image.go` / `preprocess.go` 5-line `if err != nil` blocks | Unrelated domains (child-list JSON encode, base64 decode, image decode) behind a universal Go idiom — scan noise at `-t 1`. |
-| `examples/a2ui` + `examples/structured` `cli.NewAgentFromArgs(2, "...")` | The clone IS the shared bootstrap helper; the examples differ by prompt and schema on purpose. |
+| `examples/a2ui` + `examples/structured` `cli.NewAgentFromArgs(2, "...")` + `LoadImageArg` + status line | The abstractions already exist (`NewAgentFromArgs`, `LoadImageArg`); the residue is the bootstrap idiom that makes each example a complete, copy-pasteable teaching program. Marked `// art-dupl:accept` at both sites. |
 | `config.go` + `store.go` error-wrap blocks | Unrelated operations (config JSON encode vs journal read); idiomatic wrap per site. |
 | `generate.go` `applyDefaults` + `surface.go` `Compile` zero-checks | Two different types (`GenerateOptions` vs `SurfaceSpec`); the default VALUES (`defaultSurfaceID`, `DefaultCatalogID`) are already single-sourced constants. |
 | `commands.go` `newConfigFlagSet("compare"/"events", stderr)` call lines | The clone is the shared-helper call itself (same class as `NewAgentFromArgs`); the per-command flags deliberately stay local. |

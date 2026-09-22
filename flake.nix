@@ -77,7 +77,11 @@
           };
         in
         {
-          packages.default = pkgs.buildGoModule {
+          # go.mod requires go >= 1.27.1 while buildGoModule defaults to
+          # pkgs.go (1.26.x): override the toolchain or the -go-modules FOD
+          # fails with "go.mod requires go >= 1.27.1; GOTOOLCHAIN=local"
+          # (the nixpkgs go_1_27 attr is exactly 1.27.1).
+          packages.default = (pkgs.buildGoModule.override { go = pkgs.go_1_27; }) {
             pname = "vision-review-agent";
             inherit version src vendorHash;
             proxyVendor = true;
@@ -105,7 +109,7 @@
             };
           };
 
-          packages.visionreviewd = pkgs.buildGoModule {
+          packages.visionreviewd = (pkgs.buildGoModule.override { go = pkgs.go_1_27; }) {
             pname = "visionreviewd";
             inherit version src vendorHash;
             proxyVendor = true;
@@ -142,7 +146,7 @@
               program = pkgs.lib.getExe (
                 pkgs.writeShellApplication {
                   name = "run-test";
-                  runtimeInputs = [ pkgs.go_1_26 ];
+                  runtimeInputs = [ pkgs.go_1_27 ];
                   text = "go test -race -v -coverprofile=coverage.out ./...";
                 }
               );
@@ -155,7 +159,7 @@
                 pkgs.writeShellApplication {
                   name = "run-lint";
                   runtimeInputs = [
-                    pkgs.go_1_26
+                    pkgs.go_1_27
                     pkgs.golangci-lint
                   ];
                   text = "golangci-lint run ./...";
@@ -169,7 +173,7 @@
               program = pkgs.lib.getExe (
                 pkgs.writeShellApplication {
                   name = "check-deps";
-                  runtimeInputs = [ pkgs.go_1_26 ];
+                  runtimeInputs = [ pkgs.go_1_27 ];
                   text = builtins.readFile ./scripts/check-deps.sh;
                 }
               );
@@ -194,7 +198,7 @@
                 pkgs.writeShellApplication {
                   name = "verify-bump";
                   runtimeInputs = [
-                    pkgs.go_1_26
+                    pkgs.go_1_27
                     pkgs.golangci-lint
                   ];
                   text = builtins.readFile ./scripts/verify-bump.sh;
@@ -207,7 +211,7 @@
           devShells = {
             default = pkgs.mkShell {
               packages = with pkgs; [
-                go_1_26
+                go_1_27
                 golangci-lint
                 gopls
                 gotools
@@ -227,7 +231,7 @@
 
             ci = pkgs.mkShellNoCC {
               packages = [
-                pkgs.go_1_26
+                pkgs.go_1_27
                 pkgs.golangci-lint
               ];
               GOWORK = "off";
