@@ -16,12 +16,8 @@ const CompareSystemPrompt = `You are a meticulous UI review engine comparing two
 // scoreContractLine is the mandatory final line of every model answer.
 const scoreContractLine = "Score: N/10"
 
-// ReviewPrompt builds the user prompt for reviewing one screenshot.
-func ReviewPrompt(viewKey ViewKey) string {
-	var prompt strings.Builder
-
-	prompt.WriteString(viewContext(viewKey))
-	prompt.WriteString(`
+// reviewInstructions is the markdown structure a single-view review emits.
+const reviewInstructions = `
 Review this UI screenshot.
 
 Answer with EXACTLY this markdown structure:
@@ -40,19 +36,10 @@ One short paragraph describing the visible UI.
 ## Recommendations
 - Bullet list of the most impactful concrete fixes, most important first.
 
-`)
-	scoreRules(&prompt, false)
+`
 
-	return prompt.String()
-}
-
-// ComparePrompt builds the user prompt for a BEFORE/AFTER comparison. The
-// first image is the before version, the second the after version.
-func ComparePrompt(viewKey ViewKey) string {
-	var prompt strings.Builder
-
-	prompt.WriteString(viewContext(viewKey))
-	prompt.WriteString(`
+// compareInstructions is the markdown structure an A/B comparison emits.
+const compareInstructions = `
 Compare two versions of this view. Image 1 is the BEFORE version. Image 2 is the AFTER version.
 
 Answer with EXACTLY this markdown structure:
@@ -69,10 +56,29 @@ Answer with EXACTLY this markdown structure:
 ## Verdict
 One short paragraph: is the AFTER version better overall, and why?
 
-`)
-	scoreRules(&prompt, true)
+`
+
+// buildPrompt assembles a user prompt: identifying view context, the
+// persona's instructions, then the scoring contract every answer ends with.
+func buildPrompt(viewKey ViewKey, instructions string, ratesAfter bool) string {
+	var prompt strings.Builder
+
+	prompt.WriteString(viewContext(viewKey))
+	prompt.WriteString(instructions)
+	scoreRules(&prompt, ratesAfter)
 
 	return prompt.String()
+}
+
+// ReviewPrompt builds the user prompt for reviewing one screenshot.
+func ReviewPrompt(viewKey ViewKey) string {
+	return buildPrompt(viewKey, reviewInstructions, false)
+}
+
+// ComparePrompt builds the user prompt for a BEFORE/AFTER comparison. The
+// first image is the before version, the second the after version.
+func ComparePrompt(viewKey ViewKey) string {
+	return buildPrompt(viewKey, compareInstructions, true)
 }
 
 // scoreRules appends the scoring contract to a prompt. ratesAfter switches

@@ -30,6 +30,15 @@ func newFlagSet(name string, stderr io.Writer) *flag.FlagSet {
 	return flagSet
 }
 
+// newConfigFlagSet builds a named flag set that already carries the -config
+// flag every daemon command shares, so its default and description are
+// defined in exactly one place.
+func newConfigFlagSet(name string, stderr io.Writer) (*flag.FlagSet, *string) {
+	flagSet := newFlagSet(name, stderr)
+
+	return flagSet, flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
+}
+
 // loadDaemonConfig expands and loads the config at path.
 func loadDaemonConfig(path string) (reviewed.Config, error) {
 	expanded, err := reviewed.ExpandTilde(path)
@@ -137,9 +146,8 @@ func runDiscoverCommand(args []string, stdout, stderr io.Writer) int {
 
 // runCompareCommand manually compares a BEFORE and AFTER screenshot.
 func runCompareCommand(args []string, stdout, stderr io.Writer) int {
-	flagSet := newFlagSet("compare", stderr)
+	flagSet, configPath := newConfigFlagSet("compare", stderr)
 
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
 	project := flagSet.String("project", "", "project the compared view belongs to")
 
 	if err := flagSet.Parse(args); err != nil {
@@ -229,9 +237,8 @@ func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
 
 // runEventsCommand prints the recorded event journal with filters.
 func runEventsCommand(args []string, stdout, stderr io.Writer) int {
-	flagSet := newFlagSet("events", stderr)
+	flagSet, configPath := newConfigFlagSet("events", stderr)
 
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
 	project := flagSet.String("project", "", "only events of this project")
 	view := flagSet.String("view", "", "only events of this view key (e.g. Home--dark--desktop)")
 	eventType := flagSet.String("type", "", "only events of this type (view.captured, view.reviewed, view.compared)")
@@ -296,9 +303,8 @@ const eventsTimeFormat = "2006-01-02 15:04:05"
 // holds it, so run this while the daemon is stopped (e.g. between passes or
 // via `systemctl stop`). The snapshot never mutates the source journal.
 func runBackupCommand(args []string, stdout, stderr io.Writer) int {
-	flagSet := newFlagSet("backup", stderr)
+	flagSet, configPath := newConfigFlagSet("backup", stderr)
 
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
 	wait := flagSet.Duration("wait", reviewed.DefaultBackupLockTimeout,
 		"how long to wait for the journal lock before giving up")
 
@@ -485,9 +491,7 @@ func openConfiguredPipeline(
 // and loads the config it points at. ok is false when the failure was
 // already reported to stderr; exitCode is the code to return then.
 func parseConfigFlag(name string, args []string, stderr io.Writer) (reviewed.Config, int, bool) {
-	flagSet := newFlagSet(name, stderr)
-
-	configPath := flagSet.String("config", reviewed.DefaultConfigPath, "path to the daemon config JSON")
+	flagSet, configPath := newConfigFlagSet(name, stderr)
 
 	if err := flagSet.Parse(args); err != nil {
 		return reviewed.Config{}, exitUsage, false
