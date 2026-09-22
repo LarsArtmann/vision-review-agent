@@ -39,7 +39,7 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exhaustruct
+    - exhaustruct_v5
     - exptostd
     - fatcontext
     - forbidigo
@@ -147,8 +147,8 @@ linters:
         - fmt.Println
         - (*strings.Builder).WriteString
         - (*bytes.Buffer).WriteString
-    exhaustruct:
-      exclude:
+    exhaustruct_v5:
+      ignore-patterns:
         - os/exec.Cmd
         - charm\.land/fantasy\..*
         - net/http\..*
@@ -299,6 +299,7 @@ linters:
           - recvcheck
           - contextcheck
           - exhaustive
+          - exhaustruct_v5
       - path: (cmd|examples|internal/cli)/
         linters:
           - forbidigo

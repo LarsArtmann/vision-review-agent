@@ -20,6 +20,7 @@ Usage:
   scripts/cdp-shoot.py --subpages --skip-home gogenfilter  # subpages only, subset
   scripts/cdp-shoot.py gogenfilter learnings # subset
 """
+
 import base64
 import json
 import os
@@ -40,7 +41,8 @@ CHROME = os.environ.get(
 )
 PORT = 9333
 OUT = os.environ.get(
-    "VISION_SHOOT_OUT", os.path.expanduser("~/.local/share/vision-review-agent/screenshots")
+    "VISION_SHOOT_OUT",
+    os.path.expanduser("~/.local/share/vision-review-agent/screenshots"),
 )
 SETTLE_SECONDS = float(os.environ.get("VISION_SHOOT_SETTLE", "2.5"))
 
@@ -75,19 +77,31 @@ VIEWPORTS = {
 SUBPAGES = {
     "art-dupl": ["getting-started/installation/", "getting-started/quick-start/"],
     "cleanwizard": ["getting-started/installation/", "getting-started/quick-start/"],
-    "dynamicmarkdown": ["getting-started/installation/", "getting-started/quick-start/"],
+    "dynamicmarkdown": [
+        "getting-started/installation/",
+        "getting-started/quick-start/",
+    ],
     "emeet-pixyd": ["getting-started/installation/", "getting-started/quick-start/"],
     "atomicwrite": ["getting-started/installation/", "getting-started/quick-start/"],
     "branded-id": ["getting-started/installation/", "getting-started/quick-start/"],
     "errorfamily": ["getting-started/installation/", "getting-started/quick-start/"],
     "filewatcher": ["getting-started/installation/", "getting-started/quick-start/"],
     "go-output": ["getting-started/installation/", "getting-started/quick-start/"],
-    "go-workflow-auditlog": ["getting-started/installation/", "getting-started/quick-start/"],
+    "go-workflow-auditlog": [
+        "getting-started/installation/",
+        "getting-started/quick-start/",
+    ],
     "gogenfilter": ["getting-started/installation/", "getting-started/quick-start/"],
-    "md-go-validator": ["getting-started/installation/", "getting-started/quick-start/"],
+    "md-go-validator": [
+        "getting-started/installation/",
+        "getting-started/quick-start/",
+    ],
     "do-auditlog": ["getting-started/installation/", "getting-started/quick-start/"],
     "templcomponents": ["getting-started/installation", "getting-started/quick-start"],
-    "learnings": ["docs/getting-started/installation", "docs/getting-started/configuration"],
+    "learnings": [
+        "docs/getting-started/installation",
+        "docs/getting-started/configuration",
+    ],
 }
 
 
@@ -143,7 +157,9 @@ class WS:
             head.append(0x80 | 127)
             head += struct.pack(">Q", n)
         head += mask
-        self.sock.sendall(bytes(head) + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
+        self.sock.sendall(
+            bytes(head) + bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+        )
 
     def recv(self):
         while True:
@@ -191,9 +207,7 @@ class CDP:
 
 
 def http_json(path, method="GET"):
-    req = urllib.request.Request(
-        f"http://127.0.0.1:{PORT}{path}", method=method
-    )
+    req = urllib.request.Request(f"http://127.0.0.1:{PORT}{path}", method=method)
     with urllib.request.urlopen(req, timeout=10) as r:
         return json.loads(r.read())
 
@@ -214,7 +228,9 @@ def page_label(url_path):
     return "".join(p[:1].upper() + p[1:] for p in parts)[:60]
 
 
-def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=(), skip_home=False):
+def shoot(
+    project, url, modes, viewports, user_data_dir, subpage_paths=(), skip_home=False
+):
     results = []
     pages = [] if skip_home else [("Home", url)]
     for sp in subpage_paths:
@@ -225,7 +241,7 @@ def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=(), skip_
         return results
     for vp_name in viewports:
         vp = VIEWPORTS[vp_name]
-        target = http_json(f"/json/new?about:blank", method="PUT")
+        target = http_json("/json/new?about:blank", method="PUT")
         ws_url = target["webSocketDebuggerUrl"]
         cdp = CDP(ws_url)
         try:
@@ -282,9 +298,8 @@ def shoot(project, url, modes, viewports, user_data_dir, subpage_paths=(), skip_
                             height = cdp.cmd(
                                 "Runtime.evaluate",
                                 {
-                                    "expression":
-                                        "Math.max(document.documentElement.scrollHeight,"
-                                        " document.body ? document.body.scrollHeight : 0)",
+                                    "expression": "Math.max(document.documentElement.scrollHeight,"
+                                    " document.body ? document.body.scrollHeight : 0)",
                                     "returnByValue": True,
                                 },
                             )["result"]["value"]
@@ -385,7 +400,11 @@ def main():
             print(f"=== {proj} ({url})")
             try:
                 sp = tuple(SUBPAGES.get(proj, ())) if subpages else ()
-                expected = ((0 if skip_home_flag else 1) + len(sp)) * len(modes) * len(viewports)
+                expected = (
+                    ((0 if skip_home_flag else 1) + len(sp))
+                    * len(modes)
+                    * len(viewports)
+                )
                 results = shoot(
                     proj, url, modes, viewports, user_data_dir, sp, skip_home_flag
                 )

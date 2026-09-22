@@ -17,15 +17,24 @@ MODEL_SNAP="${VISION_MODEL_SNAP:-/data/ai/cache/huggingface/hub/models--GitMyLo-
 LLAMA_SERVER="${VISION_LLAMA_SERVER:-llama-server}"
 
 while [ $# -gt 0 ]; do
-  case "$1" in
-    --port) PORT="$2"; shift 2 ;;
-    --wait) WAIT="$2"; shift 2 ;;
-    *) echo "unknown arg: $1" >&2; exit 2 ;;
-  esac
+	case "$1" in
+	--port)
+		PORT="$2"
+		shift 2
+		;;
+	--wait)
+		WAIT="$2"
+		shift 2
+		;;
+	*)
+		echo "unknown arg: $1" >&2
+		exit 2
+		;;
+	esac
 done
 
 healthy() {
-  python3 - "$PORT" <<'PYEOF'
+	python3 - "$PORT" <<'PYEOF'
 import http.client, sys
 try:
     c = http.client.HTTPConnection("127.0.0.1", int(sys.argv[1]), timeout=5)
@@ -38,36 +47,36 @@ PYEOF
 }
 
 if healthy; then
-  echo "vision stack already healthy on :$PORT"
-  exit 0
+	echo "vision stack already healthy on :$PORT"
+	exit 0
 fi
 
 MODEL="$MODEL_SNAP/NSFWCaption-v3-Qwen3-VL-8B-Q8_0.gguf"
 MMPROJ="$MODEL_SNAP/mmproj-NSFWCaption-v3.gguf"
 if [ ! -f "$MODEL" ] || [ ! -f "$MMPROJ" ]; then
-  echo "model files missing under $MODEL_SNAP" >&2
-  echo "set VISION_MODEL_SNAP to the correct snapshot dir" >&2
-  exit 1
+	echo "model files missing under $MODEL_SNAP" >&2
+	echo "set VISION_MODEL_SNAP to the correct snapshot dir" >&2
+	exit 1
 fi
 
 if ! command -v "$LLAMA_SERVER" >/dev/null 2>&1; then
-  echo "$LLAMA_SERVER not in PATH; set VISION_LLAMA_SERVER (e.g. /nix/store/<hash>-llama-cpp-0.4.0/bin/llama-server)" >&2
-  exit 1
+	echo "$LLAMA_SERVER not in PATH; set VISION_LLAMA_SERVER (e.g. /nix/store/<hash>-llama-cpp-0.4.0/bin/llama-server)" >&2
+	exit 1
 fi
 
 echo "starting $LLAMA_SERVER on :$PORT (direct paths)"
 start=$(date +%s)
 nohup "$LLAMA_SERVER" -m "$MODEL" --mmproj "$MMPROJ" \
-  --host 127.0.0.1 --port "$PORT" \
-  >"/tmp/vision-stack-$PORT.log" 2>&1 &
+	--host 127.0.0.1 --port "$PORT" \
+	>"/tmp/vision-stack-$PORT.log" 2>&1 &
 echo "pid $!; log /tmp/vision-stack-$PORT.log"
 
-deadline=$(( $(date +%s) + WAIT ))
+deadline=$(($(date +%s) + WAIT))
 until healthy; do
-  [ "$(date +%s)" -ge "$deadline" ] && {
-    echo "server not healthy after ${WAIT}s — check the log" >&2
-    exit 1
-  }
-  sleep 2
+	[ "$(date +%s)" -ge "$deadline" ] && {
+		echo "server not healthy after ${WAIT}s — check the log" >&2
+		exit 1
+	}
+	sleep 2
 done
-echo "vision stack healthy on :$PORT (reload took $(( $(date +%s) - start ))s)"
+echo "vision stack healthy on :$PORT (reload took $(($(date +%s) - start))s)"

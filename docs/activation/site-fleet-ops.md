@@ -62,10 +62,10 @@ After attach: re-shoot + re-review typespec at the custom domain (plan F6).
 
 Measured 2026-09-19 (plain user `dd`, no sudo needed):
 
-| Filesystem | Device | Write (O_DIRECT) | Read (O_DIRECT) | Read (cached) |
-| ---------- | ------ | ---------------- | --------------- | ------------- |
-| `/data`    | Lexar SSD NQ790 2TB (nvme1n1p8) | **5.3 MB/s** | **8.0 MB/s** | 19.4 MB/s |
-| `/`        | Samsung SSD 970 EVO Plus (nvme0n1p2) | 4.2 GB/s | 3.1 GB/s | — |
+| Filesystem | Device                               | Write (O_DIRECT) | Read (O_DIRECT) | Read (cached) |
+| ---------- | ------------------------------------ | ---------------- | --------------- | ------------- |
+| `/data`    | Lexar SSD NQ790 2TB (nvme1n1p8)      | **5.3 MB/s**     | **8.0 MB/s**    | 19.4 MB/s     |
+| `/`        | Samsung SSD 970 EVO Plus (nvme0n1p2) | 4.2 GB/s         | 3.1 GB/s        | —             |
 
 `/data` is ~800× slower than the healthy root NVMe — the device or its
 partition is failing (or stuck in a degenerate state). Run:
@@ -153,12 +153,12 @@ Companion audits: `scripts/fleet-404-audit.py` (custom-404 integrity) and
 the 2026-09-20 runs found zero problems on both (all hardcoded star
 counts match the repos; no soft-404s, canonical/CSP clean per the table).
 
-| Item | Result | Action |
-| --- | --- | --- |
-| Canonical (#12) | 15/17 ok incl. go-workflow-auditlog (parity done); **cmdguard + typespec-asyncapi point at their KNOWN-broken `.lars.software` domains** | none — same root cause as §1.1/§1.2 console attach; repointing the Astro `site` would flip the mismatch when the custom domains go live |
-| CSP (#11) | 16 sites: no CSP; templcomponents: enforced, fully coherent (`manifest-src 'self'`, hashed script-src, `img-src 'self' data:`); no report-only CSPs exist fleet-wide | closed — the og/meta additions (learnings) are crawler-facing and CSP-invisible |
-| hreflang (#39) | 16 single-locale sites: none (correct); learnings: `en` + `x-default` (correct for en-only Docusaurus) | closed as no-op |
-| Favicon ICO fallback (#40) | 17/17 declare SVG icon + webmanifest; only atomicwrite + gogenfilter serve `/favicon.ico` (200), 15 return 404; no `apple-touch-icon` anywhere | accepted gap — Safari-only cosmetic; not worth 15 rebuilds |
+| Item                       | Result                                                                                                                                                               | Action                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Canonical (#12)            | 15/17 ok incl. go-workflow-auditlog (parity done); **cmdguard + typespec-asyncapi point at their KNOWN-broken `.lars.software` domains**                             | none — same root cause as §1.1/§1.2 console attach; repointing the Astro `site` would flip the mismatch when the custom domains go live |
+| CSP (#11)                  | 16 sites: no CSP; templcomponents: enforced, fully coherent (`manifest-src 'self'`, hashed script-src, `img-src 'self' data:`); no report-only CSPs exist fleet-wide | closed — the og/meta additions (learnings) are crawler-facing and CSP-invisible                                                         |
+| hreflang (#39)             | 16 single-locale sites: none (correct); learnings: `en` + `x-default` (correct for en-only Docusaurus)                                                               | closed as no-op                                                                                                                         |
+| Favicon ICO fallback (#40) | 17/17 declare SVG icon + webmanifest; only atomicwrite + gogenfilter serve `/favicon.ico` (200), 15 return 404; no `apple-touch-icon` anywhere                       | accepted gap — Safari-only cosmetic; not worth 15 rebuilds                                                                              |
 
 ### 2.5 Review-pass load characteristics (measured 2026-09-20 00:20–00:45)
 

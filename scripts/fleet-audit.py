@@ -7,6 +7,7 @@ Covers four NEXT-list items in one pass:
   #39 hreflang alternates (single-locale sites: expect none -> close)
   #40 favicon: declared icon links + /favicon.ico fallback status
 """
+
 import json
 import re
 import ssl
@@ -50,10 +51,8 @@ def fetch(url, method="GET"):
 
 def meta_links(html):
     return re.findall(
-        r'<link\b[^>]*rel="([^"]*)"[^>]*href="([^"]*)"[^>]*>', html, re.I
-    ) + re.findall(
-        r'<link\b[^>]*href="([^"]*)"[^>]*rel="([^"]*)"[^>]*>', html, re.I
-    )
+        r'<link\b[^>]*rel="([^"]*)"[^>]*href="([^"]*)"[^>]*>', html, re.IGNORECASE
+    ) + re.findall(r'<link\b[^>]*href="([^"]*)"[^>]*rel="([^"]*)"[^>]*>', html, re.IGNORECASE)
 
 
 def audit(name, base):
@@ -75,14 +74,21 @@ def audit(name, base):
     pairs = meta_links(body)
     rels = {}
     for a, b in pairs:
-        rel, href = (a.lower(), b) if a.lower() in ("canonical", "alternate", "icon", "manifest", "apple-touch-icon") else (b.lower(), a)
+        rel, href = (
+            (a.lower(), b)
+            if a.lower()
+            in ("canonical", "alternate", "icon", "manifest", "apple-touch-icon")
+            else (b.lower(), a)
+        )
         if rel in rels and rel != "alternate":
             rels[rel] += "|" + href
         elif rel in ("canonical", "alternate", "icon", "manifest", "apple-touch-icon"):
             rels[rel] = href
 
     can = rels.get("canonical", "")
-    row["canonical"] = "missing" if not can else ("ok" if can.startswith(base) else f"MISMATCH:{can}")
+    row["canonical"] = (
+        "missing" if not can else ("ok" if can.startswith(base) else f"MISMATCH:{can}")
+    )
     row["og_url"] = "ok" if 'property="og:url"' in body or "og:url" in body else "none"
 
     hl = [h for h in re.findall(r'hreflang="([^"]*)"', body)]

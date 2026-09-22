@@ -7,6 +7,7 @@ latest release tag). Flags mismatches: hero copy that claims a different
 star count than the repo actually has, or a version older than the latest
 tag.
 """
+
 import json
 import re
 import ssl
@@ -20,28 +21,54 @@ FLEET = [
     ("art-dupl", "https://art-dupl.lars.software", "LarsArtmann/art-dupl"),
     ("cleanwizard", "https://cleanwizard.lars.software", "LarsArtmann/clean-wizard"),
     ("cmdguard", "https://cmdguard.web.app", "LarsArtmann/cmdguard"),
-    ("dynamicmarkdown", "https://dynamicmarkdown.lars.software", "LarsArtmann/dynamic-markdown-site"),
+    (
+        "dynamicmarkdown",
+        "https://dynamicmarkdown.lars.software",
+        "LarsArtmann/dynamic-markdown-site",
+    ),
     ("emeet-pixyd", "https://emeet-pixyd.lars.software", "LarsArtmann/emeet-pixyd"),
     ("atomicwrite", "https://atomicwrite.lars.software", "LarsArtmann/go-atomic-write"),
     ("branded-id", "https://branded-id.lars.software", "LarsArtmann/go-branded-id"),
     ("errorfamily", "https://errorfamily.lars.software", "LarsArtmann/go-error-family"),
     ("filewatcher", "https://filewatcher.lars.software", "LarsArtmann/go-filewatcher"),
     ("go-output", "https://go-output.lars.software", "LarsArtmann/go-output"),
-    ("go-workflow-auditlog", "https://go-workflow-auditlog.lars.software", "LarsArtmann/go-workflow-auditlog"),
+    (
+        "go-workflow-auditlog",
+        "https://go-workflow-auditlog.lars.software",
+        "LarsArtmann/go-workflow-auditlog",
+    ),
     ("gogenfilter", "https://gogenfilter.lars.software", "LarsArtmann/gogenfilter"),
-    ("md-go-validator", "https://md-go-validator.lars.software", "LarsArtmann/md-go-validator"),
-    ("do-auditlog", "https://do-auditlog.lars.software", "LarsArtmann/samber-do-auditlog"),
-    ("typespec-asyncapi", "https://typespec-asyncapi.web.app", "LarsArtmann/typespec-asyncapi"),
-    ("templcomponents", "https://templcomponents.lars.software", "LarsArtmann/templ-components"),
+    (
+        "md-go-validator",
+        "https://md-go-validator.lars.software",
+        "LarsArtmann/md-go-validator",
+    ),
+    (
+        "do-auditlog",
+        "https://do-auditlog.lars.software",
+        "LarsArtmann/samber-do-auditlog",
+    ),
+    (
+        "typespec-asyncapi",
+        "https://typespec-asyncapi.web.app",
+        "LarsArtmann/typespec-asyncapi",
+    ),
+    (
+        "templcomponents",
+        "https://templcomponents.lars.software",
+        "LarsArtmann/templ-components",
+    ),
     ("learnings", "https://lars-learnings.web.app", "LarsArtmann/learnings"),
 ]
 
-STAR_PAT = re.compile(r">\s*(\d+)\s+Stars?\s*<", re.I)
+STAR_PAT = re.compile(r">\s*(\d+)\s+Stars?\s*<", re.IGNORECASE)
 VER_PAT = re.compile(r">\s*v?(\d+\.\d+\.\d+)\s*<")
 
 
 def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 hero-audit/1"})
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "Mozilla/5.0 hero-audit/1"}
+    )
     try:
         with urllib.request.urlopen(req, timeout=15, context=CTX) as r:
             return r.status, r.read().decode("utf-8", "replace")
@@ -53,7 +80,9 @@ def gh(path):
     try:
         out = subprocess.run(
             ["gh", "api", path, "--jq", "."],
-            capture_output=True, text=True, timeout=20,
+            capture_output=True,
+            text=True,
+            timeout=20,
         )
         return json.loads(out.stdout) if out.returncode == 0 else None
     except Exception:
@@ -76,10 +105,14 @@ def main():
             for c in sorted(set(claims)):
                 mark = "OK" if c == stars_live else "STALE"
                 if c != stars_live:
-                    problems.append(f"{name}: hero claims {c} stars, repo has {stars_live}")
+                    problems.append(
+                        f"{name}: hero claims {c} stars, repo has {stars_live}"
+                    )
                 print(f"{name}: stars claimed={c} live={stars_live} [{mark}]")
         elif claims:
-            print(f"{name}: stars claimed={sorted(set(claims))} live=UNKNOWN (gh api failed)")
+            print(
+                f"{name}: stars claimed={sorted(set(claims))} live=UNKNOWN (gh api failed)"
+            )
         vers = sorted(set(m.group(1) for m in VER_PAT.finditer(html)))
         if vers:
             print(f"{name}: version strings on page: {vers[:4]}")

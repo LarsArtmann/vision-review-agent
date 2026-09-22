@@ -32,7 +32,7 @@ shared Astro component package.
 ## Why sync-script
 
 1. **It matches how the family already evolves** (copy-mutate), but makes
-   the copy step *audited*: a script applies a canonical change and
+   the copy step _audited_: a script applies a canonical change and
    reports coverage against the repo list, so the
    "found-but-unfixed = exit 1" rule is mechanical, not attentional.
 2. **No new dependency graph.** Repos stay buildable standalone.
@@ -54,5 +54,5 @@ Exit 1 if any repo has findings — the coverage-diff guard from the
   output.
 - New repos cloned from the family inherit the guard as a post-clone
   check.
-- Revisit extract-package only if a *behavioral* component (not copy)
+- Revisit extract-package only if a _behavioral_ component (not copy)
   starts changing weekly across all repos.
