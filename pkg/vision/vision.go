@@ -503,6 +503,7 @@ func (va *Agent) buildAgentCall(
 		Messages: messages,
 	}
 	params := va.config.optionalParams()
+	// art-dupl:accept fantasy's AgentCall/AgentStreamCall are flat unembeddable types; this copy is the API boundary
 	call.MaxOutputTokens = params.maxOutputTokens
 	call.Temperature = params.temperature
 	call.TopP = params.topP
@@ -525,6 +526,7 @@ func (va *Agent) buildAgentStreamCall(
 		Messages: messages,
 	}
 	params := va.config.optionalParams()
+	// art-dupl:accept fantasy's AgentCall/AgentStreamCall are flat unembeddable types; this copy is the API boundary
 	call.MaxOutputTokens = params.maxOutputTokens
 	call.Temperature = params.temperature
 	call.TopP = params.topP

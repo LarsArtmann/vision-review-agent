@@ -21,6 +21,7 @@ import (
 )
 
 func main() {
+	// art-dupl:accept examples are self-contained teaching programs; the shared bootstrap idiom is the point
 	ctx, agent := cli.NewAgentFromArgs(2, "You are a UI engineer who recreates interfaces as A2UI components.", 0.2)
 
 	img := cli.LoadImageArg()
