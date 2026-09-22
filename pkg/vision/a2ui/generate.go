@@ -111,13 +111,7 @@ func Generate(
 
 // applyDefaults fills the zero-value option fields.
 func (o *GenerateOptions) applyDefaults() {
-	if o.SurfaceID == "" {
-		o.SurfaceID = defaultSurfaceID
-	}
-
-	if o.CatalogID == "" {
-		o.CatalogID = DefaultCatalogID
-	}
+	o.SurfaceID, o.CatalogID = defaultIDs(o.SurfaceID, o.CatalogID)
 }
 
 // unwrapStarProperties repairs a model quirk observed with caption-tuned

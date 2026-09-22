@@ -61,18 +61,26 @@ type ComponentSpec struct {
 	Properties map[string]any `description:"catalog-specific properties, e.g. text, variant, url, align, action" json:"properties,omitempty"`
 }
 
+// defaultIDs substitutes the conventional surface identifier and the basic
+// catalog for empty values. The one fallback rule for both IDs lives here.
+func defaultIDs(surfaceID, catalogID string) (string, string) {
+	if surfaceID == "" {
+		surfaceID = defaultSurfaceID
+	}
+
+	if catalogID == "" {
+		catalogID = DefaultCatalogID
+	}
+
+	return surfaceID, catalogID
+}
+
 // Compile converts a SurfaceSpec into its canonical wire messages:
 // createSurface, updateComponents, and (when the spec carries a data model)
 // updateDataModel. The result is validated with Validate before it is
 // returned, so a spec that compiles is a spec a client can render.
 func Compile(spec SurfaceSpec) ([]Message, error) {
-	if spec.SurfaceID == "" {
-		spec.SurfaceID = defaultSurfaceID
-	}
-
-	if spec.CatalogID == "" {
-		spec.CatalogID = DefaultCatalogID
-	}
+	spec.SurfaceID, spec.CatalogID = defaultIDs(spec.SurfaceID, spec.CatalogID)
 
 	messages := []Message{NewCreateSurface(spec.SurfaceID, spec.CatalogID)}
 
