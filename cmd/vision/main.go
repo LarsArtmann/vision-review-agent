@@ -11,8 +11,7 @@ package main
 
 import (
 	"context"
-	"encoding/json/jsontext"
-	"encoding/json/v2"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -375,9 +374,10 @@ func runStructured(
 		failAnalysis(stderr, err)
 	}
 
-	enc := jsontext.NewEncoder(stdout, jsontext.WithIndent("  "))
+	enc := json.NewEncoder(stdout)
+	enc.SetIndent("", "  ")
 
-	if err := json.MarshalEncode(enc, result.Object); err != nil {
+	if err := enc.Encode(result.Object); err != nil {
 		fmt.Fprintln(stderr, "Error encoding JSON:", err)
 	}
 }
@@ -498,9 +498,10 @@ func printJSON(w io.Writer, result *vision.AnalyzeResult) {
 			TotalTokens:  result.Usage.TotalTokens,
 		},
 	}
-	enc := jsontext.NewEncoder(w, jsontext.WithIndent("  "))
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
 
-	if err := json.MarshalEncode(enc, output); err != nil {
+	if err := enc.Encode(output); err != nil {
 		fmt.Fprintln(os.Stderr, "Error encoding JSON:", err)
 	}
 }

@@ -2,7 +2,7 @@
 package visionutil
 
 import (
-	"encoding/json/v2"
+	"encoding/json"
 	"fmt"
 
 	"charm.land/fantasy"

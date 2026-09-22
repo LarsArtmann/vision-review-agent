@@ -1,8 +1,7 @@
 package a2ui
 
 import (
-	"encoding/json/jsontext"
-	"encoding/json/v2"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -27,7 +26,7 @@ func basicCatalogKinds(t *testing.T) map[string]bool {
 	require.NoError(t, err, "read pinned basic catalog")
 
 	var catalog struct {
-		Components map[string]jsontext.Value `json:"components"`
+		Components map[string]json.RawMessage `json:"components"`
 	}
 	require.NoError(t, json.Unmarshal(data, &catalog))
 	require.NotEmpty(t, catalog.Components)
