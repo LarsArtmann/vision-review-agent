@@ -2,12 +2,14 @@ package a2ui
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"encoding/json/jsontext"
 
 	jschema "github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/stretchr/testify/require"
@@ -225,7 +227,7 @@ func TestOfficialExampleValidates(t *testing.T) {
 	schema := officialS2CSchema(t)
 
 	var sample struct {
-		Messages []json.RawMessage `json:"messages"`
+		Messages []jsontext.Value `json:"messages"`
 	}
 	require.NoError(t, json.Unmarshal(readOfficialSchema(t, "example_interactive-button.json"), &sample))
 	require.NotEmpty(t, sample.Messages)
