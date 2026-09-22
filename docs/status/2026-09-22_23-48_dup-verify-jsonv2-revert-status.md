@@ -1,0 +1,121 @@
+# Status: Duplication Verification + jsonv2 Import Revert
+
+**Session:** 2026-09-22, ~21:00–23:55 CEST
+**Scope:** art-dupl clone-group triage (user-pasted `-t 2` output) → full-suite verification → jsonv2 migration revert → art-dupl v0.7.0 re-baseline → docs. Nothing else researched.
+**Tree state at writing:** clean at `3ca8e55`; all session work auto-committed (revert = `117a28f`, docs = `cb97e05`/`3ca8e55`).
+
+---
+
+## a) FULLY DONE
+
+| Item | Evidence |
+|---|---|
+| All 4 user-pasted clone groups adjudicated. Group 3 (SurfaceID fallback) was **already fixed** — pasted output was stale; `defaultIDs` exists (pkg/vision/a2ui/surface.go:66, used at surface.go:83 + generate.go:114). Groups 1/2/4 confirmed **accept** after reading every site (err-trio = universal idiom in unrelated domains; config/store = unrelated ops; `newConfigFlagSet` = the shared-helper call itself). | Fresh scans: `-t 2` = 3 groups, `-t 1` = 4 (v0.6-era tool, early session) |
+| **jsonv2 import migration fully reverted** (19 files: `cmd/vision/main.go`, `internal/reviewd/{discover,config,commands}.go`, `internal/catalog/sync.go`, `internal/visionutil/helpers.go`, a2ui `component/messages.go` + 6 test files, `fakeserver_test.go`). Root cause: `dbbd62b` (auto-commit, Sep 13) imported `encoding/json/v2` **as** `json`, silently switching every `json.Marshal`/`Unmarshal` to v2 semantics. | Commit `117a28f`; zero `encoding/json/v2`/`jsontext` references remain repo-wide |
+| Both regimes green: `go build ./...` under jsonv2 **and** `GOEXPERIMENT=none` SDK subset; `go vet` both regimes; `gofmt -l` clean. | Session shell logs, exit codes captured |
+| Tests green: full suite both regimes; `-race` on `pkg/vision/...`, `internal/reviewd`, `cmd/visionreviewd`, `cmd/vision` (`RACE_EXIT=0`); previously-failing `TestMessageWireShape/createSurface` + `ExampleCompile` now PASS (verbose-verified). | `/tmp/vra-test.log`, `/tmp/vra-race.log` |
+| Root cause chain documented: v2 `omitempty` semantics emitted `sendDataModel:false` into `createSurface` wire output (broke wire-shape pin + Example); `GOEXPERIMENT=none` broke SDK compile. | AGENTS.md "Dual json v1+v2" bullet, RECURRENCE paragraph |
+| art-dupl **v0.7.0** upgrade discovered mid-session (system tool, v0.6.x → v0.7.0, new semantic mode + shown/non-actionable/filtered classification). Re-baselined: `-t 2` = 5 shown groups, all judged and accepted (decodePayload call sites ×4; discover.go switch predicates ×3; append-in-loop pair; printUsage pair ×2; NArg pair); `-t 3` = 0 shown; `stats` = "excellent code health". | DUPLICATION_POLICY.md re-baseline paragraph + 4 new "v0.7" accepted rows |
+| AGENTS.md corrected: duplication counts (tool-version-tagged), `GOEXPERIMENT=jsonv2` source (shell env export — `~/.config/go/env` does NOT set it), jsonv2 RECURRENCE entry with "grep imports after suspicious auto-commits" rule. | `3ca8e55` et al. |
+| Go 1.27.1 amd64 store path identified among 4 (one is arm64 — `40wlcfzp…` fails cgo on x86); working: `/nix/store/dvp2lzfa22nnpqfl5dbi680a93chdsjv-go-1.27.1/bin/go`. | Session build logs |
+| Lint attribution: all 15 findings predate this session (blame: `a1c95dc` Sep 07, `ba835f7` Sep 19, `cd00cdf` Jul 28, `f9e77dd` Aug 16). My revert introduced **zero** of them. | `git log -L` checks |
+
+## b) PARTIALLY DONE
+
+1. **art-dupl v0.7 re-baseline** — `-t 2` fully judged (5/5 accepted). NOT done: `-t 1`'s 7 shown groups unexamined; whether v0.7 still honors `// art-dupl:accept` markers unverified (the marker'd groups are absent from top-5, but 134 groups detected — suppressed or just low-ranked?); v0.7 `-t` flag semantics (tokens vs percent) not re-documented. Effort to finish: S.
+2. **jsonv2 revert verification** — local gates green (build/vet/test/fmt/race-targeted, both regimes). NOT done: full 9-step canonical matrix (govulncheck, `go mod verify`, `go mod tidy -diff`, dep-drift, `nix build .`, `nix build .#visionreviewd`, `nix flake check`); full-module `-race` under jsonv2; GitHub CI state of master HEAD unconfirmed. Blocker: none — just not run yet. Effort: M.
+3. **Docs "latest full-green" claims** — updated to be tool-version-tagged, but the "Latest full-green run: 2026-09-07" line is now known-stale (15 days of undetected breakage landed since). Refresh only after (f)#1 + (f)#2 complete. Effort: S.
+4. **Lint findings triage** — attributed but not fixed (see d1). Effort: S/M depending on tagliatelle decision (wire-key compatibility risk).
+
+## c) NOT STARTED (all planned, zero work this session)
+
+- Guard-railing the auto-commit/auto-upgrade daemon so depguard-denied imports can never land again (biggest process hole exposed).
+- art-dupl `baseline`/`check` CI wiring decision (v0.7's intended workflow; deferred — no CI consumer today, YAGNI until adopted).
+- Cross-project lessons → `references/lessons.md` (crush-config repo): piped `$?`, scanner-version pinning, auto-commit gating.
+- GitHub issue tracking the daemon's recurring jsonv2 migration attempts.
+- Harvest of this report's (f) list into TODO_LIST/ROADMAP.
+- Annotation of the four earlier 2026-09-22 status docs (dedup rounds 1–3, systemnix activation) with the lint-red + jsonv2 discoveries.
+
+## d) TOTALLY FUCKED UP
+
+1. **Master's required `lint` check is RED — 15 findings — and has been for days, invisible.** `golangci-lint run ./...` exits **1** (verified 23:49, unpiped). Breakdown: exhaustruct_v5 ×4 (incl. `Pipeline` missing `sourceURLs` field, replay `Captured` missing `SourceURL`), gocognit ×1 (golden-journal test, 27>25), nolintlint ×4 (stale `gosec` directives in `main_entry_test.go`), tagliatelle ×3 (`sourceURL`/`sourceURLs` casing), wsl_v5 ×3. Direct pushes bypass branch protection → nobody sees red. Severity: blocks the "required checks" safety story entirely. Workaround: none — it's just red.
+2. **Two `//nolint:exhaustruct` directives are dead lies** (internal/reviewd/store.go:155, 257). They name `exhaustruct` but the active linter is `exhaustruct_v5` — the nolint never matches, yet the code "looks" suppressed. Same class of rot can affect every directive after linter renames. Severity: medium (misleading, not misbehaving — findings are stylistic).
+3. **The jsonv2 migration shipped Sep 13 and both regime CI jobs have presumably been red on master for ~9 days** (`no-jsonv2` compile failure; `jsonv2-compat` failing wire-shape tests). Silent because: auto-commit daemon pushes directly, lint (the designed guard) never ran on the commit, and local shells default to jsonv2 so the compile failure was invisible locally. Fixed this session; the *window* is the fuckup. Severity at time of discovery: high (consumer guarantee `GOEXPERIMENT=none` was broken).
+4. **My own false "LINT_EXIT=0" claim mid-session** — I read `$?` after a `| tail` pipe, which reported tail's status, not golangci-lint's. Corrected at 23:49 by re-running with unpiped exit capture (real answer: 1). Same pipe trap briefly affected the first test-suite run's `EXIT=$?` echo (compensated with explicit-exit reruns). Severity: process, not product — but it almost produced a wrong "all green" line in this report.
+5. **AGENTS.md doc rot** — "Latest full-green run: 2026-09-07" and the `~/.config/go/env` GOEXPERIMENT pointer were both stale going into this session; the env-file claim sent me chasing the wrong source for 30 seconds. First was corrected with version tags; full refresh pending (b3).
+6. **Wasted cycle: built with the arm64 Go 1.27.1 store path first** (cgo assembler explosion). AGENTS.md warned "several store paths exist, pick amd64" but not *how*; I picked `head -1`. Mitigation found (`go env GOHOSTARCH` filter) — not yet written down (f#17).
+
+## e) WHAT WE SHOULD IMPROVE
+
+1. **Auto-commits get zero gates.** PRs need 10 green checks; the daemon lands 18-file commits (incl. an import migration) straight to master with no build/test/lint. This is the single root cause behind d1 and d3. Fix: a commit-time hook in the daemon (build + vet + lint + regime-grep) — same guarantees, no human in the loop.
+2. **Lint is the only depguard guard, and it only runs in CI/PR.** Belt-and-braces: a 1-second `grep -rn "encoding/json/v2"` guard (CI step or daemon hook) costs nothing and would have caught `dbbd62b` instantly.
+3. **Doc baselines rot when tools upgrade.** v0.6.x counts became unverifiable overnight when art-dupl v0.7.0 hit the system profile. Either pin tool versions, use machine baselines (`art-dupl baseline`/`check`), or stamp every doc claim with tool version + date (policy now does the latter).
+4. **Exit-code discipline in verification commands.** Never accept `$?` from behind a pipe; write `(cmd > log 2>&1); echo $?`. This session nearly encoded a false green into a status report.
+5. **Re-run scanners before analyzing pasted output.** The session started from a stale art-dupl capture (pre-`defaultIDs`). One rerun vs the user's paste saved a wrong verdict on group 3.
+6. **"Stale LSP, trust the CLI" needs nuance.** store.go's exhaustruct_v5 LSP warnings now AGREE with the CLI (the CLI is red too). The rule should be "compare, and when they agree, act."
+7. **Stale-claim hygiene in AGENTS.md.** "Latest full-green" style claims should carry the commit hash and be invalidated by the next breaking landing, not by a human noticing.
+
+## f) NEXT TASKS (50, ranked by impact — HARVEST input for TODO_LIST/ROADMAP)
+
+| # | Task | Impact | Effort | Category |
+|---|------|--------|--------|----------|
+| 1 | Fix all 15 lint findings; restore master `lint` gate (rename nolint directives to `exhaustruct_v5`, resolve tagliatelle casing policy, wsl whitespace, split/limit golden-journal test, drop stale gosec nolints) | Critical | S–M | Bug |
+| 2 | Investigate replay.go:147 `Captured{...}` missing `SourceURL` — possible real replay-fidelity bug, not just lint (does a BEFORE→AFTER replay lose the source URL in markdown?) | High | M | Bug |
+| 3 | Investigate pipeline.go:86 `Pipeline` missing `sourceURLs` — ghost-field decision: should Pipeline carry it, or exclude the struct | High | M | Bug |
+| 4 | **Check tagliatelle fix compatibility**: `sourceURL`/`sourceURLs` are journaled/config wire keys — renaming breaks existing `~/.config/visionreviewd/websites.json` + golden-journal pins. Prefer config exclusion/allowlist over rename | High | M | Bug |
+| 5 | Gate the auto-commit daemon: build+vet+lint+`grep encoding/json/v2` before any commit lands | Critical | M | Quality |
+| 6 | Disable/pin the auto-upgrade daemon's json import migration attempts (3rd recurrence; config lives outside this repo) | Critical | ? | Quality |
+| 7 | Confirm actual CI status of master HEAD (`gh run list`/branch page): which of the 10 required checks are red and since when | High | S | Bug |
+| 8 | Inspect daemon's mid-session commits I never reviewed (go.mod, TODO_LIST.md, `scripts/fleet-audit.py`, 4 status docs — `cb97e05`, `3ca8e55` window) for unintended drift | High | S | Cleanup |
+| 9 | Run full 9-step verification matrix on final tree (govulncheck, `go mod verify`, `tidy -diff`, dep-drift, `nix build .`, `nix build .#visionreviewd`, `nix flake check`) | High | M | Quality |
+| 10 | `go mod tidy -diff` + vendorHash check after the daemon's unexamined go.mod change | High | S | Quality |
+| 11 | Full-module `-race` suite under jsonv2 (session ran race on affected packages only) | Medium | S | Quality |
+| 12 | Determine why conformance_test did NOT catch the `sendDataModel:false` leak — does it validate createSurface payload keys against the official schema? If not, extend it | Medium | S | Bug |
+| 13 | Add CI guard step: fail fast on `encoding/json/v2`/`jsontext` imports in first-party code (1-second grep, independent of golangci) | Medium | S | Quality |
+| 14 | Examine art-dupl v0.7 `-t 1` 7-shown groups (only `-t 2`'s 5 were judged) | Medium | S | Quality |
+| 15 | Verify whether v0.7 honors `// art-dupl:accept` markers; if not, migrate to `art-dupl baseline`/`check` | Medium | S | Quality |
+| 16 | Document v0.7 `-t` flag semantics (min tokens vs percent) in DUPLICATION_POLICY | Low | S | Documentation |
+| 17 | AGENTS.md: add amd64 store-path filter command (`go env GOHOSTARCH`) to the toolchain gotcha | Low | S | Documentation |
+| 18 | Record cross-project lessons in crush-config `references/lessons.md`: piped `$?` trap; scanner-version pinning; auto-commits need PR-grade gates | Medium | M | Documentation |
+| 19 | Refresh AGENTS.md "Latest full-green run" after #1+#9 | Medium | S | Documentation |
+| 20 | File GitHub issue: daemon repeatedly re-migrating json imports (link AGENTS.md recurrence) | Medium | S | Process |
+| 21 | Decide `exhaustruct_v5` policy: fix-by-constructing-exhaustively vs exclusions for bbolt.Options-style third-party structs | Medium | S | Cleanup |
+| 22 | Split `TestGoldenJournalPayloadsDecode` (gocognit 27>25) or exempt tests from gocognit in `.golangci.yaml` — note dbbd62b added gocognit 25; confirm intent | Medium | S | Cleanup |
+| 23 | Fix nolintlint ×4 in `cmd/vision/main_entry_test.go`: drop unused `gosec` from directives or re-enable gosec | Low | S | Cleanup |
+| 24 | Fix wsl_v5 ×3 (markdown.go ×2, pipeline_bdd_test.go ×1) | Low | S | Cleanup |
+| 25 | Review dbbd62b's `.golangci.yaml` additions (gocognit/goconst/gocyclo/nestif/tagalign) — intentional tuning or daemon drift? Align with #1 | Medium | S | Cleanup |
+| 26 | Validate daemon-added `.github/dependabot.yml` (groups syntax, weekly schedule) | Low | S | Cleanup |
+| 27 | Harvest this report's (f) into TODO_LIST.md + ROADMAP.md (docs-health HARVEST) | High | S | Documentation |
+| 28 | Annotate the four earlier 2026-09-22 status docs with lint-red + jsonv2 findings (docs-health ANNOTATE, non-destructive) | Low | S | Documentation |
+| 29 | Re-run `nix run .#verify-bump`-style gate on the revert | Medium | S | Quality |
+| 30 | Land the next change through a PR so required checks actually gate it (validate the protection story end-to-end) | Medium | S | Process |
+| 31 | Verify golden-journal fixture pins `events.go` payload tags before ANY tag rename (#4 subset but separate machine-pin check) | High | S | Quality |
+| 32 | Add explicit `-t 1`/marker-semantics note for art-dupl v0.7 to policy (completes b1) | Low | S | Documentation |
+| 33 | Decide art-dupl baseline/check CI adoption (deferred this session — no consumer today) | Low | S | Feature |
+| 34 | Sweep history for other partial v2 migrations: `git log -S 'encoding/json/v2'` beyond dbbd62b | Low | S | Cleanup |
+| 35 | Make GOEXPERIMENT discoverable: set it in `~/.config/go/env` (or document the shell-export source) so local regime matches docs | Low | S | Quality |
+| 36 | Add GOEXPERIMENT banner to test output (TestMain log) so CI regime is visible in failing logs | Low | S | Quality |
+| 37 | `-race` under `GOEXPERIMENT=none` for the SDK subset (no-jsonv2 parity) | Low | S | Quality |
+| 38 | Grep docs for stale "0 lint findings"/"full-green" claims beyond AGENTS.md | Low | S | Documentation |
+| 39 | Update the "Stale-LSP diagnostics" AGENTS.md rule with the "when LSP and CLI agree, act immediately" nuance (store.go case) | Low | S | Documentation |
+| 40 | Confirm branch protection still requires exactly the 10 checks listed in AGENTS.md | Low | S | Documentation |
+| 41 | Tagliatelle config-level allowlist for a2ui wire keys (snake_case contract) so future fields don't trip it | Low | S | Cleanup |
+| 42 | CHANGELOG entry for the jsonv2 revert (consumer-visible: v0.9.1 wire output regression existed between Sep 13–22 builds) | Medium | S | Documentation |
+| 43 | Consider pinning golangci-lint linter-name↔nolint-name sync test (directive-lint that catches `exhaustruct` vs `exhaustruct_v5` rot) | Low | M | Quality |
+| 44 | Nightly/weekly CI job already re-scans govulncheck; add same "re-scan unchanged tree" idea for lint+art-dupl so silent tool/config upgrades surface | Medium | M | Quality |
+| 45 | DUPLICATION_POLICY: add art-dupl `baseline`/`check` usage example if adopted (#33) | Low | S | Documentation |
+| 46 | Review `scripts/fleet-audit.py` daemon change (session-adjacent, unreviewed) | Low | S | Cleanup |
+| 47 | Add `nix build .#visionreviewd` + version smoke to the post-change routine checklist in AGENTS.md verification matrix (already listed as steps 8–9; confirm they run this cycle) | Medium | S | Quality |
+| 48 | Evaluate `--structural` mode deltas in art-dupl v0.7 (ROADMAP fuel) | Low | S | Quality |
+| 49 | Annotate DUPLICATION_POLICY "Patterns Below Scan Scope" once/revisit after v0.7 marker verdict (#15) | Low | S | Documentation |
+| 50 | AGENTS.md: record the amd64-Go + `GOHOSTARCH` one-liner AND the lint-exit-capture pattern as session-proof commands | Low | S | Documentation |
+
+## g) QUESTIONS I CANNOT ANSWER MYSELF
+
+1. **What is the auto-upgrade daemon's mandate, and can its rules be pinned?** It has now attempted the `encoding/json/v2` migration at least twice (documented historically, then `dbbd62b` on Sep 13) and committed unrelated drift (go.mod, fleet-audit.py) mid-session. Its config is outside this repo — I can't see what drives it or disable it. Without this, #5/#6 are guesses.
+2. **Do you want master's red required checks treated as actionable?** Direct pushes bypass branch protection by design (documented for the auto-commit daemon), so `lint` (15 findings, ≥Sep 19) and presumably both json jobs (Sep 13 → today) sat red with no signal. Is "master statuses may be red between PRs" accepted policy, or should I fix-and-verify #1/#7 right away?
+3. **Were the daemon's mid-session commits (`cb97e05` window: go.mod, TODO_LIST.md, `scripts/fleet-audit.py`, status docs) yours from a parallel session?** I can read the diffs, but I can't judge intent — if they're yours I'll leave them; if not, they need the same review as `dbbd62b`.
+
+---
+
+*Point-in-time snapshot — will go stale. Section (f) is the HARVEST input for TODO_LIST/ROADMAP.*
