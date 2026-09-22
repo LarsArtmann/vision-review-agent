@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sort"
+	"maps"
+	"slices"
 	"time"
 )
 
@@ -109,7 +110,7 @@ func (p *Pipeline) Pass(ctx context.Context, projects map[string][]string) (Pass
 
 	var errs []error
 
-	for _, project := range sortedProjectNames(projects) {
+	for _, project := range slices.Sorted(maps.Keys(projects)) {
 		if err := ctx.Err(); err != nil {
 			errs = append(errs, fmt.Errorf("project %s: skipped, pass context done: %w", project, err))
 
@@ -330,17 +331,4 @@ func (p *Pipeline) refreshIndex(ctx context.Context, project string, captures []
 	}
 
 	return nil
-}
-
-// sortedProjectNames returns project names in deterministic order.
-func sortedProjectNames(projects map[string][]string) []string {
-	names := make([]string, 0, len(projects))
-
-	for name := range projects {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-
-	return names
 }

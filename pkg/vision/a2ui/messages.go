@@ -99,8 +99,8 @@ func (m *CreateSurface) UnmarshalJSON(data []byte) error {
 		Theme         map[string]any `json:"theme"`
 		SendDataModel bool           `json:"sendDataModel"`
 	}
-	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("%w: decode createSurface payload: %w", ErrMalformedMessage, err)
+	if err := decodePayload(kindCreateSurface, data, &payload); err != nil {
+		return err
 	}
 
 	m.SurfaceID = payload.SurfaceID
@@ -156,8 +156,8 @@ func (m *UpdateComponents) UnmarshalJSON(data []byte) error {
 		SurfaceID  string      `json:"surfaceId"`
 		Components []Component `json:"components"`
 	}
-	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("%w: decode updateComponents payload: %w", ErrMalformedMessage, err)
+	if err := decodePayload(kindUpdateComponents, data, &payload); err != nil {
+		return err
 	}
 
 	m.SurfaceID = payload.SurfaceID
@@ -239,8 +239,8 @@ func (m *UpdateDataModel) UnmarshalJSON(data []byte) error {
 		Path      string `json:"path"`
 		Value     any    `json:"value"`
 	}
-	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("%w: decode updateDataModel payload: %w", ErrMalformedMessage, err)
+	if err := decodePayload(kindUpdateDataModel, data, &payload); err != nil {
+		return err
 	}
 
 	m.SurfaceID = payload.SurfaceID
@@ -292,11 +292,22 @@ func (m *DeleteSurface) UnmarshalJSON(data []byte) error {
 	var payload struct {
 		SurfaceID string `json:"surfaceId"`
 	}
-	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("%w: decode deleteSurface payload: %w", ErrMalformedMessage, err)
+	if err := decodePayload(kindDeleteSurface, data, &payload); err != nil {
+		return err
 	}
 
 	m.SurfaceID = payload.SurfaceID
+
+	return nil
+}
+
+// decodePayload decodes one message-kind payload, wrapping every failure
+// with ErrMalformedMessage and the wire kind so all kinds share one error
+// contract.
+func decodePayload(kind string, data []byte, payload any) error {
+	if err := json.Unmarshal(data, payload); err != nil {
+		return fmt.Errorf("%w: decode %s payload: %w", ErrMalformedMessage, kind, err)
+	}
 
 	return nil
 }

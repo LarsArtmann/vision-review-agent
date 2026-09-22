@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -228,7 +229,7 @@ func replayEvent(writer *Writer, stream *replayStream, evt event.Event) (replayC
 func replayIndexes(writer *Writer, streams map[string]*replayStream) ([]string, error) {
 	rowsByProject := make(map[string][]IndexRow)
 
-	for _, streamID := range sortedStreamIDs(streams) {
+	for _, streamID := range slices.Sorted(maps.Keys(streams)) {
 		stream := streams[streamID]
 		rowsByProject[stream.address.project] = append(rowsByProject[stream.address.project], IndexRow{
 			ViewKey:   stream.address.viewKey,
@@ -238,13 +239,7 @@ func replayIndexes(writer *Writer, streams map[string]*replayStream) ([]string, 
 		})
 	}
 
-	projects := make([]string, 0, len(rowsByProject))
-
-	for project := range rowsByProject {
-		projects = append(projects, project)
-	}
-
-	sort.Strings(projects)
+	projects := slices.Sorted(maps.Keys(rowsByProject))
 
 	var errs []error
 
@@ -257,19 +252,6 @@ func replayIndexes(writer *Writer, streams map[string]*replayStream) ([]string, 
 	}
 
 	return projects, errors.Join(errs...)
-}
-
-// sortedStreamIDs returns stream IDs in deterministic order.
-func sortedStreamIDs(streams map[string]*replayStream) []string {
-	ids := make([]string, 0, len(streams))
-
-	for streamID := range streams {
-		ids = append(ids, streamID)
-	}
-
-	sort.Strings(ids)
-
-	return ids
 }
 
 // indexStamp picks the deterministic INDEX timestamp: the newest row update

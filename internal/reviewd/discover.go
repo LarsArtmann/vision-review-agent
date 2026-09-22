@@ -5,9 +5,10 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -205,8 +206,8 @@ func sortedSuggestions(found map[string]*projectAccumulator) []SuggestedProject 
 		suggestions = append(suggestions, suggestionOf(project))
 	}
 
-	sort.Slice(suggestions, func(i, j int) bool {
-		return suggestions[i].Name < suggestions[j].Name
+	slices.SortFunc(suggestions, func(a, b SuggestedProject) int {
+		return strings.Compare(a.Name, b.Name)
 	})
 
 	return suggestions
@@ -220,8 +221,8 @@ func suggestionOf(project *projectAccumulator) SuggestedProject {
 		Images: 0,
 	}
 
-	for _, dir := range sortedNestedKeys(project.dirs) {
-		for _, extension := range sortedIntMapKeys(project.dirs[dir]) {
+	for _, dir := range slices.Sorted(maps.Keys(project.dirs)) {
+		for _, extension := range slices.Sorted(maps.Keys(project.dirs[dir])) {
 			count := project.dirs[dir][extension]
 			suggestion.Globs = append(suggestion.Globs, filepath.Join(dir, "*"+extension))
 			suggestion.Images += count
@@ -229,18 +230,6 @@ func suggestionOf(project *projectAccumulator) SuggestedProject {
 	}
 
 	return suggestion
-}
-
-// sortedIntMapKeys returns the sorted keys of a map[string]int.
-func sortedIntMapKeys(m map[string]int) []string {
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-
-	sort.Strings(keys)
-
-	return keys
 }
 
 // SuggestedConfigJSON renders discovered projects as the pretty-printed JSON
@@ -258,16 +247,4 @@ func SuggestedConfigJSON(suggestions []SuggestedProject) (string, error) {
 	}
 
 	return string(encoded), nil
-}
-
-// sortedNestedKeys returns the sorted keys of a map[string]map[string]int.
-func sortedNestedKeys(m map[string]map[string]int) []string {
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-
-	sort.Strings(keys)
-
-	return keys
 }
