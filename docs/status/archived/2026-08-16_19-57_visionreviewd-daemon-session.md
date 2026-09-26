@@ -40,7 +40,7 @@
 
 | Item                                                                  | State                                                                                                                                              | What remains                                                                                                                                                                                                 |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ~~**T2: Domain events, viewKey parsing, hashing**~~ done at `df51b84` | Research done (StreamType is `type StreamType string`, `ParseStreamType` non-error for constants; StreamID needs `ParseStreamID` + error handling) | ~~Write `events.go` / `views.go` / `hash.go` + table tests; replace spike payloads with real domain types~~ shipped (files landed as `events.go` / `viewkey.go` / `hash.go` / `blobstore.go`; spike deleted) |
+| ~~**T2: Domain events, viewKey parsing, hashing**~~ done at `df51b84` | ~~Research done (StreamType is `type StreamType string`, `ParseStreamType` non-error for constants; StreamID needs `ParseStreamID` + error handling)~~ | ~~Write `events.go` / `views.go` / `hash.go` + table tests; replace spike payloads with real domain types~~ shipped (files landed as `events.go` / `viewkey.go` / `hash.go` / `blobstore.go`; spike deleted) |
 
 ## c) NOT STARTED
 

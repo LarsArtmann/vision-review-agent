@@ -1,5 +1,7 @@
 # visionreviewd — Full Execution Plan v2 (Remaining Work)
 
+> ~~**PLAN FULLY EXECUTED 2026-08-16**~~ done — all T2-T18 shipped; per-task Status column inside (annotated by the 2026-08-17 docs-health pass; re-verified 2026-09-26).
+
 > **STATUS: FULLY EXECUTED — archived 2026-08-16.** Every task T2–T18
 > shipped (see Status column below); final verification passed at `5da8022`.
 > Post-build activation work (push, SystemNix bump, host enablement, real-model

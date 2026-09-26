@@ -1,5 +1,7 @@
 # Status Report: visionreviewd SystemNix Activation Session
 
+> ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
+
 
 > **ANNOTATED 2026-09-26 (docs-health):** the (f) list routes as
 > follows: 1-8 = the activation handoff (user steps; canonical copy in

@@ -1,5 +1,7 @@
 # Planning — Post-Todo-List Pareto Execution Plan
 
+> ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
+
 
 > **EXECUTED 2026-07-27/28 — CLOSED 2026-09-26 (docs-health):** E1-E7
 > all shipped and verified (see the companion status

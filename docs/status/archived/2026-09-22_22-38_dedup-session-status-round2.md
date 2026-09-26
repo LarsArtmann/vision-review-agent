@@ -1,5 +1,7 @@
 # Status Report — Deduplication Session, Round 2 (2026-09-22, 22:38 CEST)
 
+> ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
+
 
 > **ANNOTATED 2026-09-26 (docs-health):** superseded by round 3 and
 > the 23:48 session. The §b/§c/d open items all resolved: the a2ui

@@ -1,5 +1,7 @@
 # Status: Post-v0.6.2 Brutal Self-Review — What Was Forgotten, What Was Sloppy, What's Next
 
+> ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
+
 
 > **ANNOTATED 2026-09-26 (docs-health):** §f resolved. The
 > wire-regression cluster (1-13) was WRONG-rooted here: the two failing

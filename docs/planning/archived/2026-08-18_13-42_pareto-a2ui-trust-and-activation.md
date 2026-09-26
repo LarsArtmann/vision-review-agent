@@ -1,5 +1,7 @@
 # Pareto Execution Plan — A2UI Trust, Real Activation, and v0.7 Cycle Hygiene
 
+> ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
+
 
 > **EXECUTED 2026-08-18 — CLOSED 2026-09-26 (docs-health):** M1-M27
 > shipped end-to-end the same day (trust rails + first real reviews
