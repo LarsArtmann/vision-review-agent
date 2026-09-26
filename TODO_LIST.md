@@ -10,34 +10,6 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ---
 
-## pkg/vision/a2ui — Go 1.27 `encoding/json/v2` wire regression (found 2026-09-22)
-
-`go.mod` moved to Go 1.27.1, where `encoding/json/v2` exists natively (no
-GOEXPERIMENT) with different defaults than the 1.26 experiment. Two a2ui tests
-now fail on master (verified at committed HEAD in a clean worktree, so no
-local-change blame):
-
-- [ ] **Restore deterministic wire output** — `Component.MarshalJSON` and
-      `UpdateDataModel.MarshalJSON` marshal `map[string]any`; under 1.27 the
-      key order is nondeterministic (5 runs → 4 orderings). Protocol output
-      must be byte-stable: emit map keys sorted (ordered encoding path), then
-      re-pin `ExampleCompile`'s `// Output:` block.
-- [ ] **`omitempty` ignored on scalars** — `CreateSurface.MarshalJSON` emits
-      `"sendDataModel":false` despite `json:"sendDataModel,omitempty"`, which
-      breaks `TestMessageWireShape/createSurface{,_with_theme}`. Switch the
-      a2ui marshal tags to `omitzero` (honored by v1 and v2) or gate the field
-      in code, and confirm `theme,omitempty` behaves identically.
-- [ ] **Lint fallout of the new `.golangci.yaml` rules (uncommitted change)** —
-      `wsl_v5` ×3 (markdown.go, pipeline_bdd_test.go), `gocognit` ×1
-      (golden_journal_test.go), `tagliatelle` ×3 on `sourceURLs`/`sourceURL`
-      wire tags (config.go, events.go — URL is not a "word", add the
-      documented `//nolint:tagliatelle` with the openaicompat precedent), and
-      `exhaustruct_v5` ×4 (Pipeline/Captured missing recently added SourceURL
-      fields — populate or nolint; bbolt.Options literals ×2 are deliberate
-      zero-value opens).
-
----
-
 ## Website fleet — monitoring & re-review (2026-09-19 sweep residue)
 
 Harvested from the 2026-09-19 fleet follow-up execution
@@ -86,12 +58,13 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
 
 ## Website fleet — quality polish
 
-- [ ] **Template-family token convergence — SOURCE DONE 2026-09-20, deploys pending.** All 9 INFO repos now define `--color-on-accent` (per-theme values CONTRAST-MEASURED per repo — go-error-family uses white/white because its dark accent is violet-600; go-atomic-write uses dark-ink/dark-ink on emerald; the rest dark-ink-dark/white-light) and their solid `bg-accent` CTAs use `text-on-accent`. `family-a11y-guard.sh` now reports **0 FAIL / 0 INFO** family-wide (was 68 INFO). REMAINING: `pnpm build` + firebase deploy for the 9 sites (deferred — the box was load 30-88 all night; never build parallel to model inference), then an axe re-run to confirm contrast live.
-- [ ] **Template-family divergence report → ADR** — DONE 2026-09-19:
-      `docs/activation/template-family-divergence.md` +
-      `docs/adr/0001-template-family-sync-over-extract.md` + prototype
-      `scripts/family-a11y-guard.sh`. Remaining: use the guard in the next
-      family sweep and wire it as a CI check in one pilot repo.
+- [ ] **Deploy the 9 template-family sites** — source work DONE 2026-09-20
+      (`--color-on-accent` tokens everywhere, `family-a11y-guard.sh` 0 FAIL /
+      0 INFO); `pnpm build` + firebase deploy deferred while the box was load
+      30-88, then an axe re-run to confirm contrast live.
+- [ ] **Use `family-a11y-guard.sh` in the next family sweep + wire it as a CI
+      check in one pilot repo** — the guard, divergence report, and ADR
+      (`docs/adr/0001`) shipped 2026-09-19; adoption is the open part.
 - [ ] **Hero-copy staleness pass** — per-site counts ("123 components") and
       version claims drift; verify each against the repo state.
 - [ ] **learnings: docs-subpage heading-order cleanups** — home page fixed;
@@ -168,9 +141,15 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
       — `discover /home/lars/projects/DiscordSync` already emits the full
       glob; measured 2026-09-07: **220 PNGs** in
       `internal/web/testdata/visual/`. Durable config entry:
-      `json
-      "projects": { "discordsync":
-        ["/home/lars/projects/DiscordSync/internal/web/testdata/visual/*.png"] }`
+
+      ```json
+      "projects": {
+        "discordsync": [
+          "/home/lars/projects/DiscordSync/internal/web/testdata/visual/*.png"
+        ]
+      }
+      ```
+
       Duration estimate from the measured baseline
       (`docs/status/2026-09-07_22-15_perf-baseline-m14.md`): local scan+fold
       is ~6 ms for 220 views (PassSteady 2.9 ms per 100); the model dominates
@@ -207,13 +186,27 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
       BuildFlow's go-auto-upgrade step applies its `jsonv1tov2` migrator to
       every repo under `~/projects`; this repo needs `encoding/json` (v1 API)
       because the jsonv2 experiment swaps the implementation, not the import
-      path — see AGENTS.md "Dual json v1+v2 support". The 4 breakages:
-      2026-07-27, 07-28, 08-02, 08-18. The tool reads a per-project
-      `.go-auto-upgrade.json` (`{"exclude": ["jsonv1tov2"]}`, schema:
-      `include`/`exclude` arrays of migrator names — `cmd/go-auto-upgrade/
-      config.go`). **Proposal: commit that file at this repo root.** The repo
-      side is already guarded (depguard + CI regime jobs), so this is
-      defense-in-depth at the source.
+      path — see AGENTS.md "Dual json v1+v2 support". **Five documented
+      breakages** (2026-07-27, 07-28, 08-02, 08-18, and **09-23**: auto-commit
+      `cc3d1b9` re-migrated 5 files hours after the 09-22 revert). The tool
+      reads a per-project `.go-auto-upgrade.json`
+      (`{"exclude": ["jsonv1tov2"]}`, schema: `include`/`exclude` arrays of
+      migrator names — `cmd/go-auto-upgrade/config.go`). **Proposal: commit
+      that file at this repo root.** Repo-side defenses re-verified 2026-09-26:
+      the 5th recurrence reverted (both regimes + race + lint green), the
+      depguard deny list RESTORED (it had been silently dropped by the
+      `2934585` config rework — that gap is why the daemon's edits passed
+      lint), and the CI `no-jsonv2` job now sets `GOEXPERIMENT=none`
+      explicitly (on Go 1.27, unset means jsonv2, so the job had been testing
+      the wrong regime).
+- [ ] **Direct table test for `defaultIDs`** — extracted in the 2026-09-22
+      dedup round 3; covered only transitively (Compile + Generate BDD).
+      10-line table: both empty / one empty / neither
+      (`pkg/vision/a2ui/surface.go`).
+- [ ] **art-dupl v0.7 `-t 1` sweep** — the re-baseline judged `-t 2`'s 5
+      groups; `-t 1` shows 7 groups unexamined, and whether v0.7 still
+      honors `// art-dupl:accept` markers is unverified
+      (`docs/DUPLICATION_POLICY.md`).
 - [ ] **go-cqrs-lite asks (filed 2026-09-07)** — #22 (bbolt
       `OpenWith(ReadOnly)` always fails) and #23 (missing `serializableEvent`
       golden/contract test) are filed; a per-module CHANGELOG request was

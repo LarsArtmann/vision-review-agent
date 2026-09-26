@@ -1,5 +1,38 @@
 # Comprehensive Status Report — Vision Review Agent
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** every numbered item resolved
+> against the tree. §c/§f: ~~1 (Go version)~~ moot (repo on `go 1.27`,
+> flake `go_1_27`); ~~2 (CLI refactor/tests)~~ done v0.4.0
+> (`parseFlags` FlagSet refactor + 19 CLI tests); ~~3 (CI)~~ done
+> (`.github/workflows/ci.yml`, v0.4.0, now 10 checks); ~~4 (testify
+> migration)~~ **Won't implement — deliberate mix** (table/testify/BDD
+> split is documented convention, AGENTS.md Test Organization); ~~5
+> (functional options)~~ **Won't implement — no demand** (zero-value
+> Config is the documented API); ~~6 (ValidateImage on load)~~ done
+> (auto-detect + magic-byte validation in `LoadImageFromFile`); ~~7
+> (slog)~~ **Won't implement — no demand** (hooks are the observability
+> seam; OTel is the ROADMAP idea); ~~8 (benchmarks)~~ done (encodeImage
+> v0.4.0, a2ui codecs v0.6.2, reviewd perf v0.7.0); ~~9 (fuzz)~~ done
+> (`FuzzDetectImageFormat`, `FuzzDecodeBase64Flex`, `FuzzParseFlags`
+> v0.4.0 + a2ui codec fuzz v0.6.2); ~~10 (package docs)~~ done; ~~11,12
+> (Anthropic/Google examples)~~ **Won't implement — the CLI supports
+> 40+ providers via catwalk; provider examples stayed at 2** (catalog
+> listing flags cover discovery, v0.5.0); ~~13 (GoReleaser)~~ **Won't
+> implement — nix flake is the distribution**; ~~14 (caching)~~ routed
+> ROADMAP "Result caching"; ~~15 (preprocessing)~~ done v0.4.0; ~~16
+> (plugin hooks)~~ done (`Config.Tools`/`PrepareStep`/`Hooks`, v0.4.0);
+> ~~17 (model discovery)~~ done (catwalk `internal/catalog`, v0.5.0);
+> ~~18 (batch)~~ done v0.2.0; ~~19 (OTel)~~ routed ROADMAP; ~~20 (schema
+> validation)~~ done (`AnalyzeStructured` schema-gen, v0.2.0); ~~21
+> (cancellation tests)~~ done (timeout BDD specs v0.2.0-era; cancelled-pass
+> tests v0.6.0); ~~22 (real-provider tests)~~ done (openaicompat E2E vs
+> httptest fake, v0.6.0); ~~23 (badges)~~ **Won't implement**; ~~24
+> (CONTRIBUTING)~~ done v0.4.0; ~~25 (changelog automation)~~
+> **Won't implement — hand-curated CHANGELOG is the convention**. §e
+> folds into the same verdicts. No open items remain; superseded by
+> v0.2.0–v0.7.0.
+
 **Date:** 2026-04-27 13:04 CEST
 **Branch:** `master`
 **Commits Since Last Report:** 15

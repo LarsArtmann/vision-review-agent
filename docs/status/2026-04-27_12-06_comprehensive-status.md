@@ -1,5 +1,26 @@
 # Comprehensive Status Report
 
+
+> **ANNOTATED 2026-09-26 (docs-health, pre-August pass):** every numbered
+> item below was checked against the tree and git history. §c 1–25 / §f —
+> shipped or closed as follows: remote+CI+tag ~~1,3,5,6,12~~ done (remote
+> pushed; CI `.github/workflows/ci.yml` since v0.4.0; v0.1.0 tagged);
+> ~~2~~ done (`toFileParts`/`filterValidImages` wired, v0.1.0-era);
+> ~~4,22,23~~ done (fake-server E2E `fakeserver_test.go` v0.6.0, batch
+> `AnalyzeBatch` v0.2.0, resize/compress v0.4.0); ~~7,15,17~~ done
+> (`Config.Preprocess` + `CompressImage` v0.4.0); ~~10~~ done
+> (classified-error advice, v0.2.0); ~~11,25~~ done (benchmarks + fuzz
+> suite, v0.4.0/v0.6.2); ~~9,14,19~~ **Won't implement — demand-gated**
+> (progress bars, Redis caching, docs website: no consumer ask; result
+> caching lives in ROADMAP); ~~16,18,20,21,24~~ **Won't implement —
+> out of scope** (Homebrew, screenshot capture, webhooks/web UI, DB
+> persistence, mobile SDK); ~~13~~ done (Docker never added; `nix build`
+> is the container story — closed as covered). §e items fold into the
+> same verdicts. The toolchain-mismatch trauma (§d) is history — the repo
+> rides `go 1.27` with the flake pinned to `go_1_27` since 2026-09-22.
+> Zero open items remain from this report; superseded by v0.2.0–v0.7.0
+> (CHANGELOG).
+
 **Project:** vision-review-agent\
 **Date:** 2026-04-27 12:06 CEST\
 **Branch:** master\

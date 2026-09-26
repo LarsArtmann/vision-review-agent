@@ -1,5 +1,33 @@
 # Vision Review Agent — Comprehensive Status Report
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** every numbered item resolved.
+> §c/§f: ~~1 (pointer bug)~~ done (`optionalParams` sends pointers only
+> when set — v0.4.0 `Config.optionalParams()`); ~~2 (LICENSE)~~ resolved
+> (README says PROPRIETARY; `flake.nix` `licenses.unfree`; public/private
+> decision pending in `PUBLIC_OR_PRIVATE.md`, untouched since); ~~3 (20
+> lint issues)~~ done v0.2.0 (0 issues; the 2026-09-26 pass restored 0
+> after 15 regressed); ~~4 (CHANGELOG stale)~~ done (v0.2.0 cut
+> 2026-07-23); ~~5,6 (CLI + internal/cli tests)~~ done (v0.4.0 / v0.6.0
+> `internal/cli` tests); ~~7 (WebP magic)~~ done v0.2.0 (RIFF + WEBP
+> offset 8); ~~8 (LimitReader)~~ done v0.2.0 (50 MB cap); ~~9 (README)~~
+> done v0.4.0 rewrite; ~~10 (AGENTS tree)~~ done; ~~11 (VisionAgent
+> alias)~~ routed ROADMAP "API evolution"; ~~12 (parseFlags dead error)~~
+> done v0.4.0 (FlagSet refactor); ~~13 (fantasy.Agent routing)~~ closed
+> as designed (structured calls document the Model-direct path; retry
+> composed via `Config.Retry`, v0.4.0); ~~14 (agent caching)~~ done
+> (`cachedAgent` + `invalidate()`); ~~15 (strings.Builder)~~ done v0.2.0;
+> ~~16 (assertion style)~~ **Won't implement — deliberate mix**; ~~17
+> (jscpd artifact)~~ done (trashed 2026-08-18); ~~18 (.gitignore)~~ done;
+> ~~19 (uncommitted diff)~~ moot (landed via v0.2.0); ~~20 (nix package
+> build)~~ done (v0.5.0-era `packages.default` + `visionreviewd`); ~~21
+> (justfile migration)~~ done (justfile deleted; flake-only, 2026-07-27);
+> ~~22 (ProviderOptions)~~ done (`Config.Headers`/`UserAgent` v0.4.0);
+> ~~23 (WithModel)~~ **Won't implement — no demand**; ~~24 (Go version)~~
+> moot (repo on `go 1.27`); ~~25 (mocked integration test)~~ done (mock
+> BDD + fakeserver E2E). §g license question: resolved as PROPRIETARY
+> (source-available). No open items remain.
+
 **Date:** 2026-05-04 21:44 CEST
 **Branch:** master (up to date with origin)
 **Commits:** 25 total
