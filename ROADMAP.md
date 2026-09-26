@@ -194,3 +194,12 @@ tasks. They are **not** TODO items until answered.
    direction confirmed: visionreviewd targets a real host with real
    projects (DiscordSync 220-view watch is real upcoming work, not
    local-only).
+6. **Structured-output reviews (visionreviewd)?** — should the review /
+   compare contract move from free-markdown + the `Score: N/10` regex to
+   `AnalyzeStructured[ReviewResult]` (typed score/sections)? It changes
+   provider requirements (structured-output support from llama-server-class
+   endpoints) and the markdown projection pipeline, but kills
+   `ExtractScore`/`StripScoreLines` and the `ScoreUnknown`/`?` failure
+   modes. First raised 2026-08-29 (`docs/status/2026-08-29_18-36` §g1);
+   the prompt contract is now test-pinned either way, so the switch is
+   safe whenever the product call is made.

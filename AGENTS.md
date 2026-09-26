@@ -216,7 +216,7 @@ regimes incl. the `GOEXPERIMENT=none` SDK-subset tests, `go mod verify` +
 `tidy -diff` clean); nix steps 7–9 NOT re-run this pass (flake proven green
 2026-09-22 with the `go_1_27` override). Earlier full 9-step runs:
 2026-09-07 at `8590dda` (post go-cqrs-lite bump; evidence in
-`docs/status/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`), same day
+`docs/status/archived/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`), same day
 at `cecc399` (PR #1 merge), and at `4d495b6` (post docs sweep).
 
 Dependency hygiene: `nix run .#dep-drift` (or `scripts/check-deps.sh`)
