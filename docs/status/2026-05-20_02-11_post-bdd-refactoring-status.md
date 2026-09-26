@@ -1,5 +1,30 @@
 # Vision Review Agent — Comprehensive Status Report
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** all numbered items resolved
+> against the tree. §c/§f: ~~1,2 (vendorHash, pre-commit hooks)~~
+> resolved long since (hash maintained via `vendorHash.nix` +
+> `nix run .#update-vendor-hash`; BuildFlow hook co-exists, failures are
+> addressed per-incident); ~~3 (LICENSE)~~ resolved (PROPRIETARY;
+> `licenses.unfree`); ~~4 (CHANGELOG)~~ done (v0.2.0+); ~~5,6 (CLI +
+> internal/cli tests)~~ done v0.4.0/v0.6.0; ~~7 (WebP)~~ done v0.2.0;
+> ~~8 (LimitReader)~~ done v0.2.0; ~~9 (README)~~ done v0.4.0; ~~10 (LSP
+> ghost)~~ transient, gone; ~~11 (strings.Builder)~~ done v0.2.0; ~~12
+> (structured BDD)~~ done (structured specs in the suite; conformance
+> suite v0.6.2); ~~13 (cancellation tests)~~ done; ~~14
+> (go-structure-linter nits)~~ moot (tooling changed); ~~15 (VisionAgent
+> alias)~~ routed ROADMAP; ~~16 (parseFlags)~~ done v0.4.0; ~~17 (cache
+> safety)~~ done (invalidate-on-mutation; document single-goroutine use);
+> ~~18 (fantasy.Agent routing)~~ closed as designed (see 13-04 verdict);
+> ~~19 (jscpd artifact)~~ done; ~~20 (nix package build)~~ done; ~~21
+> (justfile)~~ done (deleted 2026-07-27); ~~22 (ProviderOptions)~~ done
+> v0.4.0; ~~23 (WithModel)~~ **Won't implement — no demand**; ~~24 (real
+> provider tests)~~ done (fakeserver E2E v0.6.0); ~~25 (benchmarks)~~
+> done (v0.4.0/v0.6.2/v0.7.0). §b "AnalyzeStructured bypass" — closed by
+> design + `Config.Retry`/`optionalParams` (v0.4.0). §d pre-commit
+> systemic failure — the BuildFlow relationship remains external tooling;
+> repo-side gates are the 10-check CI. No open items remain here.
+
 **Date:** 2026-05-20 02:11 CEST
 **Branch:** master (up to date with origin)
 **Commits:** 31 total (6 new since last report)

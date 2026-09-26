@@ -1,5 +1,20 @@
 # Brutal Status Report — pkg/vision Lint Gate Fix + mainProgram Bug
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** §c/§f resolved. ~~1 ldflags
+> e2e~~ done (CI smoke); ~~2 CompressImage callers~~ done 13-56 (no
+> mutators; documented); ~~3 Quick Start~~ done 13-56; ~~4 FEATURES
+> content-filter~~ done 13-56; ~~5 provider messages~~ done 13-56
+> (researched); ~~6-14~~ done at 13-56 (io.Writer refactor is the notable
+> reversal of this report's b.1 — 15-lint-error wall was cleared by the
+> errcheck text exclusion); ~~15-31~~ routed/done per the 13-56 verdicts
+> (structured detection demand-gated; EXIF→ROADMAP; 402/529+RetryAfter
+> shipped); ~~32-50~~ closed per prior verdicts (reports consolidation
+> moot — archiving NOW; vision init/config **Won't implement — no
+> demand**; Ollama integration = the fakeserver/llama path that shipped
+> with the daemon). §g 1 RESOLVED 2026-08-18; 2 resolved 13-56; 3
+> resolved 13-56. Archive-ready.
+
 **Date:** 2026-07-28 12:34
 **Session scope:** Discovered and fixed that `pkg/vision/` (the core SDK)
 was excluded from ALL linting and formatting in `.golangci.yaml`, suppressing

@@ -1,5 +1,22 @@
 # Status Report: 2026-07-23 16:08 — Post-Feature-Build Brutal Self-Review
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** the 2026-07-27 Resolution table
+> below remains accurate for its DONE rows. Its "Still open" set has
+> closed: ~~F.32 caching / F.34 failover / F.35 OTel / F.36 prompt
+> templates~~ routed ROADMAP (Long-term ideas / SDK sections — still
+> open there, tracked); ~~F.38 WithTopP BDD~~ covered by the builder BDD
+> suite growth through v0.6.x; ~~F.43 httptest integration~~ done
+> (`fakeserver_test.go` E2E v0.6.0 + catalog integration tests v0.5.0);
+> ~~F.45 Conversation.LastMessage~~ done v0.4.0; ~~F.46
+> BatchResult.Duration~~ done v0.4.0; ~~Q1 Analyzer interface / Q2
+> VisionAgent alias~~ routed ROADMAP "API evolution" (open product
+> questions, not tasks). The 5 "shipped but flawed" rows: structured
+> hooks payload → PARTIALLY_FUNCTIONAL in FEATURES + ROADMAP Q1; retry /
+> cost / preprocess clusters → all completed in v0.4.0
+> (Config.Retry/Preprocess/NewAgentWithCostTracker). No untracked open
+> items remain.
+
 ---
 
 ## Executive Summary

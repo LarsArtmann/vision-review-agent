@@ -1,5 +1,37 @@
 # Status Report — 2026-07-27 20:40
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** §f resolved. Release:
+> ~~1,2~~ done (flake check + mod verify green many times since);
+> ~~3~~ RESOLVED 2026-08-18 (ghost tags deleted from origin; real work
+> had shipped as v0.4.0); ~~4~~ closed (v0.3.0 is proxy-burned; v0.4.0
+> was the right call); ~~5~~ done (2026-07-27 pareto E2.4). Code
+> quality: ~~6,7~~ done v0.4.0 (parseFlags refactor + flag tests);
+> ~~8~~ done (structured branch covered by CLI tests v0.4.0+); ~~9,10~~
+> done v0.4.0 (JPEGQuality wired; CompressImage); ~~11 EXIF~~ routed
+> ROADMAP; ~~12~~ **Won't implement — mock is single-package by
+> design**; ~~13,14~~ done (retry-test determinism, 2026-07-27 E1);
+> ~~15-17~~ done v0.4.0 (tidy/config-verify/nix-check in CI). Testing:
+> ~~18-29~~ all done across v0.4.0 (E5 batch + 13-56 session:
+> mediaType table, BMP roundtrip, passthroughs, structured preprocess,
+> nil-RawResponse, contentFilter, 501/503, batch mixed, conversation
+> errors, streaming-retry-exclusion, jitter determinism). Errors:
+> ~~30,31~~ done v0.4.0 (KindOverloaded, KindPaymentRequired → 16
+> kinds); ~~32~~ routed (structured detection — demand-gated);
+> ~~33 RetryAfter~~ done v0.4.0; ~~34~~ done (README errors.AsType +
+> ERROR_DESIGN.md). Architecture: ~~35,36~~ routed ROADMAP "API
+> evolution"; ~~37 Close~~ routed ROADMAP; ~~38 LastMessage~~ done
+> v0.4.0; ~~39 Duration~~ done v0.4.0; ~~40 catwalk~~ done v0.5.0;
+> ~~41,42~~ routed ROADMAP. Observability: ~~43,44~~ routed ROADMAP;
+> ~~45 Agent.Cost~~ closed (NewAgentWithCostTracker is the API);
+> ~~46~~ example exists (hooks). Docs: ~~47,48~~ done v0.4.0; ~~49~~
+> done (`docs/ERROR_DESIGN.md` v0.5.0-era); ~~50 API reference gen~~
+> **Won't implement — pkg.go.dev serves godoc**. §g Q1 resolved
+> (supersede with v0.4.0 + later delete ghosts); Q2 = ROADMAP Q1; Q3
+> resolved (streaming stays no-auto-retry by design + design doc
+> `2026-07-28_streaming-auto-retry-design.md`). No open items remain —
+> archive-ready.
+
 **Session:** Completed the entire TODO_LIST.md (22 items) in one session.
 
 ---

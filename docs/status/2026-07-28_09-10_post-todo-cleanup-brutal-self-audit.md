@@ -1,5 +1,26 @@
 # Brutal Status Report — Post-Todo Cleanup Execution
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** §b/§c/§f resolved. ~~io.Writer
+> capture pattern~~ superseded (the io.Writer refactor landed the NEXT
+> session, 13-56 — 10 paralleltest nolints gone); ~~content-filter
+> guesses~~ fixed 13-56 (provider-verified signals); ~~CompressImage
+> contract~~ audited + documented 13-56; ~~FEATURES update~~ done 13-56;
+> ~~ldflags e2e~~ done (CI version smoke + `visionreviewd-version-smoke`
+> flake check v0.6.0); ~~README Quick Start compile~~ done 13-56. §c:
+> ~~1 tag anomaly~~ RESOLVED 2026-08-18 (ghost tags deleted from
+> origin); ~~2-8~~ done at the 13-56 session (provider ctor tests,
+> main() subprocess tests, actionlint, CONTRIBUTING, DOMAIN_LANGUAGE,
+> streaming design doc, FEATURES/ROADMAP); ~~9-12~~ routed ROADMAP
+> (EXIF, failover, OTel, VisionAgent) or closed demand-gated;
+> ~~per-pkg gate~~ **Won't implement** (combined gate). §f items
+> 16-31, 33-50 = the 13-56 session's checklist — all shipped there or
+> routed per prior verdicts (402/529 kinds + RetryAfter + LastMessage +
+> Duration + GIF/WebP tests + parseRetryAfter + benchmarks + fuzz +
+> errcheck exclusion all landed 13-56/v0.4.0). §g 1 RESOLVED 2026-08-18;
+> 2 resolved 13-56; 3 resolved 13-56 (original-pointer contract kept,
+> godoc-documented). Archive-ready.
+
 **Date:** 2026-07-28 09:10
 **Session scope:** Execution of the 24-task cleanup plan derived from
 `docs/status/2026-07-28_00-48_post-pareto-brutal-self-audit.md` sections f)

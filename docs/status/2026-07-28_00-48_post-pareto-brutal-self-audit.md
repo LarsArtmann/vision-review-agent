@@ -1,5 +1,28 @@
 # Brutal Status Report — Post-Pareto Execution Self-Audit
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** every Critical item of §f
+> shipped within 48h: ~~1 broken handleError~~ + ~~2 content-filter
+> FP~~ + ~~3 enshrined test~~ + ~~4 stale version var~~ done at the
+> 09-10 session; ~~5 DOMAIN_LANGUAGE~~ done v0.4.0; ~~6 README snippet
+> compile-verify~~ done (09-10 §a + full extraction build); ~~7 cmd
+> coverage~~ done (37.9%→73.3%, 09-10); ~~8 InEpsilon~~ done (09-10);
+> ~~9 formatting~~ done (09-10); ~~10 infertypeargs~~ done (09-10);
+> ~~11 stale diagnostics~~ cleared. Medium: ~~12 CompressImage guard~~
+> done (09-10); ~~13 BMP height~~ done (09-10/13-56); ~~14 mock
+> thread-safety~~ documented (capture-mock warning, 09-10); ~~15
+> actionlint~~ done v0.4.0; ~~16 nix_path check~~ verified (09-10);
+> ~~17 per-pkg coverage gate~~ **Won't implement — combined gate +
+> per-pkg visibility deemed enough**; ~~18 ldflags~~ done (09-10 wired;
+> CI smoke asserts version); ~~19 examples-compile CI~~ done (09-10);
+> ~~20 all-systems CI~~ **Won't implement — x86_64 only by scope**.
+> Lower: 21-35 done or closed as nits (editorconfig rule exists;
+> consolidate-reports moot; fuzz/benchmark/DOMAIN_LANGUAGE items done);
+> ROADMAP candidates 36-50 routed (tag anomaly resolved 2026-08-18).
+> §g 1 resolved (`0.3.0-dev`→ldflags pattern, landed); 2 resolved
+> (real-provider signals researched 2026-07-28 13-56); 3 RESOLVED
+> 2026-08-18 (ghost tags deleted). Archive-ready.
+
 **Date:** 2026-07-28 00:48
 **Session scope:** Execution of the 7-epic / 34-subtask Pareto plan
 (`docs/planning/2026-07-27_21-18_pareto-post-todo-execution-plan.md`).

@@ -1,5 +1,32 @@
 # Status Report — Buildflow Failures Fixed (Brutal Self-Review)
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** §c/§f resolved. ~~1
+> (CHANGELOG MaxRetries entry)~~ done (v0.4.0 Changed documents the
+> zero-disables semantics; AGENTS carries the gotcha); ~~2 (README
+> MaxRetries row)~~ done ("0 disables"); ~~3 (explicit zero-disables
+> test)~~ done (retry tests assert exact call counts since the
+> 2026-07-27 E1 pass); ~~4 (coverage)~~ done (CI gate green since);
+> ~~5 (mod tidy/verify)~~ done (CI steps); ~~6 (MaxRetries as *int)~~
+> **Won't implement — evaluated and rejected** (the zero-disables
+> default is the better contract; documented); ~~7 (binary smoke)~~
+> done (CI + `visionreviewd-version-smoke` flake check v0.6.0); ~~8
+> (examples build)~~ done (CI step); ~~9 (goexperiment tags)~~ closed
+> as harmless dead config (still present; removing risks re-confusing
+> the daemon); ~~10 (version drift)~~ moot (all on 1.27 now); ~~11-13~~
+> done (nix-flake-check CI job; tidy-diff CI step; JPEGQuality wired);
+> ~~14 (FEATURES)~~ done v0.4.0; ~~15 (Classify fuzz)~~ **Won't
+> implement — no demand**. ~~16-34~~ all done via the 13-56 session
+> (content-filter signals verified against real providers, io.Writer
+> refactor, paralleltest cleanup, 402/529 kinds, RetryAfter, fuzz
+> tests, GIF/WebP tests, ctor tests, entry-point tests, actionlint,
+> CONTRIBUTING, DOMAIN_LANGUAGE retry section) — see
+> `2026-07-28_13-56_todo-list-execution.md` §a. ~~35-50~~ routed per
+> prior verdicts (tag anomaly resolved 08-18; ROADMAP items). §g Q1
+> resolved (change kept + documented); Q2 closed (tags kept as inert
+> config); Q3 closed (int semantics shipped). No open items remain —
+> archive-ready.
+
 **Date:** 2026-07-27 22:48
 **Session goal:** Fix the 6 failed buildflow steps reported in `paste_1.txt`
 **Verdict:** All 6 failures pass now. But I shipped an **undocumented breaking API change** and left gaps. See below.

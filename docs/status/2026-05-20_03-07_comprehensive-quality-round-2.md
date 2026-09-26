@@ -1,5 +1,26 @@
 # Status Report — Vision Review Agent
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** all numbered items resolved.
+> §C: ~~1 (cachedAgent race — sync.Once)~~ closed: builder is documented
+> single-goroutine; mutation invalidates the cache (`invalidate()`);
+> no concurrency guarantee promised; ~~2 (stale cache after With*)~~
+> done (all `With*` invalidate, table-tested); ~~3 (MediaType
+> validation)~~ closed as designed (media type validated via magic bytes
+> at load); ~~4,5 (FromFile limits/validation)~~ done (auto-detect +
+> `ValidateImage` on load); ~~6 (MediaTypeBMP)~~ done v0.4.0; ~~7
+> (AnalyzeStructuredStream)~~ done v0.2.0; ~~8 (VisionAgent)~~ routed
+> ROADMAP; ~~9 (RawResponse leak)~~ closed as designed (documented
+> escape hatch); ~~10 (visionutil)~~ kept (used by structured paths);
+> ~~11 (CI)~~ done v0.4.0 (10 checks today); ~~12 (justfile)~~ moot
+> (deleted); ~~13 (LICENSE)~~ resolved (PROPRIETARY); ~~14
+> (CONTRIBUTING)~~ done v0.4.0. §F mirrors §C — same verdicts (1
+> sync.Once: see above; 6 testify→Gomega **Won't implement — deliberate
+> mix**). §G question (fantasy.Agent vs LanguageModel for objects) —
+> settled by the current design: object calls go through the model with
+> `optionalParams()`; retry composed via `Config.Retry`. No open items
+> remain.
+
 **Date:** 2026-05-20 03:07 CEST | **Branch:** master | **Commits:** 38 total
 
 ---

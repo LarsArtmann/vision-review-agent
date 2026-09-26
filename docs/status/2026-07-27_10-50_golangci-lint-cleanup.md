@@ -1,5 +1,33 @@
 # Status Report: golangci-lint Cleanup & depguard Repair
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** the same-day Resolution
+> appendix held; its open rows have closed: ~~config verify~~ done
+> v0.4.0 (green in CI since); ~~nolintlint tightened~~ done v0.4.0
+> (`require-explanation: true`); ~~depguard $module root-cause~~ closed
+> as documented workaround (hardcoded path + comment; NOTE: the whole
+> depguard deny block was later DROPPED by `2934585` and restored
+> 2026-09-26 — see AGENTS.md "Dual json" CAUTION); ~~nolint audit~~
+> recurring (4 stale gosec directives fixed 2026-09-26; nolint-rot after
+> linter renames is now a known class); ~~CI lint gate~~ done v0.4.0
+> (required check). §f: ~~1,2 ($module research/comment)~~ done
+> (documented); ~~3~~ done v0.4.0; ~~4 (git blame legacyerrors)~~ moot
+> (directives gone; origin archaeology adds nothing); ~~5~~ recurring by
+> nature, last swept 2026-09-26; ~~6,7~~ done v0.4.0; ~~8,9~~ done
+> (flake parity verified via `nix run .#test/.#lint`, CI nix job);
+> ~~10~~ **Won't implement — pre-commit lint delegated to BuildFlow**;
+> ~~11,12~~ done (depguard allow-list mirrors go.mod directs; updated
+> 2026-09-26 with go-codec/santhosh-tekuri/bbolt); ~~13~~ done
+> (AGENTS lint section); ~~14,15~~ closed (gomodguard is not enabled;
+> no overlap issue observed); ~~16-20~~ closed as config-evolved (lint
+> config reworked twice since; drift items moot); ~~21~~ done
+> (golangci-lint pinned v2.13.2 in CI + AGENTS rule); ~~22-45~~
+> config-evolution noise, closed; ~~46-50~~ **Won't implement /
+> external** (subscription, monthly audits — the weekly
+> `scheduled-security` workflow covers the security re-scan idea).
+> §g Q1/Q2 historical (both root-caused since); Q3 resolved (pushed).
+> No open items remain — archive-ready.
+
 **Date:** 2026-07-27 10:50 CEST
 **Session scope:** Run golangci-lint across all `go.mod` files; drive to zero issues; self-critique
 **Reporter:** Crush (self-review)

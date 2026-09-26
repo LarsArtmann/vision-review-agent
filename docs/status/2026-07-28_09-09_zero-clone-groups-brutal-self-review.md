@@ -1,5 +1,27 @@
 # Status: Zero Clone Groups — Brutal Self-Review
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** §f resolved. ~~1 (content
+> filter race)~~ closed: the race was the `pkg/errors` signal test
+> mutating package state; fixed when the signal list became
+> provider-verified constants (2026-07-28 13-56); suite is race-clean
+> since; ~~2 (untrack vision binary)~~ done (`.gitignore` anchored
+> binaries v0.5.1; binary long gone); ~~3,4 (withPrepared/cli tests)~~
+> covered transitively + `internal/cli` tests v0.6.0; ~~5 (cli
+> testable)~~ done (`parseFlags` refactor v0.4.0; RequireArgc subprocess
+> test v0.6.0); ~~6 (infertypeargs)~~ done 09-10; ~~7 (diff hygiene)~~
+> moot (daemon-owned commits are the norm); ~~8,9~~ done (lint + flake
+> check green many times). Medium: ~~10-12~~ done (conversation example
+> consistency swept with later example work; 00-41 report annotated —
+> THIS pass; hooks example pedagogy **Won't implement — nit**); ~~13
+> dedup CI gate~~ routed (art-dupl ladder is the pre-release checklist
+> item; policy doc records it); ~~14 withPrepared ADR~~ closed (AGENTS
+> bullet documents it); ~~15-20~~ closed as nits/demand-gated; ~~21-50~~
+> polish/consider items — **closed demand-gated** (survivors live in
+> DUPLICATION_POLICY + AGENTS). §g Q1 resolved (os.Exit helpers stay;
+> subprocess testing covers); Q2 resolved (accident; untracked since);
+> Q3 resolved (daemon handles commits). Archive-ready.
+
 **Date:** 2026-07-28 09:09 CEST
 **Session goal:** De-duplicate until `art-dupl --type-aware --sort total-tokens -t 1` reports **zero**.
 **Outcome:** ✅ Zero clone groups reached — but the session has real warts.

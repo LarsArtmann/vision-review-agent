@@ -1,5 +1,28 @@
 # Status Report: Deduplication Pass — 2026-07-28
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** the zero-harmful-clones goal
+> held only until the a2ui package landed (2026-08-18 rescan: 41 groups,
+> all non-actionable/suppressed) and the 2026-09-22 pass re-zeroed it
+> (4 harmful groups extracted; art-dupl v0.7 baseline: 5 accepted at
+> `-t 2`, 0 at `-t 3` — `docs/DUPLICATION_POLICY.md`). §f: ~~1 lint~~
+> done (0 issues then; 0 again after the 2026-09-26 sweep); ~~2~~
+> closed (pointers are construction-time copies; no dangling); ~~3,4~~
+> covered transitively (BDD suite); ~~5 classifyAndFire~~ closed
+> (error labels differ per site; dedup tool does not flag); ~~6~~ done
+> (AGENTS documents the helpers); ~~7~~ done (DUPLICATION_POLICY is the
+> index); ~~8 diagram~~ **Won't implement — no demand**; ~~9~~ done
+> (preparedRequest doc comments); ~~10-13~~ covered by later suite
+> growth (cache-invalidation list tests exist; benchmarks shipped
+> v0.4.0/v0.6.2); ~~14-50~~ nits/consider-items — **closed
+> demand-gated** (naming bikeshed, helper extraction, examples/README
+> indexing); the durable survivors: `// art-dupl:accept` markers
+> (adopted 2026-09-22 round 2) and DUPLICATION_POLICY as living index
+> (both shipped). §g Q1 resolved (auto-daemon commits; harness never
+> commits unasked); Q2 resolved (retry_test change was the MaxRetries-0
+> alignment, landed); Q3 resolved (markers + policy doc adopted).
+> Archive-ready.
+
 **Session:** Deduplication run (`art-dupl --type-aware --sort total-tokens -t 1 --html`)
 **Result:** 10 clone groups → 5 (all remaining accepted with rationale)
 **Tests:** All 81 pass with `-race`

@@ -1,5 +1,14 @@
 # Status — Pareto Post-TODO Execution: COMPLETE
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** plan fully executed and
+> verified (its own gates table). The three deferred questions: tag
+> anomaly RESOLVED 2026-08-18 (ghosts deleted; work shipped v0.4.0);
+> structured hooks breaking change = ROADMAP open question 1 ( Hooks
+> stay stable); streaming auto-retry = deliberately excluded, design
+> doc `2026-07-28_streaming-auto-retry-design.md` (Option B never
+> demanded — callers use WithRetry). No open items — archive-ready.
+
 **Date:** 2026-07-27
 **Source plan:** `docs/planning/2026-07-27_21-18_pareto-post-todo-execution-plan.md`
 **Outcome:** All 7 epics (34 subtasks) executed and verified. E2.5 (tag anomaly)

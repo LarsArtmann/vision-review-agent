@@ -1,5 +1,31 @@
 # Status Report: Docs-Health & Update-Old-Docs Pass — Brutal Self-Review
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** all of §f resolved. ~~1-10
+> (flake check, lint, README, DOMAIN_LANGUAGE, CONTRIBUTING, health
+> math, skill references, CHANGELOG fact-check, hash citations, jscpd)~~
+> done across 2026-07-27→08-18 sessions (CONTRIBUTING fixed v0.4.0;
+> glossary rewritten then extended with daemon/a2ui vocab v0.6.2; jscpd
+> superseded by art-dupl; formula-based health reports shipped by the
+> 08-17/08-18 audits). ~~11-16 (license, nil RawResponse, params dup,
+> BMP, mediaType, retry reconcile)~~ done/documented — see the 11-49
+> annotation. ~~17-23~~ done (Preprocess v0.4.0; hooks payload → ROADMAP
+> Q1; CLI tests v0.4.0; retry-through-batch v0.4.0; Agent.Cost folded
+> into NewAgentWithCostTracker; error-handling example v0.4.0; catwalk
+> v0.5.0). ~~24-30~~ done (lint hygiene + CI per the 10-50 annotation).
+> ~~31-35~~ resolved (ghost tags deleted 2026-08-18; v0.2.0 release
+> page closed by policy; real work tagged v0.4.0; semver presentation
+> decided 2026-09-07; `### Breaking` callouts = ROADMAP Q2 open).
+> ~~36-45~~ done or routed per 11-49/16-08 verdicts (BDD v0.4.0; error
+> kinds v0.4.0; LINTING.md **Won't implement — AGENTS carries it**).
+> ~~46-50~~ done (DOMAIN_LANGUAGE/README/FEATURES current; old-report
+> annotation = THIS pass; DUPLICATION_POLICY re-verified 2026-09-22).
+> §g Q1 answered by practice (docs-only diffs scope the gate; recorded
+> in AGENTS matrix intro); Q2 resolved 2026-08-18 (tags deleted);
+> Q3 resolved (README IS a docs-health target — rewritten multiple
+> times since). This report's own failure list (§d) drove the 08-17
+> session's discipline fixes. No open items remain — archive-ready.
+
 **Date:** 2026-07-27 12:09 CEST
 **Session scope:** Read all `**/2026-07-2*` status reports; run `update-old-docs`
 (annotate 5 historical reports) + `docs-health` (rebuild CHANGELOG, TODO_LIST,

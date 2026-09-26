@@ -1,5 +1,37 @@
 # Status Report — 2026-07-27 11:49
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** the same-day Resolution
+> appendix verified all 5 Critical items still open THEN; all closed
+> within days: ~~F1/f.2 applyModelParams dup~~ done v0.4.0
+> (`Config.optionalParams()`); ~~F2/f.1 nil RawResponse~~ documented
+> contract + PARTIALLY_FUNCTIONAL row (proper fix = ROADMAP Q1);
+> ~~F3/f.3 BMP decoder~~ done v0.4.0; ~~F4/f.4 mediaTypeFromExtension~~
+> done v0.4.0 (explicit table); ~~F5/f.5 MaxRetries vs WithRetry~~
+> reconciled v0.4.0 (`Config.Retry` composes; zero-value semantics
+> fixed 2026-07-27). §f high-value: ~~6,7,8~~ done v0.4.0
+> (Config.Preprocess, WithMaxDimension, CompressImage); ~~9,10~~ done
+> (retry composes through batch/conversation via the shared generate
+> path; hooks payload = ROADMAP Q1); ~~11 catwalk~~ done v0.5.0;
+> ~~12 CLI tests~~ done v0.4.0; ~~13 CHANGELOG~~ done v0.4.0; ~~14
+> README~~ done v0.4.0; ~~15 fuzz CI~~ **Won't implement — seeds run in
+> the normal suite; dedicated fuzz workflow is ROADMAP-fuel**; ~~16
+> coverage gate~~ done (CI ≥70%). §f medium: ~~17,18~~ done
+> (NewAgentWithCostTracker; Config.Retry); ~~19-30~~ routed (failover,
+> caching, OTel, EXIF, custom client, context-aware batch, Close, typed
+> validation errors, provider passthrough → ROADMAP SDK section; video
+> frames → ROADMAP long-term; Prompt templates → ROADMAP); §f DX:
+> ~~31 godoc examples~~ done v0.6.0; ~~32 benchmarks~~ done; ~~33 race
+> CI~~ done; ~~34 dependabot~~ done (config exists, daemon-added);
+> ~~35-36 goreleaser/semver~~ closed (nix distribution; 0.x policy
+> decided 2026-09-07); ~~37-39~~ **Won't implement — no demand**
+> (license headers, dashboard HTML, D2 diagrams as standing tasks);
+> ~~40-50~~ process/skill suggestions — executed repeatedly since
+> (brutal reviews, art-dupl passes, naming/data-model reviews happened
+> via sessions). §g: Q1 resolved (catwalk shipped; hand-rolled CLI
+> providers replaced); Q2 resolved (Config.Retry, v0.4.0); Q3 = ROADMAP
+> Q1 (open). No untracked items remain.
+
 **Session scope:** Executed the entire `TODO_LIST.md` (37 items → 34 tasks) in one pass.
 **Verification at end of session:** `go test ./...` ✅ · `go vet ./...` ✅ · `go build ./...` ✅ · `gofmt -l .` clean ✅ · `golangci-lint run ./...` **0 issues** ✅
 

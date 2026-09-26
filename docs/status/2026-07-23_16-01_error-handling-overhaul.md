@@ -1,5 +1,26 @@
 # Status: Error Handling Overhaul — ModelError Classification System
 
+
+> **ANNOTATED 2026-09-26 (docs-health):** the 2026-07-27 Resolution table
+> below already closed the wiring gaps; its still-open rows have since
+> resolved too: ~~f.7 errTestNoop~~ + ~~f.8 wrapNoop~~ done at v0.4.0
+> (`[0.4.0] Removed`); ~~f.12/f.14 BDD + batch error tests~~ done v0.4.0
+> (`error_classification_bdd_test.go` 10-entry table + batch
+> classified-error tests); ~~f.37 examples/error-handling~~ done v0.4.0;
+> ~~f.23–27 error kinds~~ done v0.4.0 (KindNotImplemented,
+> KindServiceUnavailable, KindContentFilter; taxonomy now 16 kinds);
+> ~~f.19,20 (truncation/network tests)~~ covered by the BDD/table suite
+> that grew through v0.6.x; ~~f.22 Classify benchmark~~ **Won't
+> implement — no demand**. Still genuinely open from (f):
+> f.28–f.32 (CLI `--retry`/`--max-retries`/exit-code differentiation) —
+> **Won't implement — demand-gated** (Config.Retry + advice output cover
+> the SDK side; no CLI consumer ask). Roadmap-era items (48 RetryPolicy
+> → shipped as Config.Retry v0.4.0; 49 metrics-via-hooks, 50 structured
+> logging) → routed ROADMAP observability ideas. §g Q2 resolved
+> (retry-in-tests fixed by MaxRetries-0 default); Q3 resolved
+> (Config.Retry shipped; CLI stays print-and-exit). Everything else
+> shipped in v0.2.0–v0.6.2.
+
 **Date:** 2026-07-23 16:01
 **Session focus:** Improve error handling for AI model calls
 **Verdict:** Foundation is solid and tested, but **wiring is incomplete** (screenshot.go missed) and several polish items remain.
