@@ -28,6 +28,7 @@ linters:
     - copyloopvar
     - cyclop
     - decorder
+    - depguard
     - dogsled
     - dupl
     - dupword
@@ -124,9 +125,40 @@ linters:
     - wrapcheck
     - wsl_v5
     - zerologlint
-  disable:
-    - depguard
   settings:
+    depguard:
+      rules:
+        main:
+          # Note: golangci-lint v2 does not support the $module variable for
+          # automatic module-path resolution (regression from v1). The module
+          # path is hardcoded below instead. Update it if the module path
+          # in go.mod changes.
+          allow:
+            - $gostd
+            - github.com/larsartmann/vision-review-agent
+            - github.com/larsartmann/go-cqrs-lite
+            - github.com/larsartmann/go-codec
+            - charm.land/fantasy
+            - charm.land/catwalk
+            - github.com/onsi/ginkgo
+            - github.com/onsi/gomega
+            - github.com/stretchr/testify
+            - github.com/santhosh-tekuri/jsonschema
+            - golang.org/x/sync
+            - golang.org/x/image
+            - go.etcd.io/bbolt
+          # Deny wins over the $gostd allow entry above. The go-auto-upgrade
+          # daemon repeatedly migrates encoding/json -> encoding/json/v2 +
+          # jsontext, which breaks compilation (jsontext.Encoder has no
+          # SetIndent). See AGENTS.md "Dual json v1+v2 support - do NOT
+          # migrate imports". (Restored 2026-09-26: the 2934585 config rework
+          # dropped this deny list, and on Sep 23 the daemon re-migrated 5
+          # files to v2 imports - the 5th documented recurrence.)
+          deny:
+            - pkg: encoding/json/v2
+              desc: jsonv2 swaps encoding/json in place; v2 import paths are unsupported here (jsontext.Encoder has no SetIndent) - see AGENTS.md
+            - pkg: encoding/json/jsontext
+              desc: jsonv2 swaps encoding/json in place; jsontext import paths are unsupported here (Encoder has no SetIndent) - see AGENTS.md
     cyclop:
       max-complexity: 15
     errcheck:
