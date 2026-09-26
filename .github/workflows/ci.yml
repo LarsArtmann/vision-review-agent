@@ -132,10 +132,13 @@ jobs:
 
   no-jsonv2:
     # Consumer guarantee: the SDK (everything except the daemon) must build
-    # and test under the DEFAULT Go regime too — consumers do not set
-    # GOEXPERIMENT. internal/reviewd + cmd/visionreviewd are excluded:
-    # go-cqrs-lite imports encoding/json/v2, which only exists under the
-    # jsonv2 experiment (the daemon always builds with it; see flake.nix).
+    # and test under the json-v1 regime too. On Go 1.27 json/v2 is the
+    # DEFAULT, so the v1 regime is only selected via GOEXPERIMENT=none —
+    # until 2026-09-26 this job set nothing, silently testing jsonv2 twice
+    # while the v1 build was broken by a daemon import migration.
+    # internal/reviewd + cmd/visionreviewd are excluded: go-cqrs-lite
+    # imports encoding/json/v2, which the v1 regime excludes (the daemon
+    # always builds with jsonv2; see flake.nix).
     name: SDK without GOEXPERIMENT=jsonv2
     runs-on: ubuntu-latest
     steps:
@@ -146,8 +149,9 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Build, vet, test SDK packages (default regime)
+      - name: Build, vet, test SDK packages (json-v1 regime)
         run: |
+          export GOEXPERIMENT=none
           go build ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/... ./examples/...
           go vet ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/...
           go test -race ./pkg/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/...

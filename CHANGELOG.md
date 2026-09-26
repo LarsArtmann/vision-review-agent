@@ -4,6 +4,66 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- **`visionreviewd backup OUT`** — consistent journal snapshots via a single
+  bbolt read transaction. Stop the daemon first (bbolt allows one writer
+  handle); `-wait` bounds how long the command waits for the lock before
+  failing. Restore by copying the snapshot back into a data dir; an E2E test
+  proves replay of a restored journal is byte-identical to the original.
+- **`visionreviewd doctor` journal probe** — doctor now fully reads the event
+  journal and folds every stream, so format drift or a broken row fails
+  doctor naming the offending event index, type, and stream. A journal held
+  by a running daemon is skipped, a missing one reported as a fresh dataDir.
+
+### Changed
+
+- **go-cqrs-lite re-bumped to the coordinated upstream release** (decider
+  v4.6.0, event v4.10.0, id v4.6.0, storage/bbolt v4.2.0, command v4.9.0,
+  dispatcher v4.4.0, kv v4.3.0, metadata v4.7.0, query v4.8.0, record
+  v4.5.0, snapshot v4.5.0) — absorbs the upstream fixes for the two defects
+  this repo filed (bbolt `OpenWith(ReadOnly)` always failing, missing
+  `serializableEvent` golden test; go-cqrs-lite #22/#23, both closed with
+  tag references). Verified with the full matrix including a
+  production-data gate: old-pin vs new-pin `visionreviewd events` output on
+  a copy of the real journal is byte-identical.
+- **Nix builds fixed on Go 1.27** — `buildGoModule` now overrides
+  `go = pkgs.go_1_27` for both packages and the devShell/apps follow, so the
+  `go 1.27` floor in go.mod no longer breaks nix builds.
+- **Deduplication pass (art-dupl rounds 1–5)** — four harmful clone groups
+  eliminated (per-map sorted-keys helpers → stdlib `slices.Sorted(maps.Keys)`,
+  a2ui payload-decode error contract → `decodePayload`, the daemon prompt
+  skeletons → `buildPrompt`, and the surface/catalog ID fallback rule →
+  `defaultIDs`) plus the `-config` flag shared via `newConfigFlagSet`;
+  re-baselined under art-dupl v0.7 (5 accepted idiom-level groups at `-t 2`,
+  0 at `-t 3`). See `docs/DUPLICATION_POLICY.md`.
+
+### Fixed
+
+- **Fifth go-auto-upgrade json/v2 recurrence reverted — and the guard it
+  evaded restored.** On Sep 23 the daemon re-migrated five files to
+  `encoding/json/v2`/`jsontext` imports (`internal/catalog/sync_test.go`,
+  `internal/reviewd/{config_test,discover}.go`, a2ui
+  `{component,conformance}_test.go`), silently switching them to v2
+  semantics and breaking the SDK's `GOEXPERIMENT=none` build. The imports
+  are back on `encoding/json` and — root cause of the leak — the depguard
+  `encoding/json/v2`/`jsontext` deny list (dropped by the 2026-07-28 lint
+  config rework) is restored in `.golangci.yaml`. Both regimes re-verified
+  green, and the CI grep guard is green again.
+- **Master lint restored to 0 issues** (was 15 red findings, invisible
+  because direct pushes bypass branch protection): stale `//nolint:gosec`
+  and `//nolint:exhaustruct` directives whose linter names changed, wsl
+  whitespace, explicit zero-value fields for the reviewd `sourceURLs`/
+  `Captured.SourceURL` additions, and documented
+  `//nolint:tagliatelle` on the `sourceURL`/`sourceURLs` journaled wire keys
+  (renaming would break existing journals and user configs).
+- **Corrupt journals are no longer mislabeled as locked** — the journal lock
+  probe treated every open error as "held by another process"; it now
+  reports held only for a genuine lock timeout, so a broken journal fails
+  with its real cause.
+
 ## [0.7.0] - 2026-09-07
 
 ### Added
@@ -34,27 +94,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   now run under their own persona agent with the compare system prompt;
   the prompt contract (headings, order, final `Score: N/10` line) is
   pinned by tests so score extraction stays reliable.
-
-## [Unreleased]
-
-### Added
-
-- **`visionreviewd backup OUT`** — consistent journal snapshots via a single
-  bbolt read transaction. Stop the daemon first (bbolt allows one writer
-  handle); `-wait` bounds how long the command waits for the lock before
-  failing. Restore by copying the snapshot back into a data dir; an E2E test
-  proves replay of a restored journal is byte-identical to the original.
-- **`visionreviewd doctor` journal probe** — doctor now fully reads the event
-  journal and folds every stream, so format drift or a broken row fails
-  doctor naming the offending event index, type, and stream. A journal held
-  by a running daemon is skipped, a missing one reported as a fresh dataDir.
-
-### Fixed
-
-- **Corrupt journals are no longer mislabeled as locked** — the journal lock
-  probe treated every open error as "held by another process"; it now
-  reports held only for a genuine lock timeout, so a broken journal fails
-  with its real cause.
 
 ## [0.6.2] - 2026-08-18
 

@@ -148,6 +148,7 @@ func replayStreamFor(streams map[string]*replayStream, streamID string) (*replay
 			SourcePath: "",
 			BlobPath:   "",
 			SHA256:     "",
+			SourceURL:  "",
 			CapturedAt: time.Time{},
 		},
 	}

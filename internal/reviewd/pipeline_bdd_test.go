@@ -223,6 +223,7 @@ var _ = Describe("Pipeline Pass", func() {
 			Expect(writeShotPNG(filepath.Join(shotsDir, viewKeyStr+".png"))).To(Succeed())
 
 			model.setGenerateErr(errors.New("transient model outage"))
+
 			_, err := pipeline.Pass(context.Background(), newProjects())
 			Expect(err).To(HaveOccurred())
 

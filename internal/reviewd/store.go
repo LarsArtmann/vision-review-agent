@@ -152,7 +152,7 @@ func JournalLockHeld(path string, within time.Duration) bool {
 		return false
 	}
 
-	opts := &bolt.Options{ReadOnly: true, Timeout: within} //nolint:exhaustruct // zero opts intentional
+	opts := &bolt.Options{ReadOnly: true, Timeout: within} //nolint:exhaustruct_v5 // zero opts intentional
 
 	db, err := bolt.Open(path, journalFilePermission, opts)
 	if err != nil {
@@ -254,7 +254,7 @@ func (s *Store) Backup(_ context.Context, w io.Writer) error {
 // the daemon holds it while running — so back up with the daemon stopped.
 // The lock timeout bounds how long a held journal blocks the snapshot.
 func BackupJournalFile(path string, w io.Writer, lockTimeout time.Duration) error {
-	opts := &bolt.Options{ReadOnly: true, Timeout: lockTimeout} //nolint:exhaustruct // zero opts intentional
+	opts := &bolt.Options{ReadOnly: true, Timeout: lockTimeout} //nolint:exhaustruct_v5 // zero opts intentional
 
 	snapshotDB, err := bolt.Open(path, journalFilePermission, opts)
 	if err != nil {

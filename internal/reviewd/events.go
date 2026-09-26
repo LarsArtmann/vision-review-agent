@@ -24,7 +24,7 @@ type Captured struct {
 
 	// SourceURL is the page the screenshot was taken from, when the project
 	// declares one in config (website captures). Empty for file-only projects.
-	SourceURL string `json:"sourceURL,omitempty"`
+	SourceURL string `json:"sourceURL,omitempty"` //nolint:tagliatelle // journaled event wire key; renaming breaks existing journals (golden-pinned)
 }
 
 // Reviewed is the payload of view.reviewed: the model reviewed the capture

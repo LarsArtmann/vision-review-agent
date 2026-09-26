@@ -20,14 +20,14 @@ and user-decision items from the 2026-09-07 post-bump execution
 the journal-format golden-fixture pin, the go-cqrs-lite v4.9-era bump,
 and CI hardening: golangci-lint is version-pinned and all 10 CI checks
 are required on PR merges (the red-lint landing of 2026-09-07 was
-root-caused to linter version drift — see AGENTS.md). The Go 1.26.x
-toolchain item resolved 2026-09-07: nixpkgs ships 1.26.7 and the repo
-has been pinned to it since `2934585` (the five stdlib CVEs from the
-August probe are moot). The SystemNix lock bump is committed (pins
-`dcd50a0`, verified 2026-08-18). All earlier near-term work —
-preprocessing auto-wiring, retry reconciliation, catwalk CLI
-integration, cost tracking, the visionreviewd daemon itself — shipped
-and lives in [CHANGELOG.md](CHANGELOG.md).
+root-caused to linter version drift — see AGENTS.md). The Go toolchain
+now rides **1.27** (`go 1.27` in go.mod, `go_1_27` throughout the
+flake, json/v2 native); the earlier 1.26.7 pin is history. The SystemNix
+lock bump is committed (pins `dcd50a0`, verified 2026-08-18). All
+earlier near-term work — preprocessing auto-wiring, retry
+reconciliation, catwalk CLI integration, cost tracking, the
+visionreviewd daemon itself — shipped and lives in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Mid-term ideas
 
@@ -171,17 +171,13 @@ tasks. They are **not** TODO items until answered.
    result variables and anti-idiomatic `generic_return`) untouched because
    the answer is unknown. If it is a gate, suppression config is needed; if
    advisory, the documented false-positive rationale stands.
-4. **Tag anomaly resolution (partially done in `v0.4.0`; both ghosts
-   remain).** `v0.2.1` and `v0.3.0` both point at commit `d5dda4b`
-   (2026-04-27), an _ancestor_ of the real `v0.2.0` (`003a256`, 2026-07-23).
-   They never represented real releases. **Correction 2026-08-16:** the
-   v0.4.0 release note claims `v0.3.0` was deleted (local + remote), but
-   both tags currently exist on `origin` — the deletion either never took or
-   was undone. A fresh `v0.3.0` must NOT be created regardless: the number
-   is burned on `proxy.golang.org` as `d5dda4b` (reusing it would cause
-   checksum mismatches). Deleting both ghosts needs approval because remote
-   tag deletion is destructive. Until then they stay documented, not acted
-   on (see TODO_LIST "Release mechanics").
+4. **Tag anomaly resolution — RESOLVED 2026-08-18.** The ghost tags
+   `v0.2.1` and `v0.3.0` (both pointing at `d5dda4b`, a pre-`[0.2.0]`
+   ancestor) were deleted from origin when v0.6.2 was cut; the tag list
+   is clean since (re-verified 2026-09-26). `v0.3.0` remains permanently
+   burned on `proxy.golang.org` as `d5dda4b` and `go.mod` carries the
+   matching `retract v0.3.0` — the number must never be reused. Kept as a
+   historical record; nothing left to decide.
 5. **Release presentation policy** — every release so far is marked
    prerelease, so v0.2.0 (July) still holds the GitHub "Latest" badge while
    v0.6.1 is the real newest. The v0.6.1 tag also reports version "0.6.0"

@@ -83,7 +83,10 @@ func NewPipeline(
 		logger = slog.Default()
 	}
 
-	return &Pipeline{reviewer: reviewer, store: store, blobs: blobs, writer: writer, logger: logger}, nil
+	return &Pipeline{
+		reviewer: reviewer, store: store, blobs: blobs,
+		writer: writer, logger: logger, sourceURLs: nil,
+	}, nil
 }
 
 // WithSourceURLs records per-project capture source pages (website

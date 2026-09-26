@@ -43,7 +43,7 @@ type Config struct {
 	// SourceURLs optionally maps a project name to the page its
 	// screenshots were taken from (website captures). Rendered in review
 	// markdown so every review points back at the live page.
-	SourceURLs map[string]string `json:"sourceURLs,omitempty"`
+	SourceURLs map[string]string `json:"sourceURLs,omitempty"` //nolint:tagliatelle // wire key: existing user configs (~/.config/visionreviewd) use sourceURLs; URL is not a word
 }
 
 // configJSON is the wire shape of Config: durations as human strings.
@@ -56,7 +56,7 @@ type configJSON struct {
 	DataDir    string              `json:"dataDir"`
 	ReviewsDir string              `json:"reviewsDir"`
 	Projects   map[string][]string `json:"projects"`
-	SourceURLs map[string]string   `json:"sourceURLs,omitempty"`
+	SourceURLs map[string]string   `json:"sourceURLs,omitempty"` //nolint:tagliatelle // wire key: existing user configs use sourceURLs; URL is not a word
 }
 
 // DefaultConfig returns the daemon defaults: the caption-tuned vision model,

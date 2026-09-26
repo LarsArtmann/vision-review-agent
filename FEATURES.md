@@ -3,13 +3,14 @@
 Honest inventory of what exists and how well it works. For future direction,
 see [ROADMAP.md](ROADMAP.md); for open work, see [TODO_LIST.md](TODO_LIST.md).
 
-> **Status vocabulary:** **DONE** = code present and working (tests pass).
-> **PARTIALLY DONE** = ships but has known gaps, edge-case bugs, or missing
-> wiring. **PLANNED** = designed/documented but no code exists.
+> **Status vocabulary:** **FULLY_FUNCTIONAL** = code present and working
+> (tests pass). **PARTIALLY_FUNCTIONAL** = ships but has known gaps,
+> edge-case bugs, or missing wiring. **PLANNED** = designed/documented but
+> no code exists.
 
 ---
 
-## DONE
+## FULLY_FUNCTIONAL
 
 ### Core Analysis
 
@@ -144,8 +145,8 @@ as go-cqrs-lite events on bbolt.
   INDEX with score table and trend arrows; all writes atomic
 - **Daemon loop** — immediate pass + ticker, logged-and-continue per-pass
   failures, clean SIGINT/SIGTERM shutdown (`internal/reviewd/daemon.go`)
-- **7 subcommands** — run, once, discover, compare, events, replay, doctor,
-  version (`cmd/visionreviewd`); plus `backup` for journal snapshots
+- **8 subcommands** — run, once, discover, compare, events, backup,
+  replay, doctor, plus `version` (`cmd/visionreviewd`)
 - **Replay** — rebuild the whole reviews directory byte-identically from the
   event journal (`internal/reviewd/replay.go`); INDEX stamps derive from row
   timestamps, not wall clock, so pass and replay agree; per-event failures
@@ -231,7 +232,7 @@ Real-model bring-up and host activation are tracked in
 - **error-handling** — Classified error handling with kind-to-action lookup
 - **a2ui** — Screenshot → A2UI surface as JSON Lines
 
-## PARTIALLY DONE
+## PARTIALLY_FUNCTIONAL
 
 > These ship and compile, but have known gaps. See [TODO_LIST.md](TODO_LIST.md)
 > for the specific fixes tracked.
@@ -241,7 +242,7 @@ Real-model bring-up and host activation are tracked in
   **synthesized** `*AnalyzeResult` with nil `RawResponse` (documented contract,
   but a nil-pointer hazard for consumers that dereference it) and `Text`
   holding raw JSON, not prose. Hooks in `Analyze`/`AnalyzeStream`/
-  `AnalyzeConversation` are fully DONE. A proper `HooksEvent` redesign is a
+  `AnalyzeConversation` are FULLY_FUNCTIONAL. A proper `HooksEvent` redesign is a
   breaking change deferred to ROADMAP.
 - **Streaming auto-retry** — Deliberately excluded. `AnalyzeStream`,
   `AnalyzeConversationStream`, and `AnalyzeStructuredStream` do NOT auto-retry

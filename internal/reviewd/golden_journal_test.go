@@ -346,6 +346,8 @@ func TestGoldenJournalFixtureLoads(t *testing.T) {
 
 // TestGoldenJournalPayloadsDecode proves DecodePayloadAuto resolves the right
 // codec for every fixture payload and recovers the exact original values.
+//
+//nolint:gocognit,gocyclo // dense by design: one table-driven golden pin per fixture payload; splitting would scatter the pin set
 func TestGoldenJournalPayloadsDecode(t *testing.T) {
 	t.Parallel()
 

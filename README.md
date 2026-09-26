@@ -18,7 +18,7 @@ A simple, production-ready Go SDK for building AI agents with vision capabilitie
 - **Automatic Retry** — Optional vision-layer retry with backoff + jitter on transient errors
 - **Cost Tracking** — Thread-safe token accumulator wired into hooks
 - **Flexible Image Loading** — Load from files, URLs, base64 strings, or any `io.Reader`
-- **Classified Errors** — Every model error is classified into 14 kinds with `IsRetryable()` for smart retry logic
+- **Classified Errors** — Every model error is classified into 16 kinds with `IsRetryable()` for smart retry logic
 - **Built-in CLI** — Analyze images from the command line with catalog-driven provider/model selection
 - **Remote Catalog Sync** — Optional ETag-based catalog updates via `CATWALK_URL` (falls back to embedded data offline)
 - **Full Model Parameters** — Temperature, TopP, TopK, PresencePenalty, FrequencyPenalty
