@@ -1,6 +1,5 @@
 # Status Report — buildflow recovery: json/v2 guard + nix OOM retry
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the json/v2
 > story here is round 4 of what became FIVE recurrences — the depguard
 > deny shipped in `11d3490` was later SILENTLY DROPPED by the

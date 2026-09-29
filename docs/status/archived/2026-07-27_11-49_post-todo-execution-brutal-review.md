@@ -1,6 +1,5 @@
 # Status Report — 2026-07-27 11:49
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** the same-day Resolution
 > appendix verified all 5 Critical items still open THEN; all closed
 > within days: ~~F1/f.2 applyModelParams dup~~ done v0.4.0

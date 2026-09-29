@@ -1,6 +1,5 @@
 # Status: Duplication Verification + jsonv2 Import Revert
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §b/§c resolved: ~~b1 art-dupl
 > v0.7 `-t 1` sweep~~ = the one small open TODO_LIST item; ~~b2
 > verification matrix~~ steps 1-5 GREEN 2026-09-26 (build/vet/gofmt/

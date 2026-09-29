@@ -1,6 +1,5 @@
 # visionreviewd Status — T6–T10 Complete (Pipeline, CLI, Daemon)
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the three
 > remaining open items: ~~#34 Interval() accessor test~~ CLOSED —
 > dropped as noise in later TODO rebuilds (daemon options are

@@ -1,6 +1,5 @@
 # Catwalk Integration — Bug Fix & Polish Session
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** remaining open
 > items: ~~env-hints dynamic (b.1)~~ closed (80/20 accepted, static
 > list); ~~.golangci.yaml comments (b.2/c.2/f.5)~~ done (v0.6.2 G117/

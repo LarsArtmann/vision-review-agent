@@ -1,6 +1,5 @@
 # Status: Pareto Plan Complete — Unwrap Verified, Matrix Green, Harvest Done
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** the "Remaining (all
 > user-gated or external)" list: ~~M24 ghost tags + release
 > presentation~~ RESOLVED (tags deleted 2026-08-18; `--latest` policy

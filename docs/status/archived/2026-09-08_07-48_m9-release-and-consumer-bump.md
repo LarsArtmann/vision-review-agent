@@ -1,6 +1,5 @@
 # Status: M9 Unblocked — Upstream Release + Consumer Re-bump, Closeout Sweep
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §b/§c/§f resolved: ~~b.1
 > consumer re-bump 95%~~ DONE — `vendorHash.nix` committed
 > (`sha256-KZC4um…`), matrix steps 8-9 green at the bump (nix builds +

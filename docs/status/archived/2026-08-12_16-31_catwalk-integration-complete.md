@@ -1,6 +1,5 @@
 # Catwalk Integration — Comprehensive Status Report
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the remaining
 > open items resolved: ~~remote-sync logging (b.4/f.39-41)~~ routed
 > ROADMAP "Remote-sync observability"; ~~BDD/benchmarks (b.5, c.2-3,

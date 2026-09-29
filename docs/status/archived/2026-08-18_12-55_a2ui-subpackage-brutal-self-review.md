@@ -1,6 +1,5 @@
 # Status Report: A2UI Sub Package — Brutal Self-Review
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** every `← still
 > open (TODO_LIST)` marker above resolved within HOURS by the same-day
 > pareto completion (v0.6.2): ~~f.1 conformance suite~~ done (M5,

@@ -2,7 +2,6 @@
 
 > ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** superseded by round 3 and
 > the 23:48 session. The §b/§c/d open items all resolved: the a2ui
 > "Go 1.27 wire regressions" were the `dbbd62b` v2-import-as-`json`

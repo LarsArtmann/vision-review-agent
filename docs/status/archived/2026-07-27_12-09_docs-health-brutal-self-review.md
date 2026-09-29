@@ -1,6 +1,5 @@
 # Status Report: Docs-Health & Update-Old-Docs Pass — Brutal Self-Review
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** all of §f resolved. ~~1-10
 > (flake check, lint, README, DOMAIN_LANGUAGE, CONTRIBUTING, health
 > math, skill references, CHANGELOG fact-check, hash citations, jscpd)~~

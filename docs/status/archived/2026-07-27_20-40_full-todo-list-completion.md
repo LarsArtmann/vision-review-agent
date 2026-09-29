@@ -1,6 +1,5 @@
 # Status Report — 2026-07-27 20:40
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §f resolved. Release:
 > ~~1,2~~ done (flake check + mod verify green many times since);
 > ~~3~~ RESOLVED 2026-08-18 (ghost tags deleted from origin; real work

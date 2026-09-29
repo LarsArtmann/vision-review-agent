@@ -1,6 +1,5 @@
 # Status Report — 2026-08-02 06:13
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** every remaining
 > open marker resolved: ~~erraudit advisory-vs-gate~~ still ROADMAP
 > open question 3 (user call — unchanged); ~~godoc examples~~ done

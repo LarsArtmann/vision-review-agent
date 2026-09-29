@@ -1,6 +1,5 @@
 # Status: Zero Clone Groups — Brutal Self-Review
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §f resolved. ~~1 (content
 > filter race)~~ closed: the race was the `pkg/errors` signal test
 > mutating package state; fixed when the signal list became

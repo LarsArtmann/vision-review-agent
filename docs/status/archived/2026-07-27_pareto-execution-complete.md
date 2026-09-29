@@ -2,7 +2,6 @@
 
 > ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** plan fully executed and
 > verified (its own gates table). The three deferred questions: tag
 > anomaly RESOLVED 2026-08-18 (ghosts deleted; work shipped v0.4.0);

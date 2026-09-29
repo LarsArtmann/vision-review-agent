@@ -1,32 +1,32 @@
 # Pareto Execution Status — Plan Run Interrupted at M8
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §b/§c/§f resolved by the
 > overnight M9 session + later work: ~~b.1 M8 red HEAD~~ fixed same
 > evening (the `errors` import landed; doctor probe shipped, CHANGELOG
 > [Unreleased] documents it); ~~b.2 M5 harvest/plan annotation~~ done
 > (2026-09-07/08); ~~b.3 M15~~ done (DEPS.md ADR — snapshot/
 > WithBatchCommit declined with evidence); ~~b.4 M16~~ done (tidy-diff
-> + verify + vendorHash-consistency are CI jobs; 10 required checks);
-> ~~b.5 M11 DEPS.md~~ done; ~~b.6 M22 exclusion proposal~~ open user
-> decision (TODO_LIST — 5th recurrence since strengthened the case);
-> ~~b.7 M23 replay error context~~ done (`050910f` — replay errors
-> name journal path + event position); ~~b.8 CHANGELOG discipline~~
-> restored (Unreleased carries backup + doctor + the 2026-09-26
-> entries); ~~c.1-4~~ DONE (M9 upstream release + re-bump; M10 flake
-> apps; M12 v5 guard; M13 filed-then-fixed); ~~c.5 dep bumps~~ open
-> (fantasy v0.43.1 etc. — TODO_LIST bump-PR template awaits use);
-> ~~c.6 GitHub Release pages for 15 tags~~ closed (tag-only chosen;
-> the coordinated CHANGELOG section is the record); ~~c.7 docs truth
-> pass~~ DONE 2026-09-08 + refreshed 2026-09-26 (AGENTS versions
-> corrected: decider v4.6.0 / event v4.10.0 / bbolt v4.2.0). §f:
-> 1-7 done (M9 closeout); 8-11 user-gated (`.go-auto-upgrade.json`,
-> DiscordSync cadence, llama eval, SystemNix activation — the last is
-> wiring-done 2026-09-22, runtime pending); 12-50 routed/done per the
-> 17-21 verdicts (DEPS/ROADMAP/perf/policy). §g 1 closed (upstream
-> confirmed new-keys-first via the concurrent agent); 2 closed (otel
-> v4.4.0 never needed — pin wave settled); 3 closed (tag-only; no
-> multi-tag release-page precedent needed since). Archive-ready.
+>
+> - verify + vendorHash-consistency are CI jobs; 10 required checks);
+>   ~~b.5 M11 DEPS.md~~ done; ~~b.6 M22 exclusion proposal~~ open user
+>   decision (TODO_LIST — 5th recurrence since strengthened the case);
+>   ~~b.7 M23 replay error context~~ done (`050910f` — replay errors
+>   name journal path + event position); ~~b.8 CHANGELOG discipline~~
+>   restored (Unreleased carries backup + doctor + the 2026-09-26
+>   entries); ~~c.1-4~~ DONE (M9 upstream release + re-bump; M10 flake
+>   apps; M12 v5 guard; M13 filed-then-fixed); ~~c.5 dep bumps~~ open
+>   (fantasy v0.43.1 etc. — TODO_LIST bump-PR template awaits use);
+>   ~~c.6 GitHub Release pages for 15 tags~~ closed (tag-only chosen;
+>   the coordinated CHANGELOG section is the record); ~~c.7 docs truth
+>   pass~~ DONE 2026-09-08 + refreshed 2026-09-26 (AGENTS versions
+>   corrected: decider v4.6.0 / event v4.10.0 / bbolt v4.2.0). §f:
+>   1-7 done (M9 closeout); 8-11 user-gated (`.go-auto-upgrade.json`,
+>   DiscordSync cadence, llama eval, SystemNix activation — the last is
+>   wiring-done 2026-09-22, runtime pending); 12-50 routed/done per the
+>   17-21 verdicts (DEPS/ROADMAP/perf/policy). §g 1 closed (upstream
+>   confirmed new-keys-first via the concurrent agent); 2 closed (otel
+>   v4.4.0 never needed — pin wave settled); 3 closed (tag-only; no
+>   multi-tag release-page precedent needed since). Archive-ready.
 
 **Created:** 2026-09-07 20:39 CEST
 **Branch:** `master` @ `a1c95dc` (auto-commit) — **HEAD DOES NOT BUILD** (see d1)

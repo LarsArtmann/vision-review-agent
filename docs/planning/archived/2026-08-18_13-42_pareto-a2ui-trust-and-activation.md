@@ -2,7 +2,6 @@
 
 > ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
 
-
 > **EXECUTED 2026-08-18 — CLOSED 2026-09-26 (docs-health):** M1-M27
 > shipped end-to-end the same day (trust rails + first real reviews
 > `15-05`, closeout + v0.6.2 `18-45`; per-item status in those

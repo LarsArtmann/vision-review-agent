@@ -1,6 +1,5 @@
 # Brutal Status Report — Post-Pareto Execution Self-Audit
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** every Critical item of §f
 > shipped within 48h: ~~1 broken handleError~~ + ~~2 content-filter
 > FP~~ + ~~3 enshrined test~~ + ~~4 stale version var~~ done at the

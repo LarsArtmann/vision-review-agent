@@ -2,7 +2,6 @@
 
 > ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** the master-red items (d1/d4)
 > RESOLVED — root cause of the two failing a2ui tests was the
 > `dbbd62b` v2-import-as-`json` migration, not native-Go-1.27 json

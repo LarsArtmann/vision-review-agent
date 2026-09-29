@@ -2,7 +2,6 @@
 
 # Status Report · 2026-08-29 18:36 CEST · Prompt-Contract Hardening Session
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §b/§f resolved: ~~b.1 lint
 > verdict~~ closed (pinned v2.13.2 same week; the `config.go` recvcheck
 > finding is accepted by v2.13.x — AGENTS lint-pin section; lint 0

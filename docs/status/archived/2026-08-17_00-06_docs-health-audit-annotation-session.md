@@ -1,6 +1,5 @@
 # Status Report: Docs-Health Audit — August 2026 Snapshot Annotation
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the remaining
 > `← still open` markers all resolved: ~~#13 glossary sweep~~ DONE
 > v0.6.2 (M16 — visionreviewd + a2ui vocabulary in DOMAIN_LANGUAGE);

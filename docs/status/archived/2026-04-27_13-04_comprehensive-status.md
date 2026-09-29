@@ -1,6 +1,5 @@
 # Comprehensive Status Report — Vision Review Agent
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** every numbered item resolved
 > against the tree. §c/§f: ~~1 (Go version)~~ moot (repo on `go 1.27`,
 > flake `go_1_27`); ~~2 (CLI refactor/tests)~~ done v0.4.0

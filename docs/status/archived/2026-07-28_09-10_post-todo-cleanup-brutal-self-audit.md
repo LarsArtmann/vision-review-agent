@@ -1,6 +1,5 @@
 # Brutal Status Report — Post-Todo Cleanup Execution
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §b/§c/§f resolved. ~~io.Writer
 > capture pattern~~ superseded (the io.Writer refactor landed the NEXT
 > session, 13-56 — 10 paralleltest nolints gone); ~~content-filter

@@ -1,6 +1,5 @@
 # Status Report — Vision Review Agent
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** all numbered items resolved.
 > §C: ~~1 (cachedAgent race — sync.Once)~~ closed: builder is documented
 > single-goroutine; mutation invalidates the cache (`invalidate()`);

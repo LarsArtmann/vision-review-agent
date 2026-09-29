@@ -2,21 +2,21 @@
 
 > ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** the (f) list routes as
 > follows: 1-8 = the activation handoff (user steps; canonical copy in
 > TODO_LIST "visionreviewd activation"); 9-10 site-list single-source
-> + flake gates → 10 superseded (flake apps verified green many times
-> since, incl. the `go_1_27` sweep) — 9 open as a SystemNix-side idea
-> (external repo); 11 AGENTS devShell gotcha → DONE 2026-09-26
-> (rewritten — devShell ships 1.27.1); 12 SystemNix FEATURES row →
-> external repo; 13-20 routed ROADMAP "SystemNix hardening"/"Retention
-> GC"/"Daemon ergonomics" (13 journal backup registration remains the
-> top open one); 21-40 follow-ups routed/closed (22 scan-collapse
-> semantics = per-viewKey fold, documented in AGENTS store/pipeline
-> notes; 29-30 = v0.8.0 release content pending user go). §g 1-3 =
-> open user decisions (soak-vs-retire the manual pass; first-pass
-> burst; backup policy) — flagged in TODO_LIST context. Archive-ready.
+>
+> - flake gates → 10 superseded (flake apps verified green many times
+>   since, incl. the `go_1_27` sweep) — 9 open as a SystemNix-side idea
+>   (external repo); 11 AGENTS devShell gotcha → DONE 2026-09-26
+>   (rewritten — devShell ships 1.27.1); 12 SystemNix FEATURES row →
+>   external repo; 13-20 routed ROADMAP "SystemNix hardening"/"Retention
+>   GC"/"Daemon ergonomics" (13 journal backup registration remains the
+>   top open one); 21-40 follow-ups routed/closed (22 scan-collapse
+>   semantics = per-viewKey fold, documented in AGENTS store/pipeline
+>   notes; 29-30 = v0.8.0 release content pending user go). §g 1-3 =
+>   open user decisions (soak-vs-retire the manual pass; first-pass
+>   burst; backup policy) — flagged in TODO_LIST context. Archive-ready.
 
 **Date:** 2026-09-22 22:37 CEST
 **Session scope:** Enable visionreviewd on evo-x2 via SystemNix (the TODO_LIST

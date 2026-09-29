@@ -1,6 +1,5 @@
 # Status Report — 2026-08-02 05:47
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the surviving
 > open markers above are now closed: the external go-auto-upgrade items
 > (c.1/2, f.1-3, 13, 15-17, 20) — the daemon's exclusion file is a

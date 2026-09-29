@@ -1,6 +1,5 @@
 # Brutal Status Report — TODO List Execution (Post-Lint-Gate Session)
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** all of §a shipped and held.
 > §b/§c/§f: ~~1 parseRetryAfter HTTP-date branch~~ **closed as
 > documented gap** (delta-seconds + error paths covered; time-dependent

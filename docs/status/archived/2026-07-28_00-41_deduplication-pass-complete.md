@@ -1,6 +1,5 @@
 # Status Report: Deduplication Pass — 2026-07-28
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** the zero-harmful-clones goal
 > held only until the a2ui package landed (2026-08-18 rescan: 41 groups,
 > all non-actionable/suppressed) and the 2026-09-22 pass re-zeroed it

@@ -1,6 +1,5 @@
 # Status Report — visionreviewd T10→T18: replay, E2E, doctor, Nix, SystemNix
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the open items
 > under (f) resolved: ~~1-3~~ done (pushed; lock pins the module);
 > ~~4-7 activation chain~~ wiring DONE 2026-09-22 (SystemNix session:

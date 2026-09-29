@@ -1,6 +1,5 @@
 # Vision Review Agent — Comprehensive Status Report
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** all numbered items resolved
 > against the tree. §c/§f: ~~1,2 (vendorHash, pre-commit hooks)~~
 > resolved long since (hash maintained via `vendorHash.nix` +

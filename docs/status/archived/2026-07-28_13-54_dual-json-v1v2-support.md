@@ -1,6 +1,5 @@
 # Status Report — Dual `encoding/json` v1+v2 Support
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** this session's changes
 > (jsonv2-compat CI job + the AGENTS "do NOT migrate" rule) were
 > committed and shipped; the guard story has since evolved: the

@@ -1,6 +1,5 @@
 # Vision Review Agent — Comprehensive Status Report
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** every numbered item resolved.
 > §c/§f: ~~1 (pointer bug)~~ done (`optionalParams` sends pointers only
 > when set — v0.4.0 `Config.optionalParams()`); ~~2 (LICENSE)~~ resolved

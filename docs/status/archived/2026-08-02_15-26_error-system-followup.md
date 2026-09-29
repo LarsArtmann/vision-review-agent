@@ -1,6 +1,5 @@
 # Status Report — 2026-08-02 15:26
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** remaining open
 > markers resolved: ~~godoc examples (22/23)~~ done v0.6.0; ~~erraudit
 > items (5/25/31/33)~~ = ROADMAP open question 3 (user call);

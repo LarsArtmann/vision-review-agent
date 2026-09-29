@@ -1,6 +1,5 @@
 # Status: Error Handling Overhaul — ModelError Classification System
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** the 2026-07-27 Resolution table
 > below already closed the wiring gaps; its still-open rows have since
 > resolved too: ~~f.7 errTestNoop~~ + ~~f.8 wrapNoop~~ done at v0.4.0

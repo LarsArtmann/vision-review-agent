@@ -1,6 +1,5 @@
 # Pareto Execution Plan — Post-Bump Hardening & Delivery
 
-
 > **CLOSED 2026-09-26 (docs-health):** every M-item is resolved —
 > M1-M8 shipped 2026-09-07 (see `20-39`), M9/M10/M12/M13/M14/M16/M24
 > shipped 2026-09-07/08 (see `07-48`; M9 = the 15-module upstream

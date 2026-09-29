@@ -1,6 +1,5 @@
 # Status Report — Buildflow Failures Fixed (Brutal Self-Review)
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §c/§f resolved. ~~1
 > (CHANGELOG MaxRetries entry)~~ done (v0.4.0 Changed documents the
 > zero-disables semantics; AGENTS carries the gotcha); ~~2 (README

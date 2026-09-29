@@ -1,6 +1,5 @@
 # Comprehensive Status Report
 
-
 > **ANNOTATED 2026-09-26 (docs-health, pre-August pass):** every numbered
 > item below was checked against the tree and git history. §c 1–25 / §f —
 > shipped or closed as follows: remote+CI+tag ~~1,3,5,6,12~~ done (remote

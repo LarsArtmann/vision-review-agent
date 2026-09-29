@@ -1,6 +1,5 @@
 # Status Report: visionreviewd Daemon — Session Snapshot
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the two remaining
 > open items resolved: ~~#36 real-model prompt tuning~~ done 2026-08-18
 > (first real reviews, prompt-tuning verdict F8; persona contract
@@ -38,8 +37,8 @@
 
 ## b) PARTIALLY DONE
 
-| Item                                                                  | State                                                                                                                                              | What remains                                                                                                                                                                                                 |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Item                                                                  | State                                                                                                                                                  | What remains                                                                                                                                                                                                 |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | ~~**T2: Domain events, viewKey parsing, hashing**~~ done at `df51b84` | ~~Research done (StreamType is `type StreamType string`, `ParseStreamType` non-error for constants; StreamID needs `ParseStreamID` + error handling)~~ | ~~Write `events.go` / `views.go` / `hash.go` + table tests; replace spike payloads with real domain types~~ shipped (files landed as `events.go` / `viewkey.go` / `hash.go` / `blobstore.go`; spike deleted) |
 
 ## c) NOT STARTED

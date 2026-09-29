@@ -2,7 +2,6 @@
 
 > ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** superseded by rounds 2-3
 > (see `22-38`/`22-52`) and closed out by the 23:48 session. The three
 > open c)-items (a2ui fixes, lint findings, config review) all

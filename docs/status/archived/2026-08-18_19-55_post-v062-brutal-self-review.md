@@ -2,7 +2,6 @@
 
 > ~~All open items resolved — annotated & closed by the 2026-09-26 docs-health pass~~ (verdicts in the dated annotation block below).
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §f resolved. The
 > wire-regression cluster (1-13) was WRONG-rooted here: the two failing
 > tests came from the `dbbd62b` v2-import-as-`json` migration (reverted

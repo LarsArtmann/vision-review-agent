@@ -1,6 +1,5 @@
 # Status Report: Docs-Health Full Audit — Recovery, Harvest, Annotation
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** every remaining
 > open item resolved: ~~b.1 canonical matrix~~ closed for a docs-only
 > diff by the 2026-09-26 pass (steps 1-5 green; the "run the whole

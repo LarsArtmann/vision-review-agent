@@ -1,6 +1,5 @@
 # Status Report — 2026-08-02 15:49
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** remaining open
 > markers resolved: ~~ERROR_DESIGN cross-links (b.1/f.2)~~ done v0.6.0;
 > ~~mock field priority in AGENTS (b.2/f.3)~~ done; ~~internal/cli

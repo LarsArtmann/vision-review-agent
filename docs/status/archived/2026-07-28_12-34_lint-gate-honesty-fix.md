@@ -1,6 +1,5 @@
 # Brutal Status Report — pkg/vision Lint Gate Fix + mainProgram Bug
 
-
 > **ANNOTATED 2026-09-26 (docs-health):** §c/§f resolved. ~~1 ldflags
 > e2e~~ done (CI smoke); ~~2 CompressImage callers~~ done 13-56 (no
 > mutators; documented); ~~3 Quick Start~~ done 13-56; ~~4 FEATURES

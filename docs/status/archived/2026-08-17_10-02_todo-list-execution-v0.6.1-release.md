@@ -1,6 +1,5 @@
 # TODO-List Execution + v0.6.1 Release — Session Report
 
-
 > **ANNOTATED 2026-09-26 (docs-health, second pass):** the remaining
 > `← still open` items resolved: ~~f.3-5 activation/smoke/DiscordSync~~
 > — activation wiring done 2026-09-22 (runtime = user's push+deploy);
