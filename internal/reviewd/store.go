@@ -94,7 +94,7 @@ func ApplyViewState(state ViewState, evt event.Event) (ViewState, error) {
 
 		state.Comparisons++
 	default:
-		return state, nil
+		return state, fmt.Errorf("fold: unknown event type: %s", evt.Type())
 	}
 
 	return state, nil
