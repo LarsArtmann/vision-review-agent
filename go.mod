@@ -3,7 +3,7 @@ module github.com/larsartmann/vision-review-agent
 go 1.27.1
 
 require (
-	charm.land/catwalk v0.52.58
+	charm.land/catwalk v0.52.59
 	charm.land/fantasy v0.45.2
 	github.com/larsartmann/go-codec v0.3.0
 	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.7.0
@@ -25,7 +25,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.3.0 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
-	github.com/anthropics/anthropic-sdk-go v1.76.0 // indirect
+	github.com/anthropics/anthropic-sdk-go v1.78.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.47.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.20 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.33.6 // indirect
