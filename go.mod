@@ -3,13 +3,13 @@ module github.com/larsartmann/vision-review-agent
 go 1.27.1
 
 require (
-	charm.land/catwalk v0.52.59
+	charm.land/catwalk v0.52.62
 	charm.land/fantasy v0.45.2
 	github.com/larsartmann/go-codec v0.3.0
-	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.7.0
-	github.com/larsartmann/go-cqrs-lite/event/v4 v4.12.0
-	github.com/larsartmann/go-cqrs-lite/id/v4 v4.6.1
-	github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4 v4.2.1
+	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.7.1
+	github.com/larsartmann/go-cqrs-lite/event/v4 v4.13.0
+	github.com/larsartmann/go-cqrs-lite/id/v4 v4.6.2
+	github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4 v4.2.2
 	github.com/onsi/ginkgo/v2 v2.33.0
 	github.com/onsi/gomega v1.44.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
@@ -58,7 +58,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20260926063103-aaccee046517 // indirect
-	github.com/google/s2a-go v0.1.10 // indirect
+	github.com/google/s2a-go v0.1.11 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.22 // indirect
 	github.com/googleapis/gax-go/v2 v2.26.2 // indirect
@@ -67,14 +67,14 @@ require (
 	github.com/kaptinlin/jsonpointer v0.4.28 // indirect
 	github.com/kaptinlin/jsonschema v0.9.10 // indirect
 	github.com/larsartmann/go-branded-id v0.7.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/command/v4 v4.12.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/dispatcher/v4 v4.5.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/kv/v4 v4.3.1 // indirect
-	github.com/larsartmann/go-cqrs-lite/metadata/v4 v4.7.1 // indirect
-	github.com/larsartmann/go-cqrs-lite/otel/v4 v4.5.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/query/v4 v4.9.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/record/v4 v4.6.0 // indirect
-	github.com/larsartmann/go-cqrs-lite/snapshot/v4 v4.5.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/command/v4 v4.13.0 // indirect
+	github.com/larsartmann/go-cqrs-lite/dispatcher/v4 v4.5.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/kv/v4 v4.3.2 // indirect
+	github.com/larsartmann/go-cqrs-lite/metadata/v4 v4.7.2 // indirect
+	github.com/larsartmann/go-cqrs-lite/otel/v4 v4.5.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/query/v4 v4.10.0 // indirect
+	github.com/larsartmann/go-cqrs-lite/record/v4 v4.6.1 // indirect
+	github.com/larsartmann/go-cqrs-lite/snapshot/v4 v4.6.0 // indirect
 	github.com/larsartmann/go-error-family v0.11.0 // indirect
 	github.com/larsartmann/go-flightrecorder v0.2.0 // indirect
 	github.com/maypok86/otter/v2 v2.3.0 // indirect
@@ -89,14 +89,15 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.71.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0 // indirect
-	go.opentelemetry.io/otel v1.46.0 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.46.0 // indirect
-	go.opentelemetry.io/otel/metric v1.46.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.46.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.46.0 // indirect
-	go.opentelemetry.io/otel/trace v1.46.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.72.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0 // indirect
+	go.opentelemetry.io/otel v1.47.0 // indirect
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.47.0 // indirect
+	go.opentelemetry.io/otel/log v1.47.0 // indirect
+	go.opentelemetry.io/otel/metric v1.47.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.47.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.47.0 // indirect
+	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/mod v0.41.0 // indirect
@@ -106,8 +107,8 @@ require (
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 	golang.org/x/tools v0.50.0 // indirect
-	google.golang.org/api v0.299.0 // indirect
-	google.golang.org/genai v1.71.0 // indirect
+	google.golang.org/api v0.300.0 // indirect
+	google.golang.org/genai v1.72.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
