@@ -40,10 +40,19 @@ Click-by-click (console.web.app / console.firebase.google.com):
 
 After attach: re-shoot + re-review cmdguard at the custom domain (plan F3).
 
-### 1.2 typespec-asyncapi.lars.software — Namecheap CNAME + console attach (M2)
+### 1.2 typespec-asyncapi.lars.software — Namecheap CNAME + console attach (M2) — DONE 2026-10-03
 
-Symptom: the host does not resolve at all (NXDOMAIN). The site is deployed and
-served at `https://typespec-asyncapi.web.app` (HTTP 200).
+**RESOLVED 2026-10-03** via Terraform (not the manual console flow below):
+domain attached via the Firebase Hosting REST API
+(`customDomains` endpoint, firebase-tools configstore token — the gcloud ADC
+token 403s on quota project `ai-testing-492904`), CNAME + ACME TXT applied via
+`~/projects/domains` Terraform (`NAMECHEAP_CLIENT_IP` required — api.ipify.org
+is blocked on this network). Cert reached active; `https://typespec-asyncapi.lars.software`,
+`/og.png`, and `/guides/mixing-with-openapi` all return 200. Manual steps kept
+below for reference.
+
+Symptom (before): the host did not resolve at all (NXDOMAIN). The site was
+deployed and served at `https://typespec-asyncapi.web.app` (HTTP 200).
 
 Steps:
 
@@ -155,7 +164,7 @@ counts match the repos; no soft-404s, canonical/CSP clean per the table).
 
 | Item                       | Result                                                                                                                                                               | Action                                                                                                                                  |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Canonical (#12)            | 15/17 ok incl. go-workflow-auditlog (parity done); **cmdguard + typespec-asyncapi point at their KNOWN-broken `.lars.software` domains**                             | none — same root cause as §1.1/§1.2 console attach; repointing the Astro `site` would flip the mismatch when the custom domains go live |
+| Canonical (#12)            | 16/17 ok incl. go-workflow-auditlog (parity done) + typespec-asyncapi (M2 fixed 2026-10-03); **only cmdguard still points at its KNOWN-broken `.lars.software` domain**                                      | none — same root cause as §1.1 console attach; repointing the Astro `site` would flip the mismatch when the custom domain goes live |
 | CSP (#11)                  | 16 sites: no CSP; templcomponents: enforced, fully coherent (`manifest-src 'self'`, hashed script-src, `img-src 'self' data:`); no report-only CSPs exist fleet-wide | closed — the og/meta additions (learnings) are crawler-facing and CSP-invisible                                                         |
 | hreflang (#39)             | 16 single-locale sites: none (correct); learnings: `en` + `x-default` (correct for en-only Docusaurus)                                                               | closed as no-op                                                                                                                         |
 | Favicon ICO fallback (#40) | 17/17 declare SVG icon + webmanifest; only atomicwrite + gogenfilter serve `/favicon.ico` (200), 15 return 404; no `apple-touch-icon` anywhere                       | accepted gap — Safari-only cosmetic; not worth 15 rebuilds                                                                              |
