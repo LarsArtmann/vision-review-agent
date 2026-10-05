@@ -91,7 +91,7 @@ func printVisionModels(w io.Writer, svc *catalog.Service, providerFilter string)
 func printProviderInfo(w io.Writer, svc *catalog.Service, providerName string) {
 	name := normalizeProviderName(providerName)
 
-	provider, ok := svc.FindProvider(name)
+	provider, ok := svc.FindProvider(catalog.ProviderID(name))
 	if !ok {
 		fmt.Fprintf(w, "Provider %q not found. Use -list-providers to see options.\n", providerName)
 

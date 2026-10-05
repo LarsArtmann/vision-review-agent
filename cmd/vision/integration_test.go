@@ -17,7 +17,7 @@ func TestIntegrationCatalogToAgentFlow(t *testing.T) {
 	require.NotEmpty(t, svc.Providers(), "catalog must have providers")
 
 	// 2. Find a known vision model
-	provider, model, ok := svc.FindModel("gpt-4o")
+	provider, model, ok := svc.FindModel(catalog.NewModelID("gpt-4o"))
 	require.True(t, ok, "gpt-4o must be in catalog")
 	require.True(t, model.SupportsImages, "gpt-4o must support images")
 	require.Positive(t, model.CostPer1MIn, "gpt-4o must have pricing")
@@ -28,7 +28,7 @@ func TestIntegrationCatalogToAgentFlow(t *testing.T) {
 	require.Equal(t, "openai", string(provider.ID))
 
 	// Re-get with correct provider context
-	catwalkModel, ok := svc.FindModelInProvider("openai", "gpt-4o")
+	catwalkModel, ok := svc.FindModelInProvider(catalog.ProviderID("openai"), catalog.NewModelID("gpt-4o"))
 	require.True(t, ok)
 
 	info = vision.NewModelInfo(*catwalkModel)
@@ -96,7 +96,7 @@ func TestIntegrationProviderBridgeForKnownTypes(t *testing.T) {
 		t.Run(tt.providerID, func(t *testing.T) {
 			t.Parallel()
 
-			provider, ok := svc.FindProvider(tt.providerID)
+			provider, ok := svc.FindProvider(catalog.ProviderID(tt.providerID))
 			require.True(t, ok, "%s must be in catalog", tt.providerID)
 
 			apiKey := "sk-test-key"
