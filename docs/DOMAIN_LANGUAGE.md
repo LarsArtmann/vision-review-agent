@@ -32,18 +32,18 @@ Objects with identity and lifecycle:
 
 Immutable objects defined by their attributes:
 
-| Term                 | Definition                                                                                                      | Context                                   |
-| -------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **ImageSource**      | `Data []byte` + `MediaType` + `Filename`. Created via constructors that validate non-empty data.                | Immutable after construction              |
-| **Config**           | All agent configuration: model, prompts, sampling params, hooks, retry, preprocessing. Validated at `NewAgent`. | Value object, copied by the agent         |
-| **MediaType**        | Defined string type for image formats: PNG, JPEG, GIF, WebP, BMP.                                               | Type safety over raw strings              |
-| **ModelID**          | Branded model identifier (`go-branded-id`); `vision.ModelID`, `catalog.ModelID`, and `reviewed.ModelID` are distinct types per bounded context. | Type safety over raw strings |
-| **ProviderID**       | A catwalk InferenceProvider identifier ("openai", "gemini"); `catalog.ProviderID` aliases the upstream type.    | Type safety over raw strings              |
-| **PreprocessConfig** | Image preprocessing settings: max dimension, JPEG quality. Zero-value disables.                                 | Applied automatically by the agent        |
-| **RetryConfig**      | Retry policy: max attempts, initial backoff, cap, multiplier, jitter. Zero-value falls back to defaults.        | Used by `Config.Retry` and `WithRetry[T]` |
-| **Usage**            | Token usage from a single call: input, output, total.                                                           | Accumulated by `CostTracker`              |
-| **ErrorKind**        | Classified category of a model error (16 kinds). Drives retry vs. fix-input decisions.                          | Enum-like string type                     |
-| **CostTracker**      | Thread-safe token accumulator with optional pricing. `CostUSD()` returns 0 without `ModelInfo`.                 | `pkg/vision.CostTracker`                  |
+| Term                 | Definition                                                                                                                                      | Context                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **ImageSource**      | `Data []byte` + `MediaType` + `Filename`. Created via constructors that validate non-empty data.                                                | Immutable after construction              |
+| **Config**           | All agent configuration: model, prompts, sampling params, hooks, retry, preprocessing. Validated at `NewAgent`.                                 | Value object, copied by the agent         |
+| **MediaType**        | Defined string type for image formats: PNG, JPEG, GIF, WebP, BMP.                                                                               | Type safety over raw strings              |
+| **ModelID**          | Branded model identifier (`go-branded-id`); `vision.ModelID`, `catalog.ModelID`, and `reviewed.ModelID` are distinct types per bounded context. | Type safety over raw strings              |
+| **ProviderID**       | A catwalk InferenceProvider identifier ("openai", "gemini"); `catalog.ProviderID` aliases the upstream type.                                    | Type safety over raw strings              |
+| **PreprocessConfig** | Image preprocessing settings: max dimension, JPEG quality. Zero-value disables.                                                                 | Applied automatically by the agent        |
+| **RetryConfig**      | Retry policy: max attempts, initial backoff, cap, multiplier, jitter. Zero-value falls back to defaults.                                        | Used by `Config.Retry` and `WithRetry[T]` |
+| **Usage**            | Token usage from a single call: input, output, total.                                                                                           | Accumulated by `CostTracker`              |
+| **ErrorKind**        | Classified category of a model error (16 kinds). Drives retry vs. fix-input decisions.                                                          | Enum-like string type                     |
+| **CostTracker**      | Thread-safe token accumulator with optional pricing. `CostUSD()` returns 0 without `ModelInfo`.                                                 | `pkg/vision.CostTracker`                  |
 
 ## Error Classification
 
@@ -134,7 +134,7 @@ Actions the system performs:
 | Term           | Definition                                                                                                              | Context                                    |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | **ViewKey**    | `{Page}--{theme}--{viewport}`, the identity of one reviewed view (parsed from golden file names)                        | `ParseViewKey`                             |
-| **StreamID**   | Branded event-stream identifier `<project>:<viewKey>`; `ViewStreamID` builds it, replay parses it back                   | `id.StreamID`, `ViewStreamID`              |
+| **StreamID**   | Branded event-stream identifier `<project>:<viewKey>`; `ViewStreamID` builds it, replay parses it back                  | `id.StreamID`, `ViewStreamID`              |
 | **Golden**     | A screenshot a project regenerates on change; the daemon's review subject                                               | `testdata/visual/*.png` convention         |
 | **Capture**    | The `view.captured` event: a golden's content hash was seen (first time or changed)                                     | Event store, blob store                    |
 | **Review**     | The `view.reviewed` event: a vision model judged one capture; carries markdown + score                                  | `Reviewer.Review`                          |
