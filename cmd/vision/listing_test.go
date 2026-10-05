@@ -51,9 +51,9 @@ func TestCountVisionModels(t *testing.T) {
 			want: 2,
 		},
 		{
-			name:    "real catalog provider",
-			models:  openai.Models,
-			want:    len(svc.VisionModels()) - countNonOpenAIVision(svc, openai),
+			name:   "real catalog provider",
+			models: openai.Models,
+			want:   len(svc.VisionModels()) - countNonOpenAIVision(svc, openai),
 		},
 	}
 

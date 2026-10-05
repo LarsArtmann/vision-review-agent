@@ -203,10 +203,13 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
       dedup round 3; covered only transitively (Compile + Generate BDD).
       10-line table: both empty / one empty / neither
       (`pkg/vision/a2ui/surface.go`).
-- [ ] **art-dupl v0.7 `-t 1` sweep** — the re-baseline judged `-t 2`'s 5
-      groups; `-t 1` shows 7 groups unexamined, and whether v0.7 still
-      honors `// art-dupl:accept` markers is unverified
-      (`docs/DUPLICATION_POLICY.md`).
+- [x] **art-dupl v0.7 `-t 1` sweep** — DONE 2026-10-05: `-t 1` fully judged
+      (canonical scan: 4 shown; `--suggest-generics`: 6 shown). One group
+      extracted (`countVisionModels` in `cmd/vision/listing.go`), one marked
+      accepted (the three per-package `ModelBrand` definitions), the rest are
+      documented idiom groups. v0.7 marker support empirically confirmed:
+      the marked group disappears from `-t 1` output. Details in
+      `docs/DUPLICATION_POLICY.md`.
 - [ ] **go-cqrs-lite asks (filed 2026-09-07)** — #22 (bbolt
       `OpenWith(ReadOnly)` always fails) and #23 (missing `serializableEvent`
       golden/contract test) are filed; a per-module CHANGELOG request was

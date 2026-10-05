@@ -347,7 +347,12 @@ See [`docs/DUPLICATION_POLICY.md`](docs/DUPLICATION_POLICY.md) for the full
 list of extraction helpers and duplication decisions. Current state:
 **4 clone groups, all accepted with rationale** at
 `art-dupl --sort total-tokens -t 1 --type-aware` over the whole repo
-(v0.6.x, re-verified 2026-09-22; `-t 2` reports 3, `-t 3` reports 0).
+(v0.7.x, re-verified 2026-10-05; `--suggest-generics` widens the window to
+6 shown, all accepted too).
+The 2026-10-05 pass extracted `countVisionModels` (the 2-site
+`SupportsImages` counting loop in `cmd/vision/listing.go`), marked the three
+per-package branded-ID definitions `// art-dupl:accept`, and empirically
+confirmed v0.7 honors that marker (marked groups drop out of `-t 1` output).
 The same day the system tool upgraded to **art-dupl v0.7.0** (semantic mode,
 new shown/non-actionable/filtered classification): under it `-t 2` shows 5
 groups and `-t 3` shows 0 — all five reviewed and accepted (idiom-level;
