@@ -5,6 +5,7 @@ go 1.27.1
 require (
 	charm.land/catwalk v0.52.62
 	charm.land/fantasy v0.45.2
+	github.com/larsartmann/go-branded-id v0.7.0
 	github.com/larsartmann/go-codec v0.3.0
 	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.7.1
 	github.com/larsartmann/go-cqrs-lite/event/v4 v4.13.0
@@ -66,7 +67,6 @@ require (
 	github.com/invopop/jsonschema v0.14.0 // indirect
 	github.com/kaptinlin/jsonpointer v0.4.28 // indirect
 	github.com/kaptinlin/jsonschema v0.9.10 // indirect
-	github.com/larsartmann/go-branded-id v0.7.0 // indirect
 	github.com/larsartmann/go-cqrs-lite/command/v4 v4.13.0 // indirect
 	github.com/larsartmann/go-cqrs-lite/dispatcher/v4 v4.5.1 // indirect
 	github.com/larsartmann/go-cqrs-lite/kv/v4 v4.3.2 // indirect

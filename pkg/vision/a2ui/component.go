@@ -1,8 +1,7 @@
 package a2ui
 
 import (
-	"encoding/json/jsontext"
-	"encoding/json/v2"
+	"encoding/json"
 	"fmt"
 	"maps"
 )
@@ -102,7 +101,7 @@ func (c *Component) UnmarshalJSON(data []byte) error {
 	c.Child = structural.Child
 	c.Children = structural.Children
 
-	var raw map[string]jsontext.Value
+	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return fmt.Errorf("decode component %q fields: %w", structural.ID, err)
 	}
