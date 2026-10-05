@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/larsartmann/go-cqrs-lite/event/v4"
+	cqrsid "github.com/larsartmann/go-cqrs-lite/id/v4"
 )
 
 // ReplayResult counts what a replay rebuilt from the journal.
@@ -51,8 +52,8 @@ type streamAddress struct {
 // parseStreamAddress splits a View stream ID ("<project>:<viewKey>") back
 // into its parts. The view key segment is canonical, so ParseViewKey
 // round-trips it even when the page itself contains "--".
-func parseStreamAddress(streamID string) (streamAddress, error) {
-	parts := strings.SplitN(streamID, ":", streamAddressParts)
+func parseStreamAddress(streamID cqrsid.StreamID) (streamAddress, error) {
+	parts := strings.SplitN(streamID.String(), ":", streamAddressParts)
 	if len(parts) != streamAddressParts {
 		return streamAddress{}, fmt.Errorf("%w %q: want <project>:<viewKey>", ErrMalformedStreamID, streamID)
 	}
@@ -93,7 +94,7 @@ func Replay(ctx context.Context, store *Store, writer *Writer) (ReplayResult, er
 
 	result := ReplayResult{Projects: 0, Views: 0, Reviews: 0, Comparisons: 0}
 
-	streams := make(map[string]*replayStream)
+	streams := make(map[cqrsid.StreamID]*replayStream)
 
 	var errs []error
 
@@ -102,7 +103,7 @@ func Replay(ctx context.Context, store *Store, writer *Writer) (ReplayResult, er
 			continue
 		}
 
-		stream, streamErr := replayStreamFor(streams, evt.StreamID().String())
+		stream, streamErr := replayStreamFor(streams, evt.StreamID())
 		if streamErr != nil {
 			errs = append(errs, fmt.Errorf("journal %s, event %d: %w", store.JournalFile(), i+1, streamErr))
 
@@ -131,7 +132,7 @@ func Replay(ctx context.Context, store *Store, writer *Writer) (ReplayResult, er
 
 // replayStreamFor returns the fold state of a stream, creating it on first
 // sight.
-func replayStreamFor(streams map[string]*replayStream, streamID string) (*replayStream, error) {
+func replayStreamFor(streams map[cqrsid.StreamID]*replayStream, streamID cqrsid.StreamID) (*replayStream, error) {
 	if stream, ok := streams[streamID]; ok {
 		return stream, nil
 	}
@@ -292,7 +293,7 @@ func SummarizeEvents(events []event.Event) []EventSummary {
 			continue
 		}
 
-		address, err := parseStreamAddress(evt.StreamID().String())
+		address, err := parseStreamAddress(evt.StreamID())
 		if err != nil {
 			summaries = append(summaries, EventSummary{
 				Version:    evt.Version(),
