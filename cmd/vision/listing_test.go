@@ -26,6 +26,57 @@ func TestPrintProvidersListsAllProviders(t *testing.T) {
 	require.Contains(t, out, "providers")
 }
 
+func TestCountVisionModels(t *testing.T) {
+	t.Parallel()
+
+	svc := catalog.New()
+
+	openai, ok := svc.FindProvider("openai")
+	require.True(t, ok)
+
+	tests := []struct {
+		name   string
+		models []catwalk.Model
+		want   int
+	}{
+		{name: "empty", models: nil, want: 0},
+		{
+			name: "mixed",
+			models: []catwalk.Model{
+				{ID: "vision", SupportsImages: true},
+				{ID: "text"},
+				{ID: "vision-2", SupportsImages: true},
+			},
+			want: 2,
+		},
+		{
+			name:    "real catalog provider",
+			models:  openai.Models,
+			want:    len(svc.VisionModels()) - countNonOpenAIVision(svc, openai),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tt.want, countVisionModels(tt.models))
+		})
+	}
+}
+
+func countNonOpenAIVision(svc *catalog.Service, openai catalog.Provider) int {
+	count := 0
+
+	for _, entry := range svc.VisionModels() {
+		if entry.Provider.ID != openai.ID {
+			count++
+		}
+	}
+
+	return count
+}
+
 func TestPrintVisionModelsShowsOnlyImageCapable(t *testing.T) {
 	t.Parallel()
 

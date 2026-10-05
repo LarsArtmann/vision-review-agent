@@ -16,6 +16,20 @@ const (
 	maxEditDistance = 3
 )
 
+// countVisionModels counts the models that can analyze images, so every
+table reports the vision-capable total from one definition.
+func countVisionModels(models []catwalk.Model) int {
+	count := 0
+
+	for _, model := range models {
+		if model.SupportsImages {
+			count++
+		}
+	}
+
+	return count
+}
+
 // printProviders writes a table of all catalog providers to w.
 func printProviders(w io.Writer, svc *catalog.Service) {
 	providers := svc.Providers()
@@ -28,16 +42,9 @@ func printProviders(w io.Writer, svc *catalog.Service) {
 	fmt.Fprintln(w, strings.Repeat("-", tableWidth))
 
 	for _, provider := range providers {
-		visionCount := 0
-
-		for _, model := range provider.Models {
-			if model.SupportsImages {
-				visionCount++
-			}
-		}
-
 		fmt.Fprintf(w, "%-22s %-24s %-16s %6d %8d\n",
-			provider.ID, provider.Name, provider.Type, len(provider.Models), visionCount)
+			provider.ID, provider.Name, provider.Type,
+			len(provider.Models), countVisionModels(provider.Models))
 	}
 
 	fmt.Fprintf(w, "\n%d providers. Use -list-models to see vision-capable models.\n", len(providers))
@@ -113,15 +120,8 @@ func printProviderInfo(w io.Writer, svc *catalog.Service, providerName string) {
 		fmt.Fprintf(w, "Default model: %s\n", provider.DefaultLargeModelID)
 	}
 
-	visionCount := 0
-
-	for _, model := range provider.Models {
-		if model.SupportsImages {
-			visionCount++
-		}
-	}
-
-	fmt.Fprintf(w, "\nModels (%d total, %d vision-capable):\n", len(provider.Models), visionCount)
+	fmt.Fprintf(w, "\nModels (%d total, %d vision-capable):\n",
+		len(provider.Models), countVisionModels(provider.Models))
 
 	sortedModels := make([]catwalk.Model, len(provider.Models))
 	copy(sortedModels, provider.Models)

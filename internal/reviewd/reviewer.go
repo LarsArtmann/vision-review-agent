@@ -10,6 +10,8 @@ import (
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
 
+// art-dupl:accept each package owns its brand; a shared ModelID would couple pkg, internal/catalog, and the daemon
+
 // ModelBrand marks branded model identifiers recorded in review events.
 type ModelBrand struct{}
 

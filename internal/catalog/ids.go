@@ -11,6 +11,8 @@ import (
 // surface stays catwalk-typed on both sides of every lookup.
 type ProviderID = catwalk.InferenceProvider
 
+// art-dupl:accept each package owns its brand; a shared ModelID would couple pkg, internal/catalog, and the daemon
+
 // ModelBrand marks branded model identifiers.
 type ModelBrand struct{}
 

@@ -2,6 +2,8 @@ package vision
 
 import id "github.com/larsartmann/go-branded-id"
 
+// art-dupl:accept each package owns its brand; a shared ModelID would couple pkg, internal/catalog, and the daemon
+
 // ModelBrand marks branded model identifiers.
 type ModelBrand struct{}
 
