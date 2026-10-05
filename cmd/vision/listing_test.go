@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/catwalk/pkg/catwalk"
 	"github.com/larsartmann/vision-review-agent/internal/catalog"
 	"github.com/stretchr/testify/require"
 )
@@ -65,7 +66,7 @@ func TestCountVisionModels(t *testing.T) {
 	}
 }
 
-func countNonOpenAIVision(svc *catalog.Service, openai catalog.Provider) int {
+func countNonOpenAIVision(svc *catalog.Service, openai catwalk.Provider) int {
 	count := 0
 
 	for _, entry := range svc.VisionModels() {

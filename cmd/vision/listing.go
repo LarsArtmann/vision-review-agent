@@ -17,7 +17,7 @@ const (
 )
 
 // countVisionModels counts the models that can analyze images, so every
-table reports the vision-capable total from one definition.
+// table reports the vision-capable total from one definition.
 func countVisionModels(models []catwalk.Model) int {
 	count := 0
 
