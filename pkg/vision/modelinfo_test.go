@@ -23,7 +23,7 @@ func TestNewModelInfoMapsAllFields(t *testing.T) {
 
 	info := NewModelInfo(source)
 
-	require.Equal(t, "gpt-4o", info.ID)
+	require.Equal(t, "gpt-4o", info.ID.Get())
 	require.Equal(t, "GPT-4o", info.Name)
 	require.InEpsilon(t, 2.50, info.CostPer1MIn, 1e-9)
 	require.InEpsilon(t, 10.00, info.CostPer1MOut, 1e-9)

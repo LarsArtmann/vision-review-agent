@@ -24,7 +24,7 @@ func TestIntegrationCatalogToAgentFlow(t *testing.T) {
 
 	// 3. Create ModelInfo from catalog data
 	info := vision.NewModelInfo(model)
-	require.Equal(t, "gpt-4o", info.ID)
+	require.Equal(t, "gpt-4o", info.ID.Get())
 	require.Equal(t, "openai", string(provider.ID))
 
 	// Re-get with correct provider context

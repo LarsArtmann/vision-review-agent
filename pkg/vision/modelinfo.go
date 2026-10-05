@@ -18,7 +18,7 @@ import (
 //	}
 type ModelInfo struct {
 	// ID is the model identifier (e.g., "gpt-4o").
-	ID string
+	ID ModelID
 
 	// Name is the human-readable model name (e.g., "GPT-4o").
 	Name string
@@ -48,7 +48,7 @@ type ModelInfo struct {
 // catwalk model catalog.
 func NewModelInfo(m catwalk.Model) ModelInfo {
 	return ModelInfo{
-		ID:               m.ID,
+		ID:               NewModelID(m.ID),
 		Name:             m.Name,
 		SupportsImages:   m.SupportsImages,
 		ContextWindow:    m.ContextWindow,
