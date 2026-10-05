@@ -100,7 +100,7 @@ func main() {
 	provider, err := createProvider(svc, cfg.providerName)
 	cli.ExitOnError(err, "")
 
-	if _, _, ok := svc.FindModel(cfg.modelID); !ok {
+	if _, _, ok := svc.FindModel(catalog.NewModelID(cfg.modelID)); !ok {
 		if suggestion := suggestModel(svc, cfg.modelID); suggestion != "" {
 			fmt.Fprintf(os.Stderr, "Warning: model %q not in catalog. Did you mean %q?\n", cfg.modelID, suggestion)
 		}
@@ -112,7 +112,7 @@ func main() {
 	var modelInfo *vision.ModelInfo
 
 	normalizedProvider := normalizeProviderName(cfg.providerName)
-	if m, ok := svc.FindModelInProvider(normalizedProvider, cfg.modelID); ok {
+	if m, ok := svc.FindModelInProvider(catalog.ProviderID(normalizedProvider), catalog.NewModelID(cfg.modelID)); ok {
 		info := vision.NewModelInfo(*m)
 		modelInfo = &info
 	}
@@ -544,7 +544,7 @@ func normalizeProviderName(name string) string {
 func createProvider(svc *catalog.Service, name string) (fantasy.Provider, error) {
 	name = normalizeProviderName(name)
 
-	provider, ok := svc.FindProvider(name)
+	provider, ok := svc.FindProvider(catalog.ProviderID(name))
 	if !ok {
 		if strings.EqualFold(name, "openaicompat") {
 			return createOpenAICompatProvider()

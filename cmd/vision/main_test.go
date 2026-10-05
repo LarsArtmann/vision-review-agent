@@ -229,10 +229,10 @@ func TestFindModelInProviderWithGoogleAlias(t *testing.T) {
 	normalized := normalizeProviderName("google")
 	require.Equal(t, "gemini", normalized)
 
-	provider, ok := svc.FindProvider(normalized)
+	provider, ok := svc.FindProvider(catalog.ProviderID(normalized))
 	require.True(t, ok, "catalog must list the normalized %q provider", normalized)
 	require.NotEmpty(t, provider.Models, "catalog %q provider must list models", normalized)
 
-	_, found := svc.FindModelInProvider(normalized, provider.Models[0].ID)
+	_, found := svc.FindModelInProvider(catalog.ProviderID(normalized), catalog.NewModelID(provider.Models[0].ID))
 	require.True(t, found, "FindModelInProvider must find models under normalized %q provider", normalized)
 }

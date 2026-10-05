@@ -38,7 +38,7 @@ func TestFindProviderKnown(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			p, ok := svc.FindProvider(tt.id)
+			p, ok := svc.FindProvider(ProviderID(tt.id))
 			require.True(t, ok, "provider %q must be found", tt.id)
 			require.Equal(t, tt.want, p.Type)
 			require.NotEmpty(t, p.Models, "provider %q must have models", tt.id)
@@ -57,7 +57,7 @@ func TestFindProviderCaseInsensitive(t *testing.T) {
 		t.Run(id, func(t *testing.T) {
 			t.Parallel()
 
-			p, ok := svc.FindProvider(id)
+			p, ok := svc.FindProvider(ProviderID(id))
 			require.True(t, ok, "provider lookup must be case-insensitive for %q", id)
 			require.NotEmpty(t, p.Name)
 		})
@@ -69,7 +69,7 @@ func TestFindProviderUnknownReturnsFalse(t *testing.T) {
 
 	svc := New()
 
-	p, ok := svc.FindProvider("nonexistent-provider")
+	p, ok := svc.FindProvider(ProviderID("nonexistent-provider"))
 	require.False(t, ok)
 	require.Equal(t, catwalk.Provider{}, p)
 }
@@ -79,7 +79,7 @@ func TestFindModelKnown(t *testing.T) {
 
 	svc := New()
 
-	p, m, ok := svc.FindModel("gpt-4o")
+	p, m, ok := svc.FindModel(NewModelID("gpt-4o"))
 	require.True(t, ok)
 	require.Equal(t, "openai", string(p.ID))
 	require.Equal(t, "gpt-4o", m.ID)
@@ -91,7 +91,7 @@ func TestFindModelCaseInsensitive(t *testing.T) {
 
 	svc := New()
 
-	_, m, ok := svc.FindModel("GPT-4O")
+	_, m, ok := svc.FindModel(NewModelID("GPT-4O"))
 	require.True(t, ok)
 	require.Equal(t, "gpt-4o", m.ID)
 }
@@ -101,7 +101,7 @@ func TestFindModelUnknownReturnsFalse(t *testing.T) {
 
 	svc := New()
 
-	_, _, ok := svc.FindModel("gpt-999-not-real")
+	_, _, ok := svc.FindModel(NewModelID("gpt-999-not-real"))
 	require.False(t, ok)
 }
 
@@ -160,7 +160,7 @@ func TestNewWithProvidersForTesting(t *testing.T) {
 
 	svc := NewWithProviders(custom)
 
-	p, ok := svc.FindProvider("test")
+	p, ok := svc.FindProvider(ProviderID("test"))
 	require.True(t, ok)
 	require.Equal(t, "Test Provider", p.Name)
 

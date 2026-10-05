@@ -42,8 +42,8 @@ func (s *Service) Providers() []catwalk.Provider {
 // FindProvider looks up a provider by its InferenceProvider ID (e.g., "openai",
 // "anthropic", "gemini"). The lookup is case-insensitive. It returns the
 // provider and true if found.
-func (s *Service) FindProvider(id string) (catwalk.Provider, bool) {
-	target := strings.ToLower(id)
+func (s *Service) FindProvider(providerID ProviderID) (catwalk.Provider, bool) {
+	target := strings.ToLower(string(providerID))
 
 	for _, p := range s.providers {
 		if strings.ToLower(string(p.ID)) == target {
@@ -63,8 +63,8 @@ type ModelEntry struct {
 // FindModel searches across all providers for a model with the given ID.
 // The lookup is case-insensitive. It returns the provider, model, and true
 // if found.
-func (s *Service) FindModel(modelID string) (catwalk.Provider, catwalk.Model, bool) {
-	target := strings.ToLower(modelID)
+func (s *Service) FindModel(modelID ModelID) (catwalk.Provider, catwalk.Model, bool) {
+	target := strings.ToLower(modelID.Get())
 
 	for _, p := range s.providers {
 		for _, m := range p.Models {
@@ -81,13 +81,13 @@ func (s *Service) FindModel(modelID string) (catwalk.Provider, catwalk.Model, bo
 // The lookup is case-insensitive for both provider ID and model ID.
 // This is preferable to FindModel when the user has selected a specific
 // provider, because model pricing and capabilities may differ across providers.
-func (s *Service) FindModelInProvider(providerID, modelID string) (*catwalk.Model, bool) {
+func (s *Service) FindModelInProvider(providerID ProviderID, modelID ModelID) (*catwalk.Model, bool) {
 	provider, ok := s.FindProvider(providerID)
 	if !ok {
 		return nil, false
 	}
 
-	target := strings.ToLower(modelID)
+	target := strings.ToLower(modelID.Get())
 
 	for idx := range provider.Models {
 		if strings.ToLower(provider.Models[idx].ID) == target {
