@@ -228,10 +228,12 @@ func replayEvent(writer *Writer, stream *replayStream, evt event.Event) (replayC
 
 // replayIndexes rewrites every project's INDEX from the folded streams and
 // returns the project names written.
-func replayIndexes(writer *Writer, streams map[string]*replayStream) ([]string, error) {
+func replayIndexes(writer *Writer, streams map[cqrsid.StreamID]*replayStream) ([]string, error) {
 	rowsByProject := make(map[string][]IndexRow)
 
-	for _, streamID := range slices.Sorted(maps.Keys(streams)) {
+	for _, streamID := range slices.SortedFunc(maps.Keys(streams), func(a, b cqrsid.StreamID) int {
+		return strings.Compare(a.String(), b.String())
+	}) {
 		stream := streams[streamID]
 		rowsByProject[stream.address.project] = append(rowsByProject[stream.address.project], IndexRow{
 			ViewKey:   stream.address.viewKey,
