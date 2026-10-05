@@ -65,7 +65,11 @@ func newBenchWorld(b *testing.B, dir string, views, passes int) *benchWorld {
 		}
 	})
 
-	reviewer, err := NewReviewer(newMockReviewModel("## Review\nFine.\n\n**Score: 7/10**"), NewModelID("bench-model"), time.Minute)
+	reviewer, err := NewReviewer(
+		newMockReviewModel("## Review\nFine.\n\n**Score: 7/10**"),
+		NewModelID("bench-model"),
+		time.Minute,
+	)
 	if err != nil {
 		b.Fatalf("NewReviewer: %v", err)
 	}

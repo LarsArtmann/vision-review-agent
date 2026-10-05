@@ -138,6 +138,7 @@ linters:
             - github.com/larsartmann/vision-review-agent
             - github.com/larsartmann/go-cqrs-lite
             - github.com/larsartmann/go-codec
+            - github.com/larsartmann/go-branded-id
             - charm.land/fantasy
             - charm.land/catwalk
             - github.com/onsi/ginkgo
