@@ -6,8 +6,24 @@ import (
 	"time"
 
 	"charm.land/fantasy"
+	id "github.com/larsartmann/go-branded-id"
 	"github.com/larsartmann/vision-review-agent/pkg/vision"
 )
+
+// ModelBrand marks branded model identifiers recorded in review events.
+type ModelBrand struct{}
+
+// Name implements [id.BrandNamer], so a ModelID renders as "Model:<id>" in
+// debug and log output.
+func (ModelBrand) Name() string { return "Model" }
+
+// ModelID identifies the vision-language model a Reviewer runs on. Event
+// payloads journal the plain string form; the brand keeps arbitrary strings
+// (view keys, project names) out of model-identifier positions.
+type ModelID = id.ID[ModelBrand, string]
+
+// NewModelID brands s as a ModelID.
+func NewModelID(s string) ModelID { return id.NewID[ModelBrand](s) }
 
 // ReviewResult is the model's judgment of one or two images.
 type ReviewResult struct {
@@ -21,7 +37,7 @@ type ReviewResult struct {
 type Reviewer struct {
 	reviewAgent  *vision.Agent
 	compareAgent *vision.Agent
-	model        string
+	model        ModelID
 }
 
 // NewReviewerFromConfig builds a Reviewer from daemon configuration: an
@@ -33,12 +49,12 @@ func NewReviewerFromConfig(ctx context.Context, config Config) (*Reviewer, error
 		return nil, err
 	}
 
-	return NewReviewer(languageModel, config.Model, config.Timeout)
+	return NewReviewer(languageModel, NewModelID(config.Model), config.Timeout)
 }
 
 // NewReviewer builds a Reviewer over an existing language model. modelID is
 // recorded in events; timeout bounds each model request.
-func NewReviewer(languageModel fantasy.LanguageModel, modelID string, timeout time.Duration) (*Reviewer, error) {
+func NewReviewer(languageModel fantasy.LanguageModel, modelID ModelID, timeout time.Duration) (*Reviewer, error) {
 	reviewAgent, err := newAgent(languageModel, ReviewSystemPrompt, "review", timeout)
 	if err != nil {
 		return nil, err
@@ -74,7 +90,7 @@ func newAgent(
 
 // Model returns the model id recorded in events.
 func (r *Reviewer) Model() string {
-	return r.model
+	return r.model.Get()
 }
 
 // Review asks the model to review the screenshot at imagePath and returns its

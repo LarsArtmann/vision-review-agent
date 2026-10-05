@@ -66,7 +66,7 @@ var _ = Describe("Daemon", func() {
 
 		Expect(writeShotPNG(filepath.Join(shotsDir, "Home--dark--desktop.png"))).To(Succeed())
 
-		reviewer, err := reviewed.NewReviewer(model, "stub-model", 0)
+		reviewer, err := reviewed.NewReviewer(model, reviewed.NewModelID("stub-model"), 0)
 		Expect(err).NotTo(HaveOccurred())
 
 		pipeline, err := reviewed.NewPipeline(

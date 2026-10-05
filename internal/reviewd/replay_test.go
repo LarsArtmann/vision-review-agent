@@ -79,7 +79,7 @@ func TestReplayRebuildsWipedReviewsDirByteIdentical(t *testing.T) {
 		}
 	}()
 
-	reviewer, err := NewReviewer(newMockReviewModel("## Review\nFine.\n\n**Score: 7/10**"), "test-model", time.Minute)
+	reviewer, err := NewReviewer(newMockReviewModel("## Review\nFine.\n\n**Score: 7/10**"), NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}

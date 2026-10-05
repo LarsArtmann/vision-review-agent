@@ -41,7 +41,7 @@ func newCancelledPassPipeline(t *testing.T, model fantasy.LanguageModel) (*Pipel
 	writeComparePNG(t, shots, "Home--dark--desktop", scanTestPNG)
 	writeComparePNG(t, shots, "Settings--dark--desktop", scanTestPNG)
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}

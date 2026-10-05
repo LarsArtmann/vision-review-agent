@@ -33,7 +33,7 @@ var _ = Describe("Replay", func() {
 
 		reviewer, err := reviewed.NewReviewer(
 			&stubLanguageModel{markdown: "## Diff\nSpacing improved.\n\nScore: 9/10"},
-			"stub-review-model",
+			reviewed.NewModelID("stub-review-model"),
 			0,
 		)
 		Expect(err).NotTo(HaveOccurred())

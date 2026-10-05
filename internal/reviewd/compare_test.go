@@ -18,7 +18,7 @@ func TestCompareManuallyRecordsEventAndWritesMarkdown(t *testing.T) {
 
 	model := newMockReviewModel("## Diff\nSpacing improved.\n\n**Score: 9/10**")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestCompareManuallyEmptyAfterName(t *testing.T) {
 	beforePath := writeComparePNG(t, dir, "before", scanTestPNG)
 	afterPath := filepath.Join(dir, ".png")
 
-	reviewer, err := NewReviewer(newMockReviewModel("x"), "test-model", time.Minute)
+	reviewer, err := NewReviewer(newMockReviewModel("x"), NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}

@@ -46,7 +46,7 @@ var _ = Describe("Pipeline Pass", func() {
 
 		model = &stubLanguageModel{markdown: "## Review\nLooks good.\n\n**Score: 8/10**"}
 
-		reviewer, reviewerErr := reviewed.NewReviewer(model, "stub-model", 0)
+		reviewer, reviewerErr := reviewed.NewReviewer(model, reviewed.NewModelID("stub-model"), 0)
 		Expect(reviewerErr).NotTo(HaveOccurred())
 
 		store, err = reviewed.OpenStore(filepath.Join(dataDir, "events.db"), slog.Default())

@@ -144,7 +144,7 @@ func TestReviewerReviewParsesScoreAndPrompt(t *testing.T) {
 
 	model := newMockReviewModel("## Summary\nLooks fine.\n\nScore: 8/10")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -179,7 +179,7 @@ func TestReviewerReviewUnknownScore(t *testing.T) {
 
 	model := newMockReviewModel("## Summary\nNo score line at all.")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestReviewerReviewModelError(t *testing.T) {
 	model := newMockReviewModel("")
 	model.generateErr = errors.New("model exploded")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -224,7 +224,7 @@ func TestReviewerReviewMissingImage(t *testing.T) {
 
 	model := newMockReviewModel("Score: 5/10")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -248,7 +248,7 @@ func TestReviewerCompareSendsTwoImages(t *testing.T) {
 
 	model := newMockReviewModel("## What improved\n- spacing\n\nScore: 9/10")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -278,7 +278,7 @@ func TestReviewerCompareMissingAfter(t *testing.T) {
 
 	model := newMockReviewModel("Score: 1/10")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -301,7 +301,7 @@ func TestReviewerCompareMissingAfter(t *testing.T) {
 func TestReviewerModelAccessor(t *testing.T) {
 	t.Parallel()
 
-	reviewer, err := NewReviewer(newMockReviewModel(""), "some-model", time.Minute)
+	reviewer, err := NewReviewer(newMockReviewModel(""), NewModelID("some-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
@@ -316,7 +316,7 @@ func TestReviewerUsesPersonaSystemPrompts(t *testing.T) {
 
 	model := newMockReviewModel("Score: 5/10")
 
-	reviewer, err := NewReviewer(model, "test-model", time.Minute)
+	reviewer, err := NewReviewer(model, NewModelID("test-model"), time.Minute)
 	if err != nil {
 		t.Fatalf("NewReviewer: %v", err)
 	}
