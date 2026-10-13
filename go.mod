@@ -3,21 +3,21 @@ module github.com/larsartmann/vision-review-agent
 go 1.27.1
 
 require (
-	charm.land/catwalk v0.52.62
+	charm.land/catwalk v0.52.69
 	charm.land/fantasy v0.45.2
 	github.com/larsartmann/go-branded-id v0.7.0
 	github.com/larsartmann/go-codec v0.3.1
-	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.7.1
-	github.com/larsartmann/go-cqrs-lite/event/v4 v4.13.0
-	github.com/larsartmann/go-cqrs-lite/id/v4 v4.6.2
-	github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4 v4.2.2
-	github.com/onsi/ginkgo/v2 v2.33.0
+	github.com/larsartmann/go-cqrs-lite/decider/v4 v4.7.2
+	github.com/larsartmann/go-cqrs-lite/event/v4 v4.13.1
+	github.com/larsartmann/go-cqrs-lite/id/v4 v4.7.2
+	github.com/larsartmann/go-cqrs-lite/storage/bbolt/v4 v4.2.3
+	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/stretchr/testify v1.12.1
 	go.etcd.io/bbolt v1.5.0
-	golang.org/x/image v0.46.0
-	golang.org/x/sync v0.23.0
+	golang.org/x/image v0.47.0
+	golang.org/x/sync v0.24.0
 )
 
 require (
@@ -103,10 +103,10 @@ require (
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
-	golang.org/x/tools v0.50.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/api v0.300.0 // indirect
 	google.golang.org/genai v1.72.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
