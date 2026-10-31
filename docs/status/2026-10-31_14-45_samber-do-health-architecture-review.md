@@ -94,8 +94,8 @@ Bonus fixes in the same sweep:
 | Check                                   | Result                                                                   |
 | --------------------------------------- | ------------------------------------------------------------------------ |
 | `go build ./...`, `go vet ./...`, `gofmt -l .` | clean (run post-fixes)                                                   |
-| `go test -race ./...`                   | all packages green **except the documented KNOWN RED** (`TestApplyViewStateIgnoresUnknownEventType`, untouched per policy) |
-| `nix run .#lint` (pinned golangci-lint) | see remaining-findings note below: only the KNOWN RED's `err113` line + the `GOEXPERIMENT=none` transitive blocker remain |
+| `go test -race ./...`                   | 8/9 packages green; the only failure is the documented KNOWN RED (`TestApplyViewStateIgnoresUnknownEventType`, untouched per policy) |
+| `nix run .#lint` (pinned golangci-lint) | **1 issue** — the `err113` on `store.go:97`, which is the exact line of the KNOWN RED (product decision pending). Started this pass at 11 issues |
 | `go mod tidy -diff` / `go mod verify`   | clean / all modules verified                                             |
 | New tests                               | `TestProbeModelEndpoint` (+subtests), `TestProbeModelEndpointUnreachable`, `TestProbeModelEndpointSendsAPIKey`, `TestHealthGate{SkipsPassWhenUnhealthy,DelegatesWhenHealthy,DeadContextBypassesProbe}`, `TestNewHealthGateRejectsInvalidWiring` — all pass under `-race` |
 
@@ -103,7 +103,7 @@ Bonus fixes in the same sweep:
 
 | #  | Recommendation                                                                                                                                                     | Effort |
 | -- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| R1 | Add a **CI grep guard for `encoding/json/v2` in the daemon+SDK build steps** and a scheduled (weekly) tree-wide grep job — memory-based recurrence detection has failed 7 times | S      |
+| R1 | The CI grep guard exists (first step of `build-and-test`) but **auto-commit direct pushes bypass PR checks by design** — that is exactly how seven recurrences landed. Make the auto-commit daemon itself run the tree-wide grep + pinned lint before committing (or add a scheduled job so drift is caught within days, not weeks) | M      |
 | R2 | Decide the KNOWN RED fold semantics (tolerate-and-ignore vs strict) — it is the only red test and the only `err113` finding                                          | M      |
 | R3 | Consider gating `once` with the same health gate behind a flag (`--skip-unhealthy`) if operators start running it from cron                                         | S      |
 | R4 | If the daemon ever grows an HTTP surface, reuse `ProbeModelEndpoint` + the doctor checks as a `/healthz` handler — the probe extraction made that a one-liner         | S      |
