@@ -226,4 +226,12 @@ else
 	echo "site-monitor: $ok_count ok, $warn_count warn, $known_count known-broken, $unexpected_fail UNEXPECTED FAIL"
 fi
 
+# Off-machine vantage (T13b): a dead-man's switch ping proves the MONITOR
+# itself ran, so fleet-down is visible even when this whole box is down.
+# Set SITE_MONITOR_PING_URL to a healthchecks.io-style ping endpoint; the
+# ping fires only on a clean run (unexpected_fail == 0), best-effort.
+if [ "$unexpected_fail" -eq 0 ] && [ -n "${SITE_MONITOR_PING_URL:-}" ]; then
+	curl -fsS --max-time 10 "$SITE_MONITOR_PING_URL" >/dev/null 2>&1 || true
+fi
+
 [ "$unexpected_fail" -eq 0 ]

@@ -149,7 +149,18 @@ as go-cqrs-lite events on bbolt.
   `{baseUrl}/models` first (5 s timeout, shared probe with doctor); while the
   model endpoint is unhealthy, passes are skipped with one warning per pass
   and the views are picked up unchanged by the next healthy pass
-  (`internal/reviewd/health.go`)
+  (`internal/reviewd/health.go`). Operator surface per decision D3:
+  `healthGate` config stanza (`enabled`, `probeTimeout`) and
+  `once --skip-unhealthy`; skip logs carry consecutive-skip counts,
+  deferred-capture estimates, and a recovery Info with the outage length
+- **Model retry** — `retry` config stanza wires the vision SDK's
+  `Config.Retry` into both persona agents; default on (3 attempts, 2s
+  initial, 30s cap, jitter), `{"enabled": false}` disables. Streaming
+  paths are exempt by SDK design
+- **Pass resilience** — pass-start disk probe (`BlobStore.CheckWritable`)
+  aborts a pass with one clear error on an unwritable data disk, and
+  per-glob scan isolation keeps healthy globs working when one pattern or
+  file fails (`internal/reviewd/pipeline.go`, `scan.go`, `blobstore.go`)
 - **8 subcommands** — run, once, discover, compare, events, backup,
   replay, doctor, plus `version` (`cmd/visionreviewd`)
 - **Replay** — rebuild the whole reviews directory byte-identically from the
