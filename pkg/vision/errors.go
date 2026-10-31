@@ -64,8 +64,10 @@ const (
 	KindServerError        = apperrors.KindServerError
 	KindNotImplemented     = apperrors.KindNotImplemented
 	KindServiceUnavailable = apperrors.KindServiceUnavailable
+	KindOverloaded         = apperrors.KindOverloaded
 	KindNetwork            = apperrors.KindNetwork
 	KindAuthentication     = apperrors.KindAuthentication
+	KindPaymentRequired    = apperrors.KindPaymentRequired
 	KindNotFound           = apperrors.KindNotFound
 	KindBadRequest         = apperrors.KindBadRequest
 	KindContentFilter      = apperrors.KindContentFilter
