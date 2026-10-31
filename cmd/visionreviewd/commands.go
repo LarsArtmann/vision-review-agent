@@ -203,10 +203,21 @@ const compareArgCount = 2
 
 // gatedRunner wraps the pass runner in the endpoint health gate, so the
 // daemon loop skips passes while the model endpoint is down instead of
-// failing every changed view against it.
+// failing every changed view against it. The config stanza turns the gate
+// off and tunes the probe timeout (decision D3: configurable, on by
+// default).
 func gatedRunner(pipeline *reviewed.Pipeline, config reviewed.Config) (reviewed.PassRunner, error) {
+	if config.HealthGate != nil && config.HealthGate.Enabled != nil && !*config.HealthGate.Enabled {
+		return pipeline, nil
+	}
+
+	probeTimeout := reviewed.EndpointProbeTimeout
+	if config.HealthGate != nil && config.HealthGate.ProbeTimeout > 0 {
+		probeTimeout = config.HealthGate.ProbeTimeout
+	}
+
 	gate, err := reviewed.NewHealthGate(pipeline, func(ctx context.Context) error {
-		return reviewed.ProbeModelEndpoint(ctx, config, reviewed.EndpointProbeTimeout)
+		return reviewed.ProbeModelEndpoint(ctx, config, probeTimeout)
 	}, slog.Default())
 	if err != nil {
 		return nil, fmt.Errorf("build health gate: %w", err)

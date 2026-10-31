@@ -47,6 +47,12 @@ type Config struct {
 	// {"enabled": false} disables retry entirely.
 	Retry *RetryConfig `json:"retry,omitempty"`
 
+	// HealthGate is the pre-pass endpoint gating policy. The zero stanza
+	// means defaults: gate enabled with the package probe timeout. Omit the
+	// stanza for the same defaults; {"enabled": false} turns the gate off
+	// (every pass runs and fails per-view against a dead endpoint).
+	HealthGate *HealthGateConfig `json:"healthGate,omitempty"`
+
 	// SourceURLs optionally maps a project name to the page its
 	// screenshots were taken from (website captures). Rendered in review
 	// markdown so every review points back at the live page.
@@ -100,6 +106,23 @@ type RetryConfig struct {
 	Multiplier float64 `json:"multiplier,omitempty"`
 }
 
+// HealthGateConfig is the daemon's pre-pass endpoint gating policy.
+type HealthGateConfig struct {
+	// Enabled toggles the gate; nil means enabled (on by default).
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// ProbeTimeout bounds the pre-pass endpoint probe; zero falls back to
+	// EndpointProbeTimeout.
+	ProbeTimeout time.Duration `json:"-"`
+}
+
+// healthGateJSON is the wire shape of HealthGateConfig: the timeout as a
+// human string.
+type healthGateJSON struct {
+	Enabled      *bool  `json:"enabled,omitempty"`
+	ProbeTimeout string `json:"probeTimeout,omitempty"`
+}
+
 // retryJSON is the wire shape of RetryConfig: durations as human strings.
 type retryJSON struct {
 	Enabled        *bool   `json:"enabled,omitempty"`
@@ -120,6 +143,7 @@ type configJSON struct {
 	ReviewsDir string              `json:"reviewsDir"`
 	Projects   map[string][]string `json:"projects"`
 	Retry      *retryJSON          `json:"retry,omitempty"`
+	HealthGate *healthGateJSON     `json:"healthGate,omitempty"`
 	SourceURLs map[string]string   `json:"sourceURLs,omitempty"` //nolint:tagliatelle // wire key: existing user configs use sourceURLs; URL is not a word
 }
 
@@ -139,6 +163,7 @@ func DefaultConfig() Config {
 		ReviewsDir: DefaultReviewsDir,
 		Projects:   map[string][]string{},
 		Retry:      &policy,
+		HealthGate: &HealthGateConfig{},
 	}
 }
 
@@ -156,6 +181,7 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		ReviewsDir: c.ReviewsDir,
 		Projects:   c.Projects,
 		Retry:      nil, // decoded separately below: an absent stanza keeps the loaded default
+		HealthGate: nil, // decoded separately below: an absent stanza keeps the loaded default
 		SourceURLs: c.SourceURLs,
 	}
 
@@ -194,6 +220,17 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		}
 
 		c.Retry = policy
+	}
+
+	// A present healthGate stanza replaces the whole policy; an absent
+	// stanza keeps the loaded default.
+	if raw.HealthGate != nil {
+		gate, decodeErr := decodeHealthGatePolicy(raw.HealthGate)
+		if decodeErr != nil {
+			return decodeErr
+		}
+
+		c.HealthGate = gate
 	}
 
 	if raw.SourceURLs != nil {
@@ -266,6 +303,7 @@ func (c Config) MarshalJSON() ([]byte, error) {
 		ReviewsDir: c.ReviewsDir,
 		Projects:   c.Projects,
 		Retry:      encodeRetryPolicy(c.Retry),
+		HealthGate: encodeHealthGatePolicy(c.HealthGate),
 		SourceURLs: c.SourceURLs,
 	}
 
@@ -303,6 +341,48 @@ func encodeRetryPolicy(policy *RetryConfig) *retryJSON {
 		InitialBackoff: initial,
 		MaxBackoff:     maxBackoff,
 		Multiplier:     policy.Multiplier,
+	}
+}
+
+// decodeHealthGatePolicy converts the wire stanza; a duration parse failure
+// is a config error naming the offending field. A nil Enabled stays nil
+// (enabled by default).
+func decodeHealthGatePolicy(raw *healthGateJSON) (*HealthGateConfig, error) {
+	gate := HealthGateConfig{
+		Enabled:      nil,
+		ProbeTimeout: 0,
+	}
+
+	if raw.Enabled != nil {
+		gate.Enabled = raw.Enabled
+	}
+
+	timeout, err := parseOptionalDuration("healthGate.probeTimeout", raw.ProbeTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	gate.ProbeTimeout = timeout
+
+	return &gate, nil
+}
+
+// encodeHealthGatePolicy converts the policy to its wire shape; nil omits
+// the stanza.
+func encodeHealthGatePolicy(policy *HealthGateConfig) *healthGateJSON {
+	if policy == nil {
+		return nil
+	}
+
+	probeTimeout := ""
+
+	if policy.ProbeTimeout > 0 {
+		probeTimeout = policy.ProbeTimeout.String()
+	}
+
+	return &healthGateJSON{
+		Enabled:      policy.Enabled,
+		ProbeTimeout: probeTimeout,
 	}
 }
 

@@ -235,7 +235,7 @@ func TestRunDoctorAllChecksPass(t *testing.T) {
 		"ok   globs myapp: 1 screenshots match",
 		"ok   journal: no journal yet",
 		"ok   model endpoint: stub listed",
-		"5 checks, 0 failed",
+		"0 failed",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, out)
@@ -773,5 +773,61 @@ func TestRunDoctorJSONMode(t *testing.T) {
 
 	if !slices.Contains(names, "model endpoint") {
 		t.Fatalf("report checks %v missing model endpoint", names)
+	}
+}
+
+// TestRunDoctorEndpointFailureDetail pins the exact failure-detail shape
+// doctor reports through the shared probe delegation: the sentinel text,
+// the models URL, and the offending reason must all survive into the
+// printed line, so a fleet operator can diagnose from doctor output alone.
+func TestRunDoctorEndpointFailureDetail(t *testing.T) {
+	t.Parallel()
+
+	modelsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[{"id":"other-model"}]}`)
+	}))
+	t.Cleanup(modelsServer.Close)
+
+	shotsDir := filepath.Join(t.TempDir(), "shots")
+
+	if err := os.MkdirAll(shotsDir, 0o750); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(shotsDir, "Home--dark--desktop.png"), []byte("png"), 0o600); err != nil {
+		t.Fatalf("write screenshot: %v", err)
+	}
+
+	dataDir := filepath.Join(t.TempDir(), "data")
+	reviewsDir := filepath.Join(t.TempDir(), "reviews")
+
+	config := fmt.Sprintf(`{"model":"stub","baseUrl":"%s/v1","dataDir":%q,"reviewsDir":%q,"projects":{"myapp":[%q]}}`,
+		modelsServer.URL, dataDir, reviewsDir, filepath.Join(shotsDir, "*.png"))
+
+	configPath := filepath.Join(t.TempDir(), "config.json")
+
+	if err := os.WriteFile(configPath, []byte(config), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-config", configPath}, stdout, stderr)
+	if code != exitFailed {
+		t.Fatalf("exit = %d, want %d (stderr: %s)\n%s", code, exitFailed, stderr, stdout)
+	}
+
+	out := stdout.String()
+
+	for _, want := range []string{
+		"FAIL model endpoint: ",
+		"model endpoint unhealthy: ",
+		`model "stub" not listed at ` + modelsServer.URL + "/v1/models",
+		"1 failed",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("doctor output missing %q:\n%s", want, out)
+		}
 	}
 }
