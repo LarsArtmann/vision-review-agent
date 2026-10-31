@@ -145,6 +145,8 @@ Actions the system performs:
 | **Journal**    | The bbolt event store (`<dataDir>/events.db`): the source of truth; markdown is a rebuildable projection                | `Store`, `JournalPath`                     |
 | **Backup**     | Consistent journal snapshot via one bbolt read transaction; daemon must be stopped (one writer handle)                  | `Store.Backup`, `visionreviewd backup`     |
 | **Doctor**     | Preflight check: config paths, glob matches, journal read-and-fold, model endpoint reachability                         | `visionreviewd doctor`                     |
+| **Endpoint probe** | One cheap `/models` request proving the model endpoint can serve the configured model right now                     | `ProbeModelEndpoint`                       |
+| **Health gate** | PassRunner decorator that skips a whole pass (one warning) while the endpoint probe fails, instead of one model error per changed view | `HealthGate`, daemon loop   |
 | **Discover**   | Walk a project for known golden patterns and emit a suggested config                                                    | `visionreviewd discover`                   |
 | **INDEX**      | Per-project markdown table of every view with score + trend                                                             | `RenderIndex`                              |
 

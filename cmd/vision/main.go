@@ -432,45 +432,31 @@ func printAnalysisError(w io.Writer, err error, streamed bool) {
 	fmt.Fprintln(w, prefix, err)
 }
 
+// adviceByKind maps each classified error kind to a user-actionable hint;
+// kinds absent from the map get no specific advice.
+var adviceByKind = map[vision.ErrorKind]string{
+	vision.KindRateLimited:        "The AI provider is rate-limiting requests. Wait a moment and retry.",
+	vision.KindTimeout:            "The request timed out. Increase the -timeout flag or use fewer/smaller images.",
+	vision.KindServerError:        "The AI provider is experiencing issues. Retry later.",
+	vision.KindServiceUnavailable: "The AI provider is temporarily unavailable (503). Retry with backoff; consider a different model if persistent.",
+	vision.KindNotImplemented:     "The provider does not implement this model or feature (501). Use a different model or provider.",
+	vision.KindNetwork:            "Could not reach the AI provider. Check your internet connection and retry.",
+	vision.KindAuthentication:     "Authentication failed. Verify your API key environment variable (OPENAI_API_KEY or OPENROUTER_API_KEY).",
+	vision.KindNotFound:           "The requested model was not found. Check the -model flag.",
+	vision.KindBadRequest:         "The provider rejected the request. Check your prompt and image formats.",
+	vision.KindContentFilter:      "The provider's content policy rejected the request. Modify your prompt or image.",
+	vision.KindContextTooLarge:    "The input exceeds the model's context window. Use fewer or smaller images.",
+	vision.KindCancelled:          "The request was cancelled.",
+	vision.KindStructuredParse:    "The model failed to produce valid structured output. Try simplifying your prompt.",
+	vision.KindOverloaded:         "The AI provider is overloaded. Retry with backoff; consider a different model if persistent.",
+	vision.KindPaymentRequired:    "The account is out of credit or over quota. Check the provider's billing page.",
+	vision.KindUnknown:            "The provider returned an unrecognized error. Retry once; if it persists, report the message above.",
+}
+
 // adviceForKind returns a user-actionable hint for a given error kind,
 // or an empty string if no specific advice applies.
 func adviceForKind(kind vision.ErrorKind) string {
-	switch kind {
-	case vision.KindRateLimited:
-		return "The AI provider is rate-limiting requests. Wait a moment and retry."
-	case vision.KindTimeout:
-		return "The request timed out. Increase the -timeout flag or use fewer/smaller images."
-	case vision.KindServerError:
-		return "The AI provider is experiencing issues. Retry later."
-	case vision.KindServiceUnavailable:
-		return "The AI provider is temporarily unavailable (503). Retry with backoff; consider a different model if persistent."
-	case vision.KindNotImplemented:
-		return "The provider does not implement this model or feature (501). Use a different model or provider."
-	case vision.KindNetwork:
-		return "Could not reach the AI provider. Check your internet connection and retry."
-	case vision.KindAuthentication:
-		return "Authentication failed. Verify your API key environment variable (OPENAI_API_KEY or OPENROUTER_API_KEY)."
-	case vision.KindNotFound:
-		return "The requested model was not found. Check the -model flag."
-	case vision.KindBadRequest:
-		return "The provider rejected the request. Check your prompt and image formats."
-	case vision.KindContentFilter:
-		return "The provider's content policy rejected the request. Modify your prompt or image."
-	case vision.KindContextTooLarge:
-		return "The input exceeds the model's context window. Use fewer or smaller images."
-	case vision.KindCancelled:
-		return "The request was cancelled."
-	case vision.KindStructuredParse:
-		return "The model failed to produce valid structured output. Try simplifying your prompt."
-	case vision.KindOverloaded:
-		return "The AI provider is overloaded. Retry with backoff; consider a different model if persistent."
-	case vision.KindPaymentRequired:
-		return "The account is out of credit or over quota. Check the provider's billing page."
-	case vision.KindUnknown:
-		return "The provider returned an unrecognized error. Retry once; if it persists, report the message above."
-	default:
-		return ""
-	}
+	return adviceByKind[kind]
 }
 
 func printText(w io.Writer, result *vision.AnalyzeResult, streamed bool) {
