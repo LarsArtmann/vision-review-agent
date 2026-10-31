@@ -831,3 +831,20 @@ func TestRunDoctorEndpointFailureDetail(t *testing.T) {
 		}
 	}
 }
+
+func TestRunOnceSkipUnhealthyFlagParses(t *testing.T) {
+	t.Parallel()
+
+	missing := filepath.Join(t.TempDir(), "missing.json")
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"once", "-skip-unhealthy", "-config", missing}, stdout, stderr)
+	if code != exitFailed {
+		t.Fatalf("exit = %d, want %d (missing config), stderr:\n%s", code, exitFailed, stderr)
+	}
+
+	if strings.Contains(stderr.String(), "flag provided but not defined") {
+		t.Fatalf("-skip-unhealthy must parse:\n%s", stderr)
+	}
+}

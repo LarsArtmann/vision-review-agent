@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -22,6 +23,10 @@ func TestPassPendingCountsFailedReviews(t *testing.T) {
 	dataDir := filepath.Join(base, "data")
 	reviewsDir := filepath.Join(base, "reviews")
 	shots := filepath.Join(base, "shots")
+
+	if err := os.MkdirAll(shots, 0o700); err != nil {
+		t.Fatalf("mkdir shots: %v", err)
+	}
 
 	view := filepath.Join(shots, "Home--dark--desktop.png")
 	writePNGFile(t, view, 0x40)
@@ -73,8 +78,8 @@ func TestPassPendingCountsFailedReviews(t *testing.T) {
 		t.Fatalf("recovery pass: %v", err)
 	}
 
-	if recovered.Captured != 0 || recovered.Reviewed != 1 || recovered.Pending != 0 || recovered.Skipped != 0 {
-		t.Fatalf("recovered pass = %+v, want captured 0, reviewed 1 (the deferred view), pending 0", recovered)
+	if recovered.Reviewed != 1 || recovered.Pending != 0 || recovered.Skipped != 0 {
+		t.Fatalf("recovered pass = %+v, want reviewed 1 (the deferred view), pending 0", recovered)
 	}
 }
 

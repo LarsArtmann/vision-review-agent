@@ -121,6 +121,10 @@ func writePNGFile(t *testing.T, path string, shade uint8) {
 	image := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	image.Set(0, 0, color.NRGBA{R: shade, G: shade, B: shade, A: 0xff})
 
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatalf("mkdir %s: %v", filepath.Dir(path), err)
+	}
+
 	file, err := os.Create(path)
 	if err != nil {
 		t.Fatalf("create %s: %v", path, err)

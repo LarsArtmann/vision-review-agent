@@ -1,6 +1,7 @@
 package reviewed
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,19 +32,31 @@ type Capture struct {
 // modification time wins, so a view is always represented by its latest
 // screenshot. Directories and non-regular files matched by a glob are
 // ignored.
+//
+// Failures are isolated per glob and per file: one bad pattern or unreadable
+// file no longer blinds the scan to everything after it. The returned error
+// joins every failure (nil when none); the returned captures are everything
+// that scanned successfully, so callers can process the good part while
+// still surfacing the failures.
 func ScanProject(globs []string) ([]Capture, error) {
 	latest := make(map[ViewKey]Capture)
+
+	var errs []error
 
 	for _, glob := range globs {
 		matches, err := filepath.Glob(glob)
 		if err != nil {
-			return nil, fmt.Errorf("scan glob %s: %w", glob, err)
+			errs = append(errs, fmt.Errorf("scan glob %s: %w", glob, err))
+
+			continue
 		}
 
 		for _, path := range matches {
 			info, err := os.Stat(path)
 			if err != nil {
-				return nil, fmt.Errorf("scan %s: %w", path, err)
+				errs = append(errs, fmt.Errorf("scan %s: %w", path, err))
+
+				continue
 			}
 
 			if !info.Mode().IsRegular() {
@@ -56,7 +69,9 @@ func ScanProject(globs []string) ([]Capture, error) {
 
 			capture, err := captureOf(path, info)
 			if err != nil {
-				return nil, err
+				errs = append(errs, err)
+
+				continue
 			}
 
 			existing, seen := latest[capture.ViewKey]
@@ -66,7 +81,7 @@ func ScanProject(globs []string) ([]Capture, error) {
 		}
 	}
 
-	return sortedCaptures(latest), nil
+	return sortedCaptures(latest), errors.Join(errs...)
 }
 
 // captureOf derives a view key from the file name and hashes the file.

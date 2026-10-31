@@ -388,3 +388,84 @@ func TestLoadConfigRetryStanza(t *testing.T) {
 		}
 	})
 }
+
+func TestLoadConfigHealthGateStanza(t *testing.T) {
+	t.Parallel()
+
+	t.Run("absent stanza keeps the default (enabled, package timeout)", func(t *testing.T) {
+		t.Parallel()
+
+		path := writeConfigFile(t, t.TempDir(), `{"projects": {"proj": ["/abs/*.png"]}}`)
+
+		config, err := LoadConfig(path)
+		if err != nil {
+			t.Fatalf("LoadConfig: %v", err)
+		}
+
+		if config.HealthGate == nil {
+			t.Fatal("health gate config = nil, want default stanza")
+		}
+
+		if config.HealthGate.Enabled != nil {
+			t.Fatalf("enabled = %v, want nil (default on)", *config.HealthGate.Enabled)
+		}
+
+		if config.HealthGate.ProbeTimeout != 0 {
+			t.Fatalf("probeTimeout = %v, want 0 (package default)", config.HealthGate.ProbeTimeout)
+		}
+	})
+
+	t.Run("explicit stanza overrides and round-trips", func(t *testing.T) {
+		t.Parallel()
+
+		path := writeConfigFile(t, t.TempDir(),
+			`{"healthGate": {"enabled": false, "probeTimeout": "8s"}, "projects": {"proj": ["/abs/*.png"]}}`)
+
+		config, err := LoadConfig(path)
+		if err != nil {
+			t.Fatalf("LoadConfig: %v", err)
+		}
+
+		if config.HealthGate == nil || config.HealthGate.Enabled == nil || *config.HealthGate.Enabled {
+			t.Fatalf("health gate = %+v, want enabled=false", config.HealthGate)
+		}
+
+		if config.HealthGate.ProbeTimeout != 8*time.Second {
+			t.Fatalf("probeTimeout = %v, want 8s", config.HealthGate.ProbeTimeout)
+		}
+
+		encoded, err := json.Marshal(config)
+		if err != nil {
+			t.Fatalf("marshal: %v", err)
+		}
+
+		var reloaded Config
+		if err := json.Unmarshal(encoded, &reloaded); err != nil {
+			t.Fatalf("unmarshal: %v", err)
+		}
+
+		if reloaded.HealthGate == nil || reloaded.HealthGate.Enabled == nil || *reloaded.HealthGate.Enabled {
+			t.Fatalf("round-trip lost enabled=false: %+v", reloaded.HealthGate)
+		}
+
+		if reloaded.HealthGate.ProbeTimeout != 8*time.Second {
+			t.Fatalf("round-trip lost probeTimeout: %+v", reloaded.HealthGate)
+		}
+	})
+
+	t.Run("invalid probe timeout names the field", func(t *testing.T) {
+		t.Parallel()
+
+		path := writeConfigFile(t, t.TempDir(),
+			`{"healthGate": {"probeTimeout": "not-a-duration"}, "projects": {"proj": ["/abs/*.png"]}}`)
+
+		_, err := LoadConfig(path)
+		if err == nil {
+			t.Fatal("invalid probeTimeout must fail")
+		}
+
+		if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "healthGate.probeTimeout") {
+			t.Fatalf("err = %v, want ErrInvalidConfig naming healthGate.probeTimeout", err)
+		}
+	})
+}

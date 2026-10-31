@@ -86,16 +86,49 @@ func openPipeline(ctx context.Context, config reviewed.Config) (*reviewed.Pipeli
 }
 
 // runOnceCommand runs a single pass over all configured projects.
+// -skip-unhealthy gates the pass behind the same endpoint probe the daemon
+// loop uses, so cron operators can skip instead of burning doomed model
+// calls.
 func runOnceCommand(args []string, stdout, stderr io.Writer) int {
 	// art-dupl:accept command runners intentionally share the open-and-cleanup prologue; the defer must stay in this frame
-	config, pipeline, store, code, ok := openConfiguredPipeline("once", args, stderr)
-	if !ok {
-		return code
+	flagSet, configPath := newConfigFlagSet("once", stderr)
+
+	skipUnhealthy := flagSet.Bool("skip-unhealthy", false, "skip the pass when the model endpoint probe fails")
+
+	if err := flagSet.Parse(args); err != nil {
+		return exitUsage
+	}
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd once: %v\n", err)
+
+		return exitFailed
+	}
+
+	pipeline, store, err := openPipeline(context.Background(), config)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd once: %v\n", err)
+
+		return exitFailed
 	}
 
 	defer closeStore(store, "once", stderr)
 
-	result, err := pipeline.Pass(context.Background(), config.Projects)
+	runner := reviewed.PassRunner(pipeline)
+
+	if *skipUnhealthy {
+		gate, gateErr := gatedRunner(pipeline, config)
+		if gateErr != nil {
+			fmt.Fprintf(stderr, "visionreviewd once: %v\n", gateErr)
+
+			return exitFailed
+		}
+
+		runner = gate
+	}
+
+	result, err := runner.Pass(context.Background(), config.Projects)
 
 	fmt.Fprintf(stdout,
 		"pass complete: %d projects, %d views, %d captured, %d skipped, %d reviewed, %d compared\n",
