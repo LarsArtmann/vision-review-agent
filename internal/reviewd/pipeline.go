@@ -106,7 +106,9 @@ func (p *Pipeline) WithSourceURLs(urls map[string]string) *Pipeline {
 // Pass scans every project and processes each changed view once. Per-view
 // failures (model errors, write errors) are collected and joined into the
 // returned error after every project was processed, so one broken view never
-// blocks the others.
+// blocks the others. A pass aborts early (one error, zero work) when the
+// data disk cannot take writes — every view would fail at archive time
+// anyway, and a full disk is one operator problem, not N.
 func (p *Pipeline) Pass(ctx context.Context, projects map[string][]string) (PassResult, error) {
 	result := PassResult{
 		Projects: 0,
@@ -120,6 +122,10 @@ func (p *Pipeline) Pass(ctx context.Context, projects map[string][]string) (Pass
 
 	var errs []error
 
+	if err := p.blobs.CheckWritable(); err != nil {
+		return result, fmt.Errorf("pass aborted, blob store not writable: %w", err)
+	}
+
 	for _, project := range slices.Sorted(maps.Keys(projects)) {
 		if err := ctx.Err(); err != nil {
 			errs = append(errs, fmt.Errorf("project %s: skipped, pass context done: %w", project, err))
@@ -131,8 +137,13 @@ func (p *Pipeline) Pass(ctx context.Context, projects map[string][]string) (Pass
 
 		captures, err := ScanProject(projects[project])
 		if err != nil {
+			// Per-glob isolation: a bad pattern or unreadable file must not
+			// blind the pass to the project's healthy globs; the failures
+			// are reported AND the good captures still processed.
 			errs = append(errs, fmt.Errorf("project %s: %w", project, err))
+		}
 
+		if len(captures) == 0 {
 			continue
 		}
 

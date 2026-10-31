@@ -163,7 +163,7 @@ func DefaultConfig() Config {
 		ReviewsDir: DefaultReviewsDir,
 		Projects:   map[string][]string{},
 		Retry:      &policy,
-		HealthGate: &HealthGateConfig{},
+		HealthGate: &HealthGateConfig{Enabled: nil, ProbeTimeout: 0},
 	}
 }
 

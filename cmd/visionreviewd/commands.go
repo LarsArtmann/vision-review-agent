@@ -118,7 +118,7 @@ func runOnceCommand(args []string, stdout, stderr io.Writer) int {
 	runner := reviewed.PassRunner(pipeline)
 
 	if *skipUnhealthy {
-		gate, gateErr := gatedRunner(pipeline, config)
+		gate, gateErr := healthGatedRunner(pipeline, config)
 		if gateErr != nil {
 			fmt.Fprintf(stderr, "visionreviewd once: %v\n", gateErr)
 
@@ -234,12 +234,12 @@ func runCompareCommand(args []string, stdout, stderr io.Writer) int {
 // compareArgCount is the positional argument count compare expects.
 const compareArgCount = 2
 
-// gatedRunner wraps the pass runner in the endpoint health gate, so the
+// healthGatedRunner wraps the pass runner in the endpoint health gate, so the
 // daemon loop skips passes while the model endpoint is down instead of
 // failing every changed view against it. The config stanza turns the gate
 // off and tunes the probe timeout (decision D3: configurable, on by
 // default).
-func gatedRunner(pipeline *reviewed.Pipeline, config reviewed.Config) (reviewed.PassRunner, error) {
+func healthGatedRunner(pipeline *reviewed.Pipeline, config reviewed.Config) (reviewed.PassRunner, error) {
 	if config.HealthGate != nil && config.HealthGate.Enabled != nil && !*config.HealthGate.Enabled {
 		return pipeline, nil
 	}
@@ -260,7 +260,7 @@ func gatedRunner(pipeline *reviewed.Pipeline, config reviewed.Config) (reviewed.
 }
 
 // runDaemonCommand runs the interval loop until SIGINT/SIGTERM.
-// gatedRunner wraps the pipeline so a pass whose model endpoint is down is
+// healthGatedRunner wraps the pipeline so a pass whose model endpoint is down is
 // skipped with one warning instead of one failed model call per changed
 // view; the loop self-heals on the next interval once the endpoint returns.
 func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
@@ -272,7 +272,7 @@ func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
 
 	defer closeStore(store, "run", stderr)
 
-	runner, err := gatedRunner(pipeline, config)
+	runner, err := healthGatedRunner(pipeline, config)
 	if err != nil {
 		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
 

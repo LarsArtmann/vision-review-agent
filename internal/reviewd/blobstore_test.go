@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -153,4 +154,51 @@ func TestBlobStoreMissingSource(t *testing.T) {
 	if _, _, err := store.Store(filepath.Join(t.TempDir(), "missing.png")); err == nil {
 		t.Fatal("Store on missing source should error")
 	}
+}
+
+// TestBlobStoreCheckWritable proves the pass-start disk probe: a healthy
+// (or creatable) blob dir passes, an unwritable location fails with the
+// offending path named.
+func TestBlobStoreCheckWritable(t *testing.T) {
+	t.Parallel()
+
+	t.Run("healthy dir passes and re-creates a wiped dataDir", func(t *testing.T) {
+		t.Parallel()
+
+		blobs := NewBlobStore(filepath.Join(t.TempDir(), "data"))
+
+		if err := blobs.CheckWritable(); err != nil {
+			t.Fatalf("fresh dataDir should pass: %v", err)
+		}
+
+		if err := os.Remove(blobs.Dir()); err != nil {
+			t.Fatalf("remove blob dir: %v", err)
+		}
+
+		if err := blobs.CheckWritable(); err != nil {
+			t.Fatalf("wiped blob dir should heal: %v", err)
+		}
+	})
+
+	t.Run("unwritable location fails naming the path", func(t *testing.T) {
+		t.Parallel()
+
+		if os.Geteuid() == 0 {
+			t.Skip("root ignores permission bits")
+		}
+
+		base := t.TempDir()
+		readOnly := filepath.Join(base, "ro")
+
+		if err := os.Mkdir(readOnly, 0o500); err != nil {
+			t.Fatalf("mkdir ro: %v", err)
+		}
+
+		blobs := &BlobStore{dir: filepath.Join(readOnly, "images")}
+
+		err := blobs.CheckWritable()
+		if err == nil || !strings.Contains(err.Error(), readOnly) {
+			t.Fatalf("err = %v, want failure naming %s", err, readOnly)
+		}
+	})
 }

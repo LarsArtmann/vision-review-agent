@@ -389,6 +389,7 @@ func TestLoadConfigRetryStanza(t *testing.T) {
 	})
 }
 
+//nolint:gocognit // dense by design: one function groups the healthGate-stanza scenarios; subtests are the readable shape
 func TestLoadConfigHealthGateStanza(t *testing.T) {
 	t.Parallel()
 

@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **sd_notify watchdog** — `run` announces `READY=1` at startup and pings
+  `WATCHDOG=1` from a background heartbeat at half the negotiated
+  `WATCHDOG_USEC` budget (spans whole passes: a slow model call is progress,
+  not a hang). The NixOS module switches the unit to `Type=notify` with a
+  configurable `watchdogSec` (default 30m, documented against the
+  worst-case pass). Outside systemd the notifier is an inert no-op
+  (`internal/reviewd/notify.go`, protocol-tested against a real unixgram
+  socket).
+- **Health-gate operator surface** — `config.json` gains a `healthGate`
+  stanza (`{"enabled": false, "probeTimeout": "8s"}`) per decision D3:
+  on by default, configurable for cron operators and odd endpoints.
+  `visionreviewd once -skip-unhealthy` gates a one-shot pass behind the same
+  probe the daemon loop uses.
+- **Pass observability** — every pass log line carries `pending` (views
+  captured but left unreviewed by model failures — the greppable degradation
+  signal) and `duration`; a pass that overruns the interval logs
+  "overran the interval; the next tick was dropped".
+- **doctor blob-dir probe** — doctor now also probes
+  `<dataDir>/images` writability, so a broken blob store fails health
+  checks before the first capture.
 - **Health gate on the daemon `run` loop** — `HealthGate` (a `PassRunner`
   decorator) probes the configured model endpoint before each pass; while
   the endpoint is down, passes are skipped with a warning instead of burning

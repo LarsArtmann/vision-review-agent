@@ -3,6 +3,7 @@ package reviewed
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -147,4 +148,36 @@ var scanTestPNG = []byte{
 	0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x62, 0x00, 0x01, 0x00, 0x00,
 	0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
 	0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+}
+
+// TestScanProjectIsolatesBadGlobs proves per-glob isolation: a bad pattern
+// or unreadable file fails the scan WITH an error naming it, but every
+// healthy glob still yields captures.
+func TestScanProjectIsolatesBadGlobs(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeScanPNG(t, dir, "Home--dark--desktop")
+
+	captures, err := ScanProject([]string{"[", filepath.Join(dir, "*.png")})
+	if err == nil {
+		t.Fatal("want error naming the bad glob")
+	}
+
+	if !strings.Contains(err.Error(), "[") {
+		t.Fatalf("error %q should name the offending pattern", err)
+	}
+
+	if len(captures) != 1 || captures[0].ViewKey.String() != "Home--dark--desktop" {
+		t.Fatalf("captures = %+v, want the healthy glob's capture despite the bad glob", captures)
+	}
+
+	clean, err := ScanProject([]string{filepath.Join(dir, "*.png")})
+	if err != nil {
+		t.Fatalf("clean scan: %v", err)
+	}
+
+	if len(clean) != 1 {
+		t.Fatalf("clean scan captures = %d, want 1", len(clean))
+	}
 }

@@ -26,6 +26,29 @@ func (b *BlobStore) Dir() string {
 	return b.dir
 }
 
+// CheckWritable probes that the blob directory can take a write and remove
+// right now. It is the pass-start disk-health gate: a full or read-only disk
+// fails every archive anyway, so the pass aborts with one clear error
+// instead of N per-view failures. The probe re-creates the directory so a
+// wiped dataDir heals instead of failing forever.
+func (b *BlobStore) CheckWritable() error {
+	if err := os.MkdirAll(b.dir, blobDirPermission); err != nil {
+		return fmt.Errorf("create %s: %w", b.dir, err)
+	}
+
+	probe := filepath.Join(b.dir, ".write-probe")
+
+	if err := os.WriteFile(probe, []byte("probe"), blobFilePermission); err != nil {
+		return fmt.Errorf("write %s: %w", probe, err)
+	}
+
+	if err := os.Remove(probe); err != nil {
+		return fmt.Errorf("remove %s: %w", probe, err)
+	}
+
+	return nil
+}
+
 // blobDirPermission and blobFilePermission restrict the data directory to
 // the running user; the event store and blobs are private daemon state.
 const (
