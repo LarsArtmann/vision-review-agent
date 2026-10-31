@@ -317,7 +317,15 @@
             projectRootFile = "go.mod";
             programs = {
               gofumpt.enable = true;
-              goimports.enable = true;
+              # goimports is deliberately NOT a treefmt program: it loads
+              # packages via the go toolchain, and inside the network-less
+              # nix build sandbox it tries to download go1.27.1 (go.mod
+              # floor > the bundled go) — `nix flake check` has been red on
+              # that since the treefmt-nix/go bump (2026-10, CI + local:
+              # "formatted 3 files (0 changed)" + toolchain download
+              # refused). Import ORDER is enforced by the `gci` linter in
+              # .golangci.yaml (a required CI check); gofumpt here covers
+              # formatting and needs no package loading at all.
               nixfmt.enable = true;
             };
           };
