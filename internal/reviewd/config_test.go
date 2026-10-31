@@ -1,7 +1,7 @@
 package reviewed
 
 import (
-	"encoding/json/v2"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
