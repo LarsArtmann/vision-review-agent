@@ -97,7 +97,9 @@ func ProbeModelEndpoint(ctx context.Context, config Config, timeout time.Duratio
 // once the endpoint is back. The gate tracks its probe outcomes so every
 // log line carries the operator-visible state: consecutive skip count,
 // time since the endpoint was last healthy, and how many captures the
-// skipped pass deferred.
+// skipped pass deferred. A skipped pass leaves the reviews dir and INDEX
+// untouched (stale-but-true from the last good pass); the first healthy
+// pass reviews the deferred captures. See DOMAIN_LANGUAGE.md, "Health gate".
 type HealthGate struct {
 	inner  PassRunner
 	probe  func(ctx context.Context) error
@@ -107,6 +109,8 @@ type HealthGate struct {
 	consecutiveSkips int
 	lastHealthy      time.Time // zero: the probe has never succeeded
 }
+
+var _ PassRunner = (*HealthGate)(nil)
 
 // NewHealthGate wires the decorator. The probe must be non-nil and cheap
 // relative to a pass; a nil logger falls back to the default logger.

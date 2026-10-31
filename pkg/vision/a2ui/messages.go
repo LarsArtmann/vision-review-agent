@@ -53,6 +53,20 @@ type CreateSurface struct {
 
 	// SendDataModel makes the client send the full data model back with
 	// every action it dispatches. Optional.
+	//
+	// Wire-regime note (dual json v1+v2): the payload marshals with
+	// `omitempty`. Under json v1 a false bool is omitted, so the field is
+	// absent when false and present (`true`) when set — exactly the
+	// spec-neutral shape. Under the jsonv2 experiment, `omitempty` on a
+	// bool EMITS `false` explicitly; that is still spec-valid (the official
+	// schema has no additionalProperties:false on this payload and a false
+	// flag equals the default), so the tag is regime-stable without
+	// reaching for `omitzero` — which v1 (pre-Go-1.24 semantics) would
+	// render as the literal string "omitzero" in the tag and ignore. If
+	// this ever changes, the conformance suite and the JSONL golden
+	// roundtrips in this package are the tripwires; see AGENTS.md, "Dual
+	// json v1+v2 support" (the 09-13/09-29 recurrences flipped exactly
+	// this tag).
 	SendDataModel bool
 
 	version string

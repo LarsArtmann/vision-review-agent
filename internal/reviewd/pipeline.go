@@ -37,6 +37,12 @@ type PassResult struct { // Projects is the number of projects scanned.
 
 	// Compared is the number of BEFORE→AFTER comparisons completed.
 	Compared int
+
+	// Pending is the number of views this pass captured but could not
+	// review (model failures). They stay NeedsReview and the next pass
+	// picks them up; a persistently nonzero Pending is the greppable
+	// degradation signal.
+	Pending int
 }
 
 // Pipeline performs review passes over configured projects: scan for
@@ -109,6 +115,7 @@ func (p *Pipeline) Pass(ctx context.Context, projects map[string][]string) (Pass
 		Skipped:  0,
 		Reviewed: 0,
 		Compared: 0,
+		Pending:  0,
 	}
 
 	var errs []error
@@ -135,6 +142,7 @@ func (p *Pipeline) Pass(ctx context.Context, projects map[string][]string) (Pass
 		result.Skipped += projectResult.Skipped
 		result.Reviewed += projectResult.Reviewed
 		result.Compared += projectResult.Compared
+		result.Pending += projectResult.Pending
 
 		if err != nil {
 			errs = append(errs, fmt.Errorf("project %s: %w", project, err))
@@ -153,6 +161,7 @@ func (p *Pipeline) passProject(ctx context.Context, project string, captures []C
 		Skipped:  0,
 		Reviewed: 0,
 		Compared: 0,
+		Pending:  0,
 	}
 
 	var errs []error
@@ -203,6 +212,7 @@ func (p *Pipeline) passProject(ctx context.Context, project string, captures []C
 		if reviewErr := p.review(ctx, project, capture.ViewKey, captured); reviewErr != nil {
 			p.logger.Warn("review failed", "view", capture.ViewKey.String(), "err", reviewErr)
 			errs = append(errs, reviewErr)
+			result.Pending++
 
 			continue
 		}

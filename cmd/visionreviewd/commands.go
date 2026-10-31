@@ -623,8 +623,9 @@ type doctorCheck struct {
 // counts per project, journal readability, and the model endpoint's model
 // list.
 func doctorChecks(ctx context.Context, config reviewed.Config) []doctorCheck {
-	checks := make([]doctorCheck, 0, len(config.Projects))
+	checks := make([]doctorCheck, 0, len(config.Projects)+3)
 	checks = append(checks, checkWritableDir("dataDir", config.DataDir))
+	checks = append(checks, checkWritableDir("blobDir", reviewed.NewBlobStore(config.DataDir).Dir()))
 	checks = append(checks, checkWritableDir("reviewsDir", config.ReviewsDir))
 	checks = append(checks, checkProjectGlobs(config)...)
 	checks = append(checks, checkJournal(ctx, config))

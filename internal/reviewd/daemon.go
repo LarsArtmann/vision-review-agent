@@ -154,9 +154,20 @@ func (d *Daemon) startLiveness(ctx context.Context) {
 	}()
 }
 
-// runPass executes one pass and logs its outcome.
+// runPass executes one pass and logs its outcome. A pass that overruns the
+// interval consumed the next tick's slot; the warning makes that degradation
+// greppable instead of silent.
 func (d *Daemon) runPass(ctx context.Context) {
+	started := time.Now()
+
 	result, err := d.pipeline.Pass(ctx, d.projects)
+
+	duration := time.Since(started)
+	if duration > d.interval {
+		d.logger.Warn("review pass overran the interval; the next tick was dropped",
+			"duration", duration, "interval", d.interval)
+	}
+
 	if err != nil {
 		d.logger.Warn("review pass finished with errors",
 			"err", err,
@@ -172,5 +183,7 @@ func (d *Daemon) runPass(ctx context.Context) {
 		"captured", result.Captured,
 		"skipped", result.Skipped,
 		"reviewed", result.Reviewed,
-		"compared", result.Compared)
+		"compared", result.Compared,
+		"pending", result.Pending,
+		"duration", duration)
 }
