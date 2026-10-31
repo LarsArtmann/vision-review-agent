@@ -44,6 +44,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `encoding/json/v2`/`jsontext` import returns — positive-control-proven and
   CI-bypass-immune. `internal/reviewd` additionally walks the whole module,
   so a recurrence anywhere is caught by any reviewd test run.
+- **Model retry policy** — `config.json` gains a `retry` stanza wired into
+  both persona agents through the vision SDK's `Config.Retry` (fantasy
+  HTTP-layer `MaxRetries` stays 0). Default when absent: enabled, 3
+  attempts, 2s initial backoff (llama-server cold-start window), 30s cap,
+  2.0x, jitter always on; a present stanza replaces the whole policy and
+  `{"enabled": false}` kills retry. Proven E2E: a transient 500 on the
+  first model call is retried and the view still reviews exactly once.
+- **json-v1 regime watchdog (CI scope fix)** — the perpetually-red
+  `no-jsonv2` job (red since 2026-09-29 for the transitive
+  kaptinlin-via-fantasy blocker; the fantasy-free package set is provably
+  empty) became a watchdog: GREEN while the `GOEXPERIMENT=none` failure is
+  still exactly the documented kaptinlin chain, RED "blocker is GONE" when
+  kaptinlin ships a dual-regime release (restore the full SDK subset then),
+  RED "chain changed" if the failure shape ever differs. A weekly
+  scheduled workflow re-runs the tree-wide grep plus the package-local
+  guard tests, so a recurrence is caught within 7 days regardless of how
+  it landed.
+- **`doctor -json`** — machine-readable doctor report (`checks` with
+  name/ok/detail plus `total`/`failed`) with the same exit-code contract;
+  text output unchanged and still the default.
+- **Pass-start disk probe + per-glob scan isolation** — `Pass` aborts with
+  one clear error when the blob directory cannot take writes (re-creating a
+  wiped dir instead of failing forever), and `ScanProject` now joins
+  per-glob/per-file failures while still returning the healthy captures, so
+  one bad glob no longer blinds the pass to the rest of a project.
+- **site-monitor daemon-gate watch** — the fleet monitor counts
+  `pass skipped, model endpoint unhealthy` lines in the visionreviewd
+  journal over a 24h window and fires a critical desktop notification once
+  per threshold crossing (default 3), reusing the existing notify path.
+- **Decision records** — `docs/decisions/` opens with D1 (fold tolerates
+  unknown event kinds) and D2 (no DI container; samber/do declined with
+  explicit revisit triggers), plus the upstream jsonv2-blocker watch table,
+  seventh-recurrence post-mortem, and the Q8_0-vs-smaller-quant open
+  decision in `docs/DEPS.md`.
 - **Tolerant fold for unknown event types** — `ApplyViewState` counts
   unrecognized events into `ViewState.UnknownEvents` instead of erroring
   (decision D1, 2026-10-31: journals are a lifetime asset; an old binary must

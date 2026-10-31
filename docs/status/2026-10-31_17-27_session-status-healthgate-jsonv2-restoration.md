@@ -152,3 +152,24 @@ Should the gate be operator-visible configuration (`healthGate.enabled`, `probeT
 ---
 
 **Per instruction: WAITING FOR FURTHER INSTRUCTIONS.** Section (f) is HARVEST-ready; say the word and it routes into TODO_LIST.md / ROADMAP.md.
+
+---
+
+## Resolution annotation (2026-10-31 evening session — annotated, never rewritten)
+
+- **g1 ANSWERED as decision D1 (tolerate-and-ignore)** — fold now counts
+  unknown events into `ViewState.UnknownEvents`; red test green, last
+  err113 finding gone. Record:
+  `docs/decisions/2026-10-31_D1-fold-tolerates-unknown-events.md`.
+- **g3 ANSWERED as decision D3 (configurable, on by default)** —
+  `healthGate` stanza (`enabled`, `probeTimeout`) plus
+  `once --skip-unhealthy` landed; record cited in CHANGELOG.
+- **g2 STILL OPEN** — the auto-commit commit gate remains the one
+  unimplemented R-class item; harvested to TODO_LIST "Pareto plan residue".
+- "lint 1 issue" (err113) is now **lint 0 issues** (pinned golangci-lint
+  v2.13.2, verified 2026-10-31 evening); the KNOWN RED is green; master is
+  fully green for the first time since 2026-10-05.
+- Verification receipts this session: `go test -race ./...` green
+  (reviewd, cmd/visionreviewd, pkg/vision included), tree-wide v2 grep
+  clean (exit 1 = no matches, 21:20), lint 0 (21:10), actionlint clean on
+  both touched workflows.

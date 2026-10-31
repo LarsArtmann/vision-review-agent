@@ -255,3 +255,29 @@ flowchart TD
 ---
 
 *Point-in-time plan. When items ship, tick them here ONLY if a later task explicitly refreshes this file; the living source is `TODO_LIST.md` (HARVEST owns the transfer).*
+
+---
+
+## Execution status (2026-10-31 evening — this file may be ticked once; living source is TODO_LIST.md)
+
+Tier 1 (WP-01 guard tests) ✅ landed — both packages, module-wide walk,
+positive controls, manual negative control proven. Tier 2: WP-02's
+implementation arrived as decision D1 (parallel session; brief superseded
+by the decision record), WP-04 proof + audits ✅ (transitive-only blocker
+proven; go.sum −92 and SECURITY.md +40 audited as benign), WP-08 ✅
+(watchdog conversion + weekly scheduled grep, WP-11), WP-09 ✅ (retry
+stanza + transient-500 E2E), WP-10 ⏳ (nix steps run at session end).
+Tier 3: WP-05 ✅ E2E die/skip/recover, WP-07 ✅ observability (7.1
+satisfied by DefaultTransport evidence, no global added), WP-13 ✅
+(stale-but-true documented in DOMAIN_LANGUAGE + gate doc), WP-14 ✅
+(doctor -json + site-monitor daemon-gate watch), WP-16 ✅ (wire doc +
+baselines 93.0% + fuzz re-run), WP-17 ✅ (D2 record + compile assertion),
+WP-19 ✅ (detail pins; LSP closure at session end), WP-20 ✅ (perf re-run
+at-or-better, concurrency contract pinned with the 600s-hang receipt,
+cross-project lesson committed in crush-config `a6099a8`), WP-22 ✅
+(disk probe, per-glob isolation, rename; 22.3 skipped → TODO_LIST),
+WP-23 ✅ (DEPS watch table + post-mortem + quant decision), WP-18 ✅
+(CHANGELOG delta + residue harvest), WP-25 ✅ (this verification).
+⛔-gated: WP-03 (g2) still open → TODO_LIST. WP-06/WP-21 landed via D3
+(parallel session). Residue lives in TODO_LIST "Pareto plan residue
+2026-10-31".

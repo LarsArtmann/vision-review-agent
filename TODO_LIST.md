@@ -20,6 +20,38 @@ All four harvested items landed 2026-10-31 (retry wiring, fold decision,
 watchdog, pass observability — see CHANGELOG `[Unreleased]`); nothing open
 remains in this section.
 
+## Pareto plan residue 2026-10-31 (jsonv2 hardening + gate ops)
+
+Harvested from
+`docs/planning/2026-10-31_18-16_pareto-plan-healthgate-jsonv2-hardening.md`
+execution (this session + the parallel 14:41 session; landed items are in
+CHANGELOG `[Unreleased]` — only genuinely open work is listed here).
+
+- [ ] **Auto-commit daemon commit gate (⛔ g2 unanswered)** — wrap the
+      daemon's commit step with the tree grep + pinned lint, refuse-to-commit
+      on findings (plan WP-03, micro-tasks 3.1–3.5). Highest-leverage open
+      item: closes the production path all seven recurrences used. Needs
+      Lars's infra decision (in-place gate vs branch/PR flow) first.
+- [ ] **Restore full no-jsonv2 SDK scope when the blocker clears** — the
+      json-v1 watchdog CI job goes RED with "blocker is GONE" when
+      kaptinlin ships a dual-regime release; that red is the trigger to
+      widen the job back to the full SDK subset (build/vet/test
+      `./pkg/... ./cmd/vision/... ./internal/{catalog,cli,visionutil}/...
+      ./examples/...`) and update the AGENTS.md dual-json bullet.
+- [ ] **`openConfiguredPipeline` result struct** — the 5-value return in
+      `cmd/visionreviewd/commands.go` wants a small struct (config,
+      pipeline, store) + call-site updates (plan WP-22.3; skipped
+      deliberately during the concurrent gate-config refactor — churn
+      exceeded value that hour).
+- [ ] **Quant measurement for the review model** — measure score variance
+      and review quality of Q4_K_M vs the default Q8_0 on one fleet corpus
+      before considering a smaller default (context:
+      `docs/DEPS.md` quant tradeoff section; recovery speed is already
+      tunable via the NixOS `watchdogSec`).
+- [ ] **Next status report** — after the watchdog/CI changes land, run a
+      status report verifying recurrence class 8 did not occur and the
+      required-check set is green (plan WP-25.3).
+
 ## Website fleet — monitoring & re-review (2026-09-19 sweep residue)
 
 Harvested from the 2026-09-19 fleet follow-up execution

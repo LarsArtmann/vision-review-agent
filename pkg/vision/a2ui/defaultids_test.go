@@ -12,11 +12,11 @@ func TestDefaultIDs(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name         string
-		surfaceID    string
-		catalogID    string
-		wantSurface  string
-		wantCatalog  string
+		name        string
+		surfaceID   string
+		catalogID   string
+		wantSurface string
+		wantCatalog string
 	}{
 		{
 			name:        "both empty",
