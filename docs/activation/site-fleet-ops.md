@@ -140,15 +140,28 @@ custom-domain attach is console-only (done in the browser, §1.1/§1.2).
 ### 2.3 Site fleet monitor
 
 `scripts/site-monitor.sh` (this repo) checks all fleet URLs hourly via the
-`site-monitor.timer` user timer (installed in `~/.config/systemd/user/`,
-enabled through `timers.target.wants`). It alerts on state transitions via
-`notify-send`, logs to `~/.local/state/site-monitor/log`, and tracks the two
-KNOWN-broken custom domains (§1.1, §1.2) without alerting until they are
-fixed. If a home-manager switch wipes the `timers.target.wants` symlink,
-re-create it:
+`site-monitor.timer` user timer. It alerts on state transitions via
+`notify-send`, logs to `~/.local/state/site-monitor/log`, escalates a
+KNOWN-broken target that stays KNOWN for >7 days (§1.1, §1.2 tracker),
+watches the visionreviewd gate log (`check_daemon_gate`), and — when
+`SITE_MONITOR_PING_URL` is set — pings a healthchecks.io-style dead-man's
+switch on every clean run, so fleet-down is visible even when this whole
+box is down (the external service alerts when the PINGS stop; verified
+locally 2026-10-31 with a loopback listener: exactly one ping per clean
+run).
+
+Timer installation is CANONICAL since 2026-10-31: SystemNix
+`platforms/nixos/users/home.nix` defines `site-monitor.{timer,service}` and
+`fleet-review.{timer,service}` as home-manager user units (wipe-proof).
+Until the next SystemNix deploy, the legacy hand symlinks in
+`~/.config/systemd/user/timers.target.wants/` still carry the cadence; the
+`SITE_MONITOR_PING_URL` (empty by default in the unit) is filled in at the
+switch site once an external check URL exists. After the deploy lands,
+remove the legacy symlinks:
 
 ```bash
-ln -sf ../site-monitor.timer ~/.config/systemd/user/timers.target.wants/site-monitor.timer
+rm ~/.config/systemd/user/timers.target.wants/site-monitor.timer \
+   ~/.config/systemd/user/timers.target.wants/fleet-review.timer
 systemctl --user daemon-reload
 ```
 
