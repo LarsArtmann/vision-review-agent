@@ -48,9 +48,6 @@ CHANGELOG `[Unreleased]` — only genuinely open work is listed here).
       before considering a smaller default (context:
       `docs/DEPS.md` quant tradeoff section; recovery speed is already
       tunable via the NixOS `watchdogSec`).
-- [ ] **Next status report** — after the watchdog/CI changes land, run a
-      status report verifying recurrence class 8 did not occur and the
-      required-check set is green (plan WP-25.3).
 
 ## Website fleet — monitoring & re-review (2026-09-19 sweep residue)
 
