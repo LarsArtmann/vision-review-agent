@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log/slog"
 	"maps"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -202,7 +200,24 @@ func runCompareCommand(args []string, stdout, stderr io.Writer) int {
 // compareArgCount is the positional argument count compare expects.
 const compareArgCount = 2
 
+// gatedRunner wraps the pass runner in the endpoint health gate, so the
+// daemon loop skips passes while the model endpoint is down instead of
+// failing every changed view against it.
+func gatedRunner(pipeline *reviewed.Pipeline, config reviewed.Config) (reviewed.PassRunner, error) {
+	gate, err := reviewed.NewHealthGate(pipeline, func(ctx context.Context) error {
+		return reviewed.ProbeModelEndpoint(ctx, config, reviewed.EndpointProbeTimeout)
+	}, slog.Default())
+	if err != nil {
+		return nil, fmt.Errorf("build health gate: %w", err)
+	}
+
+	return gate, nil
+}
+
 // runDaemonCommand runs the interval loop until SIGINT/SIGTERM.
+// gatedRunner wraps the pipeline so a pass whose model endpoint is down is
+// skipped with one warning instead of one failed model call per changed
+// view; the loop self-heals on the next interval once the endpoint returns.
 func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
 	// art-dupl:accept command runners intentionally share the open-and-cleanup prologue; the defer must stay in this frame
 	config, pipeline, store, code, ok := openConfiguredPipeline("run", args, stderr)
@@ -212,7 +227,14 @@ func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
 
 	defer closeStore(store, "run", stderr)
 
-	daemon, err := reviewed.NewDaemon(pipeline, config.Projects, config.Interval, slog.Default())
+	runner, err := gatedRunner(pipeline, config)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
+
+		return exitFailed
+	}
+
+	daemon, err := reviewed.NewDaemon(runner, config.Projects, config.Interval, slog.Default())
 	if err != nil {
 		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
 
@@ -646,73 +668,14 @@ func checkProjectGlobs(config reviewed.Config) []doctorCheck {
 	return checks
 }
 
-// checkModelEndpoint fetches {baseUrl}/models and verifies the configured
-// model is offered.
+// checkModelEndpoint probes {baseUrl}/models via the shared reviewd probe
+// and verifies the configured model is offered.
 func checkModelEndpoint(ctx context.Context, config reviewed.Config) doctorCheck {
 	modelsURL := strings.TrimSuffix(config.BaseURL, "/") + "/models"
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, modelsURL, nil)
-	if err != nil {
-		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("build request: %v", err)}
+	if err := reviewed.ProbeModelEndpoint(ctx, config, doctorEndpointTimeout); err != nil {
+		return doctorCheck{name: doctorEndpointName, ok: false, detail: err.Error()}
 	}
 
-	if config.APIKey != "" {
-		request.Header.Set("Authorization", "Bearer "+config.APIKey)
-	}
-
-	client := &http.Client{Timeout: doctorEndpointTimeout}
-
-	response, err := client.Do(request)
-	if err != nil {
-		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("%s: %v", modelsURL, err)}
-	}
-
-	// Read and close eagerly (instead of defer) so every failure below can
-	// report through the check detail instead of os.Stderr, which would
-	// bypass the command's injected writers.
-	body, readErr := io.ReadAll(response.Body)
-	closeErr := response.Body.Close()
-
-	if readErr != nil {
-		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("read %s: %v", modelsURL, readErr)}
-	}
-
-	if closeErr != nil {
-		return doctorCheck{
-			name:   doctorEndpointName,
-			ok:     false,
-			detail: fmt.Sprintf("close %s: %v", modelsURL, closeErr),
-		}
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return doctorCheck{
-			name:   doctorEndpointName,
-			ok:     false,
-			detail: fmt.Sprintf("%s: status %s", modelsURL, response.Status),
-		}
-	}
-
-	var listed struct {
-		Data []struct {
-			ID string `json:"id"`
-		} `json:"data"`
-	}
-
-	if err := json.Unmarshal(body, &listed); err != nil {
-		return doctorCheck{name: doctorEndpointName, ok: false, detail: fmt.Sprintf("decode %s: %v", modelsURL, err)}
-	}
-
-	for _, model := range listed.Data {
-		if model.ID == config.Model {
-			return doctorCheck{name: doctorEndpointName, ok: true, detail: config.Model + " listed at " + modelsURL}
-		}
-	}
-
-	return doctorCheck{
-		name: doctorEndpointName,
-		ok:   false,
-		detail: fmt.Sprintf("model %q not listed at %s (%d models offered)",
-			config.Model, modelsURL, len(listed.Data)),
-	}
+	return doctorCheck{name: doctorEndpointName, ok: true, detail: config.Model + " listed at " + modelsURL}
 }
