@@ -14,26 +14,6 @@ import (
 func TestProbeModelEndpoint(t *testing.T) {
 	t.Parallel()
 
-	serve := func(t *testing.T, status int, body string, sawAuth *string) *httptest.Server {
-		t.Helper()
-
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			if req.URL.Path != "/v1/models" {
-				t.Errorf("probe hit %s, want /v1/models", req.URL.Path)
-			}
-
-			if sawAuth != nil {
-				*sawAuth = req.Header.Get("Authorization")
-			}
-
-			w.WriteHeader(status)
-			_, _ = w.Write([]byte(body))
-		}))
-		t.Cleanup(server.Close)
-
-		return server
-	}
-
 	listed, err := json.Marshal(map[string]any{"data": []map[string]any{{"id": "stub-model"}, {"id": "other"}}})
 	if err != nil {
 		t.Fatalf("marshal listing: %v", err)
@@ -43,7 +23,6 @@ func TestProbeModelEndpoint(t *testing.T) {
 		name       string
 		status     int
 		body       string
-		apiKey     string
 		wantErr    bool
 		wantSubstr string
 	}{
@@ -75,37 +54,79 @@ func TestProbeModelEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			sawAuth := ""
-
-			server := serve(t, tc.status, tc.body, &sawAuth)
+			server := serveModels(t, tc.status, tc.body, nil)
 
 			config := DefaultConfig()
 			config.Model = "stub-model"
 			config.BaseURL = server.URL + "/v1"
-			config.APIKey = tc.apiKey
 
 			err := ProbeModelEndpoint(t.Context(), config, EndpointProbeTimeout)
-
-			if tc.apiKey != "" && sawAuth != "Bearer "+tc.apiKey {
-				t.Fatalf("authorization header = %q, want Bearer token", sawAuth)
-			}
-
-			if !tc.wantErr {
-				if err != nil {
-					t.Fatalf("probe = %v, want nil", err)
-				}
-
-				return
-			}
-
-			if !errors.Is(err, ErrEndpointUnhealthy) {
-				t.Fatalf("probe = %v, want ErrEndpointUnhealthy", err)
-			}
-
-			if tc.wantSubstr != "" && !strings.Contains(err.Error(), tc.wantSubstr) {
-				t.Fatalf("probe error %q missing %q", err, tc.wantSubstr)
-			}
+			assertProbeOutcome(t, err, tc.wantErr, tc.wantSubstr)
 		})
+	}
+}
+
+// serveModels starts an httptest server answering /v1/models with the given
+// status and body; sawAuth, when non-nil, records the Authorization header.
+func serveModels(t *testing.T, status int, body string, sawAuth *string) *httptest.Server {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/v1/models" {
+			t.Errorf("probe hit %s, want /v1/models", req.URL.Path)
+		}
+
+		if sawAuth != nil {
+			*sawAuth = req.Header.Get("Authorization")
+		}
+
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(server.Close)
+
+	return server
+}
+
+// assertProbeOutcome checks the probe error against the table expectation:
+// every failure must carry the ErrEndpointUnhealthy sentinel and the wanted
+// diagnostic substring.
+func assertProbeOutcome(t *testing.T, err error, wantErr bool, wantSubstr string) {
+	t.Helper()
+
+	if !wantErr {
+		if err != nil {
+			t.Fatalf("probe = %v, want nil", err)
+		}
+
+		return
+	}
+
+	if !errors.Is(err, ErrEndpointUnhealthy) {
+		t.Fatalf("probe = %v, want ErrEndpointUnhealthy", err)
+	}
+
+	if wantSubstr != "" && !strings.Contains(err.Error(), wantSubstr) {
+		t.Fatalf("probe error %q missing %q", err, wantSubstr)
+	}
+}
+
+func TestProbeModelEndpointSendsAPIKey(t *testing.T) {
+	t.Parallel()
+
+	sawAuth := ""
+
+	server := serveModels(t, http.StatusOK, `{"data":[{"id":"stub-model"}]}`, &sawAuth)
+
+	config := DefaultConfig()
+	config.Model = "stub-model"
+	config.BaseURL = server.URL + "/v1"
+	config.APIKey = "secret"
+
+	assertProbeOutcome(t, ProbeModelEndpoint(t.Context(), config, EndpointProbeTimeout), false, "")
+
+	if sawAuth != "Bearer "+config.APIKey {
+		t.Fatalf("authorization header = %q, want Bearer token", sawAuth)
 	}
 }
 
