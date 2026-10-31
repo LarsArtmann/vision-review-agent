@@ -60,10 +60,18 @@ keeps evaluating cleanly with the service simply absent.
    journalctl -u visionreviewd -f
    ```
 
-   The daemon's own health command doubles as a smoke test (5 checks:
-   dataDir, reviewsDir, project globs, journal read-and-fold, model
-   endpoint) and exits nonzero when anything fails:
-   `visionreviewd doctor -config /etc/visionreviewd/config.json`.
+   The daemon's own health command doubles as a smoke test (6 checks:
+   dataDir, blobDir (`<dataDir>/images`), reviewsDir, project globs, journal
+   read-and-fold, model endpoint) and exits nonzero when anything fails:
+   `visionreviewd doctor -config /etc/visionreviewd/config.json`
+   (`-json` for machine-readable output).
+
+   The unit is `Type=notify` with `WatchdogSec` (default 30m, configurable
+   via `services.vision-review-agent.watchdogSec`): the daemon sends
+   sd_notify READY once its loop is wired and watchdog pings from a
+   heartbeat that spans whole passes, so a truly hung daemon (heartbeat
+   stopped) restarts automatically. Raise `watchdogSec` for corpora whose
+   worst-case pass exceeds 30m (~30s/view on CPU).
 
 ## Activated on evo-x2 (2026-09-22) — what actually shipped
 
