@@ -114,16 +114,17 @@ func ApplyViewState(state ViewState, evt event.Event) (ViewState, error) {
 // from: no capture yet and both score slots unknown (not zero).
 func initialViewState() ViewState {
 	return ViewState{
-		SHA256:      "",
-		BlobPath:    "",
-		CapturedAt:  time.Time{},
-		Captures:    0,
-		ReviewedSHA: "",
-		LastReview:  nil,
-		LastScore:   ScoreUnknown,
-		PrevScore:   ScoreUnknown,
-		Reviews:     0,
-		Comparisons: 0,
+		SHA256:        "",
+		BlobPath:      "",
+		CapturedAt:    time.Time{},
+		Captures:      0,
+		ReviewedSHA:   "",
+		LastReview:    nil,
+		LastScore:     ScoreUnknown,
+		PrevScore:     ScoreUnknown,
+		Reviews:       0,
+		Comparisons:   0,
+		UnknownEvents: 0,
 	}
 }
 

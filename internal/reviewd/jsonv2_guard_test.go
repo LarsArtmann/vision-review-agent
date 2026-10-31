@@ -81,8 +81,10 @@ func TestFindJSONv2ImportsDetectsOffender(t *testing.T) {
 	dirty := filepath.Join(dir, "dirty.go")
 	nested := filepath.Join(dir, "testdata", "ignored.go")
 
-	const cleanSource = "package scratch\n\nimport \"encoding/json\"\n"
-	const dirtySource = "package scratch\n\nimport \"encoding/json/v2\"\n"
+	const (
+		cleanSource = "package scratch\n\nimport \"encoding/json\"\n"
+		dirtySource = "package scratch\n\nimport \"encoding/json/v2\"\n"
+	)
 
 	if err := os.WriteFile(clean, []byte(cleanSource), 0o600); err != nil {
 		t.Fatalf("write clean scratch file: %v", err)
