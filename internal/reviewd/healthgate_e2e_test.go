@@ -3,7 +3,7 @@ package reviewed
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"image"
@@ -60,7 +60,7 @@ func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 
-		if err := json.NewEncoder(w).Encode(
+		if err := json.MarshalWrite(w,
 			map[string]any{"data": []map[string]any{{"id": "fake-vision-model"}}},
 		); err != nil {
 			http.Error(w, "encode listing: "+err.Error(), http.StatusInternalServerError)
@@ -77,7 +77,7 @@ func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		var request fakeChatRequest
-		if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+		if err := json.UnmarshalRead(req.Body, &request); err != nil {
 			http.Error(w, "decode request: "+err.Error(), http.StatusBadRequest)
 
 			return
@@ -98,7 +98,7 @@ func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 
-		if err := json.NewEncoder(w).Encode(completion); err != nil {
+		if err := json.MarshalWrite(w, completion); err != nil {
 			http.Error(w, "encode completion: "+err.Error(), http.StatusInternalServerError)
 		}
 	default:

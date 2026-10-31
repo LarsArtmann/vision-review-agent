@@ -1,7 +1,7 @@
 package reviewed
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"net/url"
@@ -91,7 +91,7 @@ type RetryConfig struct {
 
 	// MaxAttempts is the total number of model attempts including the
 	// first; zero falls back to the SDK default.
-	MaxAttempts int `json:"maxAttempts,omitempty"`
+	MaxAttempts int `json:"maxAttempts,omitzero"`
 
 	// InitialBackoff is the delay before the first retry; zero falls back
 	// to the SDK default.
@@ -103,7 +103,7 @@ type RetryConfig struct {
 
 	// Multiplier grows the backoff between retries; zero falls back to
 	// the SDK default.
-	Multiplier float64 `json:"multiplier,omitempty"`
+	Multiplier float64 `json:"multiplier,omitzero"`
 }
 
 // HealthGateConfig is the daemon's pre-pass endpoint gating policy.
@@ -126,10 +126,10 @@ type healthGateJSON struct {
 // retryJSON is the wire shape of RetryConfig: durations as human strings.
 type retryJSON struct {
 	Enabled        *bool   `json:"enabled,omitempty"`
-	MaxAttempts    int     `json:"maxAttempts,omitempty"`
+	MaxAttempts    int     `json:"maxAttempts,omitzero"`
 	InitialBackoff string  `json:"initialBackoff,omitempty"`
 	MaxBackoff     string  `json:"maxBackoff,omitempty"`
-	Multiplier     float64 `json:"multiplier,omitempty"`
+	Multiplier     float64 `json:"multiplier,omitzero"`
 }
 
 // configJSON is the wire shape of Config: durations as human strings.
