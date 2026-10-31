@@ -20,9 +20,6 @@ Harvested from
 - [ ] **Wire daemon retry policy** — set `vision.Config.Retry` (backoff+jitter,
       retryable-aware) in `reviewer.go newAgent`; configurable via daemon config.
       Fake-server test must show a transient 500 retried within one pass.
-- [ ] **Decide fold strictness** — tolerate-and-ignore vs strict fold for unknown
-      event types (`store.go:97` vs `TestApplyViewStateIgnoresUnknownEventType`);
-      either resolution also clears the repo's only `err113` finding.
 - [ ] **Liveness watchdog** — `Type=notify` + sd_notify heartbeat per pass,
       `WatchdogSec` in the NixOS module, so a hung model call is detected, not
       just an exit.
@@ -199,37 +196,23 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
       flag permanently only on a clear fidelity win at acceptable
       throughput cost; otherwise close with the measurement recorded.
 
-## json/v2 flapping defense (user decision)
+## json/v2 flapping defense
 
-- [ ] **External root fix: exclude the jsonv1tov2 migrator for this repo**
-      — root cause located (2026-09-07, verified in go-auto-upgrade source):
-      BuildFlow's go-auto-upgrade step applies its `jsonv1tov2` migrator to
-      every repo under `~/projects`; this repo needs `encoding/json` (v1 API)
-      because the jsonv2 experiment swaps the implementation, not the import
-      path — see AGENTS.md "Dual json v1+v2 support". **Five documented
-      breakages** (2026-07-27, 07-28, 08-02, 08-18, and **09-23**: auto-commit
-      `cc3d1b9` re-migrated 5 files hours after the 09-22 revert). The tool
-      reads a per-project `.go-auto-upgrade.json`
-      (`{"exclude": ["jsonv1tov2"]}`, schema: `include`/`exclude` arrays of
-      migrator names — `cmd/go-auto-upgrade/config.go`). **Proposal: commit
-      that file at this repo root.** Repo-side defenses re-verified 2026-09-26:
-      the 5th recurrence reverted (both regimes + race + lint green), the
-      depguard deny list RESTORED (it had been silently dropped by the
-      `2934585` config rework — that gap is why the daemon's edits passed
-      lint), and the CI `no-jsonv2` job now sets `GOEXPERIMENT=none`
-      explicitly (on Go 1.27, unset means jsonv2, so the job had been testing
-      the wrong regime).
+The recurrence class is root-killed (2026-10-31): `.go-auto-upgrade.json`
+exclude committed, package + module-wide guard tests in place, fold-strictness
+resolved. See CHANGELOG `[Unreleased]` and AGENTS.md "Dual json v1+v2
+support". Remaining open items:
+
+- [ ] **Daemon gating (owner decision D2)** — the auto-commit daemon still
+      lands commits on master without the required PR checks. The exclude file
+      kills the root cause for this repo, but a systemic refuse-on-red-commit
+      gate (tree-wide v2-grep + pinned lint before each commit) is owner
+      infrastructure (PMA). Recommendation on record in
+      `docs/planning/2026-10-31_18-15_pareto-trust-resilience-fleet.md` D2.
 - [ ] **Direct table test for `defaultIDs`** — extracted in the 2026-09-22
       dedup round 3; covered only transitively (Compile + Generate BDD).
       10-line table: both empty / one empty / neither
       (`pkg/vision/a2ui/surface.go`).
-- [x] **art-dupl v0.7 `-t 1` sweep** — DONE 2026-10-05: `-t 1` fully judged
-      (canonical scan: 4 shown; `--suggest-generics`: 6 shown). One group
-      extracted (`countVisionModels` in `cmd/vision/listing.go`), one marked
-      accepted (the three per-package `ModelBrand` definitions), the rest are
-      documented idiom groups. v0.7 marker support empirically confirmed:
-      the marked group disappears from `-t 1` output. Details in
-      `docs/DUPLICATION_POLICY.md`.
 - [ ] **go-cqrs-lite asks (filed 2026-09-07)** — #22 (bbolt
       `OpenWith(ReadOnly)` always fails) and #23 (missing `serializableEvent`
       golden/contract test) are filed; a per-module CHANGELOG request was

@@ -31,6 +31,21 @@ visionreviewd daemon itself — shipped and lives in
 
 ## Mid-term ideas
 
+### Daemon observability & ops surface (harvested 2026-10-31 from both session reports)
+
+- **Admin/health port** — `/healthz` HTTP endpoint reusing the probe + doctor
+  checks, plus sd_notify `STATUS=` text, once the daemon gains a listener.
+- **Probe backoff** — after N consecutive unhealthy passes, back off probe
+  frequency (5 s probe spam matters only at short intervals; fine at 10 m).
+- **Structured (JSON) slog mode** for journald consumption; last-pass summary
+  as a JSON sidecar file for external monitors.
+- **Interval jitter** — evaluate (single host today; likely "no", record why).
+- **`openConfiguredPipeline` 5-value return** → small result struct (cleanup).
+- **Q8_0 vs smaller-quant tradeoff** doc for faster llama-server recovery
+  (first-start ~10 GB).
+- **Backup automation** — systemd timer running `visionreviewd backup`
+  between passes.
+
 ### go-cqrs-lite v5 migration (visionreviewd)
 
 - **Track and migrate to v5 pair-form removal** — upstream is removing

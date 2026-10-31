@@ -40,10 +40,64 @@ type Config struct {
 	ReviewsDir string              `json:"reviewsDir"`
 	Projects   map[string][]string `json:"projects"`
 
+	// Retry is the model-call retry policy. A present stanza replaces the
+	// default policy wholesale; zero fields fall back to the vision SDK
+	// defaults (3 attempts, 500ms initial, 30s cap, 2.0x, jitter). Omit the
+	// stanza for the daemon default (enabled, 3 attempts, 2s initial);
+	// {"enabled": false} disables retry entirely.
+	Retry *RetryConfig `json:"retry,omitempty"`
+
 	// SourceURLs optionally maps a project name to the page its
 	// screenshots were taken from (website captures). Rendered in review
 	// markdown so every review points back at the live page.
 	SourceURLs map[string]string `json:"sourceURLs,omitempty"` //nolint:tagliatelle // wire key: existing user configs (~/.config/visionreviewd) use sourceURLs; URL is not a word
+}
+
+// DefaultRetryPolicy is the daemon's out-of-the-box retry policy: three
+// attempts starting at 2s (the llama-server cold-start window), capped at
+// 30s, doubling between attempts with jitter. Transient endpoint blips stop
+// failing whole views.
+func DefaultRetryPolicy() RetryConfig {
+	return RetryConfig{
+		Enabled:        true,
+		MaxAttempts:    3,
+		InitialBackoff: 2 * time.Second,
+		MaxBackoff:     30 * time.Second,
+		Multiplier:     2.0,
+	}
+}
+
+// RetryConfig is the daemon's model-retry policy: enabled flag plus the
+// vision SDK retry knobs. Jitter is always on (retry storms against one
+// llama-server instance are pointless).
+type RetryConfig struct {
+	// Enabled turns retry off entirely when false.
+	Enabled bool `json:"enabled"`
+
+	// MaxAttempts is the total number of model attempts including the
+	// first; zero falls back to the SDK default.
+	MaxAttempts int `json:"maxAttempts,omitempty"`
+
+	// InitialBackoff is the delay before the first retry; zero falls back
+	// to the SDK default.
+	InitialBackoff time.Duration `json:"-"`
+
+	// MaxBackoff caps the delay between retries; zero falls back to the
+	// SDK default.
+	MaxBackoff time.Duration `json:"-"`
+
+	// Multiplier grows the backoff between retries; zero falls back to
+	// the SDK default.
+	Multiplier float64 `json:"multiplier,omitempty"`
+}
+
+// retryJSON is the wire shape of RetryConfig: durations as human strings.
+type retryJSON struct {
+	Enabled        *bool  `json:"enabled,omitempty"`
+	MaxAttempts    int    `json:"maxAttempts,omitempty"`
+	InitialBackoff string `json:"initialBackoff,omitempty"`
+	MaxBackoff     string `json:"maxBackoff,omitempty"`
+	Multiplier     float64 `json:"multiplier,omitempty"`
 }
 
 // configJSON is the wire shape of Config: durations as human strings.
@@ -56,13 +110,16 @@ type configJSON struct {
 	DataDir    string              `json:"dataDir"`
 	ReviewsDir string              `json:"reviewsDir"`
 	Projects   map[string][]string `json:"projects"`
+	Retry      *retryJSON          `json:"retry,omitempty"`
 	SourceURLs map[string]string   `json:"sourceURLs,omitempty"` //nolint:tagliatelle // wire key: existing user configs use sourceURLs; URL is not a word
 }
 
 // DefaultConfig returns the daemon defaults: the caption-tuned vision model,
-// llama-server on its registered port, a 10-minute scan interval, and a
-// 5-minute per-request timeout.
+// llama-server on its registered port, a 10-minute scan interval, a
+// 5-minute per-request timeout, and the default model retry policy.
 func DefaultConfig() Config {
+	policy := DefaultRetryPolicy()
+
 	return Config{
 		Model:      DefaultModel,
 		BaseURL:    DefaultBaseURL,
@@ -72,6 +129,7 @@ func DefaultConfig() Config {
 		DataDir:    DefaultDataDir,
 		ReviewsDir: DefaultReviewsDir,
 		Projects:   map[string][]string{},
+		Retry:      &policy,
 	}
 }
 
@@ -117,11 +175,69 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		c.Projects = raw.Projects
 	}
 
+	// A present retry stanza replaces the whole policy (all-or-nothing);
+	// an absent stanza keeps the loaded default.
+	if raw.Retry != nil {
+		policy, decodeErr := decodeRetryPolicy(raw.Retry)
+		if decodeErr != nil {
+			return decodeErr
+		}
+
+		c.Retry = policy
+	}
+
 	if raw.SourceURLs != nil {
 		c.SourceURLs = raw.SourceURLs
 	}
 
 	return nil
+}
+
+// decodeRetryPolicy converts the wire stanza; a duration parse failure is a
+// config error naming the offending field.
+func decodeRetryPolicy(raw *retryJSON) (*RetryConfig, error) {
+	policy := RetryConfig{}
+
+	if raw.Enabled != nil {
+		policy.Enabled = *raw.Enabled
+	} else {
+		policy.Enabled = true
+	}
+
+	policy.MaxAttempts = raw.MaxAttempts
+	policy.Multiplier = raw.Multiplier
+
+	initial, err := parseOptionalDuration("retry.initialBackoff", raw.InitialBackoff)
+	if err != nil {
+		return nil, err
+	}
+
+	policy.InitialBackoff = initial
+
+	max, err := parseOptionalDuration("retry.maxBackoff", raw.MaxBackoff)
+	if err != nil {
+		return nil, err
+	}
+
+	policy.MaxBackoff = max
+
+	return &policy, nil
+}
+
+// parseOptionalDuration parses a duration string that may be empty (zero
+// value means "fall back to the SDK default").
+func parseOptionalDuration(field, value string) (time.Duration, error) {
+	if value == "" {
+		return 0, nil
+	}
+
+	parsed, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %s must be a duration string like \"2s\": got %q",
+			ErrInvalidConfig, field, value)
+	}
+
+	return parsed, nil
 }
 
 // MarshalJSON encodes durations as human-readable strings.
@@ -135,6 +251,7 @@ func (c Config) MarshalJSON() ([]byte, error) {
 		DataDir:    c.DataDir,
 		ReviewsDir: c.ReviewsDir,
 		Projects:   c.Projects,
+		Retry:      encodeRetryPolicy(c.Retry),
 		SourceURLs: c.SourceURLs,
 	}
 
@@ -144,6 +261,35 @@ func (c Config) MarshalJSON() ([]byte, error) {
 	}
 
 	return encoded, nil
+}
+
+// encodeRetryPolicy converts the policy to its wire shape; nil omits the
+// stanza.
+func encodeRetryPolicy(policy *RetryConfig) *retryJSON {
+	if policy == nil {
+		return nil
+	}
+
+	enabled := policy.Enabled
+	initial := ""
+
+	if policy.InitialBackoff > 0 {
+		initial = policy.InitialBackoff.String()
+	}
+
+	max := ""
+
+	if policy.MaxBackoff > 0 {
+		max = policy.MaxBackoff.String()
+	}
+
+	return &retryJSON{
+		Enabled:        &enabled,
+		MaxAttempts:    policy.MaxAttempts,
+		InitialBackoff: initial,
+		MaxBackoff:     max,
+		Multiplier:     policy.Multiplier,
+	}
 }
 
 func parseDurationField(field, value string) (time.Duration, error) {
@@ -248,6 +394,32 @@ func (c Config) validateTimings() error {
 
 	if c.Timeout <= 0 {
 		return fmt.Errorf("%w: timeout must be positive, got %s", ErrInvalidConfig, c.Timeout)
+	}
+
+	return c.validateRetry()
+}
+
+// validateRetry rejects negative retry knobs; zero means "SDK default" and
+// is legal.
+func (c Config) validateRetry() error {
+	if c.Retry == nil {
+		return nil
+	}
+
+	if c.Retry.MaxAttempts < 0 {
+		return fmt.Errorf("%w: retry.maxAttempts must not be negative, got %d", ErrInvalidConfig, c.Retry.MaxAttempts)
+	}
+
+	if c.Retry.InitialBackoff < 0 {
+		return fmt.Errorf("%w: retry.initialBackoff must not be negative, got %s", ErrInvalidConfig, c.Retry.InitialBackoff)
+	}
+
+	if c.Retry.MaxBackoff < 0 {
+		return fmt.Errorf("%w: retry.maxBackoff must not be negative, got %s", ErrInvalidConfig, c.Retry.MaxBackoff)
+	}
+
+	if c.Retry.Multiplier < 0 {
+		return fmt.Errorf("%w: retry.multiplier must not be negative, got %g", ErrInvalidConfig, c.Retry.Multiplier)
 	}
 
 	return nil
