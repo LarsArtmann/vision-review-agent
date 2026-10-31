@@ -650,7 +650,11 @@ func closeStore(store *reviewed.Store, name string, stderr io.Writer) {
 	}
 }
 
-// doctorEndpointTimeout bounds the model endpoint probe.
+// doctorEndpointTimeout bounds the model endpoint probe. Deliberately
+// DOUBLE the gate's 5s EndpointProbeTimeout (decision record T19.2): the
+// gate runs every interval, so it must fail fast and skip cheaply; doctor
+// is an operator diagnostic whose whole job is a confident verdict, so it
+// trades a slower answer for fewer false "unhealthy" reports on a busy box.
 const doctorEndpointTimeout = 10 * time.Second
 
 // doctorEndpointName labels the model endpoint check in doctor output.

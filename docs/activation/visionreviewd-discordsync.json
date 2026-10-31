@@ -1,0 +1,18 @@
+{
+  "model": "GitMylo/nsfwcaption-qwen3-vl-8b-v3-gguf:Q8_0",
+  "baseUrl": "http://127.0.0.1:8390/v1",
+  "dataDir": "~/.local/share/vision-review-agent-discordsync",
+  "reviewsDir": "~/.local/share/vision-review-agent-discordsync/reviews",
+  "interval": "1h",
+  "timeout": "12m",
+  "retry": {
+    "enabled": true,
+    "maxAttempts": 3,
+    "initialBackoff": "2s",
+    "maxBackoff": "30s",
+    "multiplier": 2.0
+  },
+  "projects": {
+    "discordsync": ["/home/lars/projects/DiscordSync/internal/web/testdata/visual/*.png"]
+  }
+}

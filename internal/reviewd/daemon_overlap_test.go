@@ -2,8 +2,8 @@ package reviewed
 
 import (
 	"context"
+	"errors"
 	"log/slog"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,8 +22,8 @@ func (s *slowTrackingRunner) Pass(_ context.Context, _ map[string][]string) (Pas
 	current := s.inFlight.Add(1)
 
 	for {
-		max := s.maxSeen.Load()
-		if current <= max || s.maxSeen.CompareAndSwap(max, current) {
+		previous := s.maxSeen.Load()
+		if current <= previous || s.maxSeen.CompareAndSwap(previous, current) {
 			break
 		}
 	}
@@ -56,8 +56,10 @@ func TestDaemonPassesNeverOverlap(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
-	if err := daemon.Run(ctx); err != nil {
-		t.Fatalf("run: %v", err)
+	// The deadline expiry is the intended stop; only Canceled is a clean
+	// return by design.
+	if err := daemon.Run(ctx); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("run err = %v, want context.DeadlineExceeded", err)
 	}
 
 	if runner.maxSeen.Load() > 1 {

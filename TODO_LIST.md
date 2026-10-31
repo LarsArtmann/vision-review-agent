@@ -145,30 +145,19 @@ status: `emeet-pixyd/docs/status/2026-09-19_20-14_website-fleet-followup-executi
       `/var/lib/visionreviewd/reviews`. Journal backup ritual:
       [`docs/visionreviewd-systemnix.md`](docs/visionreviewd-systemnix.md).
 
-## DiscordSync full watch (user decision: cadence)
+## DiscordSync full watch
 
-- [ ] **Fold the full visual glob into a durable config and pick an interval**
-      — `discover /home/lars/projects/DiscordSync` already emits the full
-      glob; measured 2026-09-07: **220 PNGs** in
-      `internal/web/testdata/visual/`. Durable config entry:
+Durable config COMMITTED 2026-10-31 (decision D6: 1h cadence):
+`~/.config/visionreviewd/discordsync.json` + repo copy
+`docs/activation/visionreviewd-discordsync.json` — a SEPARATE config on
+purpose (one config = one interval; the website fleet keeps its 10m), own
+dataDir, 232 PNGs matched (doctor-verified 2026-10-31; only the model
+endpoint was down, as the daemon is not yet deployed). First-pass
+expectation: ~1.2–1.8 h CPU (model dominates at ~20–30 s/view); later
+passes are incremental via skip-seen.
 
-      ```json
-      "projects": {
-        "discordsync": [
-          "/home/lars/projects/DiscordSync/internal/web/testdata/visual/*.png"
-        ]
-      }
-      ```
-
-      Duration estimate from the measured baseline
-      (`docs/status/2026-09-07_22-15_perf-baseline-m14.md`): local scan+fold
-      is ~6 ms for 220 views (PassSteady 2.9 ms per 100); the model dominates
-      at ~20–30 s/view on CPU → **first full pass ≈ 1.2–1.8 h**. Skip-seen
-      makes later passes incremental (model only runs on changed hashes, scan
-      cost negligible). Cadence options: **10 m** (current; fine — scan is
-      ~free, models only fire on changes), **1 h** (recommended default for a
-      220-view corpus), **6 h / nightly** (if llama-server CPU/GPU is shared
-      with other work). User call.
+- [ ] **Run the first `once` pass once llama-server :8390 is up** — expect
+      ~2h wall clock; then leave the daemon to it.
 
 ## llama `--image-min-tokens 1024` eval (user action: llama restart)
 
