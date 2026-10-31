@@ -118,6 +118,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **CI green again: three red required jobs root-caused** — (1) `nix-flake-check`
+  was red because treefmt's `goimports` loads packages via the go toolchain
+  and tried downloading go1.27.1 inside the network-less nix sandbox
+  ("formatted 3 files (0 changed)" was the red herring); treefmt now drops
+  goimports — import order stays enforced by the `gci` linter, gofumpt
+  covers formatting without package loading. (2) `govulncheck` was red
+  because `go 1.27.1` in go.mod pinned CI to a toolchain with ten open
+  stdlib CVEs (fixed in 1.27.2/.3); the directive is now `go 1.27.3`
+  (the flake's nixpkgs `go_1_27` already shipped 1.27.3). (3)
+  `build-and-test` race failures were the two sessions' interleaved
+  auto-commits mid-flight; the tree is fully race-green now.
 - **Seventh json/v2 migration recurrence reverted (7 files)** — auto-commit
   `fad59ce` (Oct 11) re-migrated a2ui `component.go`/`messages.go`, reviewd
   `config.go`/`discover.go`/`fakeserver_test.go` (+ config/events test

@@ -41,6 +41,10 @@ visionreviewd daemon itself — shipped and lives in
   as a JSON sidecar file for external monitors.
 - **Interval jitter** — evaluate (single host today; likely "no", record why).
 - **`openConfiguredPipeline` 5-value return** → small result struct (cleanup).
+  (Related, DECIDED 2026-10-31: a shared `http.Client` for the endpoint
+  probes was evaluated and declined — probes are one-shot per pass minutes
+  apart, connection reuse buys nothing, and per-call construction is the
+  idiomatic way to get per-call timeouts; `health.go` documents it.)
 - **Q8_0 vs smaller-quant tradeoff** doc for faster llama-server recovery
   (first-start ~10 GB).
 - **Backup automation** — systemd timer running `visionreviewd backup`
