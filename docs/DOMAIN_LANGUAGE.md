@@ -146,7 +146,7 @@ Actions the system performs:
 | **Backup**     | Consistent journal snapshot via one bbolt read transaction; daemon must be stopped (one writer handle)                  | `Store.Backup`, `visionreviewd backup`     |
 | **Doctor**     | Preflight check: config paths, glob matches, journal read-and-fold, model endpoint reachability                         | `visionreviewd doctor`                     |
 | **Endpoint probe** | One cheap `/models` request proving the model endpoint can serve the configured model right now                     | `ProbeModelEndpoint`                       |
-| **Health gate** | PassRunner decorator that skips a whole pass (one warning) while the endpoint probe fails, instead of one model error per changed view | `HealthGate`, daemon loop   |
+| **Health gate** | PassRunner decorator that skips a whole pass (one warning) while the endpoint probe fails, instead of one model error per changed view. A skipped pass leaves the reviews dir and INDEX untouched (stale-but-true from the last good pass); the deferred captures are reviewed on the first healthy pass. Log lines carry `consecutive_skips`, `deferred_captures`, and a recovery Info with the outage length | `HealthGate`, daemon loop   |
 | **Discover**   | Walk a project for known golden patterns and emit a suggested config                                                    | `visionreviewd discover`                   |
 | **INDEX**      | Per-project markdown table of every view with score + trend                                                             | `RenderIndex`                              |
 

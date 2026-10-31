@@ -42,6 +42,20 @@ in
       '';
     };
 
+    watchdogSec = lib.mkOption {
+      type = lib.types.str;
+      default = "30m";
+      example = "1h";
+      description = ''
+        sd_notify watchdog budget (WatchdogSec). The daemon pings at half
+        this cadence from a background heartbeat that spans whole passes, so
+        a slow model call is NOT a hang; the unit restarts only when even the
+        heartbeat stops (deadlock, lost wakeup). Must exceed the worst-case
+        pass duration for your corpus (model calls dominate; ~30s/view on
+        CPU, 220 views ≈ 2h for the DiscordSync corpus → raise this).
+      '';
+    };
+
     llamaServer = {
       # Disabled by default: the first start pulls ~9-10 GB of model weights.
       enable = lib.mkEnableOption "the local llama-server vision model endpoint";
@@ -81,6 +95,12 @@ in
 
       serviceConfig = {
         ExecStart = "${lib.getExe cfg.package} run -config ${toString cfg.configFile}";
+        # Type=notify: the daemon sends sd_notify READY=1 once its loop is
+        # wired, so a crash during startup fails the unit instead of idling.
+        Type = "notify";
+        # The daemon's background heartbeat pings at half this budget and
+        # spans whole passes; only a stopped heartbeat restarts the unit.
+        WatchdogSec = cfg.watchdogSec;
         WorkingDirectory = "/var/lib/visionreviewd";
         DynamicUser = true;
         StateDirectory = "visionreviewd";

@@ -29,6 +29,25 @@ type Daemon struct {
 	projects map[string][]string
 	interval time.Duration
 	logger   *slog.Logger
+	notifier ServiceNotifier
+}
+
+// DaemonOption customizes NewDaemon wiring without touching the positional
+// signature every existing caller uses.
+type DaemonOption func(*daemonOptions)
+
+type daemonOptions struct {
+	notifier ServiceNotifier
+}
+
+// WithServiceNotifier attaches an sd_notify reporter: Run announces READY
+// once startup is done and pings WATCHDOG at the negotiated cadence for as
+// long as it lives. A nil notifier (the default) changes nothing, which is
+// also what non-systemd callers get from NewServiceNotifier.
+func WithServiceNotifier(notifier ServiceNotifier) DaemonOption {
+	return func(options *daemonOptions) {
+		options.notifier = notifier
+	}
 }
 
 // NewDaemon wires the loop. A nil logger falls back to the default logger.
@@ -37,6 +56,7 @@ func NewDaemon(
 	projects map[string][]string,
 	interval time.Duration,
 	logger *slog.Logger,
+	opts ...DaemonOption,
 ) (*Daemon, error) {
 	if pipeline == nil {
 		return nil, fmt.Errorf("new daemon: %w", ErrNoPipeline)
@@ -54,7 +74,18 @@ func NewDaemon(
 		logger = slog.Default()
 	}
 
-	return &Daemon{pipeline: pipeline, projects: projects, interval: interval, logger: logger}, nil
+	var options daemonOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return &Daemon{
+		pipeline: pipeline,
+		projects: projects,
+		interval: interval,
+		logger:   logger,
+		notifier: options.notifier,
+	}, nil
 }
 
 // Interval reports the delay between passes.
@@ -67,6 +98,7 @@ func (d *Daemon) Interval() time.Duration {
 // model must not stop the daemon. Run returns nil on graceful cancellation
 // (SIGINT/SIGTERM or ctx.Done with context.Canceled).
 func (d *Daemon) Run(ctx context.Context) error {
+	d.startLiveness(ctx)
 	d.runPass(ctx)
 
 	ticker := time.NewTicker(d.interval)
@@ -84,6 +116,42 @@ func (d *Daemon) Run(ctx context.Context) error {
 			d.runPass(ctx)
 		}
 	}
+}
+
+// startLiveness announces readiness and, when a watchdog cadence is
+// negotiated, keeps pinging at half the budget until the context ends. The
+// heartbeat spans whole passes on purpose: a slow model call is progress,
+// not a hang, and WatchdogSec only restarts the daemon when even the
+// heartbeat stops.
+func (d *Daemon) startLiveness(ctx context.Context) {
+	if d.notifier == nil {
+		return
+	}
+
+	if err := d.notifier.Ready(); err != nil {
+		d.logger.Warn("service notify READY failed", "err", err)
+	}
+
+	period := d.notifier.WatchdogInterval()
+	if period <= 0 {
+		return
+	}
+
+	go func() {
+		ticker := time.NewTicker(period)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if err := d.notifier.WatchdogPing(); err != nil {
+					d.logger.Warn("service watchdog ping failed", "err", err)
+				}
+			}
+		}
+	}()
 }
 
 // runPass executes one pass and logs its outcome.

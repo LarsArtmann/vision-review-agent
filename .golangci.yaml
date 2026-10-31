@@ -233,6 +233,7 @@ linters:
         - stdlib
         - generic
         - github\.com/larsartmann/vision-review-agent/pkg/vision/a2ui\.Message$
+        - github\.com/larsartmann/vision-review-agent/internal/reviewd\.ServiceNotifier$
     makezero:
       always: false
     misspell:

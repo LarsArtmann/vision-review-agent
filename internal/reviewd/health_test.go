@@ -309,8 +309,10 @@ func TestHealthGateObservability(t *testing.T) {
 
 	var logs bytes.Buffer
 
+	probeErr := errors.New("dial refused")
+
 	gate, err := NewHealthGate(&gateRecorder{}, func(_ context.Context) error {
-		return errors.New("dial refused")
+		return probeErr
 	}, slog.New(slog.NewTextHandler(&logs, nil)))
 	if err != nil {
 		t.Fatalf("build gate: %v", err)
@@ -334,12 +336,7 @@ func TestHealthGateObservability(t *testing.T) {
 		t.Fatalf("logs missing deferred capture estimate, got: %s", out)
 	}
 
-	gate, err = NewHealthGate(&gateRecorder{}, func(_ context.Context) error {
-		return nil
-	}, slog.New(slog.NewTextHandler(&logs, nil)))
-	if err != nil {
-		t.Fatalf("rebuild gate: %v", err)
-	}
+	probeErr = nil
 
 	if _, err := gate.Pass(t.Context(), projects); err != nil {
 		t.Fatalf("healthy pass: %v", err)

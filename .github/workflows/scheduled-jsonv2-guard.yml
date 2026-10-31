@@ -1,0 +1,42 @@
+# Weekly jsonv2 drift guard. The push-time grep in ci.yml (build-and-test,
+# first step) only sees what lands via PRs; auto-commit direct pushes bypass
+# required checks, which is how seven recurrences landed on master. This
+# schedule re-scans the whole tree at least once a week regardless of how
+# changes arrived, and runs the package-local guard tests once so a
+# regression is caught within 7 days anywhere, not just on machines that
+# happen to run go test.
+name: Scheduled jsonv2 Guard
+
+on:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays 04:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  jsonv2-grep:
+    name: Tree-wide grep for json/v2 imports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Forbid encoding/json/v2 and jsontext imports
+        run: |
+          if git grep -nE --untracked '"encoding/json/(v2|jsontext)(/[a-z0-9]+)?"' -- '*.go'; then
+            echo "::error::Direct encoding/json/v2 or encoding/json/jsontext imports are forbidden."
+            echo "::error::Restore the v1 path (plain encoding/json) - see the AGENTS.md dual-json bullet and the recurrence history."
+            exit 1
+          fi
+          echo "Tree clean: no json/v2 experiment imports."
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Run package-local guard tests (jsonv2 regime)
+        run: |
+          export GOEXPERIMENT=jsonv2
+          go test -run 'TestNoJSONv2Imports|TestFindJSONv2ImportsDetectsOffender|TestNoJSONv2ImportsModuleWide|TestFindModuleRootControls' -v ./internal/reviewd/ ./pkg/vision/

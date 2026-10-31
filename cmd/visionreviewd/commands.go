@@ -234,7 +234,13 @@ func runDaemonCommand(args []string, stdout, stderr io.Writer) int {
 		return exitFailed
 	}
 
-	daemon, err := reviewed.NewDaemon(runner, config.Projects, config.Interval, slog.Default())
+	daemon, err := reviewed.NewDaemon(
+		runner,
+		config.Projects,
+		config.Interval,
+		slog.Default(),
+		reviewed.WithServiceNotifier(reviewed.NewServiceNotifier()),
+	)
 	if err != nil {
 		fmt.Fprintf(stderr, "visionreviewd run: %v\n", err)
 
