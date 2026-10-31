@@ -8,7 +8,9 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,7 +30,10 @@ const EndpointProbeTimeout = 5 * time.Second
 // ProbeModelEndpoint verifies the OpenAI-compatible endpoint answers
 // {baseUrl}/models and lists the configured model. A nil return means the
 // endpoint can serve the daemon's model right now; every failure carries the
-// URL and the offending detail so the message is self-diagnosing.
+// URL and the offending detail so the message is self-diagnosing. Each call
+// builds its own http.Client (bounded by the timeout argument) but
+// connections pool through the shared http.DefaultTransport, so no
+// package-level client is needed.
 func ProbeModelEndpoint(ctx context.Context, config Config, timeout time.Duration) error {
 	modelsURL := strings.TrimSuffix(config.BaseURL, "/") + "/models"
 
@@ -89,11 +94,18 @@ func ProbeModelEndpoint(ctx context.Context, config Config, timeout time.Duratio
 // model endpoint is unhealthy. Without it, a dead endpoint turns every pass
 // into one failed model call per changed view; with it, the pass is skipped
 // with a single warning and the daemon heals itself on the next interval
-// once the endpoint is back.
+// once the endpoint is back. The gate tracks its probe outcomes so every
+// log line carries the operator-visible state: consecutive skip count,
+// time since the endpoint was last healthy, and how many captures the
+// skipped pass deferred.
 type HealthGate struct {
 	inner  PassRunner
 	probe  func(ctx context.Context) error
 	logger *slog.Logger
+
+	mu               sync.Mutex
+	consecutiveSkips int
+	lastHealthy      time.Time // zero: the probe has never succeeded
 }
 
 // NewHealthGate wires the decorator. The probe must be non-nil and cheap
@@ -132,10 +144,12 @@ func (g *HealthGate) Pass(ctx context.Context, projects map[string][]string) (Pa
 	}
 
 	if err := g.probe(ctx); err != nil {
-		g.logger.Warn("pass skipped, model endpoint unhealthy", "err", err)
+		g.recordSkip(projects, err)
 
 		return PassResult{}, fmt.Errorf("pass skipped, %w: %w", ErrEndpointUnhealthy, err)
 	}
+
+	g.recordHealthy()
 
 	result, err := g.inner.Pass(ctx, projects)
 	if err != nil {
@@ -143,4 +157,73 @@ func (g *HealthGate) Pass(ctx context.Context, projects map[string][]string) (Pa
 	}
 
 	return result, nil
+}
+
+// recordSkip bumps the skip counter and warns with the operator state:
+// which consecutive skip this is, how long the endpoint has been down, and
+// roughly how many captures the deferred pass would have processed.
+func (g *HealthGate) recordSkip(projects map[string][]string, probeErr error) {
+	g.mu.Lock()
+	g.consecutiveSkips++
+	skips := g.consecutiveSkips
+	lastHealthy := g.lastHealthy
+	g.mu.Unlock()
+
+	attrs := []any{
+		"err", probeErr,
+		"consecutive_skips", skips,
+		"deferred_captures", deferredCaptureEstimate(projects),
+	}
+
+	if !lastHealthy.IsZero() {
+		attrs = append(attrs, "down_since", time.Since(lastHealthy).Round(time.Second).String())
+	}
+
+	g.logger.Warn("pass skipped, model endpoint unhealthy", attrs...)
+}
+
+// recordHealthy resets the counters; a recovery after at least one skip
+// logs the outage length so state transitions are visible in the journal.
+func (g *HealthGate) recordHealthy() {
+	g.mu.Lock()
+	skips := g.consecutiveSkips
+	lastHealthy := g.lastHealthy
+	g.consecutiveSkips = 0
+	g.lastHealthy = time.Now()
+	g.mu.Unlock()
+
+	if skips == 0 {
+		return
+	}
+
+	outage := "unknown"
+
+	if !lastHealthy.IsZero() {
+		outage = time.Since(lastHealthy).Round(time.Second).String()
+	}
+
+	g.logger.Info("model endpoint recovered",
+		"skipped_passes", skips,
+		"outage", outage)
+}
+
+// deferredCaptureEstimate approximates how many captures the deferred pass
+// would have processed by counting glob matches. It ignores glob errors
+// (patterns are validated at config load) and counts files, not views, so
+// the number is an upper bound — good enough to size the backlog at 3am.
+func deferredCaptureEstimate(projects map[string][]string) int {
+	total := 0
+
+	for _, globs := range projects {
+		for _, pattern := range globs {
+			matches, err := filepath.Glob(pattern)
+			if err != nil {
+				continue
+			}
+
+			total += len(matches)
+		}
+	}
+
+	return total
 }

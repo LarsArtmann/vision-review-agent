@@ -1,11 +1,15 @@
 package reviewed
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -286,5 +290,64 @@ func TestNewHealthGateRejectsInvalidWiring(t *testing.T) {
 
 	if _, err := NewHealthGate(runner, nil, nil); !errors.Is(err, ErrNoProbe) {
 		t.Fatalf("nil probe = %v, want ErrNoProbe", err)
+	}
+}
+
+// TestHealthGateObservability pins the operator-facing gate logs: every
+// skip warns with the consecutive count and deferred-capture estimate, and
+// the first healthy probe after skips logs the recovery with outage stats.
+func TestHealthGateObservability(t *testing.T) {
+	t.Parallel()
+
+	shots := t.TempDir()
+
+	for _, name := range []string{"Home--dark--desktop.png", "Settings--light--desktop.png"} {
+		if err := os.WriteFile(filepath.Join(shots, name), []byte("png"), 0o600); err != nil {
+			t.Fatalf("write capture stub: %v", err)
+		}
+	}
+
+	var logs bytes.Buffer
+
+	gate, err := NewHealthGate(&gateRecorder{}, func(_ context.Context) error {
+		return errors.New("dial refused")
+	}, slog.New(slog.NewTextHandler(&logs, nil)))
+	if err != nil {
+		t.Fatalf("build gate: %v", err)
+	}
+
+	projects := map[string][]string{"app": {shots + "/*.png"}}
+
+	for range 2 {
+		if _, err := gate.Pass(t.Context(), projects); !errors.Is(err, ErrEndpointUnhealthy) {
+			t.Fatalf("skip pass error = %v, want ErrEndpointUnhealthy", err)
+		}
+	}
+
+	out := logs.String()
+
+	if !strings.Contains(out, "consecutive_skips=1") || !strings.Contains(out, "consecutive_skips=2") {
+		t.Fatalf("logs missing skip progression, got: %s", out)
+	}
+
+	if !strings.Contains(out, "deferred_captures=2") {
+		t.Fatalf("logs missing deferred capture estimate, got: %s", out)
+	}
+
+	gate, err = NewHealthGate(&gateRecorder{}, func(_ context.Context) error {
+		return nil
+	}, slog.New(slog.NewTextHandler(&logs, nil)))
+	if err != nil {
+		t.Fatalf("rebuild gate: %v", err)
+	}
+
+	if _, err := gate.Pass(t.Context(), projects); err != nil {
+		t.Fatalf("healthy pass: %v", err)
+	}
+
+	out = logs.String()
+
+	if !strings.Contains(out, "model endpoint recovered") || !strings.Contains(out, "skipped_passes=2") {
+		t.Fatalf("logs missing recovery line, got: %s", out)
 	}
 }
