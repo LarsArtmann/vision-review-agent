@@ -27,7 +27,7 @@ type fakeContentPart struct {
 
 // fakeChatMessage is one message of an OpenAI chat request.
 type fakeChatMessage struct {
-	Role    string         `json:"role"`
+	Role    string          `json:"role"`
 	Content json.RawMessage `json:"content"`
 }
 

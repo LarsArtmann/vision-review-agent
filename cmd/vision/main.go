@@ -462,6 +462,12 @@ func adviceForKind(kind vision.ErrorKind) string {
 		return "The request was cancelled."
 	case vision.KindStructuredParse:
 		return "The model failed to produce valid structured output. Try simplifying your prompt."
+	case vision.KindOverloaded:
+		return "The AI provider is overloaded. Retry with backoff; consider a different model if persistent."
+	case vision.KindPaymentRequired:
+		return "The account is out of credit or over quota. Check the provider's billing page."
+	case vision.KindUnknown:
+		return "The provider returned an unrecognized error. Retry once; if it persists, report the message above."
 	default:
 		return ""
 	}

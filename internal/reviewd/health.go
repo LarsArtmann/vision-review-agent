@@ -123,7 +123,12 @@ func NewHealthGate(
 // the inner runner's accurate "skipped, pass context done" errors.
 func (g *HealthGate) Pass(ctx context.Context, projects map[string][]string) (PassResult, error) {
 	if ctx.Err() != nil {
-		return g.inner.Pass(ctx, projects)
+		result, err := g.inner.Pass(ctx, projects)
+		if err != nil {
+			return result, fmt.Errorf("gated pass: %w", err)
+		}
+
+		return result, nil
 	}
 
 	if err := g.probe(ctx); err != nil {
@@ -132,5 +137,10 @@ func (g *HealthGate) Pass(ctx context.Context, projects map[string][]string) (Pa
 		return PassResult{}, fmt.Errorf("pass skipped, %w: %w", ErrEndpointUnhealthy, err)
 	}
 
-	return g.inner.Pass(ctx, projects)
+	result, err := g.inner.Pass(ctx, projects)
+	if err != nil {
+		return result, fmt.Errorf("gated pass: %w", err)
+	}
+
+	return result, nil
 }
