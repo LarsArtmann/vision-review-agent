@@ -131,15 +131,24 @@ jobs:
           GOEXPERIMENT=jsonv2 go test -race ./...
 
   no-jsonv2:
-    # Consumer guarantee: the SDK (everything except the daemon) must build
-    # and test under the json-v1 regime too. On Go 1.27 json/v2 is the
-    # DEFAULT, so the v1 regime is only selected via GOEXPERIMENT=none —
-    # until 2026-09-26 this job set nothing, silently testing jsonv2 twice
-    # while the v1 build was broken by a daemon import migration.
-    # internal/reviewd + cmd/visionreviewd are excluded: go-cqrs-lite
-    # imports encoding/json/v2, which the v1 regime excludes (the daemon
-    # always builds with jsonv2; see flake.nix).
-    name: SDK without GOEXPERIMENT=jsonv2
+    # json-v1 regime watchdog (2026-10-31 scope change). Original intent: the
+    # SDK builds and tests under GOEXPERIMENT=none. That is IMPOSSIBLE while
+    # fantasy >= v0.45.2 is pinned: it floors kaptinlin/jsonschema v0.9.9+,
+    # which imports encoding/json/v2 in core files — every SDK package
+    # transitively reaches it (verified 2026-10-31: the fantasy-free package
+    # set is EMPTY). The job sat red for that transitive reason since
+    # 2026-09-29, training everyone to ignore a required red check.
+    # Options considered: (a) fantasy-free subset — impossible, set is empty;
+    # (b) pin fantasy v0.41.1 — regresses the framework and fights the
+    # upgrade daemon; (c) drop the job — loses the tripwire entirely.
+    # Chosen: (d) watchdog. Green = the v1 failure is still EXACTLY the
+    # documented kaptinlin chain (blocker present, our tree v1-clean — our
+    # own code is covered by the tree grep in build-and-test and the
+    # package-local jsonv2 guard tests). Red with "blocker is GONE" =
+    # kaptinlin ships a dual-regime release -> restore the full SDK subset
+    # and update AGENTS.md. Red with "chain changed" = investigate
+    # immediately: our tree may have gained a direct v2 import.
+    name: json-v1 regime watchdog (kaptinlin blocker)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -149,12 +158,29 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Build, vet, test SDK packages (json-v1 regime)
+      - name: Watchdog — assert the documented kaptinlin transitive blocker
         run: |
           export GOEXPERIMENT=none
-          go build ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/... ./examples/...
-          go vet ./pkg/... ./cmd/vision/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/...
-          go test -race ./pkg/... ./internal/catalog/... ./internal/cli/... ./internal/visionutil/...
+          set +e
+          output=$(go build ./pkg/errors/ 2>&1)
+          status=$?
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            echo "::error::pkg/errors now builds under GOEXPERIMENT=none - the kaptinlin/jsonschema transitive blocker is GONE."
+            echo "::error::Restore the full no-jsonv2 SDK subset (build/vet/test ./pkg/... ./cmd/vision/... ./internal/{catalog,cli,visionutil}/... ./examples/...) and update the AGENTS.md dual-json bullet."
+            exit 1
+          fi
+
+          echo "$output"
+
+          if ! grep -q 'kaptinlin/jsonschema' <<<"$output" || ! grep -q 'encoding/json/v2' <<<"$output"; then
+            echo "::error::The v1-regime failure no longer matches the documented kaptinlin transitive chain."
+            echo "::error::Investigate before trusting this job: our tree may have gained a direct json/v2 import (run the package-local guard tests and the tree grep)."
+            exit 1
+          fi
+
+          echo "Watchdog green: blocker still present (documented kaptinlin chain); our tree is v1-clean."
 
   nix-flake-check:
     runs-on: ubuntu-latest

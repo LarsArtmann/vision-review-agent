@@ -336,6 +336,10 @@ func TestApplyViewStateIgnoresUnknownEventType(t *testing.T) {
 	if applied.Captures != 3 {
 		t.Fatalf("state should be untouched, got %+v", applied)
 	}
+
+	if applied.UnknownEvents != 1 {
+		t.Fatalf("unknown event should be counted once, got %d", applied.UnknownEvents)
+	}
 }
 
 func unknownTestEvent(t *testing.T) event.Event {

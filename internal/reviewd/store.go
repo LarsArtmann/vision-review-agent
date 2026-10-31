@@ -40,6 +40,12 @@ type ViewState struct {
 	Reviews    int
 
 	Comparisons int
+
+	// UnknownEvents counts events the fold did not recognize. A nonzero value
+	// means the journal carries event kinds newer than this binary knows; the
+	// events are skipped so old logs stay replayable, and the counter makes the
+	// skip visible instead of silent.
+	UnknownEvents int
 }
 
 // NeedsReview reports whether the current capture has no review yet.
@@ -94,7 +100,11 @@ func ApplyViewState(state ViewState, evt event.Event) (ViewState, error) {
 
 		state.Comparisons++
 	default:
-		return state, fmt.Errorf("fold: unknown event type: %s", evt.Type())
+		// Tolerate-and-ignore (decision D1, 2026-10-31): journals are a lifetime
+		// asset, so an old binary must fold a newer journal instead of erroring on
+		// event kinds it does not know. The UnknownEvents counter keeps the skip
+		// observable for callers that want to surface it.
+		state.UnknownEvents++
 	}
 
 	return state, nil
