@@ -218,7 +218,7 @@ my own standards allow.
     `SITE_MONITOR_PING_URL`.
 14. SystemNix deploy (owner): push repo, `--update-input
     vision-review-agent`, `nix run .#deploy`; verify Type=notify handshake
-    + doctor 6/6 + first pass; then remove legacy timer symlinks.
+    - doctor 6/6 + first pass; then remove legacy timer symlinks.
 15. First DiscordSync `once` pass once llama-server :8390 is up (~2h wall).
 16. Weekly scheduled CI job: tree-wide v2-grep + depguard re-scan of an
     unchanged tree (parallel f-list #3; nobody did it).
@@ -289,6 +289,6 @@ my own standards allow.
 
 ---
 
-*Point-in-time snapshot per docs policy. Route (f) through TODO_LIST.md /
+_Point-in-time snapshot per docs policy. Route (f) through TODO_LIST.md /
 ROADMAP.md via docs-health HARVEST, not this file. Now waiting for
-instructions.*
+instructions._

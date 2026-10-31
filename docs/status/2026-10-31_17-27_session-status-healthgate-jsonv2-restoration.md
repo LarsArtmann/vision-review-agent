@@ -18,30 +18,30 @@
 
 ## a) FULLY DONE (verifiable, committed)
 
-| # | What | Evidence | Files |
-|---|------|----------|-------|
-| 1 | samber/do absence proven; DO-1→DO-6 audit of manual-DI analogs — all pass | `go.mod`/`go.sum`/`go mod graph` checked; audit table in report | — |
-| 2 | `ProbeModelEndpoint` extracted from the doctor CLI into `internal/reviewd` — single source of endpoint truth, sentinel `ErrEndpointUnhealthy` wrapped into every failure, messages preserved | builds + doctor output byte-identical (main_test.go green) | `internal/reviewd/health.go`, `cmd/visionreviewd/commands.go` |
-| 3 | `HealthGate` PassRunner decorator wired into `run` only; dead-context bypass preserves shutdown semantics; `once`/`compare`/`replay` deliberately ungated | `errors.Is(err, ErrEndpointUnhealthy)` contract tested | `internal/reviewd/health.go`, `cmd/visionreviewd/commands.go` |
-| 4 | 7 new tests, all green under `-race`: probe table (listed/not-listed/5xx/malformed/unreachable/API-key), gate skip/delegate/dead-context/nil-wiring | `go test -race ./internal/reviewd/` | `internal/reviewd/health_test.go` |
-| 5 | Seventh jsonv2 recurrence restored: 6 files byte-identical to blessed `febc656` state via `git restore --source=febc656`; `fakeserver_test.go` import block hand-fixed to v1 | tree-wide grep = **0** v2 imports; `pkg/vision/a2ui` + `internal/reviewd` race suites green; committed as `e976164` | 7 files (config*, discover, events_test, fakeserver_test, a2ui component/messages) |
-| 6 | `ErrorKind` re-exports completed 14/16 → 16/16 (`KindOverloaded`, `KindPaymentRequired`); CLI advice table for all 16 kinds; switch → map (cleared `exhaustive` + `cyclop`) | `cmd/vision` tests green; lint finding gone | `pkg/vision/errors.go`, `cmd/vision/main.go` |
-| 7 | wrapcheck fix: `HealthGate.Pass` wraps delegated inner errors (`gated pass: %w`) | lint finding gone | `internal/reviewd/health.go` |
-| 8 | Architecture review report with DO-audit, health inventory, gap analysis, verdicts | committed | `docs/status/2026-10-31_14-45_samber-do-health-architecture-review.md` |
-| 9 | Domain vocabulary: **Endpoint probe**, **Health gate** | committed | `docs/DOMAIN_LANGUAGE.md` |
-| 10 | AGENTS.md: health-gate bullet, SEVENTH-recurrence paragraph incl. the false-2026-10-05-claim correction, ErrorKind re-export bullet | committed | `AGENTS.md` |
-| 11 | Verification matrix steps 1–6 executed post-fixes: build/vet/gofmt clean, race 8/9, pinned lint **1 issue** (the KNOWN RED's err113 line), tidy-diff clean, mod verify all-ok | job outputs this session | — |
+| #  | What                                                                                                                                                                                         | Evidence                                                                                                            | Files                                                                              |
+| -- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 1  | samber/do absence proven; DO-1→DO-6 audit of manual-DI analogs — all pass                                                                                                                    | `go.mod`/`go.sum`/`go mod graph` checked; audit table in report                                                     | —                                                                                  |
+| 2  | `ProbeModelEndpoint` extracted from the doctor CLI into `internal/reviewd` — single source of endpoint truth, sentinel `ErrEndpointUnhealthy` wrapped into every failure, messages preserved | builds + doctor output byte-identical (main_test.go green)                                                          | `internal/reviewd/health.go`, `cmd/visionreviewd/commands.go`                      |
+| 3  | `HealthGate` PassRunner decorator wired into `run` only; dead-context bypass preserves shutdown semantics; `once`/`compare`/`replay` deliberately ungated                                    | `errors.Is(err, ErrEndpointUnhealthy)` contract tested                                                              | `internal/reviewd/health.go`, `cmd/visionreviewd/commands.go`                      |
+| 4  | 7 new tests, all green under `-race`: probe table (listed/not-listed/5xx/malformed/unreachable/API-key), gate skip/delegate/dead-context/nil-wiring                                          | `go test -race ./internal/reviewd/`                                                                                 | `internal/reviewd/health_test.go`                                                  |
+| 5  | Seventh jsonv2 recurrence restored: 6 files byte-identical to blessed `febc656` state via `git restore --source=febc656`; `fakeserver_test.go` import block hand-fixed to v1                 | tree-wide grep = **0** v2 imports; `pkg/vision/a2ui` + `internal/reviewd` race suites green; committed as `e976164` | 7 files (config*, discover, events_test, fakeserver_test, a2ui component/messages) |
+| 6  | `ErrorKind` re-exports completed 14/16 → 16/16 (`KindOverloaded`, `KindPaymentRequired`); CLI advice table for all 16 kinds; switch → map (cleared `exhaustive` + `cyclop`)                  | `cmd/vision` tests green; lint finding gone                                                                         | `pkg/vision/errors.go`, `cmd/vision/main.go`                                       |
+| 7  | wrapcheck fix: `HealthGate.Pass` wraps delegated inner errors (`gated pass: %w`)                                                                                                             | lint finding gone                                                                                                   | `internal/reviewd/health.go`                                                       |
+| 8  | Architecture review report with DO-audit, health inventory, gap analysis, verdicts                                                                                                           | committed                                                                                                           | `docs/status/2026-10-31_14-45_samber-do-health-architecture-review.md`             |
+| 9  | Domain vocabulary: **Endpoint probe**, **Health gate**                                                                                                                                       | committed                                                                                                           | `docs/DOMAIN_LANGUAGE.md`                                                          |
+| 10 | AGENTS.md: health-gate bullet, SEVENTH-recurrence paragraph incl. the false-2026-10-05-claim correction, ErrorKind re-export bullet                                                          | committed                                                                                                           | `AGENTS.md`                                                                        |
+| 11 | Verification matrix steps 1–6 executed post-fixes: build/vet/gofmt clean, race 8/9, pinned lint **1 issue** (the KNOWN RED's err113 line), tidy-diff clean, mod verify all-ok                | job outputs this session                                                                                            | —                                                                                  |
 
 ## b) PARTIALLY DONE
 
-| What works | What remains | Blocker | Effort |
-|---|---|---|---|
-| Health gate at unit level (probe + decorator + wiring) | **No E2E test through `visionreviewd run`** with a server that dies mid-session and recovers; gate timeout (5s) and on/off are hard-coded, not config.json fields | none — just not built yet | M / S |
-| jsonv2 restoration | GOEXPERIMENT=none SDK-subset build **not re-run** this session to prove remaining failure is ONLY the transitive kaptinlin error; nix steps 7–9 of the verification matrix not re-run | KNOWN BLOCKER (fantasy ≥ v0.45.2 floors kaptinlin v0.9.9) for the former; time for the latter | S / M |
-| Seventh-recurrence root cause | Offender commit identified (`fad59ce`) but two of its side effects **uninvestigated**: `go.sum` −92 lines, `SECURITY.md` +40 lines | none — explicitly out of scope per "no unrelated research" | S |
-| Recommendation R1 (stop the recurrence class) | Written up (gate the auto-commit daemon / scheduled grep) but **not implemented** — 7 recurrences prove memory-based detection is dead | infra decision needed (see question g2) | M |
-| LSP diagnostics hygiene | 4 standing LSP warnings (depguard/gci/gocognit) are CLI-verified stale, but LSP was never restarted to confirm they clear | none | S |
-| HARVEST | This report's section (f) is the input for docs-health HARVEST into TODO_LIST.md/ROADMAP.md — **not done** | user said WAIT after the report | S |
+| What works                                             | What remains                                                                                                                                                                          | Blocker                                                                                       | Effort |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------ |
+| Health gate at unit level (probe + decorator + wiring) | **No E2E test through `visionreviewd run`** with a server that dies mid-session and recovers; gate timeout (5s) and on/off are hard-coded, not config.json fields                     | none — just not built yet                                                                     | M / S  |
+| jsonv2 restoration                                     | GOEXPERIMENT=none SDK-subset build **not re-run** this session to prove remaining failure is ONLY the transitive kaptinlin error; nix steps 7–9 of the verification matrix not re-run | KNOWN BLOCKER (fantasy ≥ v0.45.2 floors kaptinlin v0.9.9) for the former; time for the latter | S / M  |
+| Seventh-recurrence root cause                          | Offender commit identified (`fad59ce`) but two of its side effects **uninvestigated**: `go.sum` −92 lines, `SECURITY.md` +40 lines                                                    | none — explicitly out of scope per "no unrelated research"                                    | S      |
+| Recommendation R1 (stop the recurrence class)          | Written up (gate the auto-commit daemon / scheduled grep) but **not implemented** — 7 recurrences prove memory-based detection is dead                                                | infra decision needed (see question g2)                                                       | M      |
+| LSP diagnostics hygiene                                | 4 standing LSP warnings (depguard/gci/gocognit) are CLI-verified stale, but LSP was never restarted to confirm they clear                                                             | none                                                                                          | S      |
+| HARVEST                                                | This report's section (f) is the input for docs-health HARVEST into TODO_LIST.md/ROADMAP.md — **not done**                                                                            | user said WAIT after the report                                                               | S      |
 
 ## c) NOT STARTED (planned by this session, zero code)
 
@@ -51,7 +51,7 @@
 - **R5:** samber/do v2 adoption — deliberately not started; revisit triggers documented (≥2 composition roots or per-request lifetimes).
 - Circuit breaker / probe backoff after consecutive unhealthy passes.
 - `visionreviewd doctor --json` for machine consumption (site-monitor integration).
-- systemd watchdog (`WatchdogSec`/`sd_notify`) for a *hung* (not crashed) daemon.
+- systemd watchdog (`WatchdogSec`/`sd_notify`) for a _hung_ (not crashed) daemon.
 - Retry wiring (`Config.Retry`) into the daemon's reviewer — flagged, not built.
 
 ## d) TOTALLY FUCKED UP (radical honesty)
@@ -74,22 +74,23 @@
 
 ## f) 50 things to get done next (ranked; HARVEST input — route to TODO_LIST/ROADMAP)
 
-*Impact: 🔴 Critical / 🟠 High / 🟡 Medium / ⚪ Low · Effort: S <30min / M 30min–2h / L >2h*
+_Impact: 🔴 Critical / 🟠 High / 🟡 Medium / ⚪ Low · Effort: S <30min / M 30min–2h / L >2h_
 
 **Incident class: jsonv2 recurrence (highest leverage)**
-| # | Task | Impact | Effort | Category |
-|---|------|--------|--------|----------|
-| 1 | Gate the auto-commit daemon: tree-wide v2-grep + pinned lint must pass before each auto-commit, else abort | 🔴 | M | Process |
-| 2 | Add package-local guard tests that fail if `encoding/json/v2` appears in `internal/reviewd` and `pkg/vision` (runs on every `go test`, CI-bypass-immune) | 🟠 | S | Tests |
-| 3 | Add scheduled weekly CI job running the v2-import grep + depguard over the whole tree | 🟠 | S | CI |
-| 4 | Rewrite AGENTS.md "verified" claims to embed command + timestamp artifacts (start with the json bullet) | 🟡 | S | Docs |
-| 5 | ANNOTATE the 2026-10-05 status doc: its "grep clean" claim was false for fakeserver_test.go (docs-health ANNOTATE, never rewrite) | 🟡 | S | Docs |
-| 6 | Prove the GOEXPERIMENT=none SDK-subset failure contains ONLY the kaptinlin transitive error (our tree v1-clean under v1 regime) | 🟠 | S | Quality |
-| 7 | Investigate `fad59ce`'s `go.sum` −92 lines — confirm nothing was silently dropped | 🟡 | S | Bug |
-| 8 | Inspect the `SECURITY.md` (+40 lines) added by `fad59ce` — confirm intentional | ⚪ | S | Docs |
-| 9 | Decide + implement `no-jsonv2` job scope: fantasy-free subset OR pin fantasy v0.41.1 (documented blocker, tracked) | 🟠 | M | CI |
-| 10 | Track kaptinlin/fantasy upstream for a dual-regime release; bump when available | 🟡 | S | Deps |
-| 11 | Document `omitempty` vs `omitzero` dual-regime wire semantics at the `sendDataModel` field in `messages.go` | 🟡 | S | Docs |
+
+| #  | Task                                                                                                                                                     | Impact | Effort | Category |
+| -- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ | -------- |
+| 1  | Gate the auto-commit daemon: tree-wide v2-grep + pinned lint must pass before each auto-commit, else abort                                               | 🔴     | M      | Process  |
+| 2  | Add package-local guard tests that fail if `encoding/json/v2` appears in `internal/reviewd` and `pkg/vision` (runs on every `go test`, CI-bypass-immune) | 🟠     | S      | Tests    |
+| 3  | Add scheduled weekly CI job running the v2-import grep + depguard over the whole tree                                                                    | 🟠     | S      | CI       |
+| 4  | Rewrite AGENTS.md "verified" claims to embed command + timestamp artifacts (start with the json bullet)                                                  | 🟡     | S      | Docs     |
+| 5  | ANNOTATE the 2026-10-05 status doc: its "grep clean" claim was false for fakeserver_test.go (docs-health ANNOTATE, never rewrite)                        | 🟡     | S      | Docs     |
+| 6  | Prove the GOEXPERIMENT=none SDK-subset failure contains ONLY the kaptinlin transitive error (our tree v1-clean under v1 regime)                          | 🟠     | S      | Quality  |
+| 7  | Investigate `fad59ce`'s `go.sum` −92 lines — confirm nothing was silently dropped                                                                        | 🟡     | S      | Bug      |
+| 8  | Inspect the `SECURITY.md` (+40 lines) added by `fad59ce` — confirm intentional                                                                           | ⚪     | S      | Docs     |
+| 9  | Decide + implement `no-jsonv2` job scope: fantasy-free subset OR pin fantasy v0.41.1 (documented blocker, tracked)                                       | 🟠     | M      | CI       |
+| 10 | Track kaptinlin/fantasy upstream for a dual-regime release; bump when available                                                                          | 🟡     | S      | Deps     |
+| 11 | Document `omitempty` vs `omitzero` dual-regime wire semantics at the `sendDataModel` field in `messages.go`                                              | 🟡     | S      | Docs     |
 
 **Product decision (unblocks two gates)**
 | 12 | Decide unknown-event fold semantics (tolerate vs strict) and fix `ApplyViewState` or the test — clears the only red test AND the last lint finding | 🔴 | S–M | Bug |

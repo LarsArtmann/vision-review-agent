@@ -168,11 +168,11 @@ in the typed payloads. Nothing to put in metadata.
 reaches fantasy (verified 2026-10-31: that is ALL of them — the
 fantasy-free package set is empty). Watch points, cheapest first:
 
-| Option | Trigger | Cost |
-|---|---|---|
-| kaptinlin ships a dual-regime release (v2 imports moved behind build tags) | upstream release notes / go-cqrs-lite-style regime split | zero — `GOEXPERIMENT=none` build starts passing; restore the full no-jsonv2 SDK scope (the CI watchdog goes red to remind us) |
-| fantasy pins kaptinlin < v0.9.9 | fantasy CHANGELOG | zero — same restoration |
-| Pin fantasy v0.41.1 (last kaptinlin-v0.9.8) | we decide the v1 regime matters more than fantasy updates | permanent drift against the upgrade daemon; REJECT unless the ecosystem stalls for months |
+| Option                                                                     | Trigger                                                   | Cost                                                                                                                          |
+| -------------------------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| kaptinlin ships a dual-regime release (v2 imports moved behind build tags) | upstream release notes / go-cqrs-lite-style regime split  | zero — `GOEXPERIMENT=none` build starts passing; restore the full no-jsonv2 SDK scope (the CI watchdog goes red to remind us) |
+| fantasy pins kaptinlin < v0.9.9                                            | fantasy CHANGELOG                                         | zero — same restoration                                                                                                       |
+| Pin fantasy v0.41.1 (last kaptinlin-v0.9.8)                                | we decide the v1 regime matters more than fantasy updates | permanent drift against the upgrade daemon; REJECT unless the ecosystem stalls for months                                     |
 
 The 2026-10-31 CI conversion (no-jsonv2 → json-v1 watchdog) makes option
 1/2 self-announcing: the job fails with "blocker is GONE" the moment the

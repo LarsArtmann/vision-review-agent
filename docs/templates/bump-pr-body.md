@@ -5,9 +5,11 @@ not merge with an unchecked verification box.
 
 ```markdown
 ## Summary
+
 - Bump <dep> <from> → <to> (<why: CVE / feature / drift>)
 
 ## Verification
+
 - [ ] `nix run .#verify-bump` (build/vet/gofmt/lint/race/tidy/verify)
 - [ ] `nix build .#visionreviewd` (vendorHash in sync — if stale:
       `nix run .#update-vendor-hash`)
