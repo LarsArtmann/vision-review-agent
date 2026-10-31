@@ -15,8 +15,8 @@ import (
 // Health gate dependency sentinels: NewHealthGate rejects invalid wiring
 // with these.
 var (
-	ErrNoGatedRunner    = errors.New("health gate: nil runner")
-	ErrNoProbe          = errors.New("health gate: nil probe")
+	ErrNoGatedRunner     = errors.New("health gate: nil runner")
+	ErrNoProbe           = errors.New("health gate: nil probe")
 	ErrEndpointUnhealthy = errors.New("model endpoint unhealthy")
 )
 
@@ -129,7 +129,7 @@ func (g *HealthGate) Pass(ctx context.Context, projects map[string][]string) (Pa
 	if err := g.probe(ctx); err != nil {
 		g.logger.Warn("pass skipped, model endpoint unhealthy", "err", err)
 
-		return PassResult{}, fmt.Errorf("pass skipped, %w", err)
+		return PassResult{}, fmt.Errorf("pass skipped, %w: %w", ErrEndpointUnhealthy, err)
 	}
 
 	return g.inner.Pass(ctx, projects)
