@@ -27,7 +27,10 @@ func findJSONv2Imports(dir string) ([]string, error) {
 		}
 
 		if entry.IsDir() {
-			if entry.Name() == "testdata" {
+			// testdata holds fixtures, vendor/ holds dependencies whose
+			// v2 imports are the documented transitive blocker — neither
+			// is this repo's code.
+			if entry.Name() == "testdata" || entry.Name() == "vendor" {
 				return filepath.SkipDir
 			}
 
