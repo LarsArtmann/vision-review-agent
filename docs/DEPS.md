@@ -159,3 +159,44 @@ in the typed payloads. Nothing to put in metadata.
 - Candidate upstream asks: contract-test coverage for the
   `serializableEvent` envelope (our golden method is the repro),
   per-module CHANGELOGs, and the read-only defect above.
+
+## json/v2 dual-regime blocker: upstream watch (2026-10-31)
+
+`kaptinlin/jsonschema` v0.9.9+ imports `encoding/json/v2` in core files and
+`charm.land/fantasy` ≥ v0.45.2 floors it, which makes the
+`GOEXPERIMENT=none` v1-regime build impossible for every package that
+reaches fantasy (verified 2026-10-31: that is ALL of them — the
+fantasy-free package set is empty). Watch points, cheapest first:
+
+| Option | Trigger | Cost |
+|---|---|---|
+| kaptinlin ships a dual-regime release (v2 imports moved behind build tags) | upstream release notes / go-cqrs-lite-style regime split | zero — `GOEXPERIMENT=none` build starts passing; restore the full no-jsonv2 SDK scope (the CI watchdog goes red to remind us) |
+| fantasy pins kaptinlin < v0.9.9 | fantasy CHANGELOG | zero — same restoration |
+| Pin fantasy v0.41.1 (last kaptinlin-v0.9.8) | we decide the v1 regime matters more than fantasy updates | permanent drift against the upgrade daemon; REJECT unless the ecosystem stalls for months |
+
+The 2026-10-31 CI conversion (no-jsonv2 → json-v1 watchdog) makes option
+1/2 self-announcing: the job fails with "blocker is GONE" the moment the
+transitive chain clears, so no human calendar is needed.
+
+## Seventh-recurrence post-mortem (2026-10-11 → 2026-10-31)
+
+`fad59ce` (auto-commit "Daemon: true") re-migrated 7 files to
+v2/jsontext; it sat undetected for three weeks because detection was
+memory-based (AGENTS.md knowledge) rather than scheduled, and one file
+(`fakeserver_test.go`) had in fact been dirty since `6390b14` (09-29) —
+the 2026-10-05 "grep clean" claim had missed it. Full narrative:
+AGENTS.md dual-json bullet, SEVENTH recurrence paragraph. Guards landed
+2026-10-31: package + module-wide guard tests (bypass-immune), weekly
+scheduled grep workflow, watchdog CI job, `.go-auto-upgrade.json`
+migrator exclusion.
+
+## Quantization tradeoff: Q8_0 vs smaller (open decision, 2026-10-31)
+
+The default model ships as Q8_0 (~9-10 GB download). Smaller quants
+(Q4_K_M et al) would shrink the llama-server first-start download and the
+restart/recovery window after a host reboot, at a fidelity cost that has
+NEVER been measured for this review prompt (score stability, markdown
+structure). Decision left open: measure score variance + review quality
+on one fleet corpus across quants before switching the default. Until
+then Q8_0 stays: fidelity is the product; recovery speed is tunable via the
+module's `watchdogSec` option (nixos/visionreviewd.nix) instead.

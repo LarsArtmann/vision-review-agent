@@ -143,3 +143,19 @@ _(Brainstorm per the skill — routing rigor applies; most of 25–50 are ROADMA
 ---
 
 **Waiting for instructions.**
+
+---
+
+## Errata (2026-10-31, annotated — never rewrite)
+
+- The "tree-wide grep clean" verification claim in this snapshot was
+  WRONG: `internal/reviewd/fakeserver_test.go` still carried
+  `encoding/json/v2` + `jsontext` imports from the 2026-09-29 migration
+  (`6390b14`) and was missed by the 2026-10-05 restoration, then re-surfaced
+  in the seventh recurrence (`fad59ce`, 2026-10-11) and was finally
+  restored 2026-10-31 (`e976164`). Root causes: the grep claim was made
+  without re-running the command at snapshot time, and detection relied on
+  session memory instead of scheduled guards. Guards now in place:
+  package + module-wide jsonv2 guard tests, weekly scheduled grep
+  workflow, json-v1 watchdog CI job. Lesson (norm, 2026-10-31): every
+  verification claim must embed the exact command AND the date it ran.
