@@ -10,6 +10,26 @@ For current feature inventory, see [FEATURES.md](FEATURES.md).
 
 ---
 
+## Architecture review 2026-10-31 — resilience & self-health harvest
+
+Harvested from
+`docs/architecture-understanding/2026-10-31_14-41_service-orientation-resilience-selfhealth.md`
+(implementation record for the health gate itself:
+`docs/status/2026-10-31_14-45_samber-do-health-architecture-review.md`).
+
+- [ ] **Wire daemon retry policy** — set `vision.Config.Retry` (backoff+jitter,
+      retryable-aware) in `reviewer.go newAgent`; configurable via daemon config.
+      Fake-server test must show a transient 500 retried within one pass.
+- [ ] **Decide fold strictness** — tolerate-and-ignore vs strict fold for unknown
+      event types (`store.go:97` vs `TestApplyViewStateIgnoresUnknownEventType`);
+      either resolution also clears the repo's only `err113` finding.
+- [ ] **Liveness watchdog** — `Type=notify` + sd_notify heartbeat per pass,
+      `WatchdogSec` in the NixOS module, so a hung model call is detected, not
+      just an exit.
+- [ ] **Pass-duration + pending-lag observability** — warn when a pass exceeds
+      `interval` (dropped ticks); summarize views with `NeedsReview` stuck over
+      N passes in the pass log line.
+
 ## Website fleet — monitoring & re-review (2026-09-19 sweep residue)
 
 Harvested from the 2026-09-19 fleet follow-up execution
