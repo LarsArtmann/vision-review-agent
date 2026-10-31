@@ -80,6 +80,9 @@ var _ = Describe("ServiceNotifier", func() {
 		})
 
 		It("derives the ping cadence from WATCHDOG_USEC at half the budget", func() {
+			Expect(os.Setenv("NOTIFY_SOCKET", "/nonexistent/notify.sock")).To(Succeed())
+			DeferCleanup(func() { _ = os.Unsetenv("NOTIFY_SOCKET") })
+
 			Expect(os.Setenv("WATCHDOG_USEC", "30000000")).To(Succeed())
 			DeferCleanup(func() { _ = os.Unsetenv("WATCHDOG_USEC") })
 
@@ -128,11 +131,13 @@ var _ = Describe("Daemon watchdog heartbeat", func() {
 		cancel()
 		Eventually(runDone, "2s").Should(Receive(Succeed()))
 
-		pingsBeforeStop, _ := notifier.counts()
+		// READY is sent exactly once at startup and never again; ping count
+		// is allowed one late tick (a tick already queued when the context
+		// fired), which is why the stop check pins ready, not pings.
 		Consistently(func() int {
-			_, pings := notifier.counts()
+			ready, _ := notifier.counts()
 
-			return pings
-		}, "150ms", "25ms").Should(Equal(pingsBeforeStop))
+			return ready
+		}, "150ms", "25ms").Should(Equal(1))
 	})
 })

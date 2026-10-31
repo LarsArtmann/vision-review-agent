@@ -3,12 +3,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -719,5 +721,57 @@ func TestRunBackupRestoresAndReplaysEqually(t *testing.T) {
 			t.Fatalf("%s differs after backup/restore roundtrip:\noriginal:\n%s\nrestored:\n%s",
 				name, original, restoredCopy)
 		}
+	}
+}
+
+// TestRunDoctorJSONMode proves -json emits a valid, complete report while
+// keeping the text-mode default and the exit-code contract.
+func TestRunDoctorJSONMode(t *testing.T) {
+	t.Parallel()
+
+	dataDir := t.TempDir()
+	configPath := doctorTestConfig(t, dataDir)
+
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+
+	code := run([]string{"doctor", "-json", "-config", configPath}, stdout, stderr)
+	if code != exitOK {
+		t.Fatalf("exit = %d, want %d (stderr: %s)\n%s", code, exitOK, stderr, stdout)
+	}
+
+	var report struct {
+		Checks []struct {
+			Name   string `json:"name"`
+			OK     bool   `json:"ok"`
+			Detail string `json:"detail"`
+		} `json:"checks"`
+		Total  int `json:"total"`
+		Failed int `json:"failed"`
+	}
+
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout)
+	}
+
+	if report.Failed != 0 || report.Total < 5 {
+		t.Fatalf("report = %d checks, %d failed, want healthy doctor run", report.Total, report.Failed)
+	}
+
+	names := make([]string, 0, len(report.Checks))
+
+	for _, check := range report.Checks {
+		names = append(names, check.Name)
+
+		if !check.OK {
+			t.Fatalf("check %q unexpectedly failed: %s", check.Name, check.Detail)
+		}
+
+		if check.Detail == "" {
+			t.Fatalf("check %q has empty detail", check.Name)
+		}
+	}
+
+	if !slices.Contains(names, "model endpoint") {
+		t.Fatalf("report checks %v missing model endpoint", names)
 	}
 }

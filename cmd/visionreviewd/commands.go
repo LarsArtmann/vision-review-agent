@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -460,11 +461,60 @@ func runReplayCommand(args []string, stdout, stderr io.Writer) int {
 	return exitOK
 }
 
+// doctorCheckReport is the JSON wire shape of one doctor check outcome.
+type doctorCheckReport struct {
+	Name   string `json:"name"`
+	OK     bool   `json:"ok"`
+	Detail string `json:"detail"`
+}
+
+// doctorReport is the JSON wire shape of the whole doctor run.
+type doctorReport struct {
+	Checks []doctorCheckReport `json:"checks"`
+	Total  int                 `json:"total"`
+	Failed int                 `json:"failed"`
+}
+
+// writeDoctorReport emits the JSON form of a doctor run; the error is
+// already contextualized for direct printing.
+func writeDoctorReport(checks []doctorCheck, failed int, stdout io.Writer) error {
+	report := doctorReport{
+		Checks: make([]doctorCheckReport, 0, len(checks)),
+		Total:  len(checks),
+		Failed: failed,
+	}
+
+	for _, check := range checks {
+		report.Checks = append(report.Checks, doctorCheckReport{Name: check.name, OK: check.ok, Detail: check.detail})
+	}
+
+	encoder := json.NewEncoder(stdout)
+	encoder.SetIndent("", "  ")
+
+	if err := encoder.Encode(report); err != nil {
+		return fmt.Errorf("encode doctor report: %w", err)
+	}
+
+	return nil
+}
+
 // runDoctorCommand checks config, directories, globs, and the model endpoint.
+// Default output is human text; -json emits the same report machine-readable
+// with the same exit-code contract.
 func runDoctorCommand(args []string, stdout, stderr io.Writer) int {
-	config, code, ok := parseConfigFlag("doctor", args, stderr)
-	if !ok {
-		return code
+	flagSet, configPath := newConfigFlagSet("doctor", stderr)
+
+	asJSON := flagSet.Bool("json", false, "emit the report as machine-readable JSON")
+
+	if err := flagSet.Parse(args); err != nil {
+		return exitUsage
+	}
+
+	config, err := loadDaemonConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "visionreviewd doctor: %v\n", err)
+
+		return exitFailed
 	}
 
 	checks := doctorChecks(context.Background(), config)
@@ -472,17 +522,30 @@ func runDoctorCommand(args []string, stdout, stderr io.Writer) int {
 	failed := 0
 
 	for _, check := range checks {
-		status := "ok"
-
 		if !check.ok {
-			status = "FAIL"
 			failed++
 		}
-
-		fmt.Fprintf(stdout, "%-4s %s: %s\n", status, check.name, check.detail)
 	}
 
-	fmt.Fprintf(stdout, "%d checks, %d failed\n", len(checks), failed)
+	if *asJSON {
+		if err := writeDoctorReport(checks, failed, stdout); err != nil {
+			fmt.Fprintf(stderr, "visionreviewd doctor: %v\n", err)
+
+			return exitFailed
+		}
+	} else {
+		for _, check := range checks {
+			status := "ok"
+
+			if !check.ok {
+				status = "FAIL"
+			}
+
+			fmt.Fprintf(stdout, "%-4s %s: %s\n", status, check.name, check.detail)
+		}
+
+		fmt.Fprintf(stdout, "%d checks, %d failed\n", len(checks), failed)
+	}
 
 	if failed > 0 {
 		return exitFailed
