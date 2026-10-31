@@ -1,6 +1,8 @@
 package reviewed
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -105,5 +107,91 @@ func TestFindJSONv2ImportsDetectsOffender(t *testing.T) {
 
 	if len(offenders) != 1 || offenders[0] != dirty {
 		t.Fatalf("want exactly [%s], got %v (testdata must be skipped)", dirty, offenders)
+	}
+}
+
+// errNoGoMod is the sentinel returned when findModuleRoot walks past the
+// filesystem root without finding a go.mod (e.g. when tests run from a
+// scratch directory outside any module).
+var errNoGoMod = errors.New("no go.mod found above the working directory")
+
+// findModuleRoot walks up from the working directory (the package dir during
+// tests) until it finds go.mod, returning the module root.
+func findModuleRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("get working dir: %w", err)
+	}
+
+	return findModuleRootFrom(dir)
+}
+
+// TestNoJSONv2ImportsModuleWide extends the package-local guard to every Go
+// file in the module. The migrator runs `fix ./...` from the module root, so
+// cmd/, pkg/errors, internal/catalog, and examples are all in its blast
+// radius even though the historical recurrences only landed in this package
+// and pkg/vision (a2ui). This test catches those on the next
+// `go test ./internal/reviewd/` instead of waiting for each victim package's
+// own test run.
+func TestNoJSONv2ImportsModuleWide(t *testing.T) {
+	t.Parallel()
+
+	root, err := findModuleRoot()
+	if err != nil {
+		t.Fatalf("locate module root: %v", err)
+	}
+
+	offenders, err := findJSONv2Imports(root)
+	if err != nil {
+		t.Fatalf("walk module %s: %v", root, err)
+	}
+
+	for _, path := range offenders {
+		rel, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			rel = path
+		}
+
+		t.Errorf("%s: forbidden json/v2 experiment import; use plain encoding/json (see AGENTS.md)", rel)
+	}
+}
+
+// TestFindModuleRootControls pins findModuleRoot's two outcomes: a directory
+// inside this module resolves to a go.mod-bearing root, and a scratch
+// directory outside any module reports errNoGoMod.
+func TestFindModuleRootControls(t *testing.T) {
+	t.Parallel()
+
+	root, err := findModuleRoot()
+	if err != nil {
+		t.Fatalf("findModuleRoot inside module: %v", err)
+	}
+
+	if _, statErr := os.Stat(filepath.Join(root, "go.mod")); statErr != nil {
+		t.Fatalf("resolved root %s has no go.mod: %v", root, statErr)
+	}
+
+	if _, err := findModuleRootFrom(t.TempDir()); !errors.Is(err, errNoGoMod) {
+		t.Fatalf("scratch dir: want errNoGoMod, got %v", err)
+	}
+}
+
+// findModuleRootFrom is findModuleRoot with an explicit start directory so
+// the failure path is testable without changing the process working
+// directory.
+func findModuleRootFrom(start string) (string, error) {
+	dir := start
+
+	for {
+		if _, statErr := os.Stat(filepath.Join(dir, "go.mod")); statErr == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", errNoGoMod
+		}
+
+		dir = parent
 	}
 }
