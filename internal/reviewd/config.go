@@ -53,6 +53,15 @@ type Config struct {
 	SourceURLs map[string]string `json:"sourceURLs,omitempty"` //nolint:tagliatelle // wire key: existing user configs (~/.config/visionreviewd) use sourceURLs; URL is not a word
 }
 
+// Daemon retry defaults: attempts, cap, and growth factor for the
+// out-of-the-box policy (initial backoff is 2s, the llama-server
+// cold-start window).
+const (
+	defaultRetryAttempts   = 3
+	defaultRetryMaxBackoff = 30 * time.Second
+	defaultRetryMultiplier = 2.0
+)
+
 // DefaultRetryPolicy is the daemon's out-of-the-box retry policy: three
 // attempts starting at 2s (the llama-server cold-start window), capped at
 // 30s, doubling between attempts with jitter. Transient endpoint blips stop
@@ -60,10 +69,10 @@ type Config struct {
 func DefaultRetryPolicy() RetryConfig {
 	return RetryConfig{
 		Enabled:        true,
-		MaxAttempts:    3,
+		MaxAttempts:    defaultRetryAttempts,
 		InitialBackoff: 2 * time.Second,
-		MaxBackoff:     30 * time.Second,
-		Multiplier:     2.0,
+		MaxBackoff:     defaultRetryMaxBackoff,
+		Multiplier:     defaultRetryMultiplier,
 	}
 }
 
@@ -93,10 +102,10 @@ type RetryConfig struct {
 
 // retryJSON is the wire shape of RetryConfig: durations as human strings.
 type retryJSON struct {
-	Enabled        *bool  `json:"enabled,omitempty"`
-	MaxAttempts    int    `json:"maxAttempts,omitempty"`
-	InitialBackoff string `json:"initialBackoff,omitempty"`
-	MaxBackoff     string `json:"maxBackoff,omitempty"`
+	Enabled        *bool   `json:"enabled,omitempty"`
+	MaxAttempts    int     `json:"maxAttempts,omitempty"`
+	InitialBackoff string  `json:"initialBackoff,omitempty"`
+	MaxBackoff     string  `json:"maxBackoff,omitempty"`
 	Multiplier     float64 `json:"multiplier,omitempty"`
 }
 
@@ -146,6 +155,7 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		DataDir:    c.DataDir,
 		ReviewsDir: c.ReviewsDir,
 		Projects:   c.Projects,
+		Retry:      nil, // decoded separately below: an absent stanza keeps the loaded default
 		SourceURLs: c.SourceURLs,
 	}
 
@@ -196,12 +206,16 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 // decodeRetryPolicy converts the wire stanza; a duration parse failure is a
 // config error naming the offending field.
 func decodeRetryPolicy(raw *retryJSON) (*RetryConfig, error) {
-	policy := RetryConfig{}
+	policy := RetryConfig{
+		Enabled:        true,
+		MaxAttempts:    0,
+		InitialBackoff: 0,
+		MaxBackoff:     0,
+		Multiplier:     0,
+	}
 
 	if raw.Enabled != nil {
 		policy.Enabled = *raw.Enabled
-	} else {
-		policy.Enabled = true
 	}
 
 	policy.MaxAttempts = raw.MaxAttempts
@@ -214,12 +228,12 @@ func decodeRetryPolicy(raw *retryJSON) (*RetryConfig, error) {
 
 	policy.InitialBackoff = initial
 
-	max, err := parseOptionalDuration("retry.maxBackoff", raw.MaxBackoff)
+	maxBackoff, err := parseOptionalDuration("retry.maxBackoff", raw.MaxBackoff)
 	if err != nil {
 		return nil, err
 	}
 
-	policy.MaxBackoff = max
+	policy.MaxBackoff = maxBackoff
 
 	return &policy, nil
 }
@@ -277,17 +291,17 @@ func encodeRetryPolicy(policy *RetryConfig) *retryJSON {
 		initial = policy.InitialBackoff.String()
 	}
 
-	max := ""
+	maxBackoff := ""
 
 	if policy.MaxBackoff > 0 {
-		max = policy.MaxBackoff.String()
+		maxBackoff = policy.MaxBackoff.String()
 	}
 
 	return &retryJSON{
 		Enabled:        &enabled,
 		MaxAttempts:    policy.MaxAttempts,
 		InitialBackoff: initial,
-		MaxBackoff:     max,
+		MaxBackoff:     maxBackoff,
 		Multiplier:     policy.Multiplier,
 	}
 }
@@ -411,7 +425,11 @@ func (c Config) validateRetry() error {
 	}
 
 	if c.Retry.InitialBackoff < 0 {
-		return fmt.Errorf("%w: retry.initialBackoff must not be negative, got %s", ErrInvalidConfig, c.Retry.InitialBackoff)
+		return fmt.Errorf(
+			"%w: retry.initialBackoff must not be negative, got %s",
+			ErrInvalidConfig,
+			c.Retry.InitialBackoff,
+		)
 	}
 
 	if c.Retry.MaxBackoff < 0 {

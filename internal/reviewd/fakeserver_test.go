@@ -352,11 +352,16 @@ func TestReviewerRetriesTransientFailure(t *testing.T) {
 			Object:  "chat.completion",
 			Created: time.Now().UTC().Unix(),
 			Model:   request.Model,
-			Choices: []fakeChoice{{
-				Index:        0,
-				Message:      fakeMessage{Role: "assistant", Content: "## Review\nFine after retry.\n\n**Score: 7/10**"},
-				FinishReason: "stop",
-			}},
+			Choices: []fakeChoice{
+				{
+					Index: 0,
+					Message: fakeMessage{
+						Role:    "assistant",
+						Content: "## Review\nFine after retry.\n\n**Score: 7/10**",
+					},
+					FinishReason: "stop",
+				},
+			},
 			Usage: fakeUsage{PromptTokens: 10, CompletionTokens: 5, TotalTokens: 15},
 		}
 

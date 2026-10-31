@@ -25,6 +25,7 @@ type fakeNotifier struct {
 func (f *fakeNotifier) Ready() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
 	f.ready++
 
 	return nil
@@ -33,6 +34,7 @@ func (f *fakeNotifier) Ready() error {
 func (f *fakeNotifier) WatchdogPing() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
 	f.pings++
 
 	return nil

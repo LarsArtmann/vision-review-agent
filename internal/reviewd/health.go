@@ -127,7 +127,14 @@ func NewHealthGate(
 		logger = slog.Default()
 	}
 
-	return &HealthGate{inner: inner, probe: probe, logger: logger}, nil
+	return &HealthGate{
+		inner:            inner,
+		probe:            probe,
+		logger:           logger,
+		mu:               sync.Mutex{},
+		consecutiveSkips: 0,
+		lastHealthy:      time.Time{},
+	}, nil
 }
 
 // Pass probes the model endpoint and delegates to the wrapped runner only

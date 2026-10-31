@@ -279,6 +279,7 @@ func TestConfigMarshalRoundtrip(t *testing.T) {
 	}
 }
 
+//nolint:gocognit // dense by design: one function groups the retry-stanza scenarios; subtests are the readable shape
 func TestLoadConfigRetryStanza(t *testing.T) {
 	t.Parallel()
 

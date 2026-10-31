@@ -49,8 +49,8 @@ func NewServiceNotifier() ServiceNotifier {
 // nothing is ever sent.
 type noopNotifier struct{}
 
-func (noopNotifier) Ready() error             { return nil }
-func (noopNotifier) WatchdogPing() error      { return nil }
+func (noopNotifier) Ready() error                    { return nil }
+func (noopNotifier) WatchdogPing() error             { return nil }
 func (noopNotifier) WatchdogInterval() time.Duration { return 0 }
 
 // notifySocketNotifier speaks the sd_notify datagram protocol to the socket
@@ -94,15 +94,15 @@ func (n *notifySocketNotifier) notify(state string) error {
 // watchdogPeriodFromEnv parses WATCHDOG_USEC (microseconds) and halves it,
 // per the sd_notify convention of pinging at twice the needed rate. The
 // minimum of 100ms keeps a pathological WATCHDOG_USEC from busy-looping the
-// heartbeat; the 24h maximum keeps the uint64-to-Duration conversion from
-// overflowing on garbage input.
+// heartbeat; the 24h maximum bounds garbage input (a signed parse avoids any
+// uint-to-int conversion entirely).
 func watchdogPeriodFromEnv() time.Duration {
-	raw, err := strconv.ParseUint(os.Getenv("WATCHDOG_USEC"), 10, 64)
-	if err != nil || raw == 0 {
+	raw, err := strconv.ParseInt(os.Getenv("WATCHDOG_USEC"), 10, 64)
+	if err != nil || raw <= 0 {
 		return 0
 	}
 
-	const maxUseful = uint64(24 * time.Hour / time.Microsecond)
+	const maxUseful = int64(24 * time.Hour / time.Microsecond)
 	if raw > maxUseful {
 		raw = maxUseful
 	}

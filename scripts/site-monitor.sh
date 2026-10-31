@@ -96,6 +96,33 @@ set_state() {
 	printf '%s' "$2" >"$STATE_DIR/$1.state"
 }
 
+# Daemon health-gate watch: count the visionreviewd "pass skipped, model
+# endpoint unhealthy" warnings in the systemd journal over the window and
+# alert (critical) once per crossing of DAEMON_GATE_THRESHOLD. The state
+# file stores the last count so the alert fires on escalation, not every
+# run; recovery (count back below threshold) logs only.
+DAEMON_GATE_THRESHOLD=${DAEMON_GATE_THRESHOLD:-3}
+DAEMON_GATE_WINDOW=${DAEMON_GATE_WINDOW:-24 hours}
+
+check_daemon_gate() {
+	command -v journalctl >/dev/null 2>&1 || return 0
+
+	local count last
+	count=$(journalctl -u visionreviewd --since "-$DAEMON_GATE_WINDOW" --no-pager 2>/dev/null |
+		grep -c 'pass skipped, model endpoint unhealthy') || count=0
+	last=$(cat "$STATE_DIR/daemon-gate.count" 2>/dev/null || echo 0)
+
+	if [ "$count" -ge "$DAEMON_GATE_THRESHOLD" ] && [ "$last" -lt "$DAEMON_GATE_THRESHOLD" ]; then
+		notify "site-monitor: visionreviewd endpoint down" \
+			"$count unhealthy-pass skips in the last $DAEMON_GATE_WINDOW (threshold $DAEMON_GATE_THRESHOLD) - llama-server may be down" critical
+		echo "$now_iso DAEMON-GATE $count skips >= $DAEMON_GATE_THRESHOLD" >>"$LOG"
+	elif [ "$count" -lt "$DAEMON_GATE_THRESHOLD" ] && [ "$last" -ge "$DAEMON_GATE_THRESHOLD" ]; then
+		echo "$now_iso DAEMON-GATE recovered ($count skips)" >>"$LOG"
+	fi
+
+	printf '%s' "$count" >"$STATE_DIR/daemon-gate.count"
+}
+
 notify() {
 	command -v notify-send >/dev/null 2>&1 || return 0
 	notify-send -a site-monitor -u "${3:-normal}" "$1" "$2" 2>/dev/null
@@ -188,6 +215,8 @@ for t in "${TARGETS[@]}"; do
 	summary+=("$state $host ($detail)")
 	echo "$now_iso $state $host $detail" >>"$LOG"
 done
+
+check_daemon_gate
 
 if [ "$JSON" = 1 ]; then
 	printf '{"ok":%d,"warn":%d,"known":%d,"fail":%d,"at":"%s"}\n' \

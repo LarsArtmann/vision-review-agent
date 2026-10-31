@@ -191,6 +191,7 @@ func countReviewedEvents(t *testing.T, store *Store) (int, []string) {
 // pass is skipped whole (no model call, no writes, one warning), nothing is
 // lost, and the recovered pass reviews exactly what was deferred while
 // unchanged views stay skip-seen.
+//nolint:gocyclo // dense by design: the die-skip-recover sequence is one E2E scenario; phase helpers would scatter it
 func TestHealthGateEndToEndDieSkipRecover(t *testing.T) {
 	t.Parallel()
 
