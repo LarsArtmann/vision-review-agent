@@ -225,15 +225,25 @@ memory must embed the EXACT command and the DATE it ran — a claim without
 both is a rumor, not evidence (the 2026-10-05 "grep clean" claim hid a
 three-week-old v2 import; see the SEVENTH recurrence paragraph).
 
-Latest full-green run: 2026-09-26 at the working tree of this docs-health
-pass — steps 1–5 green on Go 1.27.1 (`build`/`vet`/`gofmt` clean, `lint` 0
-issues after the 15-finding cleanup, `test -race ./...` 9/9 ok, both JSON
-regimes incl. the `GOEXPERIMENT=none` SDK-subset tests, `go mod verify` +
-`tidy -diff` clean); nix steps 7–9 NOT re-run this pass (flake proven green
-2026-09-22 with the `go_1_27` override). Earlier full 9-step runs:
-2026-09-07 at `8590dda` (post go-cqrs-lite bump; evidence in
-`docs/status/archived/2026-09-07_17-21_go-cqrs-lite-full-bump-status.md`), same day
-at `cecc399` (PR #1 merge), and at `4d495b6` (post docs sweep).
+Latest full-green run: **2026-10-31 evening (full 9-step, first since
+2026-09-26)** — on Go 1.27.3: step 1 `build`/`vet`/`gofmt` clean; step 2
+`test -race ./...` green (jsonv2 regime, step 3 merged); step 4
+`GOEXPERIMENT=none` watchdog assertion matches the documented kaptinlin
+chain; step 5 `go mod verify` + `tidy -diff` clean; step 6 `govulncheck`
+**0 reachable** after `golang.org/x/net` → v0.60.0 (5 stdlib-adjacent
+reachable findings fixed; NOTE: run govulncheck via
+`go run golang.org/x/vuln/cmd/govulncheck@latest` under a nix-store
+go ≥ 1.27.3 — the system 1.26-built binary mis-scans); steps 7–9 under
+nixpkgs `1c89083e451e` (bumped 2026-10-31 from `fe13242281a6` for
+go_1_27 = 1.27.3 ≥ the go.mod floor — the older pin's 1.27.2 broke
+`nix build` when go.mod moved to 1.27.3): `nix run .#test` + `.#lint`
+(0 issues, pinned CLI v2.13.2), both `nix build` targets + version
+smoke green, `nix flake check` "all checks passed" (treefmt goimports
+removal fixed the 2026-10 red; import order stays enforced by the `gci`
+linter). After ANY go.mod bump in this repo: `go mod vendor` (vendor/ is
+committed) — the vendorHash error message about a missing module zip is
+the symptom. Prior receipts: 2026-09-26 steps 1–5 (nix not re-run);
+2026-09-07 full runs at `8590dda`/`cecc399`/`4d495b6`.
 
 Dependency hygiene: `nix run .#dep-drift` (or `scripts/check-deps.sh`)
 compares direct go.mod requirements against the latest published versions —
