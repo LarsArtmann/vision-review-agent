@@ -49,9 +49,9 @@ func (e *flippingEndpoint) chatCount() int {
 	return e.chats
 }
 
-func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch {
-	case strings.HasSuffix(r.URL.Path, "/models"):
+	case strings.HasSuffix(req.URL.Path, "/models"):
 		if !e.isHealthy() {
 			http.Error(w, "endpoint down", http.StatusInternalServerError)
 
@@ -59,8 +59,13 @@ func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]any{{"id": "fake-vision-model"}}})
-	case strings.HasSuffix(r.URL.Path, "/chat/completions"):
+
+		if err := json.NewEncoder(w).Encode(
+			map[string]any{"data": []map[string]any{{"id": "fake-vision-model"}}},
+		); err != nil {
+			http.Error(w, "encode listing: "+err.Error(), http.StatusInternalServerError)
+		}
+	case strings.HasSuffix(req.URL.Path, "/chat/completions"):
 		e.mu.Lock()
 		e.chats++
 		e.mu.Unlock()
@@ -72,7 +77,7 @@ func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var request fakeChatRequest
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
 			http.Error(w, "decode request: "+err.Error(), http.StatusBadRequest)
 
 			return
@@ -92,9 +97,12 @@ func (e *flippingEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(completion)
+
+		if err := json.NewEncoder(w).Encode(completion); err != nil {
+			http.Error(w, "encode completion: "+err.Error(), http.StatusInternalServerError)
+		}
 	default:
-		http.Error(w, fmt.Sprintf("unexpected %s %s", r.Method, r.URL.Path), http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("unexpected %s %s", req.Method, req.URL.Path), http.StatusNotFound)
 	}
 }
 

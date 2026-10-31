@@ -278,3 +278,112 @@ func TestConfigMarshalRoundtrip(t *testing.T) {
 		t.Fatalf("roundtrip mismatch:\n got %+v\nwant %+v", decoded, config)
 	}
 }
+
+func TestLoadConfigRetryStanza(t *testing.T) {
+	t.Parallel()
+
+	t.Run("absent stanza keeps the daemon default policy", func(t *testing.T) {
+		t.Parallel()
+
+		path := writeConfigFile(t, t.TempDir(), `{"projects": {"proj": ["/abs/*.png"]}}`)
+
+		config, err := LoadConfig(path)
+		if err != nil {
+			t.Fatalf("LoadConfig: %v", err)
+		}
+
+		want := DefaultRetryPolicy()
+		if config.Retry == nil || *config.Retry != want {
+			t.Fatalf("retry = %+v, want default %+v", config.Retry, want)
+		}
+	})
+
+	t.Run("present stanza replaces the policy", func(t *testing.T) {
+		t.Parallel()
+
+		path := writeConfigFile(t, t.TempDir(), `{
+			"projects": {"proj": ["/abs/*.png"]},
+			"retry": {"maxAttempts": 5, "initialBackoff": "250ms", "maxBackoff": "10s", "multiplier": 3.0}
+		}`)
+
+		config, err := LoadConfig(path)
+		if err != nil {
+			t.Fatalf("LoadConfig: %v", err)
+		}
+
+		want := RetryConfig{
+			Enabled:        true,
+			MaxAttempts:    5,
+			InitialBackoff: 250 * time.Millisecond,
+			MaxBackoff:     10 * time.Second,
+			Multiplier:     3.0,
+		}
+
+		if config.Retry == nil || *config.Retry != want {
+			t.Fatalf("retry = %+v, want %+v", config.Retry, want)
+		}
+	})
+
+	t.Run("explicit disable survives load and roundtrip", func(t *testing.T) {
+		t.Parallel()
+
+		path := writeConfigFile(t, t.TempDir(), `{
+			"projects": {"proj": ["/abs/*.png"]},
+			"retry": {"enabled": false}
+		}`)
+
+		config, err := LoadConfig(path)
+		if err != nil {
+			t.Fatalf("LoadConfig: %v", err)
+		}
+
+		if config.Retry == nil || config.Retry.Enabled {
+			t.Fatalf("retry = %+v, want disabled", config.Retry)
+		}
+
+		encoded, err := config.MarshalJSON()
+		if err != nil {
+			t.Fatalf("marshal: %v", err)
+		}
+
+		if !strings.Contains(string(encoded), `"enabled":false`) {
+			t.Fatalf("disabled retry must marshal enabled:false, got %s", encoded)
+		}
+
+		decoded := DefaultConfig()
+		if err := json.Unmarshal(encoded, &decoded); err != nil {
+			t.Fatalf("unmarshal: %v", err)
+		}
+
+		if !reflect.DeepEqual(decoded, config) {
+			t.Fatalf("roundtrip mismatch:\n got %+v\nwant %+v", decoded, config)
+		}
+	})
+
+	t.Run("invalid retry duration is a config error", func(t *testing.T) {
+		t.Parallel()
+
+		path := writeConfigFile(t, t.TempDir(),
+			`{"projects": {"proj": ["/abs/*.png"]}, "retry": {"initialBackoff": "soon"}}`)
+
+		_, err := LoadConfig(path)
+		if !errors.Is(err, ErrInvalidConfig) {
+			t.Fatalf("err = %v, want ErrInvalidConfig", err)
+		}
+	})
+
+	t.Run("negative retry knobs fail validation", func(t *testing.T) {
+		t.Parallel()
+
+		config := DefaultConfig()
+		config.DataDir = "/tmp/vra"
+		config.ReviewsDir = "/tmp/vra/reviews"
+		config.Projects = map[string][]string{"proj": {"/abs/*.png"}}
+		config.Retry.MaxAttempts = -1
+
+		err := config.Validate()
+		if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "maxAttempts") {
+			t.Fatalf("err = %v, want ErrInvalidConfig naming maxAttempts", err)
+		}
+	})
+}

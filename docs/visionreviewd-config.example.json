@@ -5,6 +5,13 @@
   "reviewsDir": "~/.local/share/vision-review-agent/reviews",
   "interval": "10m",
   "timeout": "5m",
+  "retry": {
+    "enabled": true,
+    "maxAttempts": 3,
+    "initialBackoff": "2s",
+    "maxBackoff": "30s",
+    "multiplier": 2.0
+  },
   "projects": {
     "myapp": ["/home/me/projects/myapp/screenshots/*.png"]
   }

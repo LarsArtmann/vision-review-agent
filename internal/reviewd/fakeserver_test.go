@@ -310,3 +310,143 @@ func TestReviewerOverHTTPWrapsUnreachableEndpoint(t *testing.T) {
 		t.Fatal("Review against an unreachable endpoint must fail")
 	}
 }
+
+// TestReviewerRetriesTransientFailure proves the daemon's default retry
+// policy end to end: a 500 on the first model call is retried, the second
+// attempt succeeds, and the view is reviewed exactly once with no error.
+func TestReviewerRetriesTransientFailure(t *testing.T) {
+	t.Parallel()
+
+	var (
+		mu    sync.Mutex
+		calls int
+	)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if !strings.HasSuffix(req.URL.Path, "/chat/completions") {
+			http.Error(w, "unexpected path", http.StatusNotFound)
+
+			return
+		}
+
+		mu.Lock()
+		calls++
+		attempt := calls
+		mu.Unlock()
+
+		if attempt == 1 {
+			http.Error(w, "transient failure", http.StatusInternalServerError)
+
+			return
+		}
+
+		var request fakeChatRequest
+		if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+			http.Error(w, "decode request: "+err.Error(), http.StatusBadRequest)
+
+			return
+		}
+
+		completion := fakeCompletion{
+			ID:      "chatcmpl-retry",
+			Object:  "chat.completion",
+			Created: time.Now().UTC().Unix(),
+			Model:   request.Model,
+			Choices: []fakeChoice{{
+				Index:        0,
+				Message:      fakeMessage{Role: "assistant", Content: "## Review\nFine after retry.\n\n**Score: 7/10**"},
+				FinishReason: "stop",
+			}},
+			Usage: fakeUsage{PromptTokens: 10, CompletionTokens: 5, TotalTokens: 15},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if err := json.NewEncoder(w).Encode(completion); err != nil {
+			http.Error(w, "encode response: "+err.Error(), http.StatusInternalServerError)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	config := fakeModelConfig(server.URL)
+	policy := DefaultRetryPolicy()
+	policy.InitialBackoff = time.Millisecond
+	config.Retry = &policy
+
+	reviewer, err := NewReviewerFromConfig(t.Context(), config)
+	if err != nil {
+		t.Fatalf("build reviewer: %v", err)
+	}
+
+	imagePath := writeTestPNG(t, "retry-view")
+
+	viewKey, err := ParseViewKey("Home--dark--desktop")
+	if err != nil {
+		t.Fatalf("parse view key: %v", err)
+	}
+
+	result, err := reviewer.Review(t.Context(), viewKey, imagePath)
+	if err != nil {
+		t.Fatalf("review should succeed after retry: %v", err)
+	}
+
+	if result.Score != 7 {
+		t.Fatalf("score = %d, want 7", result.Score)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if calls != 2 {
+		t.Fatalf("model calls = %d, want 2 (one 500, one success)", calls)
+	}
+}
+
+// TestReviewerDoesNotRetryNonRetryableFailure proves the retry policy is
+// classification-aware: a 400 is not retryable, so the reviewer fails after
+// exactly one model call instead of burning attempts on a permanent error.
+func TestReviewerDoesNotRetryNonRetryableFailure(t *testing.T) {
+	t.Parallel()
+
+	var (
+		mu    sync.Mutex
+		calls int
+	)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		mu.Lock()
+		calls++
+		mu.Unlock()
+
+		http.Error(w, "invalid request", http.StatusBadRequest)
+	}))
+	t.Cleanup(server.Close)
+
+	config := fakeModelConfig(server.URL)
+	policy := DefaultRetryPolicy()
+	policy.InitialBackoff = time.Millisecond
+	config.Retry = &policy
+
+	reviewer, err := NewReviewerFromConfig(t.Context(), config)
+	if err != nil {
+		t.Fatalf("build reviewer: %v", err)
+	}
+
+	imagePath := writeTestPNG(t, "nonretry-view")
+
+	viewKey, err := ParseViewKey("Home--dark--desktop")
+	if err != nil {
+		t.Fatalf("parse view key: %v", err)
+	}
+
+	if _, err := reviewer.Review(t.Context(), viewKey, imagePath); err == nil {
+		t.Fatal("review against a 400 endpoint must fail")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if calls != 1 {
+		t.Fatalf("model calls = %d, want 1 (400 is not retryable)", calls)
+	}
+}

@@ -145,6 +145,11 @@ as go-cqrs-lite events on bbolt.
   INDEX with score table and trend arrows; all writes atomic
 - **Daemon loop** — immediate pass + ticker, logged-and-continue per-pass
   failures, clean SIGINT/SIGTERM shutdown (`internal/reviewd/daemon.go`)
+- **Health gate** — `run` wraps each pass in a `HealthGate` that probes
+  `{baseUrl}/models` first (5 s timeout, shared probe with doctor); while the
+  model endpoint is unhealthy, passes are skipped with one warning per pass
+  and the views are picked up unchanged by the next healthy pass
+  (`internal/reviewd/health.go`)
 - **8 subcommands** — run, once, discover, compare, events, backup,
   replay, doctor, plus `version` (`cmd/visionreviewd`)
 - **Replay** — rebuild the whole reviews directory byte-identically from the

@@ -44,25 +44,76 @@ type Reviewer struct {
 
 // NewReviewerFromConfig builds a Reviewer from daemon configuration: an
 // OpenAI-compatible (llama-server) language model with review prompts and the
-// configured per-request timeout.
+// configured per-request timeout and retry policy.
 func NewReviewerFromConfig(ctx context.Context, config Config) (*Reviewer, error) {
 	languageModel, err := LanguageModel(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewReviewer(languageModel, NewModelID(config.Model), config.Timeout)
+	return NewReviewer(
+		languageModel,
+		NewModelID(config.Model),
+		config.Timeout,
+		WithRetryPolicy(config.Retry.visionPolicy()),
+	)
+}
+
+// visionPolicy converts the daemon policy to the vision SDK's retry config.
+// A nil or disabled policy maps to nil (no retry); jitter is always on.
+// Lives beside the reviewer (not config.go) so the config file keeps no
+// vision SDK dependency.
+func (r *RetryConfig) visionPolicy() *vision.RetryConfig {
+	if r == nil || !r.Enabled {
+		return nil
+	}
+
+	return &vision.RetryConfig{
+		MaxAttempts:    r.MaxAttempts,
+		InitialBackoff: r.InitialBackoff,
+		MaxBackoff:     r.MaxBackoff,
+		Multiplier:     r.Multiplier,
+		Jitter:         true,
+	}
+}
+
+// ReviewerOption customizes NewReviewer wiring without touching the
+// positional signature every existing caller uses.
+type ReviewerOption func(*reviewerOptions)
+
+type reviewerOptions struct {
+	retry *vision.RetryConfig
+}
+
+// WithRetryPolicy sets the vision-level retry policy applied to both
+// persona agents; nil disables retry.
+func WithRetryPolicy(policy *vision.RetryConfig) ReviewerOption {
+	return func(options *reviewerOptions) {
+		options.retry = policy
+	}
 }
 
 // NewReviewer builds a Reviewer over an existing language model. modelID is
-// recorded in events; timeout bounds each model request.
-func NewReviewer(languageModel fantasy.LanguageModel, modelID ModelID, timeout time.Duration) (*Reviewer, error) {
-	reviewAgent, err := newAgent(languageModel, ReviewSystemPrompt, "review", timeout)
+// recorded in events; timeout bounds each model request; options may attach
+// a retry policy (nil, the default, retries nothing).
+func NewReviewer(
+	languageModel fantasy.LanguageModel,
+	modelID ModelID,
+	timeout time.Duration,
+	opts ...ReviewerOption,
+) (*Reviewer, error) {
+	var options reviewerOptions
+
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	reviewAgent, err := newAgent(languageModel, ReviewSystemPrompt, "review", timeout, options.retry)
 	if err != nil {
 		return nil, err
 	}
 
-	compareAgent, err := newAgent(languageModel, CompareSystemPrompt, "compare", timeout)
+	compareAgent, err := newAgent(languageModel, CompareSystemPrompt, "compare", timeout, options.retry)
 	if err != nil {
 		return nil, err
 	}
@@ -71,17 +122,19 @@ func NewReviewer(languageModel fantasy.LanguageModel, modelID ModelID, timeout t
 }
 
 // newAgent builds a vision.Agent over languageModel under one system prompt.
-// label names the persona in error messages.
+// label names the persona in error messages; retry may be nil.
 func newAgent(
 	languageModel fantasy.LanguageModel,
 	systemPrompt string,
 	label string,
 	timeout time.Duration,
+	retry *vision.RetryConfig,
 ) (*vision.Agent, error) {
 	agent, err := vision.NewAgent(vision.Config{
 		Model:          languageModel,
 		SystemPrompt:   systemPrompt,
 		RequestTimeout: timeout,
+		Retry:          retry,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create %s agent: %w", label, err)

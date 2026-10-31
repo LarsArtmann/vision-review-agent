@@ -8,6 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Health gate on the daemon `run` loop** — `HealthGate` (a `PassRunner`
+  decorator) probes the configured model endpoint before each pass; while
+  the endpoint is down, passes are skipped with a warning instead of burning
+  doomed model calls, and the next healthy pass picks the views up
+  unchanged. `visionreviewd doctor` delegates to the same shared probe
+  (`ProbeModelEndpoint`), and `cmd/vision` maps all 16 `vision.ErrorKind`
+  values to operator advice.
+- **json/v2 recurrence root-kill** — `.go-auto-upgrade.json`
+  (`{"exclude":["jsonv1tov2"]}`) committed at the repo root (the migrator's
+  documented per-project exclusion; A/B-verified: with the config the
+  migrator skips this repo, without it rewrites the whole tree), plus guard
+  tests in `internal/reviewd` and `pkg/vision` (sub package a2ui included
+  via the walk) that fail `go test` the moment a
+  `encoding/json/v2`/`jsontext` import returns — positive-control-proven and
+  CI-bypass-immune. `internal/reviewd` additionally walks the whole module,
+  so a recurrence anywhere is caught by any reviewd test run.
+- **Tolerant fold for unknown event types** — `ApplyViewState` counts
+  unrecognized events into `ViewState.UnknownEvents` instead of erroring
+  (decision D1, 2026-10-31: journals are a lifetime asset; an old binary must
+  fold a newer journal). Clears the 26-day-red
+  `TestApplyViewStateIgnoresUnknownEventType` and the repo's last
+  pinned-lint err113 finding.
 - **`visionreviewd backup OUT`** — consistent journal snapshots via a single
   bbolt read transaction. Stop the daemon first (bbolt allows one writer
   handle); `-wait` bounds how long the command waits for the lock before
@@ -42,6 +64,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Seventh json/v2 migration recurrence reverted (7 files)** — auto-commit
+  `fad59ce` (Oct 11) re-migrated a2ui `component.go`/`messages.go`, reviewd
+  `config.go`/`discover.go`/`fakeserver_test.go` (+ config/events test
+  files) to `encoding/json/v2`/`jsontext`, including the `sendDataModel`
+  `omitempty`→`omitzero` wire change from the Sep 13 incident. All restored
+  to the v1 path Oct 31 (six of seven byte-identical to the blessed
+  pre-recurrence state). The 2026-10-05 "tree-wide grep clean" claim is
+  corrected: `fakeserver_test.go` had carried v2 imports since Sep 29
+  unnoticed — the claim is annotated in that session's status doc, and the
+  new guard tests make the check machine-enforced instead of
+  memory-enforced.
 - **Fifth go-auto-upgrade json/v2 recurrence reverted — and the guard it
   evaded restored.** On Sep 23 the daemon re-migrated five files to
   `encoding/json/v2`/`jsontext` imports (`internal/catalog/sync_test.go`,
