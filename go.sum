@@ -42,8 +42,8 @@ github.com/aws/aws-sdk-go-v2/service/ssooidc v1.44.1 h1:w8yui2ZqdHmGwVBDGvazoIvK
 github.com/aws/aws-sdk-go-v2/service/ssooidc v1.44.1/go.mod h1:gJSdIY6YUzDvqQLcMtPVZgBRHrFwzHryvpE8Igzbxps=
 github.com/aws/aws-sdk-go-v2/service/sts v1.51.6 h1:BVjKrtRUtSYKztBCCfE1oAB+d3ViKcW2cKZfserOqMQ=
 github.com/aws/aws-sdk-go-v2/service/sts v1.51.6/go.mod h1:eSukFLeLkPMm+1OxDR+F0joauZdyBkF47Ow7MqjZiJw=
-github.com/aws/smithy-go v1.28.7 h1:h/n1SHrwVtaDYLz8mR1/Kq4Xh4RaFbFW7bOYckg9mfE=
-github.com/aws/smithy-go v1.28.7/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
+github.com/aws/smithy-go v1.28.8 h1:aEmdAq7gVCoGCnvf1NnELlu3I6D/nhqrC321FyFiQkQ=
+github.com/aws/smithy-go v1.28.8/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
 github.com/bahlo/generic-list-go v0.2.0 h1:5sz/EEAK+ls5wF+NeqDpk5+iNdMDXrh3z3nPnH1Wvgk=
 github.com/bahlo/generic-list-go v0.2.0/go.mod h1:2KvAjgMlE5NNynlg/5iLrrCCZ2+5xWbdbCW3pNTGyYg=
 github.com/buger/jsonparser v1.6.1 h1:I0phFv0PlbLHnM7TZAVjZ2MJ2/eWRTDyuO7GLR98IEs=
@@ -134,8 +134,8 @@ github.com/larsartmann/go-cqrs-lite/event/v4 v4.15.2 h1:9f8JzC0Ud+O1hILNKLsXQgWr
 github.com/larsartmann/go-cqrs-lite/event/v4 v4.15.2/go.mod h1:BbipSAKx998DAgHyuvao1uxosCiovgJ3+vi80ZmVkzk=
 github.com/larsartmann/go-cqrs-lite/event/v4/eventtest v0.4.0 h1:PjI4Y+CPkg2mBG7InAi9y3+czCQsXyIdcjZiGQduq6M=
 github.com/larsartmann/go-cqrs-lite/event/v4/eventtest v0.4.0/go.mod h1:/Je8mL9pj1BtlAU8XtpBqtrLGHob1TeZpvlobrUmIy8=
-github.com/larsartmann/go-cqrs-lite/id/v4 v4.7.3 h1:MJBJNsp9UEbYvrb1HBvc6Ui94qf56GJzk76XDFbxyLY=
-github.com/larsartmann/go-cqrs-lite/id/v4 v4.7.3/go.mod h1:XW80FYXKndVG3LfgsCK3r65CHty8OKwDXlPmuytZqMU=
+github.com/larsartmann/go-cqrs-lite/id/v4 v4.7.4 h1:nzPCdZNJKxJjjB6gmfdux7YXPUSqWGcodY/DhCbBSwY=
+github.com/larsartmann/go-cqrs-lite/id/v4 v4.7.4/go.mod h1:XW80FYXKndVG3LfgsCK3r65CHty8OKwDXlPmuytZqMU=
 github.com/larsartmann/go-cqrs-lite/kv/v4 v4.3.5 h1:a0KqlSZYDmj2QS8ElKE6HEMxbvpihjE5uztqWuPeWt4=
 github.com/larsartmann/go-cqrs-lite/kv/v4 v4.3.5/go.mod h1:97HfkB9zbSSFfnbltfvy+IXmtRjh5i4mfl41OrZYfv4=
 github.com/larsartmann/go-cqrs-lite/metadata/v4 v4.7.3 h1:t6+zJntr/N9ah7HEUHab3Xq5cQK5T7Tu7UqGblRZdaw=
